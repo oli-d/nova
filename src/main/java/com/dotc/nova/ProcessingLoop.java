@@ -8,7 +8,7 @@ import com.lmax.disruptor.*;
 import com.lmax.disruptor.dsl.Disruptor;
 
 public class ProcessingLoop {
-	private static final int BUFFER_SIZE = 10000;
+	private static final int BUFFER_SIZE = com.lmax.disruptor.util.Util.ceilingNextPowerOfTwo(10000);
 
 	private RingBuffer<InvocationContext> ringBuffer;
 	private ClaimStrategy claimStrategy = new MultiThreadedClaimStrategy(BUFFER_SIZE);
@@ -22,8 +22,8 @@ public class ProcessingLoop {
 		EventFactory<InvocationContext> eventFactory = new MyEventFactory();
 
 		Disruptor<InvocationContext> disruptor = new Disruptor<InvocationContext>(eventFactory, executor, claimStrategy, waitStrategy);
-		ringBuffer = disruptor.getRingBuffer();
 		disruptor.handleEventsWith(new ProcessingEventHandler());
+		ringBuffer = disruptor.start();
 	}
 
 	public <T> void dispatch(T event, List<EventListener> listenerList) {
