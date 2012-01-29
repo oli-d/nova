@@ -3,15 +3,17 @@ package com.dotc.nova;
 import com.dotc.nova.events.EventEmitter;
 
 public class Nova {
-	private final ProcessingLoop eventDispatcher;
+	private final ProcessingLoop processingLoop;
 
 	private final EventEmitter eventEmitter;
 	private final com.dotc.nova.process.Process process;
 
 	public Nova() {
-		eventDispatcher = new ProcessingLoop();
-		eventEmitter = new EventEmitter(eventDispatcher);
-		process = new com.dotc.nova.process.Process(eventDispatcher);
+		processingLoop = new ProcessingLoop();
+		processingLoop.init();
+
+		eventEmitter = new EventEmitter(processingLoop);
+		process = new com.dotc.nova.process.Process(processingLoop);
 	}
 
 	public EventEmitter getEventEmitter() {
