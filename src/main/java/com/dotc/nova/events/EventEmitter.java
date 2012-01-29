@@ -4,16 +4,16 @@ import java.util.*;
 
 import org.apache.log4j.Logger;
 
-import com.dotc.nova.dispatching.EventDispatcher;
+import com.dotc.nova.ProcessingLoop;
 
 public class EventEmitter {
 	private static final Logger LOGGER = Logger.getLogger(EventEmitter.class);
 
 	private final HashMap<Class, List<EventListener>> mapTypeToListener = new HashMap<Class, List<EventListener>>();
 
-	private final EventDispatcher eventDispatcher;
+	private final ProcessingLoop eventDispatcher;
 
-	public EventEmitter(EventDispatcher eventDispatcher) {
+	public EventEmitter(ProcessingLoop eventDispatcher) {
 		this.eventDispatcher = eventDispatcher;
 	}
 
