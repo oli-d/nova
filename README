@@ -1,0 +1,15 @@
+The goal of this project is to bring Node.js to the Java world. 
+Well, not exactly Node.js, but its asynchronous, "single threaded"
+programming model.
+
+The API is trying to Mimic Node's API, but due to the significant 
+differences between Java and JavaScript, compromises will have to
+be made.
+
+First and foremost, Java does not support first-class functions,
+let alone closures. However, it should be easy enough to mimic
+them with classes. Yes, the code is more verbose (i.e. harder to
+read and understand) but this does not stop us from using the
+desired programming model.
+
+...
