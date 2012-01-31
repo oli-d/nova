@@ -9,12 +9,14 @@ import com.dotc.nova.ProcessingLoop;
 public class Timers {
 	private static final Logger LOGGER = Logger.getLogger(Timers.class);
 
-	private ProcessingLoop processingLoop;
+	private final ProcessingLoop processingLoop;
 	private final ScheduledExecutorService executor;
 	private long counter = 0;
 	private ConcurrentHashMap<String, ScheduledFuture> mapIdToFuture = new ConcurrentHashMap<String, ScheduledFuture>();
 
-	public Timers() {
+	public Timers(ProcessingLoop processingLoop) {
+		this.processingLoop = processingLoop;
+
 		ThreadFactory tf = new ThreadFactory() {
 
 			@Override
@@ -25,10 +27,6 @@ public class Timers {
 			}
 		};
 		executor = Executors.newSingleThreadScheduledExecutor(tf);
-	}
-
-	public void setProcessingLoop(ProcessingLoop processingLoop) {
-		this.processingLoop = processingLoop;
 	}
 
 	/**

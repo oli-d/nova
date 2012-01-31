@@ -4,22 +4,15 @@ import static org.easymock.EasyMock.*;
 import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.*;
 
-import org.junit.Before;
 import org.junit.Test;
 
 import com.dotc.nova.ProcessingLoop;
 
 public class TimersTest {
-	private Timers timers;
-
-	@Before
-	public void setup() {
-		timers = new Timers();
-	}
 
 	@Test(expected = IllegalArgumentException.class)
 	public void testSetTimeoutThrowsIfNoCallbackProvided() {
-		timers.setTimeout(null, 100);
+		new Timers(null).setTimeout(null, 100);
 	}
 
 	@Test
@@ -31,7 +24,7 @@ public class TimersTest {
 		expectLastCall().once();
 		replay(callback, processingLoop);
 
-		timers.setProcessingLoop(processingLoop);
+		Timers timers = new Timers(processingLoop);
 
 		long startDelay = 300;
 		long checkDelay = 50;
@@ -66,7 +59,7 @@ public class TimersTest {
 			}
 
 		};
-		timers.setProcessingLoop(processingLoop);
+		Timers timers = new Timers(processingLoop);
 
 		Runnable callback = new Runnable() {
 
@@ -87,12 +80,12 @@ public class TimersTest {
 
 	@Test(expected = IllegalArgumentException.class)
 	public void testClearTimeoutWithNullIdThrows() throws Exception {
-		timers.clearTimeout(null);
+		new Timers(null).clearTimeout(null);
 	}
 
 	@Test
 	public void testClearTimeoutCanBeInvokedWithoutProblemsWithUnknownId() throws Exception {
-		timers.clearTimeout("id");
+		new Timers(null).clearTimeout("id");
 	}
 
 	@Test
@@ -106,7 +99,7 @@ public class TimersTest {
 			}
 
 		};
-		timers.setProcessingLoop(processingLoop);
+		Timers timers = new Timers(processingLoop);
 
 		Runnable callback = new Runnable() {
 
@@ -129,7 +122,7 @@ public class TimersTest {
 
 	@Test(expected = IllegalArgumentException.class)
 	public void testSetIntervalThrowsIfNoCallbackProvided() {
-		timers.setInterval(null, 100);
+		new Timers(null).setInterval(null, 100);
 	}
 
 	@Test
@@ -143,7 +136,7 @@ public class TimersTest {
 			}
 
 		};
-		timers.setProcessingLoop(processingLoop);
+		Timers timers = new Timers(processingLoop);
 
 		Runnable callback = new Runnable() {
 
@@ -173,7 +166,7 @@ public class TimersTest {
 			}
 
 		};
-		timers.setProcessingLoop(processingLoop);
+		Timers timers = new Timers(processingLoop);
 
 		Runnable callback = new Runnable() {
 
@@ -194,12 +187,12 @@ public class TimersTest {
 
 	@Test(expected = IllegalArgumentException.class)
 	public void testClearIntervalWithNullIdThrows() throws Exception {
-		timers.clearInterval(null);
+		new Timers(null).clearInterval(null);
 	}
 
 	@Test
 	public void testClearIntervalCanBeInvokedWithoutProblemsWithUnknownId() throws Exception {
-		timers.clearInterval("id");
+		new Timers(null).clearInterval("id");
 	}
 
 	@Test
@@ -213,7 +206,7 @@ public class TimersTest {
 			}
 
 		};
-		timers.setProcessingLoop(processingLoop);
+		Timers timers = new Timers(processingLoop);
 
 		Runnable callback = new Runnable() {
 
