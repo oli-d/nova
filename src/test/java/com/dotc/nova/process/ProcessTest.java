@@ -50,8 +50,6 @@ public class ProcessTest {
 
 			@Override
 			public void run() {
-				// TODO Auto-generated method stub
-
 			}
 		};
 

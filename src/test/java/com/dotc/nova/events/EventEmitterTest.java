@@ -256,7 +256,7 @@ public class EventEmitterTest {
 
 		eventEmitter.emit("MyEvent", handlerTwo, handlerThree);
 
-		// FIXME: maven CLI issues when using assertThat(..., is(...)) !?!?!?
+		// maven CLI issues when using assertThat(..., is(...)) !?!?!?
 		EventListener listener1 = captureListener1.getValue();
 		assertTrue(listener1 == handlerTwo);
 		EventListener listener2 = captureListener2.getValue();
