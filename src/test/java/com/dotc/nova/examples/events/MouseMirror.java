@@ -1,4 +1,4 @@
-package com.dotc.nova.examples.mousemirror;
+package com.dotc.nova.examples.events;
 
 import java.awt.event.MouseEvent;
 
@@ -7,7 +7,7 @@ import javax.swing.JFrame;
 import org.apache.log4j.BasicConfigurator;
 
 import com.dotc.nova.Nova;
-import com.dotc.nova.examples.mousemirror.helperclasses.*;
+import com.dotc.nova.examples.events.mousemirror.*;
 
 /**
  * This simple example shows how to use the Nove event queue.

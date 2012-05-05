@@ -1,4 +1,4 @@
-package com.dotc.nova.examples.mousemirror.helperclasses;
+package com.dotc.nova.examples.events.mousemirror;
 
 import java.awt.event.*;
 
