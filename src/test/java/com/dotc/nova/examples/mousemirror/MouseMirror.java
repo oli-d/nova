@@ -1,31 +1,100 @@
 package com.dotc.nova.examples.mousemirror;
 
+import java.awt.event.MouseEvent;
+
+import javax.swing.JFrame;
+
 import org.apache.log4j.BasicConfigurator;
 
 import com.dotc.nova.Nova;
+import com.dotc.nova.examples.mousemirror.helperclasses.*;
 
+/**
+ * This simple example shows how to use the Nove event queue.
+ * 
+ * It creates a source JFrame and translates that Frame's MouseEvents to 2 target JFrames.
+ * 
+ * The translation is done by the source frame putting all MouseEvents onto the Nove event queue, and register one Nova event queue listener per target frame, which takes the MouseEvents and applies
+ * them to the target frame.
+ * 
+ */
 public class MouseMirror {
 	public static void main(String[] args) {
 		// init logging
 		BasicConfigurator.configure();
 
-		// init Nova
-		Nova nova = new Nova();
-
 		// create the UI components
-		TargetFrame targetFrame1 = new TargetFrame(nova.getEventEmitter());
-		targetFrame1.setSize(300, 300);
-		targetFrame1.setLocation(310, 0);
-		targetFrame1.setVisible(true);
+		JFrame sourceFrame = createSourceFrame();
+		JFrame[] targetFrames = createTargetFrames(2);
 
-		TargetFrame targetFrame2 = new TargetFrame(nova.getEventEmitter());
-		targetFrame2.setSize(300, 300);
-		targetFrame2.setLocation(310, 330);
-		targetFrame2.setVisible(true);
+		/**
+		 * <pre>
+		 * *********************************************************************** * 
+		 * *********************************************************************** * 
+		 * ***                                                                 *** *
+		 * *** 1st step:                                                       *** *
+		 * *** Initilize Nova by creating a new instance of com.dotc.nova.Nova *** *
+		 * ***                                                                 *** *
+		 * *********************************************************************** *
+		 * *********************************************************************** *
+		 */
+		final Nova nova = new Nova();
 
-		SourceFrame sourceFrame = new SourceFrame(nova.getEventEmitter());
+		/**
+		 * <pre>
+		 * *************************************************************************************** * 
+		 * *************************************************************************************** * 
+		 * ***                                                                                 *** *
+		 * *** 2nd step:                                                                       *** *
+		 * *** Register listener on source frame, which puts all MouseEvents on the Nova queue *** *
+		 * ***                                                                                 *** *
+		 * *************************************************************************************** *
+		 * *************************************************************************************** *
+		 */
+		MouseEventForwarder eventForwarder = new MouseEventForwarder() {
+
+			@Override
+			public void forwardEvent(MouseEvent event) {
+				nova.getEventEmitter().emit(event);
+			}
+
+		};
+		sourceFrame.getGlassPane().addMouseListener(eventForwarder);
+		sourceFrame.getGlassPane().addMouseMotionListener(eventForwarder);
+
+		/**
+		 * <pre>
+		 * ********************************************************************************************** * 
+		 * ********************************************************************************************** * 
+		 * ***                                                                                        *** *
+		 * *** 3rd step:                                                                              *** *
+		 * *** For each target frame, we register a listener, which applies the forwarded MouseEvents *** *
+		 * ***                                                                                        *** *
+		 * ********************************************************************************************** *
+		 * ********************************************************************************************** *
+		 */
+		for (JFrame targetFrame : targetFrames) {
+			nova.getEventEmitter().addListener(MouseEvent.class, new MouseEventTranslator(targetFrame));
+		}
+
+	}
+
+	private static JFrame[] createTargetFrames(int numberOfFrames) {
+		JFrame[] returnValue = new JFrame[numberOfFrames];
+		for (int i = 0; i < returnValue.length; i++) {
+			returnValue[i] = new TargetFrame();
+			returnValue[i].setSize(300, 300);
+			returnValue[i].setLocation(300 + (i * 310), 0);
+			returnValue[i].setVisible(true);
+		}
+		return returnValue;
+	}
+
+	private static JFrame createSourceFrame() {
+		SourceFrame sourceFrame = new SourceFrame();
 		sourceFrame.setSize(300, 300);
 		sourceFrame.setLocation(0, 0);
 		sourceFrame.setVisible(true);
+		return sourceFrame;
 	}
 }
