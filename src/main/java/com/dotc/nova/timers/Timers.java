@@ -59,23 +59,34 @@ public class Timers {
 	}
 
 	/**
-	 * To schedule the repeated execution of callback every delay milliseconds. Returns a intervalId for possible use with clearInterval(). Optionally you can also pass arguments to the callback.
+	 * To schedule the repeated execution of callback every delay milliseconds. Returns a intervalId for possible use with clearInterval().
 	 * 
 	 */
 	public String setInterval(Runnable callback, long delay) {
+		return setInterval(callback, delay, TimeUnit.MILLISECONDS);
+	}
+
+	/**
+	 * To schedule the repeated execution of callback. Returns a intervalId for possible use with clearInterval().
+	 * 
+	 */
+	public String setInterval(Runnable callback, long delay, TimeUnit timeUnit) {
 		if (callback == null) {
 			throw new IllegalArgumentException("callback must not be null");
+		}
+		if (timeUnit == null) {
+			throw new IllegalArgumentException("timeUnit must not be null");
 		}
 		long id = ++counter;
 		String idAsString = String.valueOf(id);
 
-		mapIdToFuture.put(idAsString, executor.scheduleWithFixedDelay(new TimeoutCallbackWrapper(callback), delay, delay, TimeUnit.MILLISECONDS));
+		mapIdToFuture.put(idAsString, executor.scheduleWithFixedDelay(new TimeoutCallbackWrapper(callback), delay, delay, timeUnit));
 
 		return idAsString;
 	}
 
 	/**
-	 * Stops a interval from triggering.
+	 * Stops an interval from triggering.
 	 */
 	public void clearInterval(String intervalId) {
 		if (intervalId == null) {

@@ -125,6 +125,14 @@ public class TimersTest {
 		new Timers(null).setInterval(null, 100);
 	}
 
+	@Test(expected = IllegalArgumentException.class)
+	public void testSetIntervalThrowsIfNoTimeUnitProvided() {
+		new Timers(null).setInterval(new Runnable() {
+			public void run() {
+			}
+		}, 100l, null);
+	}
+
 	@Test
 	public void testSetInterval() throws Throwable {
 		final int[] counter = new int[1];
