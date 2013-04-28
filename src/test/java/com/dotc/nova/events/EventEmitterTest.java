@@ -99,7 +99,7 @@ public class EventEmitterTest {
 		eventEmitter.removeListener(String.class, listener1);
 		eventEmitter.emit(String.class, "MyEvent2");
 
-		listeners = captureListeners1.getValue();
+		listeners = captureListeners2.getValue();
 		assertNotNull(listeners);
 		assertThat(listeners.size(), is(1));
 		assertTrue(listeners.contains(listener2));
