@@ -10,6 +10,7 @@ public class EventEmitter {
 	private static final Logger LOGGER = Logger.getLogger(EventEmitter.class);
 
 	private final HashMap<Class, List<EventListener>> mapTypeToListener = new HashMap<Class, List<EventListener>>();
+	private final HashMap<Object, List<EventListener>> mapEventToListener = new HashMap<>();
 
 	private final ProcessingLoop eventDispatcher;
 
