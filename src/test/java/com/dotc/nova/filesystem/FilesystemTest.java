@@ -4,13 +4,12 @@ import static org.easymock.EasyMock.*;
 import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.*;
 
-import java.io.FileNotFoundException;
+import java.nio.file.NoSuchFileException;
 
 import org.easymock.Capture;
 import org.junit.*;
 
 import com.dotc.nova.ProcessingLoop;
-import com.dotc.nova.TestHelper;
 
 public class FilesystemTest {
 	private Filesystem filesystem;
@@ -60,17 +59,17 @@ public class FilesystemTest {
 	@Test
 	public void testReadFileAsyncWithUnknownPathCausesErrorCallbackToBeInvoked() throws Throwable {
 		FileReadHandler handler = createMock(FileReadHandler.class);
-		// for Java7 version: handler.errorOccurred(anyObject(NoSuchFileException.class));
-		handler.errorOccurred(anyObject(FileNotFoundException.class));
+		handler.errorOccurred(anyObject(NoSuchFileException.class));
 		expectLastCall().once();
 
-		Capture<Runnable> runnableCapture = new Capture<Runnable>();
-		processingLoop.dispatch(capture(runnableCapture));
+		/*
+		 * Java6 Capture<Runnable> runnableCapture = new Capture<Runnable>(); processingLoop.dispatch(capture(runnableCapture));
+		 */
 
 		replay(processingLoop, handler);
 
 		filesystem.readFile("doesntExist.txt", handler);
-		TestHelper.getCaptureValue(runnableCapture).run();
+		// Java6: TestHelper.getCaptureValue(runnableCapture).run();
 		verify(handler);
 	}
 

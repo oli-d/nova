@@ -1,85 +1,75 @@
 package com.dotc.nova.filesystem;
 
-import java.io.*;
-import java.util.concurrent.*;
+import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.channels.AsynchronousFileChannel;
+import java.nio.channels.CompletionHandler;
+import java.nio.file.Paths;
+import java.util.concurrent.Future;
 
 import com.dotc.nova.ProcessingLoop;
 
 public class Filesystem {
 	private final ProcessingLoop eventDispatcher;
-	private final ExecutorService fileReadExecutor;
 
 	public Filesystem(ProcessingLoop eventDispatcher) {
 		this.eventDispatcher = eventDispatcher;
-		ThreadFactory threadFactory = new ThreadFactory() {
-
-			@Override
-			public Thread newThread(Runnable arg0) {
-				Thread t = new Thread(arg0, "FileSystemReader-" + System.currentTimeMillis());
-				t.setDaemon(true);
-				return t;
-			}
-		};
-		fileReadExecutor = Executors.newCachedThreadPool(threadFactory);
 	}
 
 	public void readFile(String filePath, final FileReadHandler handler) {
-		fileReadExecutor.execute(new AsyncFileReadCommand(filePath, handler));
+		try {
+			AsynchronousFileChannel channel = AsynchronousFileChannel.open(Paths.get(filePath));
+			long capacity = channel.size();
+			// TODO: hack for simplicity. do this properly
+			if (capacity > Integer.MAX_VALUE) {
+				throw new IllegalArgumentException("File is too big. Max size is " + Integer.MAX_VALUE + " bytes.");
+			}
+
+			ByteBuffer buffer = ByteBuffer.allocate((int) channel.size());
+			channel.read(buffer, 0, buffer, new CompletionHandler<Integer, ByteBuffer>() {
+
+				@Override
+				public void completed(Integer result, final ByteBuffer attachment) {
+					eventDispatcher.dispatch(new Runnable() {
+
+						@Override
+						public void run() {
+							handler.fileRead(new String(attachment.array()));
+						}
+					});
+				}
+
+				@Override
+				public void failed(final Throwable exc, final ByteBuffer attachment) {
+					eventDispatcher.dispatch(new Runnable() {
+
+						@Override
+						public void run() {
+							handler.errorOccurred(exc);
+						}
+					});
+				}
+			});
+		} catch (Exception e) {
+			handler.errorOccurred(e);
+		}
 	}
 
 	public String readFileSync(String filePath) throws IOException {
-		File file = new File(filePath);
-		if (!file.exists()) {
-			throw new FileNotFoundException();
+		AsynchronousFileChannel channel = AsynchronousFileChannel.open(Paths.get(filePath));
+		long capacity = channel.size();
+		if (capacity > Integer.MAX_VALUE) {
+			throw new IllegalArgumentException("File is too big. Max size is " + Integer.MAX_VALUE + " bytes.");
 		}
 
-		BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(file)));
+		ByteBuffer buffer = ByteBuffer.allocate((int) channel.size());
+		Future<Integer> future = channel.read(buffer, 0);
 		try {
-			StringBuffer buf = new StringBuffer();
-			while (reader.ready()) {
-				buf.append(reader.readLine());
-				if (reader.ready()) {
-					buf.append('\n');
-				}
-			}
-			return buf.toString();
-		} finally {
-			reader.close();
+			future.get();
+		} catch (Exception e) {
+			e.printStackTrace();
 		}
-	}
-
-	private class AsyncFileReadCommand implements Runnable {
-		private final FileReadHandler handler;
-		private final String filePath;
-
-		public AsyncFileReadCommand(String filePath, FileReadHandler handler) {
-			this.handler = handler;
-			this.filePath = filePath;
-		}
-
-		@Override
-		public void run() {
-			try {
-				final String contents = readFileSync(filePath);
-				eventDispatcher.dispatch(new Runnable() {
-
-					@Override
-					public void run() {
-						handler.fileRead(contents);
-					}
-				});
-			} catch (final IOException e) {
-				eventDispatcher.dispatch(new Runnable() {
-
-					@Override
-					public void run() {
-						handler.errorOccurred(e);
-					}
-				});
-			}
-
-		}
-
+		return new String(buffer.array());
 	}
 
 }

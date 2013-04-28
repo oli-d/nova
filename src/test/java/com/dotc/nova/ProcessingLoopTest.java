@@ -14,8 +14,6 @@ import org.junit.Test;
 import com.dotc.nova.events.EventListener;
 
 public class ProcessingLoopTest {
-	private static final long MAX_TIME_TO_SLEEP_IN_MS = 2000;
-	private static final long CHECK_DELAY_IN_MS = 100;
 	private ProcessingLoop processingLoop;
 
 	@Before
