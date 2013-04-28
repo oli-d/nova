@@ -6,7 +6,7 @@ class ProcessingEventHandler implements EventHandler<InvocationContext> {
 
 	@Override
 	public void onEvent(InvocationContext event, long sequence, boolean endOfBatch) throws Exception {
-		event.getEventHandler().handleEventWithData(event.getData());
+		event.getEventListener().handleEventWithData(event.getData());
 	}
 
 }

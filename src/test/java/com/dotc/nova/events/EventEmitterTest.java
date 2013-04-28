@@ -36,7 +36,7 @@ public class EventEmitterTest {
 	@Test(expected = IllegalArgumentException.class)
 	public void testRegisteringNullTypeThrows() {
 		replay(processingLoop);
-		EventHandler<String> listener = createMock(EventHandler.class);
+		EventListener<String> listener = createMock(EventListener.class);
 		eventEmitter.on(null, listener);
 	}
 
@@ -55,7 +55,7 @@ public class EventEmitterTest {
 	@Test(expected = IllegalArgumentException.class)
 	public void testRemovingWithNullTypeThrows() {
 		replay(processingLoop);
-		EventHandler<String> listener = createMock(EventHandler.class);
+		EventListener<String> listener = createMock(EventListener.class);
 		eventEmitter.removeListener(null, listener);
 	}
 
@@ -68,17 +68,17 @@ public class EventEmitterTest {
 	@Test
 	public void testRemovingNotYetRegisteredListenerIsHandledSilently() {
 		replay(processingLoop);
-		EventHandler<String> listener = createMock(EventHandler.class);
+		EventListener<String> listener = createMock(EventListener.class);
 		eventEmitter.removeListener(String.class, listener);
 	}
 
 	@Test
 	public void testListenerCanBeRemoved() {
-		EventHandler<String> listener1 = createMock(EventHandler.class);
-		EventHandler<String> listener2 = createMock(EventHandler.class);
+		EventListener<String> listener1 = createMock(EventListener.class);
+		EventListener<String> listener2 = createMock(EventListener.class);
 
-		Capture<List<EventHandler>> captureListeners1 = new Capture<List<EventHandler>>();
-		Capture<List<EventHandler>> captureListeners2 = new Capture<List<EventHandler>>();
+		Capture<List<EventListener>> captureListeners1 = new Capture<List<EventListener>>();
+		Capture<List<EventListener>> captureListeners2 = new Capture<List<EventListener>>();
 		processingLoop.dispatch(eq(String.class), capture(captureListeners1), eq("MyEvent1"));
 		expectLastCall().once();
 		processingLoop.dispatch(eq(String.class), capture(captureListeners2), eq("MyEvent2"));
@@ -90,7 +90,7 @@ public class EventEmitterTest {
 
 		eventEmitter.emit(String.class, "MyEvent1");
 
-		List<EventHandler> listeners = captureListeners1.getValue();
+		List<EventListener> listeners = captureListeners1.getValue();
 		assertNotNull(listeners);
 		assertThat(listeners.size(), is(2));
 		assertTrue(listeners.contains(listener1));
@@ -110,8 +110,8 @@ public class EventEmitterTest {
 
 	@Test
 	public void testAllListenersCanBeRemoved() {
-		EventHandler<String> listener1 = createMock(EventHandler.class);
-		EventHandler<String> listener2 = createMock(EventHandler.class);
+		EventListener<String> listener1 = createMock(EventListener.class);
+		EventListener<String> listener2 = createMock(EventListener.class);
 
 		replay(processingLoop);
 
@@ -138,15 +138,15 @@ public class EventEmitterTest {
 
 	@Test
 	public void testRegisteredListenersCanBeRetrieved() {
-		EventHandler<String> listener1 = createMock(EventHandler.class);
-		EventHandler<String> listener2 = createMock(EventHandler.class);
+		EventListener<String> listener1 = createMock(EventListener.class);
+		EventListener<String> listener2 = createMock(EventListener.class);
 
 		replay(processingLoop);
 
 		eventEmitter.on(String.class, listener1);
 		eventEmitter.on(String.class, listener2);
 
-		List<EventHandler> listeners = eventEmitter.getHandlers(String.class);
+		List<EventListener> listeners = eventEmitter.getHandlers(String.class);
 		assertNotNull(listeners);
 		assertThat(listeners.size(), is(2));
 		assertTrue(listeners.contains(listener1));
@@ -161,19 +161,19 @@ public class EventEmitterTest {
 
 	@Test(expected = IllegalArgumentException.class)
 	public void testOneOffEmitWithNullEventThrows() {
-		EventHandler<String> listener1 = createMock(EventHandler.class);
-		EventHandler<String> listener2 = createMock(EventHandler.class);
+		EventListener<String> listener1 = createMock(EventListener.class);
+		EventListener<String> listener2 = createMock(EventListener.class);
 		replay(processingLoop);
 		eventEmitter.emit(null, listener1, listener2);
 	}
 
 	@Test
 	public void testRegisteredListenerCalledEverytimeAnEventIsEmitted() {
-		EventHandler<String> listener = createMock(EventHandler.class);
+		EventListener<String> listener = createMock(EventListener.class);
 
-		Capture<List<EventHandler>> captureListeners1 = new Capture<List<EventHandler>>();
-		Capture<List<EventHandler>> captureListeners2 = new Capture<List<EventHandler>>();
-		Capture<List<EventHandler>> captureListeners3 = new Capture<List<EventHandler>>();
+		Capture<List<EventListener>> captureListeners1 = new Capture<List<EventListener>>();
+		Capture<List<EventListener>> captureListeners2 = new Capture<List<EventListener>>();
+		Capture<List<EventListener>> captureListeners3 = new Capture<List<EventListener>>();
 		processingLoop.dispatch(eq(String.class), capture(captureListeners1), eq("MyEvent1"));
 		expectLastCall().once();
 		processingLoop.dispatch(eq(String.class), capture(captureListeners2), eq("MyEvent2"));
@@ -188,7 +188,7 @@ public class EventEmitterTest {
 		eventEmitter.emit(String.class, "MyEvent2");
 		eventEmitter.emit(String.class, "MyEvent3", "MyEvent4");
 
-		List<EventHandler> listeners = captureListeners1.getValue();
+		List<EventListener> listeners = captureListeners1.getValue();
 		assertNotNull(listeners);
 		assertThat(listeners.size(), is(1));
 		assertTrue(listeners.contains(listener));
@@ -206,11 +206,11 @@ public class EventEmitterTest {
 
 	@Test
 	public void testAllRegisteredListenersMatchingEventAreCalledWhenEventIsEmitted() {
-		EventHandler<String> handlerOne = createMock(EventHandler.class);
-		EventHandler<String> handlerTwo = createMock(EventHandler.class);
-		EventHandler<Integer> handlerThree = createMock(EventHandler.class);
+		EventListener<String> handlerOne = createMock(EventListener.class);
+		EventListener<String> handlerTwo = createMock(EventListener.class);
+		EventListener<Integer> handlerThree = createMock(EventListener.class);
 
-		Capture<List<EventHandler>> captureListeners = new Capture<List<EventHandler>>();
+		Capture<List<EventListener>> captureListeners = new Capture<List<EventListener>>();
 		processingLoop.dispatch(eq(String.class), capture(captureListeners), eq("MyEvent"));
 		expectLastCall().once();
 		replay(processingLoop);
@@ -221,7 +221,7 @@ public class EventEmitterTest {
 
 		eventEmitter.emit(String.class, "MyEvent");
 
-		List<EventHandler> listeners = captureListeners.getValue();
+		List<EventListener> listeners = captureListeners.getValue();
 		assertNotNull(listeners);
 		assertThat(listeners.size(), is(2));
 		assertTrue(listeners.contains(handlerOne));

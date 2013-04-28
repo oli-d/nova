@@ -1,15 +1,15 @@
 package com.dotc.nova;
 
-import com.dotc.nova.events.EventHandler;
+import com.dotc.nova.events.EventListener;
 
 class InvocationContext {
 	private Object event;
-	private EventHandler eventHandler;
+	private EventListener eventListener;
 	private Object[] data;
 
 	private void reset() {
 		this.event = null;
-		this.eventHandler = null;
+		this.eventListener = null;
 		this.data = null;
 	}
 
@@ -17,18 +17,18 @@ class InvocationContext {
 		return event;
 	}
 
-	public EventHandler getEventHandler() {
-		return eventHandler;
+	public EventListener getEventListener() {
+		return eventListener;
 	}
 
 	public Object[] getData() {
 		return data;
 	}
 
-	public void setEventListenerInfo(Object event, EventHandler handler, Object... data) {
+	public void setEventListenerInfo(Object event, EventListener listener, Object... data) {
 		reset();
 		this.event = event;
-		this.eventHandler = handler;
+		this.eventListener = listener;
 		this.data = data;
 	}
 

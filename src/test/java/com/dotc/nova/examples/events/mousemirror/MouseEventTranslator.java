@@ -7,9 +7,9 @@ import java.awt.event.MouseEvent;
 import javax.swing.JFrame;
 import javax.swing.SwingUtilities;
 
-import com.dotc.nova.events.EventHandler;
+import com.dotc.nova.events.EventListener;
 
-public class MouseEventTranslator extends EventHandler<MouseEvent> {
+public class MouseEventTranslator extends EventListener<MouseEvent> {
 	private final JFrame targetFrame;
 
 	public MouseEventTranslator(JFrame targetFrame) {

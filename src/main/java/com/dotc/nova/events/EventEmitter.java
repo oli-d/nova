@@ -9,7 +9,7 @@ import com.dotc.nova.ProcessingLoop;
 public class EventEmitter {
 	private static final Logger LOGGER = Logger.getLogger(EventEmitter.class);
 
-	private final HashMap<Object, List<EventHandler>> mapEventToHandler = new HashMap<Object, List<EventHandler>>();
+	private final HashMap<Object, List<EventListener>> mapEventToHandler = new HashMap<Object, List<EventListener>>();
 
 	private final ProcessingLoop eventDispatcher;
 
@@ -17,18 +17,18 @@ public class EventEmitter {
 		this.eventDispatcher = eventDispatcher;
 	}
 
-	public void on(Object event, EventHandler callback) {
+	public void on(Object event, EventListener callback) {
 		addListener(event, callback);
 	}
 
-	public void addListener(Object event, EventHandler callback) {
+	public void addListener(Object event, EventListener callback) {
 		if (event == null) {
 			throw new IllegalArgumentException("event must not be null");
 		}
 		if (callback == null) {
 			throw new IllegalArgumentException("handler must not be null");
 		}
-		List<EventHandler> handlers = mapEventToHandler.get(event);
+		List<EventListener> handlers = mapEventToHandler.get(event);
 		if (handlers == null) {
 			handlers = new ArrayList<>();
 			mapEventToHandler.put(event, handlers);
@@ -37,14 +37,14 @@ public class EventEmitter {
 		handlers.add(callback);
 	}
 
-	public void removeListener(Object event, EventHandler handler) {
+	public void removeListener(Object event, EventListener handler) {
 		if (event == null) {
 			throw new IllegalArgumentException("event must not be null");
 		}
 		if (handler == null) {
 			throw new IllegalArgumentException("handler must not be null");
 		}
-		List<EventHandler> handlers = mapEventToHandler.get(event);
+		List<EventListener> handlers = mapEventToHandler.get(event);
 		if (handlers == null) {
 			return;
 		}
@@ -63,11 +63,11 @@ public class EventEmitter {
 		LOGGER.debug("Deregistered all listeners for event " + event);
 	}
 
-	public List<EventHandler> getHandlers(Object event) {
+	public List<EventListener> getHandlers(Object event) {
 		if (event == null) {
 			throw new IllegalArgumentException("event must not be null");
 		}
-		List<EventHandler> listeners = mapEventToHandler.get(event);
+		List<EventListener> listeners = mapEventToHandler.get(event);
 		if (listeners == null) {
 			return new ArrayList<>();
 		} else {
@@ -79,7 +79,7 @@ public class EventEmitter {
 		if (event == null) {
 			throw new IllegalArgumentException("event must not be null");
 		}
-		List<EventHandler> listenerList = mapEventToHandler.get(event);
+		List<EventListener> listenerList = mapEventToHandler.get(event);
 		if (listenerList != null) {
 			eventDispatcher.dispatch(event, listenerList);
 		}
@@ -89,7 +89,7 @@ public class EventEmitter {
 		if (event == null) {
 			throw new IllegalArgumentException("event must not be null");
 		}
-		List<EventHandler> listenerList = mapEventToHandler.get(event);
+		List<EventListener> listenerList = mapEventToHandler.get(event);
 		if (listenerList != null) {
 			eventDispatcher.dispatch(event, listenerList, data);
 		}

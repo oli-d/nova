@@ -11,7 +11,7 @@ import java.util.concurrent.TimeUnit;
 import org.junit.Before;
 import org.junit.Test;
 
-import com.dotc.nova.events.EventHandler;
+import com.dotc.nova.events.EventListener;
 
 public class ProcessingLoopTest {
 	private ProcessingLoop processingLoop;
@@ -22,10 +22,10 @@ public class ProcessingLoopTest {
 		processingLoop.init();
 	}
 
-	private EventHandler<String>[] createListeners(final CountDownLatch countDownLatch) {
-		EventHandler<String>[] listenersArray = new EventHandler[(int) countDownLatch.getCount()];
+	private EventListener<String>[] createListeners(final CountDownLatch countDownLatch) {
+		EventListener<String>[] listenersArray = new EventListener[(int) countDownLatch.getCount()];
 		for (int i = 0; i < listenersArray.length; i++) {
-			listenersArray[i] = new EventHandler<String>() {
+			listenersArray[i] = new EventListener<String>() {
 
 				@Override
 				public void handle(String... data) {
@@ -40,7 +40,7 @@ public class ProcessingLoopTest {
 	public void testDispatchEventWithListenerArray() {
 		int numberOfListeners = 5;
 		final CountDownLatch countDownLatch = new CountDownLatch(numberOfListeners);
-		EventHandler<String>[] listenersArray = createListeners(countDownLatch);
+		EventListener<String>[] listenersArray = createListeners(countDownLatch);
 
 		processingLoop.dispatch("Test", listenersArray);
 
@@ -55,9 +55,9 @@ public class ProcessingLoopTest {
 	public void testDispatchEventWithListenerList() {
 		int numberOfListeners = 5;
 		final CountDownLatch countDownLatch = new CountDownLatch(numberOfListeners);
-		EventHandler<String>[] listenersArray = createListeners(countDownLatch);
+		EventListener<String>[] listenersArray = createListeners(countDownLatch);
 
-		ArrayList<EventHandler> list = new ArrayList<EventHandler>(Arrays.asList(listenersArray));
+		ArrayList<EventListener> list = new ArrayList<EventListener>(Arrays.asList(listenersArray));
 		processingLoop.dispatch("Test", list);
 
 		try {
@@ -70,7 +70,7 @@ public class ProcessingLoopTest {
 	@Test
 	public void testDispatchHandlerWithoutEvent() {
 		final CountDownLatch countDownLatch = new CountDownLatch(1);
-		EventHandler r = new EventHandler() {
+		EventListener r = new EventListener() {
 			@Override
 			public void handle(Object... data) {
 				countDownLatch.countDown();

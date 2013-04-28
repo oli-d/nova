@@ -5,7 +5,7 @@ import java.util.concurrent.*;
 import org.apache.log4j.Logger;
 
 import com.dotc.nova.ProcessingLoop;
-import com.dotc.nova.events.EventHandler;
+import com.dotc.nova.events.EventListener;
 
 public class Timers {
 	private static final Logger LOGGER = Logger.getLogger(Timers.class);
@@ -100,10 +100,10 @@ public class Timers {
 	}
 
 	private class TimeoutCallbackWrapper implements Runnable {
-		private final EventHandler handlerToInvoke;
+		private final EventListener handlerToInvoke;
 
 		public TimeoutCallbackWrapper(final Runnable runnableToInvoke) {
-			this.handlerToInvoke = new EventHandler() {
+			this.handlerToInvoke = new EventListener() {
 				@Override
 				public void handle(Object... data) {
 					runnableToInvoke.run();

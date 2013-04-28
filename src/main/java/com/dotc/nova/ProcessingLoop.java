@@ -3,7 +3,7 @@ package com.dotc.nova;
 import java.util.List;
 import java.util.concurrent.*;
 
-import com.dotc.nova.events.EventHandler;
+import com.dotc.nova.events.EventListener;
 import com.lmax.disruptor.*;
 import com.lmax.disruptor.dsl.Disruptor;
 
@@ -26,8 +26,8 @@ public class ProcessingLoop {
 		ringBuffer = disruptor.start();
 	}
 
-	public void dispatch(Object event, List<EventHandler> listenerList, Object... data) {
-		for (EventHandler el : listenerList) {
+	public void dispatch(Object event, List<EventListener> listenerList, Object... data) {
+		for (EventListener el : listenerList) {
 			long sequence = ringBuffer.next();
 			InvocationContext eventContext = ringBuffer.get(sequence);
 			eventContext.setEventListenerInfo(event, el, data);
@@ -35,8 +35,8 @@ public class ProcessingLoop {
 		}
 	}
 
-	public <T> void dispatch(T event, EventHandler... listenerList) {
-		for (EventHandler<T> el : listenerList) {
+	public <T> void dispatch(T event, EventListener... listenerList) {
+		for (EventListener<T> el : listenerList) {
 			long sequence = ringBuffer.next();
 			InvocationContext eventContext = ringBuffer.get(sequence);
 			eventContext.setEventListenerInfo(event, el);
@@ -44,10 +44,10 @@ public class ProcessingLoop {
 		}
 	}
 
-	public void dispatch(EventHandler handler) {
+	public void dispatch(EventListener listener) {
 		long sequence = ringBuffer.next();
 		InvocationContext eventContext = ringBuffer.get(sequence);
-		eventContext.setEventListenerInfo(null, handler);
+		eventContext.setEventListenerInfo(null, listener);
 		ringBuffer.publish(sequence);
 
 	}

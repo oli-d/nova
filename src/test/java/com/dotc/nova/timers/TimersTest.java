@@ -7,7 +7,7 @@ import static org.junit.Assert.*;
 import org.junit.Test;
 
 import com.dotc.nova.ProcessingLoop;
-import com.dotc.nova.events.EventHandler;
+import com.dotc.nova.events.EventListener;
 
 public class TimersTest {
 
@@ -55,7 +55,7 @@ public class TimersTest {
 		ProcessingLoop processingLoop = new ProcessingLoop() {
 
 			@Override
-			public void dispatch(EventHandler h) {
+			public void dispatch(EventListener h) {
 				counter[0]++;
 			}
 
@@ -95,7 +95,7 @@ public class TimersTest {
 		ProcessingLoop processingLoop = new ProcessingLoop() {
 
 			@Override
-			public void dispatch(EventHandler h) {
+			public void dispatch(EventListener h) {
 				counter[0]++;
 			}
 
@@ -140,7 +140,7 @@ public class TimersTest {
 		ProcessingLoop processingLoop = new ProcessingLoop() {
 
 			@Override
-			public void dispatch(EventHandler h) {
+			public void dispatch(EventListener h) {
 				counter[0]++;
 			}
 
@@ -170,7 +170,7 @@ public class TimersTest {
 		ProcessingLoop processingLoop = new ProcessingLoop() {
 
 			@Override
-			public void dispatch(EventHandler h) {
+			public void dispatch(EventListener h) {
 				counter[0]++;
 			}
 
@@ -210,7 +210,7 @@ public class TimersTest {
 		ProcessingLoop processingLoop = new ProcessingLoop() {
 
 			@Override
-			public void dispatch(EventHandler h) {
+			public void dispatch(EventListener h) {
 				counter[0]++;
 			}
 
