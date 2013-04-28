@@ -9,21 +9,21 @@ import java.nio.file.NoSuchFileException;
 import org.easymock.Capture;
 import org.junit.*;
 
-import com.dotc.nova.ProcessingLoop;
+import com.dotc.nova.TestHelper;
 
 public class FilesystemTest {
 	private Filesystem filesystem;
-	private ProcessingLoop processingLoop;
+	private com.dotc.nova.process.Process process;
 
 	@Before
 	public void setup() {
-		processingLoop = createStrictMock(ProcessingLoop.class);
-		filesystem = new Filesystem(processingLoop);
+		process = createStrictMock(com.dotc.nova.process.Process.class);
+		filesystem = new Filesystem(process);
 	}
 
 	@After
 	public void tearDown() {
-		verify(processingLoop);
+		verify(process);
 	}
 
 	@Test
@@ -32,26 +32,17 @@ public class FilesystemTest {
 		handler.fileRead(eq("This is some content in some file."));
 		expectLastCall().once();
 
-		Capture<Runnable> runnableCapture = new Capture<Runnable>();
-		processingLoop.dispatch(capture(runnableCapture));
+		Capture<Runnable> runnableCapture = new Capture<>();
+		process.nextTick(capture(runnableCapture));
 		expectLastCall().once();
 
-		replay(processingLoop, handler);
+		replay(process, handler);
 
 		filesystem.readFile("src/test/resources/someFile.txt", handler);
-		long maxTime = System.currentTimeMillis() + 10000l;
-		Runnable runnable = null;
-		while (runnable == null && System.currentTimeMillis() <= maxTime) {
-			Thread.sleep(25);
-			try {
-				runnable = runnableCapture.getValue();
-			} catch (Exception e) {
-				// noop
-			}
-		}
-		assertNotNull(runnable);
 
-		runnable.run();
+		Runnable dispatchedRunnable = TestHelper.getCaptureValue(runnableCapture);
+		assertNotNull(dispatchedRunnable);
+		dispatchedRunnable.run();
 
 		verify(handler);
 	}
@@ -66,7 +57,7 @@ public class FilesystemTest {
 		 * Java6 Capture<Runnable> runnableCapture = new Capture<Runnable>(); processingLoop.dispatch(capture(runnableCapture));
 		 */
 
-		replay(processingLoop, handler);
+		replay(process, handler);
 
 		filesystem.readFile("doesntExist.txt", handler);
 		// Java6: TestHelper.getCaptureValue(runnableCapture).run();
@@ -75,7 +66,7 @@ public class FilesystemTest {
 
 	@Test
 	public void testReadFileSync() throws Throwable {
-		replay(processingLoop);
+		replay(process);
 		assertThat(filesystem.readFileSync("src/test/resources/someFile.txt"), is("This is some content in some file."));
 	}
 

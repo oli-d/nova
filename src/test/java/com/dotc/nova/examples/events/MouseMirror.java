@@ -55,7 +55,7 @@ public class MouseMirror {
 
 			@Override
 			public void forwardEvent(MouseEvent event) {
-				nova.getEventEmitter().emit("MouseEvent", event);
+				nova.eventEmitter.emit("MouseEvent", event);
 			}
 
 		};
@@ -74,7 +74,7 @@ public class MouseMirror {
 		 * ********************************************************************************************** *
 		 */
 		for (JFrame targetFrame : targetFrames) {
-			nova.getEventEmitter().addListener("MouseEvent", new MouseEventTranslator(targetFrame));
+			nova.eventEmitter.addListener("MouseEvent", new MouseEventTranslator(targetFrame));
 		}
 
 	}

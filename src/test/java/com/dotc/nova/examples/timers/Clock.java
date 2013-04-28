@@ -52,7 +52,7 @@ public class Clock extends JFrame {
 		 * *********************************************************************** *
 		 * *********************************************************************** *
 		 */
-		nova.getTimers().setInterval(new Runnable() {
+		nova.timers.setInterval(new Runnable() {
 
 			@Override
 			public void run() {

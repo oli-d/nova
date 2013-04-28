@@ -7,13 +7,11 @@ import java.nio.channels.CompletionHandler;
 import java.nio.file.Paths;
 import java.util.concurrent.Future;
 
-import com.dotc.nova.ProcessingLoop;
-
 public class Filesystem {
-	private final ProcessingLoop eventDispatcher;
+	private final com.dotc.nova.process.Process process;
 
-	public Filesystem(ProcessingLoop eventDispatcher) {
-		this.eventDispatcher = eventDispatcher;
+	public Filesystem(com.dotc.nova.process.Process process) {
+		this.process = process;
 	}
 
 	public void readFile(String filePath, final FileReadHandler handler) {
@@ -30,8 +28,7 @@ public class Filesystem {
 
 				@Override
 				public void completed(Integer result, final ByteBuffer attachment) {
-					eventDispatcher.dispatch(new Runnable() {
-
+					process.nextTick(new Runnable() {
 						@Override
 						public void run() {
 							handler.fileRead(new String(attachment.array()));
@@ -41,8 +38,7 @@ public class Filesystem {
 
 				@Override
 				public void failed(final Throwable exc, final ByteBuffer attachment) {
-					eventDispatcher.dispatch(new Runnable() {
-
+					process.nextTick(new Runnable() {
 						@Override
 						public void run() {
 							handler.errorOccurred(exc);

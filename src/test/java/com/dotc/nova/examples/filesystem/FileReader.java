@@ -56,7 +56,7 @@ public class FileReader extends JFrame {
 	 */
 	private void readFileAsync(String pathToFile) {
 		textArea.setText("Reading file " + pathToFile + "...");
-		nova.getFilesystem().readFile(pathToFile, new FileReadHandler() {
+		nova.filesystem.readFile(pathToFile, new FileReadHandler() {
 
 			@Override
 			public void fileRead(String fileContents) {
@@ -85,7 +85,7 @@ public class FileReader extends JFrame {
 	private void readFileSync(String pathToFile) {
 		textArea.setText("Reading file " + pathToFile + "...");
 		try {
-			textArea.setText(nova.getFilesystem().readFileSync(pathToFile));
+			textArea.setText(nova.filesystem.readFileSync(pathToFile));
 		} catch (IOException e) {
 			textArea.setText("Unable to read file.\nError: " + e);
 		}

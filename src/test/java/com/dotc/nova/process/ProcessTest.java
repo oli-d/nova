@@ -1,7 +1,6 @@
 package com.dotc.nova.process;
 
 import static org.easymock.EasyMock.*;
-import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.*;
 
 import org.apache.log4j.BasicConfigurator;
@@ -9,6 +8,8 @@ import org.easymock.Capture;
 import org.junit.*;
 
 import com.dotc.nova.ProcessingLoop;
+import com.dotc.nova.TestHelper;
+import com.dotc.nova.events.EventListener;
 
 public class ProcessTest {
 
@@ -39,23 +40,24 @@ public class ProcessTest {
 
 	@Test
 	public void testNextTickPutsCallbackOnProcessingLoop() {
-		Capture<Runnable> callbackCapture = new Capture<Runnable>();
-
-		processingLoop.dispatch(capture(callbackCapture));
+		Runnable myCallback = createMock(Runnable.class);
+		myCallback.run();
 		expectLastCall().once();
 
-		replay(processingLoop);
+		Capture<EventListener> listenerCaprure = new Capture<>();
+		processingLoop.dispatch(capture(listenerCaprure));
+		expectLastCall().once();
 
-		Runnable myCallBack = new Runnable() {
+		replay(processingLoop, myCallback);
 
-			@Override
-			public void run() {
-			}
-		};
+		process.nextTick(myCallback);
 
-		process.nextTick(myCallBack);
+		// wait for listener to be generated and put on the event loop, and invoke it
+		EventListener captureValue = TestHelper.getCaptureValue(listenerCaprure);
+		assertNotNull(captureValue);
+		captureValue.handleEventWithData();
 
-		assertThat(callbackCapture.getValue(), is(myCallBack));
+		verify(processingLoop, myCallback);
 	}
 
 }

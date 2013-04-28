@@ -27,19 +27,14 @@ public class ProcessingLoop {
 	}
 
 	public void dispatch(Object event, List<EventListener> listenerList, Object... data) {
-		for (EventListener el : listenerList) {
+		dispatch(event, listenerList.toArray(new EventListener[listenerList.size()]), data);
+	}
+
+	public void dispatch(Object event, EventListener[] listenerArray, Object... data) {
+		for (EventListener el : listenerArray) {
 			long sequence = ringBuffer.next();
 			InvocationContext eventContext = ringBuffer.get(sequence);
 			eventContext.setEventListenerInfo(event, el, data);
-			ringBuffer.publish(sequence);
-		}
-	}
-
-	public <T> void dispatch(T event, EventListener... listenerList) {
-		for (EventListener<T> el : listenerList) {
-			long sequence = ringBuffer.next();
-			InvocationContext eventContext = ringBuffer.get(sequence);
-			eventContext.setEventListenerInfo(event, el);
 			ringBuffer.publish(sequence);
 		}
 	}
