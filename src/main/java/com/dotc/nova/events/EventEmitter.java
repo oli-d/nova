@@ -9,8 +9,7 @@ import com.dotc.nova.ProcessingLoop;
 public class EventEmitter {
 	private static final Logger LOGGER = Logger.getLogger(EventEmitter.class);
 
-	private final HashMap<Class, List<EventListener>> mapTypeToListener = new HashMap<Class, List<EventListener>>();
-	private final HashMap<Object, List<EventListener>> mapEventToListener = new HashMap<>();
+	private final HashMap<Object, List<EventHandler>> mapEventToHandler = new HashMap<Object, List<EventHandler>>();
 
 	private final ProcessingLoop eventDispatcher;
 
@@ -18,86 +17,82 @@ public class EventEmitter {
 		this.eventDispatcher = eventDispatcher;
 	}
 
-	public <T> void on(Class<T> type, EventListener<T> listener) {
-		addListener(type, listener);
+	public void on(Object event, EventHandler callback) {
+		addListener(event, callback);
 	}
 
-	public <T> void addListener(Class<T> type, EventListener<T> listener) {
-		if (type == null) {
-			throw new IllegalArgumentException("type must not be null");
+	public void addListener(Object event, EventHandler callback) {
+		if (event == null) {
+			throw new IllegalArgumentException("event must not be null");
 		}
-		if (listener == null) {
-			throw new IllegalArgumentException("listener must not be null");
+		if (callback == null) {
+			throw new IllegalArgumentException("handler must not be null");
 		}
-		List<EventListener> handlers = mapTypeToListener.get(type);
+		List<EventHandler> handlers = mapEventToHandler.get(event);
 		if (handlers == null) {
-			handlers = new ArrayList<EventListener>();
-			mapTypeToListener.put(type, handlers);
-			LOGGER.info("Registered listener " + type + " --> " + listener);
+			handlers = new ArrayList<>();
+			mapEventToHandler.put(event, handlers);
+			LOGGER.debug("Registered event " + event + " --> " + callback);
 		}
-		handlers.add(listener);
+		handlers.add(callback);
 	}
 
-	public <T> void removeListener(Class<T> type, EventListener<T> listener) {
-		if (type == null) {
-			throw new IllegalArgumentException("type must not be null");
+	public void removeListener(Object event, EventHandler handler) {
+		if (event == null) {
+			throw new IllegalArgumentException("event must not be null");
 		}
-		if (listener == null) {
-			throw new IllegalArgumentException("listener must not be null");
+		if (handler == null) {
+			throw new IllegalArgumentException("handler must not be null");
 		}
-		List<EventListener> handlers = mapTypeToListener.get(type);
+		List<EventHandler> handlers = mapEventToHandler.get(event);
 		if (handlers == null) {
 			return;
 		}
-		handlers.remove(listener);
+		handlers.remove(handler);
 		if (handlers.isEmpty()) {
-			mapTypeToListener.remove(type);
+			mapEventToHandler.remove(event);
 		}
-		LOGGER.info("Deregistered listener " + type + " --> " + listener);
+		LOGGER.debug("Deregistered handler " + event + " --> " + handler);
 	}
 
-	public <T> void removeAllListeners(Class<T> type) {
-		if (type == null) {
-			throw new IllegalArgumentException("type must not be null");
+	public void removeAllListeners(Object event) {
+		if (event == null) {
+			throw new IllegalArgumentException("event must not be null");
 		}
-		mapTypeToListener.remove(type);
-		LOGGER.info("Deregistered all listeners for type " + type);
+		mapEventToHandler.remove(event);
+		LOGGER.debug("Deregistered all listeners for event " + event);
 	}
 
-	public <T> List<EventListener<T>> getListeners(Class<T> type) {
-		if (type == null) {
-			throw new IllegalArgumentException("type must not be null");
+	public List<EventHandler> getHandlers(Object event) {
+		if (event == null) {
+			throw new IllegalArgumentException("event must not be null");
 		}
-		List<EventListener> listeners = mapTypeToListener.get(type);
+		List<EventHandler> listeners = mapEventToHandler.get(event);
 		if (listeners == null) {
-			return new ArrayList<EventListener<T>>();
+			return new ArrayList<>();
+		} else {
+			return listeners;
 		}
-		// Java generics fun:
-		ArrayList<EventListener<T>> returnValue = new ArrayList<EventListener<T>>();
-		for (EventListener<T> l : listeners) {
-			returnValue.add(l);
-		}
-		return returnValue;
 	}
 
 	public void emit(Object event) {
 		if (event == null) {
 			throw new IllegalArgumentException("event must not be null");
 		}
-		List<EventListener> listenerList = mapTypeToListener.get(event.getClass());
+		List<EventHandler> listenerList = mapEventToHandler.get(event);
 		if (listenerList != null) {
 			eventDispatcher.dispatch(event, listenerList);
 		}
 	}
 
-	public <T> void emit(T event, EventListener<T>... oneOffListeners) {
+	public void emit(Object event, Object... data) {
 		if (event == null) {
 			throw new IllegalArgumentException("event must not be null");
 		}
-		if (oneOffListeners == null || oneOffListeners.length == 0) {
-			throw new IllegalArgumentException("listeners must not be null or empty");
+		List<EventHandler> listenerList = mapEventToHandler.get(event);
+		if (listenerList != null) {
+			eventDispatcher.dispatch(event, listenerList, data);
 		}
-		eventDispatcher.dispatch(event, oneOffListeners);
 	}
 
 }

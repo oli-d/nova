@@ -11,7 +11,7 @@ import java.util.concurrent.TimeUnit;
 import org.junit.Before;
 import org.junit.Test;
 
-import com.dotc.nova.events.EventListener;
+import com.dotc.nova.events.EventHandler;
 
 public class ProcessingLoopTest {
 	private ProcessingLoop processingLoop;
@@ -22,13 +22,13 @@ public class ProcessingLoopTest {
 		processingLoop.init();
 	}
 
-	private EventListener<String>[] createListeners(final CountDownLatch countDownLatch) {
-		EventListener<String>[] listenersArray = new EventListener[(int) countDownLatch.getCount()];
+	private EventHandler<String>[] createListeners(final CountDownLatch countDownLatch) {
+		EventHandler<String>[] listenersArray = new EventHandler[(int) countDownLatch.getCount()];
 		for (int i = 0; i < listenersArray.length; i++) {
-			listenersArray[i] = new EventListener<String>() {
+			listenersArray[i] = new EventHandler<String>() {
 
 				@Override
-				public void handle(String event) {
+				public void handle(String... data) {
 					countDownLatch.countDown();
 				}
 			};
@@ -40,7 +40,7 @@ public class ProcessingLoopTest {
 	public void testDispatchEventWithListenerArray() {
 		int numberOfListeners = 5;
 		final CountDownLatch countDownLatch = new CountDownLatch(numberOfListeners);
-		EventListener<String>[] listenersArray = createListeners(countDownLatch);
+		EventHandler<String>[] listenersArray = createListeners(countDownLatch);
 
 		processingLoop.dispatch("Test", listenersArray);
 
@@ -55,9 +55,9 @@ public class ProcessingLoopTest {
 	public void testDispatchEventWithListenerList() {
 		int numberOfListeners = 5;
 		final CountDownLatch countDownLatch = new CountDownLatch(numberOfListeners);
-		EventListener<String>[] listenersArray = createListeners(countDownLatch);
+		EventHandler<String>[] listenersArray = createListeners(countDownLatch);
 
-		ArrayList<EventListener> list = new ArrayList<EventListener>(Arrays.asList(listenersArray));
+		ArrayList<EventHandler> list = new ArrayList<EventHandler>(Arrays.asList(listenersArray));
 		processingLoop.dispatch("Test", list);
 
 		try {
@@ -68,12 +68,11 @@ public class ProcessingLoopTest {
 	}
 
 	@Test
-	public void testDispatchRunnable() {
+	public void testDispatchHandlerWithoutEvent() {
 		final CountDownLatch countDownLatch = new CountDownLatch(1);
-		Runnable r = new Runnable() {
-
+		EventHandler r = new EventHandler() {
 			@Override
-			public void run() {
+			public void handle(Object... data) {
 				countDownLatch.countDown();
 			}
 		};

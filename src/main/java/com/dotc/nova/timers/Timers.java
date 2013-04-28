@@ -5,6 +5,7 @@ import java.util.concurrent.*;
 import org.apache.log4j.Logger;
 
 import com.dotc.nova.ProcessingLoop;
+import com.dotc.nova.events.EventHandler;
 
 public class Timers {
 	private static final Logger LOGGER = Logger.getLogger(Timers.class);
@@ -99,17 +100,21 @@ public class Timers {
 	}
 
 	private class TimeoutCallbackWrapper implements Runnable {
-		private final Runnable runnableToInvoke;
+		private final EventHandler handlerToInvoke;
 
-		public TimeoutCallbackWrapper(Runnable runnableToInvoke) {
-			super();
-			this.runnableToInvoke = runnableToInvoke;
+		public TimeoutCallbackWrapper(final Runnable runnableToInvoke) {
+			this.handlerToInvoke = new EventHandler() {
+				@Override
+				public void handle(Object... data) {
+					runnableToInvoke.run();
+				}
+			};
 		}
 
 		@Override
 		public void run() {
 			try {
-				processingLoop.dispatch(runnableToInvoke);
+				processingLoop.dispatch(handlerToInvoke);
 			} catch (Throwable t) {
 				LOGGER.error("Unable to put callback on processing loop", t);
 			}

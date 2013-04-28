@@ -3,7 +3,7 @@ package com.dotc.nova;
 import java.util.List;
 import java.util.concurrent.*;
 
-import com.dotc.nova.events.EventListener;
+import com.dotc.nova.events.EventHandler;
 import com.lmax.disruptor.*;
 import com.lmax.disruptor.dsl.Disruptor;
 
@@ -26,8 +26,17 @@ public class ProcessingLoop {
 		ringBuffer = disruptor.start();
 	}
 
-	public <T> void dispatch(T event, List<EventListener> listenerList) {
-		for (EventListener<T> el : listenerList) {
+	public void dispatch(Object event, List<EventHandler> listenerList, Object... data) {
+		for (EventHandler el : listenerList) {
+			long sequence = ringBuffer.next();
+			InvocationContext eventContext = ringBuffer.get(sequence);
+			eventContext.setEventListenerInfo(event, el, data);
+			ringBuffer.publish(sequence);
+		}
+	}
+
+	public <T> void dispatch(T event, EventHandler... listenerList) {
+		for (EventHandler<T> el : listenerList) {
 			long sequence = ringBuffer.next();
 			InvocationContext eventContext = ringBuffer.get(sequence);
 			eventContext.setEventListenerInfo(event, el);
@@ -35,19 +44,10 @@ public class ProcessingLoop {
 		}
 	}
 
-	public <T> void dispatch(T event, EventListener... listenerList) {
-		for (EventListener<T> el : listenerList) {
-			long sequence = ringBuffer.next();
-			InvocationContext eventContext = ringBuffer.get(sequence);
-			eventContext.setEventListenerInfo(event, el);
-			ringBuffer.publish(sequence);
-		}
-	}
-
-	public void dispatch(Runnable r) {
+	public void dispatch(EventHandler handler) {
 		long sequence = ringBuffer.next();
 		InvocationContext eventContext = ringBuffer.get(sequence);
-		eventContext.setCallbackToInvoke(r);
+		eventContext.setEventListenerInfo(null, handler);
 		ringBuffer.publish(sequence);
 
 	}

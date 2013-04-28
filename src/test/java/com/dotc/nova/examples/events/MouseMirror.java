@@ -25,7 +25,7 @@ public class MouseMirror {
 
 		// create the UI components
 		JFrame sourceFrame = createSourceFrame();
-		JFrame[] targetFrames = createTargetFrames(2);
+		JFrame[] targetFrames = createTargetFrames(4);
 
 		/**
 		 * <pre>
@@ -55,7 +55,7 @@ public class MouseMirror {
 
 			@Override
 			public void forwardEvent(MouseEvent event) {
-				nova.getEventEmitter().emit(event);
+				nova.getEventEmitter().emit("MouseEvent", event);
 			}
 
 		};
@@ -74,7 +74,7 @@ public class MouseMirror {
 		 * ********************************************************************************************** *
 		 */
 		for (JFrame targetFrame : targetFrames) {
-			nova.getEventEmitter().addListener(MouseEvent.class, new MouseEventTranslator(targetFrame));
+			nova.getEventEmitter().addListener("MouseEvent", new MouseEventTranslator(targetFrame));
 		}
 
 	}

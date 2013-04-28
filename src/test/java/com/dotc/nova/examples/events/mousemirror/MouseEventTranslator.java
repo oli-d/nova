@@ -5,10 +5,11 @@ import java.awt.Graphics2D;
 import java.awt.event.MouseEvent;
 
 import javax.swing.JFrame;
+import javax.swing.SwingUtilities;
 
-import com.dotc.nova.events.EventListener;
+import com.dotc.nova.events.EventHandler;
 
-public class MouseEventTranslator implements EventListener<MouseEvent> {
+public class MouseEventTranslator extends EventHandler<MouseEvent> {
 	private final JFrame targetFrame;
 
 	public MouseEventTranslator(JFrame targetFrame) {
@@ -16,20 +17,27 @@ public class MouseEventTranslator implements EventListener<MouseEvent> {
 	}
 
 	@Override
-	public void handle(MouseEvent event) {
-		switch (event.getID()) {
-		case MouseEvent.MOUSE_MOVED:
-			handleMouseMove(event, false);
-			return;
-		case MouseEvent.MOUSE_DRAGGED:
-			handleMouseMove(event, true);
-			return;
-		case MouseEvent.MOUSE_CLICKED:
-			handleMouseClicked(event);
-			return;
-		default:
-			// no handling
-		}
+	public void handle(MouseEvent... data) {
+		final MouseEvent event = data[0];
+		SwingUtilities.invokeLater(new Runnable() {
+
+			@Override
+			public void run() {
+				switch (event.getID()) {
+					case MouseEvent.MOUSE_MOVED:
+						handleMouseMove(event, false);
+						return;
+					case MouseEvent.MOUSE_DRAGGED:
+						handleMouseMove(event, true);
+						return;
+					case MouseEvent.MOUSE_CLICKED:
+						handleMouseClicked(event);
+						return;
+					default:
+						// no handling
+				}
+			}
+		});
 	}
 
 	private void handleMouseMove(MouseEvent e, boolean mouseClicked) {
@@ -44,4 +52,5 @@ public class MouseEventTranslator implements EventListener<MouseEvent> {
 			g2.clearRect(0, 0, 300, 300);
 		}
 	}
+
 }
