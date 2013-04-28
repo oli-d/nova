@@ -4,9 +4,12 @@ import static org.easymock.EasyMock.*;
 import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.*;
 
+import org.apache.log4j.BasicConfigurator;
+import org.easymock.Capture;
 import org.junit.Test;
 
 import com.dotc.nova.ProcessingLoop;
+import com.dotc.nova.TestHelper;
 import com.dotc.nova.events.EventListener;
 
 public class TimersTest {
@@ -18,10 +21,12 @@ public class TimersTest {
 
 	@Test
 	public void testSetTimeout() throws Throwable {
+		BasicConfigurator.configure();
 		Runnable callback = createMock(Runnable.class);
 
+		Capture<EventListener> eventListenerCapture = new Capture<>();
 		ProcessingLoop processingLoop = createMock(ProcessingLoop.class);
-		processingLoop.dispatch(eq(callback));
+		processingLoop.dispatch(capture(eventListenerCapture));
 		expectLastCall().once();
 		replay(callback, processingLoop);
 
@@ -33,9 +38,10 @@ public class TimersTest {
 
 		assertNotNull(timers.setTimeout(callback, startDelay));
 
-		boolean verified = false;
+		assertNotNull(TestHelper.getCaptureValue(eventListenerCapture));
+
 		long endTime = System.currentTimeMillis() + maxCheckTime;
-		while (!verified && System.currentTimeMillis() <= endTime) {
+		while (System.currentTimeMillis() <= endTime) {
 			Thread.sleep(checkDelay);
 			try {
 				verify(processingLoop);
