@@ -10,7 +10,7 @@ public class EventEmitter {
 	private static final Logger LOGGER = Logger.getLogger(EventEmitter.class);
 
 	private final HashMap<Object, List<EventListener>> mapEventToHandler = new HashMap<Object, List<EventListener>>();
-
+	private final HashMap<Object, List<EventListener>> mapEventToOneOffHandlers = new HashMap<Object, List<EventListener>>();
 	private final ProcessingLoop eventDispatcher;
 
 	public EventEmitter(ProcessingLoop eventDispatcher) {
@@ -21,17 +21,25 @@ public class EventEmitter {
 		addListener(event, callback);
 	}
 
+	public void once(Object event, EventListener callback) {
+		addListener(event, callback, mapEventToOneOffHandlers);
+	}
+
 	public void addListener(Object event, EventListener callback) {
+		addListener(event, callback, mapEventToHandler);
+	}
+
+	private void addListener(Object event, EventListener callback, Map<Object, List<EventListener>> listenerMap) {
 		if (event == null) {
 			throw new IllegalArgumentException("event must not be null");
 		}
 		if (callback == null) {
 			throw new IllegalArgumentException("handler must not be null");
 		}
-		List<EventListener> handlers = mapEventToHandler.get(event);
+		List<EventListener> handlers = listenerMap.get(event);
 		if (handlers == null) {
 			handlers = new ArrayList<>();
-			mapEventToHandler.put(event, handlers);
+			listenerMap.put(event, handlers);
 			LOGGER.debug("Registered event " + event + " --> " + callback);
 		}
 		handlers.add(callback);
@@ -44,15 +52,24 @@ public class EventEmitter {
 		if (handler == null) {
 			throw new IllegalArgumentException("handler must not be null");
 		}
+		// remove listener from normal list
 		List<EventListener> handlers = mapEventToHandler.get(event);
-		if (handlers == null) {
-			return;
+		if (handlers != null) {
+			handlers.remove(handler);
+			if (handlers.isEmpty()) {
+				mapEventToHandler.remove(event);
+			}
+			LOGGER.debug("Deregistered handler " + event + " --> " + handler);
 		}
-		handlers.remove(handler);
-		if (handlers.isEmpty()) {
-			mapEventToHandler.remove(event);
+		// remove listener from one off list
+		handlers = mapEventToOneOffHandlers.get(event);
+		if (handlers != null) {
+			handlers.remove(handler);
+			if (handlers.isEmpty()) {
+				mapEventToHandler.remove(event);
+			}
+			LOGGER.debug("Deregistered one off handler " + event + " --> " + handler);
 		}
-		LOGGER.debug("Deregistered handler " + event + " --> " + handler);
 	}
 
 	public void removeAllListeners(Object event) {
@@ -75,22 +92,20 @@ public class EventEmitter {
 		}
 	}
 
-	public void emit(Object event) {
-		if (event == null) {
-			throw new IllegalArgumentException("event must not be null");
-		}
-		List<EventListener> listenerList = mapEventToHandler.get(event);
-		if (listenerList != null) {
-			eventDispatcher.dispatch(event, listenerList);
-		}
-	}
-
 	public void emit(Object event, Object... data) {
 		if (event == null) {
 			throw new IllegalArgumentException("event must not be null");
 		}
-		List<EventListener> listenerList = mapEventToHandler.get(event);
-		if (listenerList != null) {
+		List<EventListener> listenerList = new ArrayList<>();
+		List<EventListener> normalListenerList = mapEventToHandler.get(event);
+		if (normalListenerList != null) {
+			listenerList.addAll(normalListenerList);
+		}
+		List<EventListener> oneOffListeners = mapEventToOneOffHandlers.remove(event);
+		if (oneOffListeners != null) {
+			listenerList.addAll(oneOffListeners);
+		}
+		if (!listenerList.isEmpty()) {
 			eventDispatcher.dispatch(event, listenerList, data);
 		}
 	}

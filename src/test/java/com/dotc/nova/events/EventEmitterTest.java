@@ -228,4 +228,35 @@ public class EventEmitterTest {
 		assertTrue(listeners.contains(handlerTwo));
 	}
 
+	@Test
+	public void testOneOffListenerOnlyCalledOnce() {
+		EventListener<String> listener = createMock(EventListener.class);
+		EventListener<String> oneOffListener = createMock(EventListener.class);
+
+		Capture<List<EventListener>> captureListeners1 = new Capture<List<EventListener>>();
+		processingLoop.dispatch(eq(String.class), capture(captureListeners1), eq("First"));
+		expectLastCall().once();
+		Capture<List<EventListener>> captureListeners2 = new Capture<List<EventListener>>();
+		processingLoop.dispatch(eq(String.class), capture(captureListeners2), eq("Second"));
+		expectLastCall().once();
+		replay(processingLoop);
+
+		eventEmitter.on(String.class, listener);
+		eventEmitter.once(String.class, oneOffListener);
+
+		eventEmitter.emit(String.class, "First");
+		eventEmitter.emit(String.class, "Second");
+
+		List<EventListener> listeners1 = captureListeners1.getValue();
+		assertNotNull(listeners1);
+		assertThat(listeners1.size(), is(2));
+		assertTrue(listeners1.contains(listener));
+		assertTrue(listeners1.contains(oneOffListener));
+
+		List<EventListener> listeners2 = captureListeners2.getValue();
+		assertNotNull(listeners2);
+		assertThat(listeners2.size(), is(1));
+		assertTrue(listeners2.contains(listener));
+	}
+
 }
