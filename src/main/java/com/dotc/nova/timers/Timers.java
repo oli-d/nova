@@ -48,6 +48,10 @@ public class Timers {
 		return idAsString;
 	}
 
+	public String setTimeout(Runnable callback, long delay, TimeUnit timeUnit) {
+		return setTimeout(callback, timeUnit.toMillis(delay));
+	}
+
 	/** Prevents the timeout with the passed ID from triggering. */
 	public void clearTimeout(String timeoutId) {
 		if (timeoutId == null) {
