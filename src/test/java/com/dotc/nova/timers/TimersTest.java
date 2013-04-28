@@ -4,6 +4,8 @@ import static org.easymock.EasyMock.*;
 import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.*;
 
+import java.util.concurrent.TimeUnit;
+
 import org.apache.log4j.BasicConfigurator;
 import org.easymock.Capture;
 import org.junit.Test;
@@ -36,7 +38,7 @@ public class TimersTest {
 		long checkDelay = 50;
 		long maxCheckTime = startDelay + 150;
 
-		assertNotNull(timers.setTimeout(callback, startDelay));
+		assertNotNull(timers.setTimeout(callback, startDelay, TimeUnit.MILLISECONDS));
 
 		assertNotNull(TestHelper.getCaptureValue(eventListenerCapture));
 

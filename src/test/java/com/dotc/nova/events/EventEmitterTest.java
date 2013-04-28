@@ -123,6 +123,22 @@ public class EventEmitterTest {
 
 	}
 
+	@Test
+	public void testListenersAreRemovedFromNormalAndOneOffMaps() {
+		EventListener<String> listener1 = createMock(EventListener.class);
+
+		replay(processingLoop);
+
+		eventEmitter.on(String.class, listener1);
+		eventEmitter.once(String.class, listener1);
+
+		eventEmitter.removeListener(String.class, listener1);
+		eventEmitter.emit("MyEvent1");
+
+		assertThat(eventEmitter.getHandlers(String.class).size(), is(0));
+
+	}
+
 	@Test(expected = IllegalArgumentException.class)
 	public void testGetListenersWithNullTypeThrows() {
 		replay(processingLoop);
