@@ -25,7 +25,7 @@ public class MouseMirror {
 
 		// create the UI components
 		JFrame sourceFrame = createSourceFrame();
-		JFrame[] targetFrames = createTargetFrames(4);
+		JFrame[] targetFrames = createTargetFrames(2);
 
 		/**
 		 * <pre>
@@ -38,7 +38,7 @@ public class MouseMirror {
 		 * *********************************************************************** *
 		 * *********************************************************************** *
 		 */
-		final Nova nova = new Nova();
+		final Nova nova = new Nova.Builder().build();
 
 		/**
 		 * <pre>

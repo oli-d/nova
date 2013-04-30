@@ -1,6 +1,6 @@
 package com.dotc.nova;
 
-import com.dotc.nova.events.EventEmitter;
+import com.dotc.nova.events.*;
 import com.dotc.nova.filesystem.Filesystem;
 import com.dotc.nova.timers.Timers;
 
@@ -12,14 +12,30 @@ public class Nova {
 	public final com.dotc.nova.process.Process process;
 	public final Filesystem filesystem;
 
-	public Nova() {
+	private Nova(Builder builder) {
 		processingLoop = new ProcessingLoop();
 		processingLoop.init();
 
 		timers = new Timers(processingLoop);
-		eventEmitter = new EventEmitter(processingLoop);
+		if (builder.asyncEventEmitter) {
+			eventEmitter = new AsyncEventEmitter(processingLoop);
+		} else {
+			eventEmitter = new SyncEventEmitter();
+		}
 		process = new com.dotc.nova.process.Process(processingLoop);
 		filesystem = new Filesystem(process);
 	}
 
+	public static class Builder {
+		private boolean asyncEventEmitter;
+
+		public Builder withAsyncEventEmitter(boolean asyncEventEmitter) {
+			this.asyncEventEmitter = asyncEventEmitter;
+			return this;
+		}
+
+		public Nova build() {
+			return new Nova(this);
+		}
+	}
 }
