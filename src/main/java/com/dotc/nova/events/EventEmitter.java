@@ -1,6 +1,5 @@
 package com.dotc.nova.events;
 
-
 public interface EventEmitter {
 
 	public void on(Object event, EventListener callback);
@@ -13,5 +12,5 @@ public interface EventEmitter {
 
 	public void removeAllListeners(Object event);
 
-	public void emit(Object event, Object... data);
+	public <EventType, ParameterType> void emit(EventType event, ParameterType... data);
 }

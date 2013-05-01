@@ -55,7 +55,7 @@ public class ProcessTest {
 		// wait for listener to be generated and put on the event loop, and invoke it
 		EventListener captureValue = TestHelper.getCaptureValue(listenerCaprure);
 		assertNotNull(captureValue);
-		captureValue.handleEventWithData();
+		captureValue.handle();
 
 		verify(processingLoop, myCallback);
 	}

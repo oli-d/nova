@@ -58,7 +58,7 @@ public class ProcessingLoopTest {
 		EventListener<String>[] listenersArray = createListeners(countDownLatch);
 
 		ArrayList<EventListener> list = new ArrayList<EventListener>(Arrays.asList(listenersArray));
-		processingLoop.dispatch("Test", list);
+		processingLoop.dispatch("Test", list, "Data");
 
 		try {
 			countDownLatch.await(1, TimeUnit.SECONDS);

@@ -88,7 +88,7 @@ public class SyncEventEmitter implements EventEmitter {
 		}
 	}
 
-	public void emit(Object event, Object... data) {
+	public <EventType, ParameterType> void emit(EventType event, ParameterType... data) {
 		if (event == null) {
 			throw new IllegalArgumentException("event must not be null");
 		}
@@ -102,9 +102,10 @@ public class SyncEventEmitter implements EventEmitter {
 			listenerList.addAll(oneOffListeners);
 		}
 		if (!listenerList.isEmpty()) {
+			ParameterType[] dataToPass = data.length == 0 ? null : data;
 			for (EventListener listener : listenerList) {
 				try {
-					listener.handleEventWithData(data);
+					listener.handle(dataToPass);
 				} catch (Exception e) {
 					LOGGER.error("Uncaught exception while invoking eventListener " + listener, e);
 					LOGGER.error("\tparamters: " + Arrays.toString(data));

@@ -26,11 +26,11 @@ public class ProcessingLoop {
 		ringBuffer = disruptor.start();
 	}
 
-	public void dispatch(Object event, List<EventListener> listenerList, Object... data) {
+	public <EventType, DataType> void dispatch(EventType event, List<EventListener> listenerList, DataType... data) {
 		dispatch(event, listenerList.toArray(new EventListener[listenerList.size()]), data);
 	}
 
-	public void dispatch(Object event, EventListener[] listenerArray, Object... data) {
+	public <EventType, DataType> void dispatch(EventType event, EventListener[] listenerArray, DataType... data) {
 		for (EventListener el : listenerArray) {
 			long sequence = ringBuffer.next();
 			InvocationContext eventContext = ringBuffer.get(sequence);

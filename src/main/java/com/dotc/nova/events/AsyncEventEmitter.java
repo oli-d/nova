@@ -92,7 +92,7 @@ public class AsyncEventEmitter implements EventEmitter {
 		}
 	}
 
-	public void emit(Object event, Object... data) {
+	public <EventType, ParameterType> void emit(EventType event, ParameterType... data) {
 		if (event == null) {
 			throw new IllegalArgumentException("event must not be null");
 		}
