@@ -34,7 +34,11 @@ public class ProcessingLoop {
 		for (EventListener el : listenerArray) {
 			long sequence = ringBuffer.next();
 			InvocationContext eventContext = ringBuffer.get(sequence);
-			eventContext.setEventListenerInfo(event, el, data);
+			if (data.length == 0) {
+				eventContext.setEventListenerInfo(event, el, (Object[]) null);
+			} else {
+				eventContext.setEventListenerInfo(event, el, data);
+			}
 			ringBuffer.publish(sequence);
 		}
 	}
