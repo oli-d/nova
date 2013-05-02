@@ -136,7 +136,7 @@ public class EventListenerWrappersTest {
 		NoParameterEventListener noParamsListener = new NoParameterEventListener() {
 
 			@Override
-			void handle() {
+			public void handle() {
 				listenersInvoked[11] = true;
 			}
 		};
@@ -313,7 +313,7 @@ public class EventListenerWrappersTest {
 		NoParameterEventListener noParamsListener = new NoParameterEventListener() {
 
 			@Override
-			void handle() {
+			public void handle() {
 				listenersInvoked[11] = true;
 			}
 		};
