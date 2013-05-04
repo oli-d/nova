@@ -4,8 +4,9 @@ import com.dotc.nova.events.EventListener;
 
 public abstract class FourParametersEventListener<ParamOneType, ParamTwoType, ParamThreeType, ParamFourType> implements EventListener {
 
-	abstract void handle(ParamOneType param1, ParamTwoType param2, ParamThreeType param3, ParamFourType param4);
+	public abstract void handle(ParamOneType param1, ParamTwoType param2, ParamThreeType param3, ParamFourType param4);
 
+	@SuppressWarnings("unchecked")
 	@Override
 	public void handle(Object... data) {
 		ParamOneType param1 = null;

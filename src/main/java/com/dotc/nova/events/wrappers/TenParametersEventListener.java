@@ -5,9 +5,11 @@ import com.dotc.nova.events.EventListener;
 public abstract class TenParametersEventListener<ParamOneType, ParamTwoType, ParamThreeType, ParamFourType, ParamFiveType, ParamSixType, ParamSevenType, ParamEightType, ParamNineType, ParamTenType>
 		implements EventListener {
 
-	abstract void handle(ParamOneType param1, ParamTwoType param2, ParamThreeType param3, ParamFourType param4, ParamFiveType param5, ParamSixType param6, ParamSevenType param7,
-			ParamEightType param8, ParamNineType param9, ParamTenType param10);
+	public abstract void handle(ParamOneType param1, ParamTwoType param2, ParamThreeType param3, ParamFourType param4,
+			ParamFiveType param5, ParamSixType param6, ParamSevenType param7, ParamEightType param8, ParamNineType param9,
+			ParamTenType param10);
 
+	@SuppressWarnings("unchecked")
 	@Override
 	public void handle(Object... data) {
 		ParamOneType param1 = null;
