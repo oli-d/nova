@@ -2,10 +2,9 @@ package com.dotc.nova.filesystem;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.nio.channels.AsynchronousFileChannel;
-import java.nio.channels.CompletionHandler;
+import java.nio.channels.*;
 import java.nio.file.Paths;
-import java.util.concurrent.Future;
+import java.nio.file.StandardOpenOption;
 
 public class Filesystem {
 	private final com.dotc.nova.process.Process process;
@@ -16,7 +15,7 @@ public class Filesystem {
 
 	public void readFile(String filePath, final FileReadHandler handler) {
 		try {
-			AsynchronousFileChannel channel = AsynchronousFileChannel.open(Paths.get(filePath));
+			AsynchronousFileChannel channel = AsynchronousFileChannel.open(Paths.get(filePath), StandardOpenOption.READ);
 			long capacity = channel.size();
 			// TODO: hack for simplicity. do this properly
 			if (capacity > Integer.MAX_VALUE) {
@@ -52,20 +51,56 @@ public class Filesystem {
 	}
 
 	public String readFileSync(String filePath) throws IOException {
-		AsynchronousFileChannel channel = AsynchronousFileChannel.open(Paths.get(filePath));
+		FileChannel channel = FileChannel.open(Paths.get(filePath), StandardOpenOption.READ);
 		long capacity = channel.size();
 		if (capacity > Integer.MAX_VALUE) {
 			throw new IllegalArgumentException("File is too big. Max size is " + Integer.MAX_VALUE + " bytes.");
 		}
 
 		ByteBuffer buffer = ByteBuffer.allocate((int) channel.size());
-		Future<Integer> future = channel.read(buffer, 0);
-		try {
-			future.get();
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
+		channel.read(buffer, 0);
 		return new String(buffer.array());
 	}
 
+	public void writeFile(final String content, String filePath, final FileWriteHandler handler) {
+		try {
+			AsynchronousFileChannel channel = AsynchronousFileChannel.open(Paths.get(filePath), StandardOpenOption.WRITE, StandardOpenOption.CREATE);
+			ByteBuffer contentBuffer = ByteBuffer.wrap(content.getBytes());
+			channel.write(contentBuffer, 0, null, new CompletionHandler<Integer, ByteBuffer>() {
+
+				@Override
+				public void completed(Integer result, final ByteBuffer attachment) {
+					process.nextTick(new Runnable() {
+						@Override
+						public void run() {
+							handler.fileWritten(content);
+						}
+					});
+				}
+
+				@Override
+				public void failed(final Throwable exc, final ByteBuffer attachment) {
+					process.nextTick(new Runnable() {
+						@Override
+						public void run() {
+							handler.errorOccurred(exc);
+						}
+					});
+				}
+			});
+		} catch (Exception e) {
+			handler.errorOccurred(e);
+		}
+	}
+
+	public void writeFileSync(String content, String filePath, boolean append) throws IOException {
+		FileChannel channel = FileChannel.open(Paths.get(filePath), StandardOpenOption.WRITE, append ? StandardOpenOption.APPEND : StandardOpenOption.WRITE, StandardOpenOption.SYNC,
+				StandardOpenOption.CREATE);
+
+		try {
+			channel.write(ByteBuffer.wrap(content.getBytes()));
+		} finally {
+			channel.close();
+		}
+	}
 }
