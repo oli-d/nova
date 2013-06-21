@@ -2,10 +2,11 @@ package com.dotc.nova.events;
 
 import java.util.*;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class SyncEventEmitter implements EventEmitter {
-	private static final Logger LOGGER = Logger.getLogger(SyncEventEmitter.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(SyncEventEmitter.class);
 
 	private final HashMap<Object, List<EventListener>> mapEventToHandler = new HashMap<Object, List<EventListener>>();
 	private final HashMap<Object, List<EventListener>> mapEventToOneOffHandlers = new HashMap<Object, List<EventListener>>();

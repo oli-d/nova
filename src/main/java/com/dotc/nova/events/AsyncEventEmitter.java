@@ -2,12 +2,13 @@ package com.dotc.nova.events;
 
 import java.util.*;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.dotc.nova.ProcessingLoop;
 
 public class AsyncEventEmitter implements EventEmitter {
-	private static final Logger LOGGER = Logger.getLogger(AsyncEventEmitter.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(AsyncEventEmitter.class);
 
 	private final HashMap<Object, List<EventListener>> mapEventToHandler = new HashMap<Object, List<EventListener>>();
 	private final HashMap<Object, List<EventListener>> mapEventToOneOffHandlers = new HashMap<Object, List<EventListener>>();
