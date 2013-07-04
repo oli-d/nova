@@ -15,8 +15,6 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
-import com.dotc.nova.TestHelper;
-
 @RunWith(MockitoJUnitRunner.class)
 public class FilesystemTest {
 	private Filesystem filesystem;
@@ -35,10 +33,9 @@ public class FilesystemTest {
 		filesystem.readFile("src/test/resources/someFile.txt", handler);
 
 		ArgumentCaptor<Runnable> captor = ArgumentCaptor.forClass(Runnable.class);
-		Thread.sleep(500); // FIXME: how can we get rid off this sleep?
-		verify(process).nextTick(captor.capture());
+		verify(process, timeout(500)).nextTick(captor.capture());
 
-		Runnable dispatchedRunnable = TestHelper.getCaptorValue(captor);
+		Runnable dispatchedRunnable = captor.getValue();
 		assertNotNull(dispatchedRunnable);
 		dispatchedRunnable.run();
 
@@ -70,18 +67,18 @@ public class FilesystemTest {
 
 	@Test(expected = NoSuchFileException.class)
 	public void testReadFileSyncWithUnknownPathThrowsException() throws Throwable {
-		filesystem.readFileSync("isntThere.txt");
+		filesystem.readFileSync("src/test/resources/isntThere.txt");
 		verifyZeroInteractions(process);
 	}
 
 	@Test
 	public void testWriteFileSyncWithUnknownPathCreatesFile() throws Throwable {
 		try {
-			filesystem.writeFileSync("content", "isntThere.txt", true);
-			assertTrue(new File("isntThere.txt").exists());
+			filesystem.writeFileSync("content", "src/test/resources/isntThere.txt", true);
+			assertTrue(new File("src/test/resources/isntThere.txt").exists());
 			verifyZeroInteractions(process);
 		} finally {
-			File file = new File("isntThere.txt");
+			File file = new File("src/test/resources/isntThere.txt");
 			if (file.exists()) {
 				file.delete();
 			}
@@ -96,16 +93,15 @@ public class FilesystemTest {
 			filesystem.writeFile("content", "isntThere.txt", handler);
 
 			ArgumentCaptor<Runnable> captor = ArgumentCaptor.forClass(Runnable.class);
-			Thread.sleep(500); // FIXME: how can we get rid off this sleep?
-			verify(process).nextTick(captor.capture());
+			verify(process, timeout(500)).nextTick(captor.capture());
 
-			Runnable dispatchedRunnable = TestHelper.getCaptorValue(captor);
+			Runnable dispatchedRunnable = captor.getValue();
 			assertNotNull(dispatchedRunnable);
 			dispatchedRunnable.run();
 
 			ArgumentCaptor<String> contentCaptor = ArgumentCaptor.forClass(String.class);
 			verify(handler).fileWritten(contentCaptor.capture());
-			String writtenContent = TestHelper.getCaptorValue(contentCaptor);
+			String writtenContent = contentCaptor.getValue();
 			assertThat(writtenContent, is("content"));
 
 			assertTrue(new File("isntThere.txt").exists());

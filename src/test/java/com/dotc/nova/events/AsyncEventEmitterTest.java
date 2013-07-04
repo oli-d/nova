@@ -1,17 +1,16 @@
 package com.dotc.nova.events;
 
-import static org.easymock.EasyMock.*;
 import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.*;
+import static org.mockito.Matchers.*;
+import static org.mockito.Mockito.*;
 
 import java.util.List;
 
 import org.apache.log4j.BasicConfigurator;
-import org.easymock.Capture;
 import org.junit.*;
 
 import com.dotc.nova.ProcessingLoop;
-import com.dotc.nova.TestHelper;
 
 public class AsyncEventEmitterTest {
 	private AsyncEventEmitter eventEmitter;
@@ -30,7 +29,7 @@ public class AsyncEventEmitterTest {
 
 	@Test(expected = IllegalArgumentException.class)
 	public void testRegisteringNullEventThrows() {
-		EventListener<String> listener = createMock(EventListener.class);
+		EventListener<String> listener = mock(EventListener.class);
 		eventEmitter.on(null, listener);
 	}
 
@@ -46,7 +45,7 @@ public class AsyncEventEmitterTest {
 
 	@Test(expected = IllegalArgumentException.class)
 	public void testRemovingWithNullEventThrows() {
-		EventListener<String> listener = createMock(EventListener.class);
+		EventListener<String> listener = mock(EventListener.class);
 		eventEmitter.removeListener(null, listener);
 	}
 
@@ -57,25 +56,14 @@ public class AsyncEventEmitterTest {
 
 	@Test
 	public void testRemovingNotYetRegisteredListenerIsSilentlyIgnored() {
-		EventListener<String> listener = createMock(EventListener.class);
+		EventListener<String> listener = mock(EventListener.class);
 		eventEmitter.removeListener(String.class, listener);
 	}
 
 	@Test
 	public void testListenerCanBeRemoved() {
-		EventListener<String> listener1 = createMock(EventListener.class);
-		EventListener<String> listener2 = createMock(EventListener.class);
-
-		listener1.handle(eq("MyEvent1"));
-		expectLastCall().once();
-
-		listener2.handle(eq("MyEvent1"));
-		expectLastCall().once();
-		Capture<String> paramCapture = new Capture<>();
-		listener2.handle(capture(paramCapture));
-		expectLastCall().once();
-
-		replay(listener1, listener2);
+		EventListener<String> listener1 = mock(EventListener.class);
+		EventListener<String> listener2 = mock(EventListener.class);
 
 		eventEmitter.on(String.class, listener1);
 		eventEmitter.on(String.class, listener2);
@@ -88,18 +76,18 @@ public class AsyncEventEmitterTest {
 		eventEmitter.removeListener(String.class, listener2);
 		eventEmitter.emit(String.class, "MyEvent3");
 
-		String paramValue = TestHelper.getCaptureValue(paramCapture);
-		assertThat(paramValue, is("MyEvent2"));
+		verify(listener1, times(1)).handle(eq("MyEvent1"));
 
-		verify(listener1, listener2);
+		verify(listener2, times(1)).handle(eq("MyEvent1"));
+		verify(listener2, times(1)).handle(eq("MyEvent2"));
+
+		verifyNoMoreInteractions(listener1, listener2);
 	}
 
 	@Test
 	public void testAllListenersCanBeRemoved() {
-		EventListener<String> listener1 = createMock(EventListener.class);
-		EventListener<String> listener2 = createMock(EventListener.class);
-
-		replay(listener1, listener2);
+		EventListener<String> listener1 = mock(EventListener.class);
+		EventListener<String> listener2 = mock(EventListener.class);
 
 		eventEmitter.on(String.class, listener1);
 		eventEmitter.on(String.class, listener2);
@@ -107,19 +95,12 @@ public class AsyncEventEmitterTest {
 		eventEmitter.removeAllListeners(String.class);
 		eventEmitter.emit(String.class, "MyEvent1");
 
-		// ugly, but just to be sure that nothing is invoked, we give it a little time:
-		try {
-			Thread.sleep(1000l);
-		} catch (InterruptedException e) {
-		}
-
-		verify(listener1, listener2);
+		verifyNoMoreInteractions(listener1, listener2);
 	}
 
 	@Test
 	public void testListenersAreRemovedFromNormalAndOneOffMaps() {
-		EventListener<String> listener1 = createMock(EventListener.class);
-		replay(listener1);
+		EventListener<String> listener1 = mock(EventListener.class);
 
 		eventEmitter.on(String.class, listener1);
 		eventEmitter.once(String.class, listener1);
@@ -127,13 +108,7 @@ public class AsyncEventEmitterTest {
 		eventEmitter.removeListener(String.class, listener1);
 		eventEmitter.emit("MyEvent1");
 
-		// ugly, but just to be sure that nothing is invoked, we give it a little time:
-		try {
-			Thread.sleep(1000l);
-		} catch (InterruptedException e) {
-		}
-
-		verify(listener1);
+		verifyNoMoreInteractions(listener1);
 	}
 
 	@Test(expected = IllegalArgumentException.class)
@@ -143,43 +118,17 @@ public class AsyncEventEmitterTest {
 
 	@Test
 	public void testRegisteredListenerIsCalledWithoutDataBeingPassed() {
-		EventListener<String> listener1 = createMock(EventListener.class);
-
-		listener1.handle((String[]) null);
-		expectLastCall().once();
-
-		replay(listener1);
+		EventListener<String> listener1 = mock(EventListener.class);
 
 		eventEmitter.on(String.class, listener1);
-
 		eventEmitter.emit(String.class);
 
-		// ugly, but we give it a little time:
-		try {
-			Thread.sleep(1000l);
-		} catch (InterruptedException e) {
-		}
-
-		verify(listener1);
+		verify(listener1, timeout(1000)).handle((String[]) null);
 	}
 
 	@Test
 	public void testRegisteredListenerCalledEverytimeAnEventIsEmitted() {
-		EventListener<String> listener1 = createMock(EventListener.class);
-
-		Capture<String> captureParam1 = new Capture<String>();
-		Capture<String> captureParam2 = new Capture<String>();
-		Capture<String> captureParam3 = new Capture<String>();
-		Capture<String> captureParam4 = new Capture<String>();
-
-		listener1.handle(capture(captureParam1));
-		expectLastCall().once();
-		listener1.handle(capture(captureParam2));
-		expectLastCall().once();
-		listener1.handle(capture(captureParam3), capture(captureParam4));
-		expectLastCall().once();
-
-		replay(listener1);
+		EventListener<String> listener1 = mock(EventListener.class);
 
 		eventEmitter.on(String.class, listener1);
 
@@ -187,33 +136,17 @@ public class AsyncEventEmitterTest {
 		eventEmitter.emit(String.class, "MyEvent2");
 		eventEmitter.emit(String.class, "MyEvent3", "MyEvent4");
 
-		String param4 = TestHelper.getCaptureValue(captureParam4);
-		assertNotNull(param4);
-		assertThat(param4, is("MyEvent4"));
-		String param1 = captureParam1.getValue();
-		assertThat(param1, is("MyEvent1"));
-		String param2 = captureParam2.getValue();
-		assertThat(param2, is("MyEvent2"));
-		String param3 = captureParam3.getValue();
-		assertThat(param3, is("MyEvent3"));
-
-		verify(listener1);
+		verify(listener1, timeout(1000)).handle("MyEvent1");
+		verify(listener1, timeout(1000)).handle("MyEvent2");
+		verify(listener1, timeout(1000)).handle("MyEvent3", "MyEvent4");
+		verifyNoMoreInteractions(listener1);
 	}
 
 	@Test
 	public void testAllRegisteredListenersMatchingEventAreCalledWhenEventIsEmitted() {
-		EventListener<String> listener1 = createMock(EventListener.class);
-		EventListener<String> listener2 = createMock(EventListener.class);
-		EventListener<Integer> listener3 = createMock(EventListener.class);
-
-		Capture<String> captureListener1 = new Capture<String>();
-		listener1.handle(capture(captureListener1));
-		expectLastCall().once();
-		Capture<String> captureListener2 = new Capture<String>();
-		listener2.handle(capture(captureListener2));
-		expectLastCall().once();
-
-		replay(listener1, listener2, listener3);
+		EventListener<String> listener1 = mock(EventListener.class);
+		EventListener<String> listener2 = mock(EventListener.class);
+		EventListener<Integer> listener3 = mock(EventListener.class);
 
 		eventEmitter.on(String.class, listener1);
 		eventEmitter.on(String.class, listener2);
@@ -221,30 +154,16 @@ public class AsyncEventEmitterTest {
 
 		eventEmitter.emit(String.class, "My String");
 
-		String paramListener1 = TestHelper.getCaptureValue(captureListener1);
-		assertNotNull(paramListener1);
-		assertThat(paramListener1, is("My String"));
-		String paramListener2 = TestHelper.getCaptureValue(captureListener2);
-		assertNotNull(paramListener2);
-		assertThat(paramListener2, is("My String"));
+		verify(listener1, timeout(500)).handle("My String");
+		verify(listener2, timeout(500)).handle("My String");
 
-		verify(listener1, listener2, listener3);
+		verifyNoMoreInteractions(listener1, listener2, listener3);
 	}
 
 	@Test
 	public void testOneOffListenerOnlyCalledOnce() {
-		EventListener<String> listener = createMock(EventListener.class);
-		EventListener<String> oneOffListener = createMock(EventListener.class);
-
-		listener.handle(eq("First"));
-		expectLastCall().once();
-		Capture<String> captureParam = new Capture<String>();
-		listener.handle(capture(captureParam));
-		expectLastCall().once();
-		oneOffListener.handle(eq("First"));
-		expectLastCall().once();
-
-		replay(listener, oneOffListener);
+		EventListener<String> listener = mock(EventListener.class);
+		EventListener<String> oneOffListener = mock(EventListener.class);
 
 		eventEmitter.on(String.class, listener);
 		eventEmitter.once(String.class, oneOffListener);
@@ -252,11 +171,11 @@ public class AsyncEventEmitterTest {
 		eventEmitter.emit(String.class, "First");
 		eventEmitter.emit(String.class, "Second");
 
-		String param = TestHelper.getCaptureValue(captureParam);
-		assertNotNull(param);
-		assertThat(param, is("Second"));
+		verify(listener, timeout(300)).handle(eq("First"));
+		verify(listener, timeout(300)).handle(eq("Second"));
+		verify(oneOffListener, timeout(300)).handle(eq("First"));
 
-		verify(listener, oneOffListener);
+		verifyNoMoreInteractions(listener, oneOffListener);
 	}
 
 	@Test(expected = IllegalArgumentException.class)
@@ -272,8 +191,8 @@ public class AsyncEventEmitterTest {
 
 	@Test
 	public void testRegisteredListenersCanBeRetrieved() {
-		EventListener<String> listener1 = createMock(EventListener.class);
-		EventListener<String> listener2 = createMock(EventListener.class);
+		EventListener<String> listener1 = mock(EventListener.class);
+		EventListener<String> listener2 = mock(EventListener.class);
 
 		eventEmitter.on(String.class, listener1);
 		eventEmitter.on(String.class, listener2);

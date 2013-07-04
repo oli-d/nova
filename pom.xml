@@ -3,7 +3,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>com.dotc.nova</groupId>
 	<artifactId>nova-core</artifactId>
-	<version>0.7.0</version>
+	<version>0.8.0</version>
 
 	<dependencies>
 		<dependency>
@@ -27,12 +27,6 @@
 			<groupId>org.mockito</groupId>
 			<artifactId>mockito-core</artifactId>
 			<version>1.9.5</version>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.easymock</groupId>
-			<artifactId>easymock</artifactId>
-			<version>3.1</version>
 			<scope>test</scope>
 		</dependency>
 		<dependency>

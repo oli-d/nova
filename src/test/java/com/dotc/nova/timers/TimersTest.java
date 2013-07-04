@@ -1,17 +1,16 @@
 package com.dotc.nova.timers;
 
-import static org.easymock.EasyMock.*;
 import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
 
 import java.util.concurrent.TimeUnit;
 
 import org.apache.log4j.BasicConfigurator;
-import org.easymock.Capture;
 import org.junit.Test;
+import org.mockito.ArgumentCaptor;
 
 import com.dotc.nova.ProcessingLoop;
-import com.dotc.nova.TestHelper;
 import com.dotc.nova.events.EventListener;
 
 public class TimersTest {
@@ -24,37 +23,18 @@ public class TimersTest {
 	@Test
 	public void testSetTimeout() throws Throwable {
 		BasicConfigurator.configure();
-		Runnable callback = createMock(Runnable.class);
 
-		Capture<EventListener> eventListenerCapture = new Capture<>();
-		ProcessingLoop processingLoop = createMock(ProcessingLoop.class);
-		processingLoop.dispatch(capture(eventListenerCapture));
-		expectLastCall().once();
-		replay(callback, processingLoop);
+		Runnable callback = mock(Runnable.class);
+		ProcessingLoop processingLoop = mock(ProcessingLoop.class);
 
 		Timers timers = new Timers(processingLoop);
 
 		long startDelay = 300;
-		long checkDelay = 50;
-		long maxCheckTime = startDelay + 150;
-
 		assertNotNull(timers.setTimeout(callback, startDelay, TimeUnit.MILLISECONDS));
 
-		assertNotNull(TestHelper.getCaptureValue(eventListenerCapture));
-
-		long endTime = System.currentTimeMillis() + maxCheckTime;
-		while (System.currentTimeMillis() <= endTime) {
-			Thread.sleep(checkDelay);
-			try {
-				verify(processingLoop);
-				verify(callback);
-				return;
-			} catch (Throwable t) {
-				// noop, unable to verify
-			}
-		}
-
-		fail("Callback not put on processing loop");
+		ArgumentCaptor<EventListener> eventListenerCaptor = ArgumentCaptor.forClass(EventListener.class);
+		verify(processingLoop, timeout(500)).dispatch(eventListenerCaptor.capture());
+		assertNotNull(eventListenerCaptor.getValue());
 	}
 
 	@Test
