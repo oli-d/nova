@@ -38,7 +38,9 @@ public class SyncEventEmitter implements EventEmitter {
 			handlers = new ArrayList<>();
 			listenerMap.put(event, handlers);
 		}
-		LOGGER.debug("Registered event " + event + " --> " + callback);
+		if (LOGGER.isTraceEnabled()) {
+			LOGGER.trace("Registered event " + event + " --> " + callback);
+		}
 		handlers.add(callback);
 	}
 
@@ -56,7 +58,9 @@ public class SyncEventEmitter implements EventEmitter {
 			if (handlers.isEmpty()) {
 				mapEventToHandler.remove(event);
 			}
-			LOGGER.debug("Deregistered handler " + event + " --> " + handler);
+			if (LOGGER.isTraceEnabled()) {
+				LOGGER.trace("Deregistered handler " + event + " --> " + handler);
+			}
 		}
 		// remove listener from one off list
 		handlers = mapEventToOneOffHandlers.get(event);
@@ -65,7 +69,7 @@ public class SyncEventEmitter implements EventEmitter {
 			if (handlers.isEmpty()) {
 				mapEventToHandler.remove(event);
 			}
-			LOGGER.debug("Deregistered one off handler " + event + " --> " + handler);
+			LOGGER.trace("Deregistered one off handler " + event + " --> " + handler);
 		}
 	}
 
@@ -74,7 +78,9 @@ public class SyncEventEmitter implements EventEmitter {
 			throw new IllegalArgumentException("event must not be null");
 		}
 		mapEventToHandler.remove(event);
-		LOGGER.debug("Deregistered all listeners for event " + event);
+		if (LOGGER.isTraceEnabled()) {
+			LOGGER.trace("Deregistered all listeners for event " + event);
+		}
 	}
 
 	public List<EventListener> getHandlers(Object event) {

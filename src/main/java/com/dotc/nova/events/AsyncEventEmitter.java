@@ -41,7 +41,9 @@ public class AsyncEventEmitter implements EventEmitter {
 		if (handlers == null) {
 			handlers = new ArrayList<>();
 			listenerMap.put(event, handlers);
-			LOGGER.debug("Registered event " + event + " --> " + callback);
+			if (LOGGER.isTraceEnabled()) {
+				LOGGER.trace("Registered event " + event + " --> " + callback);
+			}
 		}
 		handlers.add(callback);
 	}
@@ -60,7 +62,9 @@ public class AsyncEventEmitter implements EventEmitter {
 			if (handlers.isEmpty()) {
 				mapEventToHandler.remove(event);
 			}
-			LOGGER.debug("Deregistered handler " + event + " --> " + handler);
+			if (LOGGER.isTraceEnabled()) {
+				LOGGER.trace("Deregistered handler " + event + " --> " + handler);
+			}
 		}
 		// remove listener from one off list
 		handlers = mapEventToOneOffHandlers.get(event);
@@ -69,7 +73,9 @@ public class AsyncEventEmitter implements EventEmitter {
 			if (handlers.isEmpty()) {
 				mapEventToHandler.remove(event);
 			}
-			LOGGER.debug("Deregistered one off handler " + event + " --> " + handler);
+			if (LOGGER.isTraceEnabled()) {
+				LOGGER.trace("Deregistered one off handler " + event + " --> " + handler);
+			}
 		}
 	}
 
@@ -78,7 +84,7 @@ public class AsyncEventEmitter implements EventEmitter {
 			throw new IllegalArgumentException("event must not be null");
 		}
 		mapEventToHandler.remove(event);
-		LOGGER.debug("Deregistered all listeners for event " + event);
+		LOGGER.trace("Deregistered all listeners for event " + event);
 	}
 
 	List<EventListener> getListeners(Object event) {

@@ -76,10 +76,9 @@ public class AsyncEventEmitterTest {
 		eventEmitter.removeListener(String.class, listener2);
 		eventEmitter.emit(String.class, "MyEvent3");
 
-		verify(listener1, times(1)).handle(eq("MyEvent1"));
-
-		verify(listener2, times(1)).handle(eq("MyEvent1"));
-		verify(listener2, times(1)).handle(eq("MyEvent2"));
+		verify(listener1, timeout(200)).handle(eq("MyEvent1"));
+		verify(listener2, timeout(200)).handle(eq("MyEvent1"));
+		verify(listener2, timeout(200)).handle(eq("MyEvent2"));
 
 		verifyNoMoreInteractions(listener1, listener2);
 	}
