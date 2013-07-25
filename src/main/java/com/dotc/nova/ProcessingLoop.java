@@ -6,13 +6,14 @@ import java.util.concurrent.*;
 import com.dotc.nova.events.EventListener;
 import com.lmax.disruptor.*;
 import com.lmax.disruptor.dsl.Disruptor;
+import com.lmax.disruptor.dsl.ProducerType;
 
 public class ProcessingLoop {
-	private static final int BUFFER_SIZE = com.lmax.disruptor.util.Util.ceilingNextPowerOfTwo(10000);
+	private static final int DEFAULT_BUFFER_SIZE = com.lmax.disruptor.util.Util.ceilingNextPowerOfTwo(10000);
 
 	private RingBuffer<InvocationContext> ringBuffer;
-	private ClaimStrategy claimStrategy = new MultiThreadedClaimStrategy(BUFFER_SIZE);
 	private WaitStrategy waitStrategy = new BlockingWaitStrategy();
+	private ProducerType producerType = ProducerType.MULTI;
 	private Executor executor;
 
 	public void init() {
@@ -21,7 +22,7 @@ public class ProcessingLoop {
 
 		EventFactory<InvocationContext> eventFactory = new MyEventFactory();
 
-		Disruptor<InvocationContext> disruptor = new Disruptor<InvocationContext>(eventFactory, executor, claimStrategy, waitStrategy);
+		Disruptor<InvocationContext> disruptor = new Disruptor<InvocationContext>(eventFactory, DEFAULT_BUFFER_SIZE, executor, producerType, waitStrategy);
 		disruptor.handleEventsWith(new ProcessingEventHandler());
 		ringBuffer = disruptor.start();
 	}
