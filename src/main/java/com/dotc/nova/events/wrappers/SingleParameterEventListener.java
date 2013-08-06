@@ -11,8 +11,9 @@ public abstract class SingleParameterEventListener<ParamType> implements EventLi
 	public void handle(Object... data) {
 		if (data == null || data.length == 0) {
 			handle((ParamType) null);
+		} else {
+			handle((ParamType) data[0]);
 		}
-		handle((ParamType) data[0]);
 	}
 
 }

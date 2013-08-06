@@ -6,7 +6,6 @@ import org.junit.Test;
 import com.dotc.nova.events.*;
 
 public class EventListenerWrappersTest {
-
 	@Test
 	public void testInvokingWithoutParams() {
 		final boolean[] listenersInvoked = new boolean[12];
