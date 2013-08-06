@@ -86,12 +86,17 @@ public abstract class EventEmitter {
 		if (event == null) {
 			throw new IllegalArgumentException("event must not be null");
 		}
+		List<EventListener> returnValue = new ArrayList<>();
 		List<EventListener> listeners = mapEventToHandler.get(event);
-		if (listeners == null) {
-			return new ArrayList<>();
-		} else {
-			return listeners;
+		if (listeners != null) {
+			returnValue.addAll(listeners);
 		}
+		listeners = mapEventToOneOffHandlers.get(event);
+		if (listeners != null) {
+			returnValue.addAll(listeners);
+		}
+
+		return returnValue;
 	}
 
 	public <EventType, ParameterType> void emit(EventType event, ParameterType... data) {

@@ -5,19 +5,19 @@ import java.util.concurrent.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.dotc.nova.ProcessingLoop;
+import com.dotc.nova.EventLoop;
 import com.dotc.nova.events.EventListener;
 
 public class Timers {
 	private static final Logger LOGGER = LoggerFactory.getLogger(Timers.class);
 
-	private final ProcessingLoop processingLoop;
+	private final EventLoop eventLoop;
 	private final ScheduledExecutorService executor;
 	private long counter = 0;
 	private ConcurrentHashMap<String, ScheduledFuture> mapIdToFuture = new ConcurrentHashMap<String, ScheduledFuture>();
 
-	public Timers(ProcessingLoop processingLoop) {
-		this.processingLoop = processingLoop;
+	public Timers(EventLoop eventLoop) {
+		this.eventLoop = eventLoop;
 
 		ThreadFactory tf = new ThreadFactory() {
 
@@ -119,7 +119,7 @@ public class Timers {
 		@Override
 		public void run() {
 			try {
-				processingLoop.dispatch(handlerToInvoke);
+				eventLoop.dispatch(handlerToInvoke);
 			} catch (Throwable t) {
 				LOGGER.error("Unable to put callback on processing loop", t);
 			}

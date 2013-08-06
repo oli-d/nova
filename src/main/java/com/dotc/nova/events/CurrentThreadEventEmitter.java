@@ -6,8 +6,8 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class SyncEventEmitter extends EventEmitter {
-	private static final Logger LOGGER = LoggerFactory.getLogger(SyncEventEmitter.class);
+public class CurrentThreadEventEmitter extends EventEmitter {
+	private static final Logger LOGGER = LoggerFactory.getLogger(CurrentThreadEventEmitter.class);
 
 	@Override
 	<EventType, ParameterType> void dispatchEventAndDataToListeners(List<EventListener> listenerList, EventType event, ParameterType... data) {

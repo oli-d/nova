@@ -10,7 +10,8 @@ import org.apache.log4j.BasicConfigurator;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 
-import com.dotc.nova.ProcessingLoop;
+import com.dotc.nova.EventDispatchConfig;
+import com.dotc.nova.EventLoop;
 import com.dotc.nova.events.EventListener;
 
 public class TimersTest {
@@ -25,22 +26,22 @@ public class TimersTest {
 		BasicConfigurator.configure();
 
 		Runnable callback = mock(Runnable.class);
-		ProcessingLoop processingLoop = mock(ProcessingLoop.class);
+		EventLoop eventLoop = mock(EventLoop.class);
 
-		Timers timers = new Timers(processingLoop);
+		Timers timers = new Timers(eventLoop);
 
 		long startDelay = 300;
 		assertNotNull(timers.setTimeout(callback, startDelay, TimeUnit.MILLISECONDS));
 
 		ArgumentCaptor<EventListener> eventListenerCaptor = ArgumentCaptor.forClass(EventListener.class);
-		verify(processingLoop, timeout(500)).dispatch(eventListenerCaptor.capture());
+		verify(eventLoop, timeout(500)).dispatch(eventListenerCaptor.capture());
 		assertNotNull(eventListenerCaptor.getValue());
 	}
 
 	@Test
 	public void testClearTimeout() throws Exception {
 		final int[] counter = new int[1];
-		ProcessingLoop processingLoop = new ProcessingLoop() {
+		EventLoop eventLoop = new EventLoop(new EventDispatchConfig.Builder().build()) {
 
 			@Override
 			public void dispatch(EventListener h) {
@@ -48,7 +49,7 @@ public class TimersTest {
 			}
 
 		};
-		Timers timers = new Timers(processingLoop);
+		Timers timers = new Timers(eventLoop);
 
 		Runnable callback = new Runnable() {
 
@@ -80,7 +81,7 @@ public class TimersTest {
 	@Test
 	public void testClearTimeoutCanBeInvokedMultipleTimes() throws Exception {
 		final int[] counter = new int[1];
-		ProcessingLoop processingLoop = new ProcessingLoop() {
+		EventLoop eventLoop = new EventLoop(new EventDispatchConfig.Builder().build()) {
 
 			@Override
 			public void dispatch(EventListener h) {
@@ -88,7 +89,7 @@ public class TimersTest {
 			}
 
 		};
-		Timers timers = new Timers(processingLoop);
+		Timers timers = new Timers(eventLoop);
 
 		Runnable callback = new Runnable() {
 
@@ -125,7 +126,7 @@ public class TimersTest {
 	@Test
 	public void testSetInterval() throws Throwable {
 		final int[] counter = new int[1];
-		ProcessingLoop processingLoop = new ProcessingLoop() {
+		EventLoop eventLoop = new EventLoop(new EventDispatchConfig.Builder().build()) {
 
 			@Override
 			public void dispatch(EventListener h) {
@@ -133,7 +134,7 @@ public class TimersTest {
 			}
 
 		};
-		Timers timers = new Timers(processingLoop);
+		Timers timers = new Timers(eventLoop);
 
 		Runnable callback = new Runnable() {
 
@@ -155,7 +156,7 @@ public class TimersTest {
 	@Test
 	public void testClearInterval() throws Exception {
 		final int[] counter = new int[1];
-		ProcessingLoop processingLoop = new ProcessingLoop() {
+		EventLoop eventLoop = new EventLoop(new EventDispatchConfig.Builder().build()) {
 
 			@Override
 			public void dispatch(EventListener h) {
@@ -163,7 +164,7 @@ public class TimersTest {
 			}
 
 		};
-		Timers timers = new Timers(processingLoop);
+		Timers timers = new Timers(eventLoop);
 
 		Runnable callback = new Runnable() {
 
@@ -195,7 +196,7 @@ public class TimersTest {
 	@Test
 	public void testClearIntervalCanBeInvokedMultipleTimes() throws Exception {
 		final int[] counter = new int[1];
-		ProcessingLoop processingLoop = new ProcessingLoop() {
+		EventLoop eventLoop = new EventLoop(new EventDispatchConfig.Builder().build()) {
 
 			@Override
 			public void dispatch(EventListener h) {
@@ -203,7 +204,7 @@ public class TimersTest {
 			}
 
 		};
-		Timers timers = new Timers(processingLoop);
+		Timers timers = new Timers(eventLoop);
 
 		Runnable callback = new Runnable() {
 

@@ -141,7 +141,7 @@ public class EventListenerWrappersTest {
 			}
 		};
 
-		EventEmitter ee = new SyncEventEmitter();
+		EventEmitter ee = new CurrentThreadEventEmitter();
 
 		ee.on("e", noParamsListener);
 		ee.on("e", genericListener);
@@ -318,7 +318,7 @@ public class EventListenerWrappersTest {
 			}
 		};
 
-		EventEmitter ee = new SyncEventEmitter();
+		EventEmitter ee = new CurrentThreadEventEmitter();
 
 		ee.on("e", noParamsListener);
 		ee.on("e", genericListener);

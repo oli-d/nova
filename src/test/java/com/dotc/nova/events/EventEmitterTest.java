@@ -63,6 +63,25 @@ public class EventEmitterTest {
 	}
 
 	@Test
+	public void testGetAllListeners() {
+		EventListener<String> listener1 = mock(EventListener.class);
+		EventListener<String> listener2 = mock(EventListener.class);
+
+		eventEmitter.on(String.class, listener1);
+		eventEmitter.once(String.class, listener2);
+
+		assertTrue(eventEmitter.getListeners("String.class").isEmpty());
+		assertEquals(2, eventEmitter.getListeners(String.class).size());
+		assertTrue(eventEmitter.getListeners(String.class).contains(listener1));
+		assertTrue(eventEmitter.getListeners(String.class).contains(listener2));
+	}
+
+	@Test(expected = IllegalArgumentException.class)
+	public void testGetAllListenersWithNullEventThrows() {
+		eventEmitter.getListeners(null);
+	}
+
+	@Test
 	public void testListenerCanBeRemoved() {
 		EventListener<String> listener1 = mock(EventListener.class);
 		EventListener<String> listener2 = mock(EventListener.class);

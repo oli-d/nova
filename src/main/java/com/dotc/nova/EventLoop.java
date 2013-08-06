@@ -8,21 +8,40 @@ import com.lmax.disruptor.*;
 import com.lmax.disruptor.dsl.Disruptor;
 import com.lmax.disruptor.dsl.ProducerType;
 
-public class ProcessingLoop {
-	private static final int DEFAULT_BUFFER_SIZE = com.lmax.disruptor.util.Util.ceilingNextPowerOfTwo(10000);
+public class EventLoop {
 
 	private RingBuffer<InvocationContext> ringBuffer;
-	private WaitStrategy waitStrategy = new BlockingWaitStrategy();
-	private ProducerType producerType = ProducerType.MULTI;
 	private Executor executor;
 
-	public void init() {
+	public EventLoop(EventDispatchConfig eventDispatchConfig) {
+		int eventBufferSize = com.lmax.disruptor.util.Util.ceilingNextPowerOfTwo(eventDispatchConfig.eventBufferSize);
+
+		WaitStrategy waitStrategy = null;
+		switch (eventDispatchConfig.waitStrategy) {
+			case MIN_CPU_USAGE:
+				waitStrategy = new BlockingWaitStrategy();
+				break;
+			case MIN_LATENCY:
+				waitStrategy = new BusySpinWaitStrategy();
+				break;
+			case LOW_CPU_DEFAULT_LATENCY:
+				waitStrategy = new SleepingWaitStrategy();
+				break;
+			case LOW_LATENCY_DEFAULT_CPU:
+				waitStrategy = new YieldingWaitStrategy();
+				break;
+			default:
+				throw new IllegalArgumentException("Unsupported wait stratehy " + eventDispatchConfig.waitStrategy);
+		}
+
+		ProducerType producerType = eventDispatchConfig.multipleProducers ? ProducerType.MULTI : ProducerType.SINGLE;
+
 		ThreadFactory threadFactory = new MyThreadFactory();
 		executor = Executors.newSingleThreadExecutor(threadFactory);
 
 		EventFactory<InvocationContext> eventFactory = new MyEventFactory();
 
-		Disruptor<InvocationContext> disruptor = new Disruptor<InvocationContext>(eventFactory, DEFAULT_BUFFER_SIZE, executor, producerType, waitStrategy);
+		Disruptor<InvocationContext> disruptor = new Disruptor<InvocationContext>(eventFactory, eventBufferSize, executor, producerType, waitStrategy);
 		disruptor.handleEventsWith(new ProcessingEventHandler());
 		ringBuffer = disruptor.start();
 	}

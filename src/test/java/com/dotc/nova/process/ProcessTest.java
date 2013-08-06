@@ -10,7 +10,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
-import com.dotc.nova.ProcessingLoop;
+import com.dotc.nova.EventLoop;
 import com.dotc.nova.events.EventListener;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -18,7 +18,7 @@ public class ProcessTest {
 
 	private Process process;
 	@Mock
-	private ProcessingLoop processingLoop;
+	private EventLoop eventLoop;
 
 	@BeforeClass
 	public static void initLogging() {
@@ -27,7 +27,7 @@ public class ProcessTest {
 
 	@Before
 	public void setup() {
-		process = new Process(processingLoop);
+		process = new Process(eventLoop);
 	}
 
 	@Test(expected = IllegalArgumentException.class)
@@ -43,7 +43,7 @@ public class ProcessTest {
 
 		// wait for listener to be generated and put on the event loop, and invoke it
 		ArgumentCaptor<EventListener> listenerCaptor = ArgumentCaptor.forClass(EventListener.class);
-		verify(processingLoop, timeout(500)).dispatch(listenerCaptor.capture());
+		verify(eventLoop, timeout(500)).dispatch(listenerCaptor.capture());
 		assertNotNull(listenerCaptor.getValue());
 		listenerCaptor.getValue().handle();
 

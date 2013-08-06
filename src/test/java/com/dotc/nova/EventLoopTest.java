@@ -13,13 +13,12 @@ import org.junit.Test;
 
 import com.dotc.nova.events.EventListener;
 
-public class ProcessingLoopTest {
-	private ProcessingLoop processingLoop;
+public class EventLoopTest {
+	private EventLoop eventLoop;
 
 	@Before
 	public void setUp() {
-		processingLoop = new ProcessingLoop();
-		processingLoop.init();
+		eventLoop = new EventLoop(new EventDispatchConfig.Builder().build());
 	}
 
 	private EventListener<String>[] createListeners(final CountDownLatch countDownLatch) {
@@ -42,7 +41,7 @@ public class ProcessingLoopTest {
 		final CountDownLatch countDownLatch = new CountDownLatch(numberOfListeners);
 		EventListener<String>[] listenersArray = createListeners(countDownLatch);
 
-		processingLoop.dispatch("Test", listenersArray);
+		eventLoop.dispatch("Test", listenersArray);
 
 		try {
 			countDownLatch.await(1, TimeUnit.SECONDS);
@@ -58,7 +57,7 @@ public class ProcessingLoopTest {
 		EventListener<String>[] listenersArray = createListeners(countDownLatch);
 
 		ArrayList<EventListener> list = new ArrayList<EventListener>(Arrays.asList(listenersArray));
-		processingLoop.dispatch("Test", list, "Data");
+		eventLoop.dispatch("Test", list, "Data");
 
 		try {
 			countDownLatch.await(1, TimeUnit.SECONDS);
@@ -77,7 +76,7 @@ public class ProcessingLoopTest {
 			}
 		};
 
-		processingLoop.dispatch(r);
+		eventLoop.dispatch(r);
 
 		try {
 			countDownLatch.await(1, TimeUnit.SECONDS);

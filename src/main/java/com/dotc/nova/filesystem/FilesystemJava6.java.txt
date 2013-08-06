@@ -3,7 +3,7 @@ package com.dotc.nova.filesystem;
 import java.io.*;
 import java.util.concurrent.*;
 
-import com.dotc.nova.ProcessingLoop;
+import com.dotc.nova.EventLoop;
 
 public class Filesystem {
 	private final ProcessingLoop eventDispatcher;

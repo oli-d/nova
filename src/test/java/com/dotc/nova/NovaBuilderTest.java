@@ -4,27 +4,27 @@ import static org.junit.Assert.*;
 
 import org.junit.Test;
 
-import com.dotc.nova.events.AsyncEventEmitter;
-import com.dotc.nova.events.SyncEventEmitter;
+import com.dotc.nova.events.CurrentThreadEventEmitter;
+import com.dotc.nova.events.EventLoopAwareEventEmitter;
 
 public class NovaBuilderTest {
 
 	@Test
-	public void testDefaultBuilsdWithSyncEmitter() {
+	public void testDefaultBuilsdWithEventLoopEmitter() {
 		Nova nova = new Nova.Builder().build();
-		assertTrue(nova.eventEmitter instanceof SyncEventEmitter);
+		assertTrue(nova.eventEmitter instanceof EventLoopAwareEventEmitter);
 	}
 
 	@Test
-	public void testBuildWithSyncEmitter() {
-		Nova nova = new Nova.Builder().withAsyncEventEmitter(false).build();
-		assertTrue(nova.eventEmitter instanceof SyncEventEmitter);
+	public void testBuildWithCurrentThreadEmitter() {
+		Nova nova = new Nova.Builder().withCurrentThreadEventEmitter(true).build();
+		assertTrue(nova.eventEmitter instanceof CurrentThreadEventEmitter);
 	}
 
 	@Test
-	public void testBuildWithAsyncEmitter() {
-		Nova nova = new Nova.Builder().withAsyncEventEmitter(true).build();
-		assertTrue(nova.eventEmitter instanceof AsyncEventEmitter);
+	public void testBuildWithEventLoopEmitter() {
+		Nova nova = new Nova.Builder().withCurrentThreadEventEmitter(false).build();
+		assertTrue(nova.eventEmitter instanceof EventLoopAwareEventEmitter);
 	}
 
 }

@@ -5,12 +5,12 @@ import static org.mockito.Mockito.*;
 import org.junit.Before;
 import org.junit.Test;
 
-public class ImmediateEventEmitterTest {
+public class CurrentThreadEventEmitterTest {
 	private EventEmitter eventEmitter;
 
 	@Before
 	public void setup() {
-		eventEmitter = new SyncEventEmitter();
+		eventEmitter = new CurrentThreadEventEmitter();
 	}
 
 	@Test

@@ -5,7 +5,7 @@ import com.dotc.nova.filesystem.Filesystem;
 import com.dotc.nova.timers.Timers;
 
 public class Nova {
-	private final ProcessingLoop processingLoop;
+	private final EventLoop eventLoop;
 
 	public final Timers timers;
 	public final EventEmitter eventEmitter;
@@ -13,28 +13,36 @@ public class Nova {
 	public final Filesystem filesystem;
 
 	private Nova(Builder builder) {
-		processingLoop = new ProcessingLoop();
-		processingLoop.init();
+		eventLoop = new EventLoop(builder.eventDispatchConfig);
 
-		timers = new Timers(processingLoop);
-		if (builder.asyncEventEmitter) {
-			eventEmitter = new AsyncEventEmitter(processingLoop);
+		timers = new Timers(eventLoop);
+		if (builder.currentThreadEventEmitter) {
+			eventEmitter = new CurrentThreadEventEmitter();
 		} else {
-			eventEmitter = new SyncEventEmitter();
+			eventEmitter = new EventLoopAwareEventEmitter(eventLoop);
 		}
-		process = new com.dotc.nova.process.Process(processingLoop);
+		process = new com.dotc.nova.process.Process(eventLoop);
 		filesystem = new Filesystem(process);
 	}
 
 	public static class Builder {
-		private boolean asyncEventEmitter;
+		private boolean currentThreadEventEmitter;
+		private EventDispatchConfig eventDispatchConfig;
 
-		public Builder withAsyncEventEmitter(boolean asyncEventEmitter) {
-			this.asyncEventEmitter = asyncEventEmitter;
+		public Builder withEventDispatchConfig(EventDispatchConfig eventDispatchConfig) {
+			this.eventDispatchConfig = eventDispatchConfig;
+			return this;
+		}
+
+		public Builder withCurrentThreadEventEmitter(boolean currentThreadEventEmitter) {
+			this.currentThreadEventEmitter = currentThreadEventEmitter;
 			return this;
 		}
 
 		public Nova build() {
+			if (eventDispatchConfig == null) {
+				eventDispatchConfig = new EventDispatchConfig.Builder().build();
+			}
 			return new Nova(this);
 		}
 	}
