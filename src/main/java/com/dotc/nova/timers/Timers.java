@@ -44,7 +44,7 @@ public class Timers {
 		long id = ++counter;
 		String idAsString = String.valueOf(id);
 
-		mapIdToFuture.put(idAsString, executor.schedule(new TimeoutCallbackWrapper(callback), delay, TimeUnit.MILLISECONDS));
+		mapIdToFuture.put(idAsString, executor.schedule(new TimeoutCallbackWrapper(idAsString, callback), delay, TimeUnit.MILLISECONDS));
 
 		return idAsString;
 	}
@@ -58,7 +58,7 @@ public class Timers {
 		if (timeoutId == null) {
 			throw new IllegalArgumentException("timeoutId must not be null");
 		}
-		ScheduledFuture sf = mapIdToFuture.get(timeoutId);
+		ScheduledFuture sf = mapIdToFuture.remove(timeoutId);
 		if (sf != null) {
 			sf.cancel(false);
 		}
@@ -86,7 +86,7 @@ public class Timers {
 		long id = ++counter;
 		String idAsString = String.valueOf(id);
 
-		mapIdToFuture.put(idAsString, executor.scheduleWithFixedDelay(new TimeoutCallbackWrapper(callback), delay, delay, timeUnit));
+		mapIdToFuture.put(idAsString, executor.scheduleWithFixedDelay(new IntervalCallbackWrapper(callback), delay, delay, timeUnit));
 
 		return idAsString;
 	}
@@ -98,7 +98,7 @@ public class Timers {
 		if (intervalId == null) {
 			throw new IllegalArgumentException("timeoutId must not be null");
 		}
-		ScheduledFuture sf = mapIdToFuture.get(intervalId);
+		ScheduledFuture sf = mapIdToFuture.remove(intervalId);
 		if (sf != null) {
 			sf.cancel(false);
 		}
@@ -107,7 +107,31 @@ public class Timers {
 	private class TimeoutCallbackWrapper implements Runnable {
 		private final EventListener handlerToInvoke;
 
-		public TimeoutCallbackWrapper(final Runnable runnableToInvoke) {
+		public TimeoutCallbackWrapper(final String callbackId, final Runnable runnableToInvoke) {
+			this.handlerToInvoke = new EventListener() {
+				@Override
+				public void handle(Object... data) {
+					clearTimeout(callbackId);
+					runnableToInvoke.run();
+				}
+			};
+		}
+
+		@Override
+		public void run() {
+			try {
+				eventLoop.dispatch(handlerToInvoke);
+			} catch (Throwable t) {
+				LOGGER.error("Unable to put timeout callback on processing loop", t);
+			}
+		}
+
+	}
+
+	private class IntervalCallbackWrapper implements Runnable {
+		private final EventListener handlerToInvoke;
+
+		public IntervalCallbackWrapper(final Runnable runnableToInvoke) {
 			this.handlerToInvoke = new EventListener() {
 				@Override
 				public void handle(Object... data) {
@@ -121,7 +145,7 @@ public class Timers {
 			try {
 				eventLoop.dispatch(handlerToInvoke);
 			} catch (Throwable t) {
-				LOGGER.error("Unable to put callback on processing loop", t);
+				LOGGER.error("Unable to put interval callback on processing loop", t);
 			}
 		}
 
