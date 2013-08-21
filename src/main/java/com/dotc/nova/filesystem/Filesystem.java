@@ -3,8 +3,9 @@ package com.dotc.nova.filesystem;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.*;
-import java.nio.file.Paths;
-import java.nio.file.StandardOpenOption;
+import java.nio.file.*;
+import java.util.HashSet;
+import java.util.Set;
 
 public class Filesystem {
 	private final com.dotc.nova.process.Process process;
@@ -94,8 +95,15 @@ public class Filesystem {
 	}
 
 	public void writeFileSync(String content, String filePath, boolean append) throws IOException {
-		FileChannel channel = FileChannel.open(Paths.get(filePath), StandardOpenOption.WRITE, append ? StandardOpenOption.APPEND : StandardOpenOption.WRITE, StandardOpenOption.SYNC,
-				StandardOpenOption.CREATE);
+		Set<OpenOption> openOptions = new HashSet<>();
+		openOptions.add(StandardOpenOption.WRITE);
+		openOptions.add(StandardOpenOption.SYNC);
+		openOptions.add(StandardOpenOption.CREATE);
+		if (append) {
+			openOptions.add(StandardOpenOption.APPEND);
+		}
+		FileChannel channel = FileChannel.open(Paths.get(filePath), openOptions);
+		channel.truncate(0);
 
 		try {
 			channel.write(ByteBuffer.wrap(content.getBytes()));

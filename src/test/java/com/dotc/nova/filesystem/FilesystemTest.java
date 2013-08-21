@@ -115,4 +115,20 @@ public class FilesystemTest {
 		}
 	}
 
+	@Test
+	public void testOverridingExistingFileDoesntLeaveAnyOldContent() throws Throwable {
+		try {
+			filesystem.writeFileSync("old loooong content", "bla.txt", false);
+			assertThat(filesystem.readFileSync("bla.txt"), is("old loooong content"));
+
+			filesystem.writeFileSync("new content", "bla.txt", false);
+			assertThat(filesystem.readFileSync("bla.txt"), is("new content"));
+		} finally {
+			File file = new File("bla.txt");
+			if (file.exists()) {
+				file.delete();
+			}
+		}
+	}
+
 }
