@@ -114,11 +114,12 @@ public class EventEmitterTest {
 
 	@Test
 	public void testAllListenersCanBeRemoved() {
+
 		EventListener<String> listener1 = mock(EventListener.class);
 		EventListener<String> listener2 = mock(EventListener.class);
 
 		eventEmitter.on(String.class, listener1);
-		eventEmitter.on(String.class, listener2);
+		eventEmitter.once(String.class, listener2);
 
 		eventEmitter.removeAllListeners(String.class);
 		eventEmitter.emit(String.class, "MyEvent1");

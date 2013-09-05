@@ -77,6 +77,7 @@ public abstract class EventEmitter {
 			throw new IllegalArgumentException("event must not be null");
 		}
 		mapEventToHandler.remove(event);
+		mapEventToOneOffHandlers.remove(event);
 		if (LOGGER.isTraceEnabled()) {
 			LOGGER.trace("Deregistered all listeners for event " + event);
 		}
