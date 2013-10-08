@@ -103,7 +103,9 @@ public class Filesystem {
 			openOptions.add(StandardOpenOption.APPEND);
 		}
 		FileChannel channel = FileChannel.open(Paths.get(filePath), openOptions);
-		channel.truncate(0);
+		if (!append) {
+			channel.truncate(0);
+		}
 
 		try {
 			channel.write(ByteBuffer.wrap(content.getBytes()));

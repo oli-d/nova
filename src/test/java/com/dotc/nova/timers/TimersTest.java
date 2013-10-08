@@ -10,9 +10,7 @@ import org.apache.log4j.BasicConfigurator;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 
-import com.dotc.nova.EventDispatchConfig;
-import com.dotc.nova.EventLoop;
-import com.dotc.nova.events.EventListener;
+import com.dotc.nova.events.*;
 
 public class TimersTest {
 

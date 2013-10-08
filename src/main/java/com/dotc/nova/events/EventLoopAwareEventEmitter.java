@@ -2,7 +2,6 @@ package com.dotc.nova.events;
 
 import java.util.List;
 
-import com.dotc.nova.EventLoop;
 
 public class EventLoopAwareEventEmitter extends EventEmitter {
 	private final EventLoop eventLoop;

@@ -1,11 +1,18 @@
-package com.dotc.nova;
-
-import com.dotc.nova.events.EventListener;
+package com.dotc.nova.events;
 
 class InvocationContext {
 	private Object event;
 	private EventListener eventListener;
 	private Object[] data;
+
+	public InvocationContext(Object event, EventListener eventListener, Object... data) {
+		this.event = event;
+		this.eventListener = eventListener;
+		this.data = data;
+	}
+
+	public InvocationContext() {
+	}
 
 	private void reset() {
 		this.event = null;

@@ -10,8 +10,8 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
-import com.dotc.nova.EventLoop;
 import com.dotc.nova.events.EventListener;
+import com.dotc.nova.events.EventLoop;
 
 @RunWith(MockitoJUnitRunner.class)
 public class ProcessTest {

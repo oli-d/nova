@@ -5,8 +5,8 @@ import java.util.concurrent.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.dotc.nova.EventLoop;
 import com.dotc.nova.events.EventListener;
+import com.dotc.nova.events.EventLoop;
 
 public class Timers {
 	private static final Logger LOGGER = LoggerFactory.getLogger(Timers.class);

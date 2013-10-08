@@ -1,4 +1,4 @@
-package com.dotc.nova;
+package com.dotc.nova.events;
 
 import com.lmax.disruptor.EventHandler;
 
@@ -8,4 +8,5 @@ class ProcessingEventHandler implements EventHandler<InvocationContext> {
 	public void onEvent(InvocationContext event, long sequence, boolean endOfBatch) throws Exception {
 		event.getEventListener().handle(event.getData());
 	}
+
 }

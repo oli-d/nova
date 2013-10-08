@@ -13,7 +13,6 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
-import com.dotc.nova.EventLoop;
 
 @RunWith(MockitoJUnitRunner.class)
 public class EventLoopAwareEventEmitterTest {

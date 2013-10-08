@@ -1,4 +1,4 @@
-package com.dotc.nova;
+package com.dotc.nova.events;
 
 import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.*;
@@ -10,8 +10,6 @@ import java.util.concurrent.TimeUnit;
 
 import org.junit.Before;
 import org.junit.Test;
-
-import com.dotc.nova.events.EventListener;
 
 public class EventLoopTest {
 	private EventLoop eventLoop;
@@ -60,7 +58,7 @@ public class EventLoopTest {
 		eventLoop.dispatch("Test", list, "Data");
 
 		try {
-			countDownLatch.await(1, TimeUnit.SECONDS);
+			countDownLatch.await(10000, TimeUnit.SECONDS);
 		} catch (InterruptedException e) {
 		}
 		assertThat(countDownLatch.getCount(), is(0l));
@@ -86,4 +84,5 @@ public class EventLoopTest {
 		assertThat(countDownLatch.getCount(), is(0l));
 	}
 
+	// FIXME: how can we test the QueueFullScenarios / Strategies?!?!?!
 }

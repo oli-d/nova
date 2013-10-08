@@ -11,8 +11,8 @@ import java.util.concurrent.TimeUnit;
 import org.apache.log4j.BasicConfigurator;
 import org.junit.Test;
 
-import com.dotc.nova.EventDispatchConfig;
-import com.dotc.nova.EventLoop;
+import com.dotc.nova.events.EventDispatchConfig;
+import com.dotc.nova.events.EventLoop;
 
 public class TimersMemLeakTest {
 	static {

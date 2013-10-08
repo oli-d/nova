@@ -131,4 +131,20 @@ public class FilesystemTest {
 		}
 	}
 
+	@Test
+	public void testAppendingToExistingFileDoesntDeleteExistingContent() throws Throwable {
+		try {
+			filesystem.writeFileSync("old loooong content\n", "bla.txt", false);
+			assertThat(filesystem.readFileSync("bla.txt"), is("old loooong content\n"));
+
+			filesystem.writeFileSync("new content", "bla.txt", true);
+			assertThat(filesystem.readFileSync("bla.txt"), is("old loooong content\nnew content"));
+		} finally {
+			File file = new File("bla.txt");
+			if (file.exists()) {
+				file.delete();
+			}
+		}
+	}
+
 }

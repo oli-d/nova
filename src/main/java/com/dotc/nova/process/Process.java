@@ -1,7 +1,7 @@
 package com.dotc.nova.process;
 
-import com.dotc.nova.EventLoop;
 import com.dotc.nova.events.EventListener;
+import com.dotc.nova.events.EventLoop;
 
 public class Process {
 	private final EventLoop eventLoop;
