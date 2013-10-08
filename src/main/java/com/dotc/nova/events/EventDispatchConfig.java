@@ -46,7 +46,7 @@ public class EventDispatchConfig {
 			return this;
 		}
 
-		public Builder withQueueFullStrategy(InsufficientCapacityStrategy queueFullStrategy) {
+		public Builder withInsufficientCapacityStrategy(InsufficientCapacityStrategy queueFullStrategy) {
 			this.queueFullStrategy = queueFullStrategy;
 			return this;
 		}
