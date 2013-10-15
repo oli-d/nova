@@ -13,6 +13,12 @@ public abstract class EventEmitter {
 	private final HashMap<Object, List<EventListener>> mapEventToHandler = new HashMap<Object, List<EventListener>>();
 	private final HashMap<Object, List<EventListener>> mapEventToOneOffHandlers = new HashMap<Object, List<EventListener>>();
 
+	private final boolean warnOnUnhandledEvents;
+
+	protected EventEmitter(boolean warnOnUnhandledEvents) {
+		this.warnOnUnhandledEvents = warnOnUnhandledEvents;
+	}
+
 	public void on(Object event, EventListener callback) {
 		addListener(event, callback);
 	}
@@ -115,6 +121,11 @@ public abstract class EventEmitter {
 		}
 		if (!listenerList.isEmpty()) {
 			dispatchEventAndDataToListeners(listenerList, event, data);
+		} else {
+			if (warnOnUnhandledEvents) {
+				LOGGER.warn("No listener registered for event " + event + ". Discarding dispatch with parameters " + Arrays.toString(data));
+			}
 		}
 	}
+
 }

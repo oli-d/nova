@@ -9,6 +9,10 @@ import org.slf4j.LoggerFactory;
 public class CurrentThreadEventEmitter extends EventEmitter {
 	private static final Logger LOGGER = LoggerFactory.getLogger(CurrentThreadEventEmitter.class);
 
+	public CurrentThreadEventEmitter(boolean warnOnUnhandledEvents) {
+		super(warnOnUnhandledEvents);
+	}
+
 	@Override
 	<EventType, ParameterType> void dispatchEventAndDataToListeners(List<EventListener> listenerList, EventType event, ParameterType... data) {
 		ParameterType[] dataToPass = data.length == 0 ? null : data;

@@ -240,6 +240,7 @@ public class EventEmitterTest {
 		private final EventEmitter delegate;
 
 		public MyEventEmitter(EventEmitter delegate) {
+			super(false);
 			this.delegate = delegate;
 		}
 

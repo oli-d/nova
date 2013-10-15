@@ -1,6 +1,7 @@
 package com.dotc.nova;
 
 import com.dotc.nova.events.*;
+import com.dotc.nova.events.EventDispatchConfig.DispatchThreadStrategy;
 import com.dotc.nova.filesystem.Filesystem;
 import com.dotc.nova.timers.Timers;
 
@@ -16,26 +17,20 @@ public class Nova {
 		eventLoop = new EventLoop(builder.eventDispatchConfig);
 
 		timers = new Timers(eventLoop);
-		if (builder.currentThreadEventEmitter) {
-			eventEmitter = new CurrentThreadEventEmitter();
+		if (builder.eventDispatchConfig.dispatchThreadStrategy == DispatchThreadStrategy.DISPATCH_IN_EMITTER_THREAD) {
+			eventEmitter = new CurrentThreadEventEmitter(builder.eventDispatchConfig.warnOnUnhandledEvent);
 		} else {
-			eventEmitter = new EventLoopAwareEventEmitter(eventLoop);
+			eventEmitter = new EventLoopAwareEventEmitter(eventLoop, builder.eventDispatchConfig.warnOnUnhandledEvent);
 		}
 		process = new com.dotc.nova.process.Process(eventLoop);
 		filesystem = new Filesystem(process);
 	}
 
 	public static class Builder {
-		private boolean currentThreadEventEmitter;
 		private EventDispatchConfig eventDispatchConfig;
 
 		public Builder withEventDispatchConfig(EventDispatchConfig eventDispatchConfig) {
 			this.eventDispatchConfig = eventDispatchConfig;
-			return this;
-		}
-
-		public Builder withCurrentThreadEventEmitter(boolean currentThreadEventEmitter) {
-			this.currentThreadEventEmitter = currentThreadEventEmitter;
 			return this;
 		}
 

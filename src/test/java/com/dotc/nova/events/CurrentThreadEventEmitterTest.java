@@ -10,7 +10,7 @@ public class CurrentThreadEventEmitterTest {
 
 	@Before
 	public void setup() {
-		eventEmitter = new CurrentThreadEventEmitter();
+		eventEmitter = new CurrentThreadEventEmitter(false);
 	}
 
 	@Test

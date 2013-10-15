@@ -4,8 +4,8 @@ import static org.junit.Assert.*;
 
 import org.junit.Test;
 
-import com.dotc.nova.events.CurrentThreadEventEmitter;
-import com.dotc.nova.events.EventLoopAwareEventEmitter;
+import com.dotc.nova.events.*;
+import com.dotc.nova.events.EventDispatchConfig.DispatchThreadStrategy;
 
 public class NovaBuilderTest {
 
@@ -17,13 +17,13 @@ public class NovaBuilderTest {
 
 	@Test
 	public void testBuildWithCurrentThreadEmitter() {
-		Nova nova = new Nova.Builder().withCurrentThreadEventEmitter(true).build();
+		Nova nova = new Nova.Builder().withEventDispatchConfig(new EventDispatchConfig.Builder().withDispatchThreadStrategy(DispatchThreadStrategy.DISPATCH_IN_EMITTER_THREAD).build()).build();
 		assertTrue(nova.eventEmitter instanceof CurrentThreadEventEmitter);
 	}
 
 	@Test
 	public void testBuildWithEventLoopEmitter() {
-		Nova nova = new Nova.Builder().withCurrentThreadEventEmitter(false).build();
+		Nova nova = new Nova.Builder().withEventDispatchConfig(new EventDispatchConfig.Builder().withDispatchThreadStrategy(DispatchThreadStrategy.DISPATCH_IN_SPECIFIC_THREAD).build()).build();
 		assertTrue(nova.eventEmitter instanceof EventLoopAwareEventEmitter);
 	}
 

@@ -8,12 +8,12 @@ import org.mockito.Mockito;
 import org.mockito.runners.MockitoJUnitRunner;
 
 @RunWith(MockitoJUnitRunner.class)
-public class BatchProcessingEventHandlerTest {
-	private BatchProcessingEventHandler sut;
+public class EventHandlerDroppingOutdatedEventsTest {
+	private EventHandlerDroppingOutdatedEvents sut;
 
 	@Before
 	public void setup() {
-		sut = new BatchProcessingEventHandler();
+		sut = new EventHandlerDroppingOutdatedEvents();
 	}
 
 	@Test

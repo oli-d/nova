@@ -7,8 +7,8 @@ import org.slf4j.LoggerFactory;
 
 import com.lmax.disruptor.EventHandler;
 
-class BatchProcessingEventHandler implements EventHandler<InvocationContext> {
-	private final static Logger LOGGER = LoggerFactory.getLogger(BatchProcessingEventHandler.class);
+class EventHandlerDroppingOutdatedEvents implements EventHandler<InvocationContext> {
+	private final static Logger LOGGER = LoggerFactory.getLogger(EventHandlerDroppingOutdatedEvents.class);
 
 	private static final int QUEUE_SIZE_WARNING_THRESHOLD = 1000;
 

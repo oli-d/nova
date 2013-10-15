@@ -13,7 +13,6 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
-
 @RunWith(MockitoJUnitRunner.class)
 public class EventLoopAwareEventEmitterTest {
 	@Mock
@@ -22,7 +21,7 @@ public class EventLoopAwareEventEmitterTest {
 
 	@Before
 	public void setup() {
-		eventEmitter = new EventLoopAwareEventEmitter(eventLoop);
+		eventEmitter = new EventLoopAwareEventEmitter(eventLoop, false);
 	}
 
 	@Test

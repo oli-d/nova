@@ -1,23 +1,42 @@
 package com.dotc.nova.events;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.*;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.dotc.nova.events.EventDispatchConfig.BatchProcessingStrategy;
 import com.dotc.nova.events.EventDispatchConfig.InsufficientCapacityStrategy;
+import com.dotc.nova.events.EventDispatchConfig.ProducerStrategy;
 import com.lmax.disruptor.*;
 import com.lmax.disruptor.dsl.Disruptor;
 import com.lmax.disruptor.dsl.ProducerType;
 
 public class EventLoop {
+	private static final Logger LOGGER = LoggerFactory.getLogger(EventLoop.class);
 
 	private final RingBuffer<InvocationContext> ringBuffer;
 	private final InsufficientCapacityStrategy insufficientCapacityStrategy;
+	private final Executor dispatchExecutor;
 	private final Executor dispatchLaterExecutor;
 
 	public EventLoop(EventDispatchConfig eventDispatchConfig) {
 		int eventBufferSize = com.lmax.disruptor.util.Util.ceilingNextPowerOfTwo(eventDispatchConfig.eventBufferSize);
 
-		this.insufficientCapacityStrategy = eventDispatchConfig.queueFullStrategy;
+		if (LOGGER.isDebugEnabled()) {
+			LOGGER.debug("Instantiating event loop, using the following configuration:");
+			LOGGER.debug("\tRingBuffer size:               " + eventBufferSize);
+			LOGGER.debug("\tDispatching thread strategy:   " + eventDispatchConfig.dispatchThreadStrategy);
+			LOGGER.debug("\tBatchProcessing strategy:      " + eventDispatchConfig.batchProcessingStrategy);
+			LOGGER.debug("\tProducer strategy:             " + eventDispatchConfig.producerStrategy);
+			LOGGER.debug("\tInsufficientCapacity strategy: " + eventDispatchConfig.insufficientCapacityStrategy);
+			LOGGER.debug("\tWait strategy:                 " + eventDispatchConfig.waitStrategy);
+			LOGGER.debug("\t# dispatch threads:            " + eventDispatchConfig.numberOfDispatchThreads);
+			LOGGER.debug("\twarn on unhandled events:      " + eventDispatchConfig.warnOnUnhandledEvent);
+		}
+		this.insufficientCapacityStrategy = eventDispatchConfig.insufficientCapacityStrategy;
 
 		WaitStrategy waitStrategy = null;
 		switch (eventDispatchConfig.waitStrategy) {
@@ -37,19 +56,26 @@ public class EventLoop {
 				throw new IllegalArgumentException("Unsupported wait stratehy " + eventDispatchConfig.waitStrategy);
 		}
 
-		ProducerType producerType = eventDispatchConfig.multipleProducers ? ProducerType.MULTI : ProducerType.SINGLE;
+		ProducerType producerType = eventDispatchConfig.producerStrategy == ProducerStrategy.MULTIPLE ? ProducerType.MULTI : ProducerType.SINGLE;
+
+		ThreadFactory dispatchThreadFactory = new MyDispatchThreadFactory();
+		dispatchExecutor = Executors.newFixedThreadPool(eventDispatchConfig.numberOfDispatchThreads, dispatchThreadFactory);
 
 		ThreadFactory dispatchLaterThreadFactory = new MyDispatchLaterThreadFactory();
 		dispatchLaterExecutor = Executors.newSingleThreadExecutor(dispatchLaterThreadFactory);
 
 		EventFactory<InvocationContext> eventFactory = new MyEventFactory();
-
-		Disruptor<InvocationContext> disruptor = new Disruptor<InvocationContext>(eventFactory, eventBufferSize, dispatchLaterExecutor, producerType, waitStrategy);
-		if (eventDispatchConfig.allowBatchProcessing) {
-			disruptor.handleEventsWith(new BatchProcessingEventHandler());
-		} else {
-			disruptor.handleEventsWith(new ProcessingEventHandler());
+		EventHandler[] eventHandlers = new EventHandler[eventDispatchConfig.numberOfDispatchThreads];
+		for (int i = 0; i < eventDispatchConfig.numberOfDispatchThreads; i++) {
+			if (eventDispatchConfig.batchProcessingStrategy == BatchProcessingStrategy.DROP_OUTDATED) {
+				eventHandlers[i] = new EventHandlerDroppingOutdatedEvents();
+			} else {
+				eventHandlers[i] = new DefaultEventHandler();
+			}
 		}
+		Disruptor<InvocationContext> disruptor = new Disruptor<InvocationContext>(eventFactory, eventBufferSize, dispatchExecutor, producerType, waitStrategy);
+		disruptor.handleEventsWith(eventHandlers);
+		disruptor.handleExceptionsWith(new DefaultExceptionHandler());
 		ringBuffer = disruptor.start();
 	}
 
@@ -78,7 +104,7 @@ public class EventLoop {
 			ic.setEventListenerInfo(event, listener, data);
 			ringBuffer.publish(nextSequenceNumber);
 		} catch (com.lmax.disruptor.InsufficientCapacityException e) {
-			handleRingBufferFull(null, listener, data);
+			handleRingBufferFull(event, listener, data);
 		}
 	}
 
@@ -89,11 +115,24 @@ public class EventLoop {
 	private <EventType, DataType> void handleRingBufferFull(EventType event, EventListener listener, DataType... data) {
 		switch (insufficientCapacityStrategy) {
 			case DROP_EVENTS:
+				if (LOGGER.isTraceEnabled()) {
+					LOGGER.trace("RingBuffer full. Dropping event " + event + " with parameters " + Arrays.toString(data));
+				}
 				return;
 			case THROW_EXCEPTION:
 				throw new InsufficientCapacityException();
 			case QUEUE_EVENTS:
 				dispatchLaterExecutor.execute(new MyDispatchLaterRunnable<EventType, DataType>(event, listener, data));
+				if (LOGGER.isTraceEnabled()) {
+					LOGGER.trace("RingBuffer full. Queued event " + event + " for later processing");
+				}
+				return;
+			case WAIT_UNTIL_SPACE_AVAILABLE:
+				long nextSequenceNumber = ringBuffer.next();
+				InvocationContext ic = ringBuffer.get(nextSequenceNumber);
+				ic.setEventListenerInfo(event, listener, data);
+				ringBuffer.publish(nextSequenceNumber);
+				return;
 		}
 	}
 
@@ -117,10 +156,21 @@ public class EventLoop {
 		}
 	}
 
+	private final class MyDispatchThreadFactory implements ThreadFactory {
+		private int numInstances = 0;
+
+		@Override
+		public synchronized Thread newThread(Runnable r) {
+			Thread t = new Thread(r, "EventLoopDispatcher" + (numInstances++));
+			t.setDaemon(true);
+			return t;
+		}
+	}
+
 	private final class MyDispatchLaterThreadFactory implements ThreadFactory {
 		@Override
 		public Thread newThread(Runnable r) {
-			Thread t = new Thread(r, "EventLoopDispatcher");
+			Thread t = new Thread(r, "EventLoopDispatchLater");
 			t.setDaemon(true);
 			return t;
 		}

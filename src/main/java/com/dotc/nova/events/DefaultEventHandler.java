@@ -2,7 +2,7 @@ package com.dotc.nova.events;
 
 import com.lmax.disruptor.EventHandler;
 
-class ProcessingEventHandler implements EventHandler<InvocationContext> {
+class DefaultEventHandler implements EventHandler<InvocationContext> {
 
 	@Override
 	public void onEvent(InvocationContext event, long sequence, boolean endOfBatch) throws Exception {
