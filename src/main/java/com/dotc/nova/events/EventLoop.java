@@ -74,8 +74,8 @@ public class EventLoop {
 			}
 		}
 		Disruptor<InvocationContext> disruptor = new Disruptor<InvocationContext>(eventFactory, eventBufferSize, dispatchExecutor, producerType, waitStrategy);
-		disruptor.handleEventsWith(eventHandlers);
 		disruptor.handleExceptionsWith(new DefaultExceptionHandler());
+		disruptor.handleEventsWith(eventHandlers);
 		ringBuffer = disruptor.start();
 	}
 

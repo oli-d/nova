@@ -1,5 +1,7 @@
 package com.dotc.nova.events;
 
+import java.util.Arrays;
+
 class InvocationContext {
 	private Object event;
 	private EventListener eventListener;
@@ -37,6 +39,11 @@ class InvocationContext {
 		this.event = event;
 		this.eventListener = listener;
 		this.data = data;
+	}
+
+	@Override
+	public String toString() {
+		return "InvocationContext [event=" + event + ", eventListener=" + eventListener + ", data=" + Arrays.toString(data) + "]";
 	}
 
 }
