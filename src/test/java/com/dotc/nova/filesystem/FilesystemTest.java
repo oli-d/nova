@@ -1,13 +1,21 @@
 package com.dotc.nova.filesystem;
 
-import static org.hamcrest.Matchers.*;
-import static org.junit.Assert.*;
-import static org.mockito.Matchers.*;
-import static org.mockito.Mockito.*;
+import static org.hamcrest.Matchers.is;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Matchers.anyObject;
+import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.timeout;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
+import static org.mockito.Mockito.verifyZeroInteractions;
 
 import java.io.File;
 import java.nio.file.NoSuchFileException;
 
+import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -24,6 +32,17 @@ public class FilesystemTest {
 	@Before
 	public void setup() {
 		filesystem = new Filesystem(process);
+	}
+
+	@AfterClass
+	public static void removeTestFiles() throws Throwable {
+		String[] files = { "bla.txt", "isntThere.txt", "src/test/resources/isntThere.txt" };
+		for (String s : files) {
+			File f = new File(s);
+			if (f.exists()) {
+				f.deleteOnExit();
+			}
+		}
 	}
 
 	@Test
@@ -67,22 +86,15 @@ public class FilesystemTest {
 
 	@Test(expected = NoSuchFileException.class)
 	public void testReadFileSyncWithUnknownPathThrowsException() throws Throwable {
-		filesystem.readFileSync("src/test/resources/isntThere.txt");
+		filesystem.readFileSync("src/test/resources/" + System.currentTimeMillis() + ".txt");
 		verifyZeroInteractions(process);
 	}
 
 	@Test
 	public void testWriteFileSyncWithUnknownPathCreatesFile() throws Throwable {
-		try {
-			filesystem.writeFileSync("content", "src/test/resources/isntThere.txt", true);
-			assertTrue(new File("src/test/resources/isntThere.txt").exists());
-			verifyZeroInteractions(process);
-		} finally {
-			File file = new File("src/test/resources/isntThere.txt");
-			if (file.exists()) {
-				file.delete();
-			}
-		}
+		filesystem.writeFileSync("content", "src/test/resources/isntThere.txt", true);
+		assertTrue(new File("src/test/resources/isntThere.txt").exists());
+		verifyZeroInteractions(process);
 	}
 
 	@Test
@@ -117,34 +129,20 @@ public class FilesystemTest {
 
 	@Test
 	public void testOverridingExistingFileDoesntLeaveAnyOldContent() throws Throwable {
-		try {
-			filesystem.writeFileSync("old loooong content", "bla.txt", false);
-			assertThat(filesystem.readFileSync("bla.txt"), is("old loooong content"));
+		filesystem.writeFileSync("old loooong content", "bla.txt", false);
+		assertThat(filesystem.readFileSync("bla.txt"), is("old loooong content"));
 
-			filesystem.writeFileSync("new content", "bla.txt", false);
-			assertThat(filesystem.readFileSync("bla.txt"), is("new content"));
-		} finally {
-			File file = new File("bla.txt");
-			if (file.exists()) {
-				file.delete();
-			}
-		}
+		filesystem.writeFileSync("new content", "bla.txt", false);
+		assertThat(filesystem.readFileSync("bla.txt"), is("new content"));
 	}
 
 	@Test
 	public void testAppendingToExistingFileDoesntDeleteExistingContent() throws Throwable {
-		try {
-			filesystem.writeFileSync("old loooong content\n", "bla.txt", false);
-			assertThat(filesystem.readFileSync("bla.txt"), is("old loooong content\n"));
+		filesystem.writeFileSync("old loooong content\n", "bla.txt", false);
+		assertThat(filesystem.readFileSync("bla.txt"), is("old loooong content\n"));
 
-			filesystem.writeFileSync("new content", "bla.txt", true);
-			assertThat(filesystem.readFileSync("bla.txt"), is("old loooong content\nnew content"));
-		} finally {
-			File file = new File("bla.txt");
-			if (file.exists()) {
-				file.delete();
-			}
-		}
+		filesystem.writeFileSync("new content", "bla.txt", true);
+		assertThat(filesystem.readFileSync("bla.txt"), is("old loooong content\nnew content"));
 	}
 
 }

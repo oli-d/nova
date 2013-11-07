@@ -16,7 +16,7 @@ class InvocationContext {
 	public InvocationContext() {
 	}
 
-	private void reset() {
+	void reset() {
 		this.event = null;
 		this.eventListener = null;
 		this.data = null;

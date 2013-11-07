@@ -2,15 +2,26 @@ package com.dotc.nova.events;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.*;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.dotc.nova.events.EventDispatchConfig.BatchProcessingStrategy;
 import com.dotc.nova.events.EventDispatchConfig.InsufficientCapacityStrategy;
+import com.dotc.nova.events.EventDispatchConfig.MultiConsumerDispatchStrategy;
 import com.dotc.nova.events.EventDispatchConfig.ProducerStrategy;
-import com.lmax.disruptor.*;
+import com.lmax.disruptor.BlockingWaitStrategy;
+import com.lmax.disruptor.BusySpinWaitStrategy;
+import com.lmax.disruptor.EventFactory;
+import com.lmax.disruptor.EventHandler;
+import com.lmax.disruptor.RingBuffer;
+import com.lmax.disruptor.SleepingWaitStrategy;
+import com.lmax.disruptor.WaitStrategy;
+import com.lmax.disruptor.WorkHandler;
+import com.lmax.disruptor.YieldingWaitStrategy;
 import com.lmax.disruptor.dsl.Disruptor;
 import com.lmax.disruptor.dsl.ProducerType;
 
@@ -27,14 +38,17 @@ public class EventLoop {
 
 		if (LOGGER.isDebugEnabled()) {
 			LOGGER.debug("Instantiating event loop, using the following configuration:");
-			LOGGER.debug("\tRingBuffer size:               " + eventBufferSize);
-			LOGGER.debug("\tDispatching thread strategy:   " + eventDispatchConfig.dispatchThreadStrategy);
-			LOGGER.debug("\tBatchProcessing strategy:      " + eventDispatchConfig.batchProcessingStrategy);
-			LOGGER.debug("\tProducer strategy:             " + eventDispatchConfig.producerStrategy);
-			LOGGER.debug("\tInsufficientCapacity strategy: " + eventDispatchConfig.insufficientCapacityStrategy);
-			LOGGER.debug("\tWait strategy:                 " + eventDispatchConfig.waitStrategy);
-			LOGGER.debug("\t# dispatch threads:            " + eventDispatchConfig.numberOfDispatchThreads);
-			LOGGER.debug("\twarn on unhandled events:      " + eventDispatchConfig.warnOnUnhandledEvent);
+			LOGGER.debug("\tRingBuffer size:                    " + eventBufferSize);
+			LOGGER.debug("\tDispatching thread strategy:        " + eventDispatchConfig.dispatchThreadStrategy);
+			LOGGER.debug("\tBatchProcessing strategy:           " + eventDispatchConfig.batchProcessingStrategy);
+			LOGGER.debug("\tProducer strategy:                  " + eventDispatchConfig.producerStrategy);
+			LOGGER.debug("\tInsufficientCapacity strategy:      " + eventDispatchConfig.insufficientCapacityStrategy);
+			LOGGER.debug("\tWait strategy:                      " + eventDispatchConfig.waitStrategy);
+			LOGGER.debug("\t# consumers:                        " + eventDispatchConfig.numberOfConsumers);
+			if (eventDispatchConfig.numberOfConsumers > 1) {
+				LOGGER.debug("\t# multi consumer dispatch strategy: " + eventDispatchConfig.multiConsumerDispatchStrategy);
+			}
+			LOGGER.debug("\twarn on unhandled events:           " + eventDispatchConfig.warnOnUnhandledEvent);
 		}
 		this.insufficientCapacityStrategy = eventDispatchConfig.insufficientCapacityStrategy;
 
@@ -53,29 +67,44 @@ public class EventLoop {
 				waitStrategy = new YieldingWaitStrategy();
 				break;
 			default:
-				throw new IllegalArgumentException("Unsupported wait stratehy " + eventDispatchConfig.waitStrategy);
+				throw new IllegalArgumentException("Unsupported wait strategy " + eventDispatchConfig.waitStrategy);
 		}
 
-		ProducerType producerType = eventDispatchConfig.producerStrategy == ProducerStrategy.MULTIPLE ? ProducerType.MULTI : ProducerType.SINGLE;
+		ProducerType producerType = eventDispatchConfig.producerStrategy == ProducerStrategy.MULTIPLE ? ProducerType.MULTI
+				: ProducerType.SINGLE;
 
 		ThreadFactory dispatchThreadFactory = new MyDispatchThreadFactory();
-		dispatchExecutor = Executors.newFixedThreadPool(eventDispatchConfig.numberOfDispatchThreads, dispatchThreadFactory);
+		dispatchExecutor = Executors.newFixedThreadPool(eventDispatchConfig.numberOfConsumers, dispatchThreadFactory);
 
 		ThreadFactory dispatchLaterThreadFactory = new MyDispatchLaterThreadFactory();
 		dispatchLaterExecutor = Executors.newSingleThreadExecutor(dispatchLaterThreadFactory);
 
 		EventFactory<InvocationContext> eventFactory = new MyEventFactory();
-		EventHandler[] eventHandlers = new EventHandler[eventDispatchConfig.numberOfDispatchThreads];
-		for (int i = 0; i < eventDispatchConfig.numberOfDispatchThreads; i++) {
-			if (eventDispatchConfig.batchProcessingStrategy == BatchProcessingStrategy.DROP_OUTDATED) {
-				eventHandlers[i] = new EventHandlerDroppingOutdatedEvents();
-			} else {
-				eventHandlers[i] = new DefaultEventHandler();
-			}
-		}
-		Disruptor<InvocationContext> disruptor = new Disruptor<InvocationContext>(eventFactory, eventBufferSize, dispatchExecutor, producerType, waitStrategy);
+
+		Disruptor<InvocationContext> disruptor = new Disruptor<InvocationContext>(eventFactory, eventBufferSize, dispatchExecutor,
+				producerType, waitStrategy);
 		disruptor.handleExceptionsWith(new DefaultExceptionHandler());
-		disruptor.handleEventsWith(eventHandlers);
+		if (eventDispatchConfig.numberOfConsumers == 1) {
+			EventHandler eventHandler;
+			if (eventDispatchConfig.batchProcessingStrategy == BatchProcessingStrategy.DROP_OUTDATED) {
+				eventHandler = new EventHandlerDroppingOutdatedEvents();
+			} else {
+				eventHandler = new SingleConsumerEventHandler();
+			}
+			disruptor.handleEventsWith(eventHandler);
+		} else if (eventDispatchConfig.multiConsumerDispatchStrategy == MultiConsumerDispatchStrategy.DISPATCH_EVENTS_TO_ALL_CONSUMERS) {
+			EventHandler[] eventHandlers = new EventHandler[eventDispatchConfig.numberOfConsumers];
+			for (int i = 0; i < eventHandlers.length; i++) {
+				eventHandlers[i] = new MultiConsumerEventHandler();
+			}
+			disruptor.handleEventsWith(eventHandlers);
+		} else {
+			WorkHandler[] workHandlers = new WorkHandler[eventDispatchConfig.numberOfConsumers];
+			for (int i = 0; i < workHandlers.length; i++) {
+				workHandlers[i] = new DefaultWorkHandler();
+			}
+			disruptor.handleEventsWithWorkerPool(workHandlers);
+		}
 		ringBuffer = disruptor.start();
 	}
 
@@ -184,7 +213,6 @@ public class EventLoop {
 	}
 
 	public static class InsufficientCapacityException extends RuntimeException {
-
 		public InsufficientCapacityException() {
 		}
 
@@ -203,7 +231,6 @@ public class EventLoop {
 		public InsufficientCapacityException(Throwable cause) {
 			super(cause);
 		}
-
 	}
 
 }

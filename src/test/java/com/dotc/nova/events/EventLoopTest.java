@@ -1,19 +1,26 @@
 package com.dotc.nova.events;
 
-import static org.hamcrest.Matchers.*;
-import static org.junit.Assert.*;
+import static org.hamcrest.Matchers.is;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.concurrent.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.log4j.BasicConfigurator;
-import org.junit.*;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Test;
 
 import com.dotc.nova.events.EventDispatchConfig.BatchProcessingStrategy;
 import com.dotc.nova.events.EventDispatchConfig.DispatchThreadStrategy;
 import com.dotc.nova.events.EventDispatchConfig.InsufficientCapacityStrategy;
+import com.dotc.nova.events.EventDispatchConfig.MultiConsumerDispatchStrategy;
 import com.dotc.nova.events.wrappers.NoParameterEventListener;
 
 public class EventLoopTest {
@@ -30,6 +37,7 @@ public class EventLoopTest {
 	}
 
 	private EventListener<String>[] createListeners(final CountDownLatch countDownLatch) {
+		@SuppressWarnings("unchecked")
 		EventListener<String>[] listenersArray = new EventListener[(int) countDownLatch.getCount()];
 		for (int i = 0; i < listenersArray.length; i++) {
 			listenersArray[i] = new EventListener<String>() {
@@ -95,12 +103,53 @@ public class EventLoopTest {
 	}
 
 	@Test
-	public void ensureNumberOfThreadsAreSpawnedAccordingToSetting() {
+	public void ensureNumberOfConsumersAreInstantiatedAccordingToSettingDispatchingEventsToAllConsumers() {
+		int numberOfConsumers = 7;
+		int numberOfEvents = 100000;
+
+		eventLoop = new EventLoop(new EventDispatchConfig.Builder().withEventBufferSize(numberOfEvents)
+				.withDispatchThreadStrategy(DispatchThreadStrategy.DISPATCH_IN_SPECIFIC_THREAD)
+				.withMultiConsumerDispatchStrategy(MultiConsumerDispatchStrategy.DISPATCH_EVENTS_TO_ALL_CONSUMERS)
+				.withNumberOfConsumers(numberOfConsumers).build());
+
+		final CountDownLatch latch = new CountDownLatch(numberOfConsumers);
+		final ConcurrentHashMap<Thread, Thread> threads = new ConcurrentHashMap<>();
+		NoParameterEventListener threadDetectingListener = new NoParameterEventListener() {
+			@Override
+			public void handle() {
+				threads.put(Thread.currentThread(), Thread.currentThread());
+			}
+		};
+		NoParameterEventListener endListener = new NoParameterEventListener() {
+			@Override
+			public void handle() {
+				latch.countDown();
+			}
+		};
+
+		for (int i = 0; i < numberOfEvents; i++) {
+			eventLoop.dispatch("tick", threadDetectingListener);
+		}
+		eventLoop.dispatch("end", endListener);
+
+		try {
+			latch.await();
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+
+		org.junit.Assert.assertEquals(numberOfConsumers, threads.size());
+	}
+
+	@Test
+	public void ensureNumberOfConsumersAreInstantiatedAccordingToSettingDispatchingEventsToOneConsumer() {
 		int numberOfThreads = 7;
 		int numberOfEvents = 100000;
 
-		eventLoop = new EventLoop(new EventDispatchConfig.Builder().withEventBufferSize(numberOfEvents).withDispatchThreadStrategy(DispatchThreadStrategy.DISPATCH_IN_SPECIFIC_THREAD)
-				.withNumberOfDispatchThreads(numberOfThreads).build());
+		eventLoop = new EventLoop(new EventDispatchConfig.Builder().withEventBufferSize(numberOfEvents)
+				.withDispatchThreadStrategy(DispatchThreadStrategy.DISPATCH_IN_SPECIFIC_THREAD)
+				.withMultiConsumerDispatchStrategy(MultiConsumerDispatchStrategy.DISPATCH_EVENTS_TO_ONE_CONSUMER)
+				.withNumberOfConsumers(numberOfThreads).build());
 
 		final CountDownLatch latch = new CountDownLatch(1);
 		final ConcurrentHashMap<Thread, Thread> threads = new ConcurrentHashMap<>();
@@ -133,7 +182,8 @@ public class EventLoopTest {
 
 	@Test
 	public void testEventsAreDroppedIfQueueIsFullAndStrategySaysSo() {
-		eventLoop = new EventLoop(new EventDispatchConfig.Builder().withDispatchThreadStrategy(DispatchThreadStrategy.DISPATCH_IN_SPECIFIC_THREAD)
+		eventLoop = new EventLoop(new EventDispatchConfig.Builder()
+				.withDispatchThreadStrategy(DispatchThreadStrategy.DISPATCH_IN_SPECIFIC_THREAD)
 				.withInsufficientCapacityStrategy(InsufficientCapacityStrategy.DROP_EVENTS).withEventBufferSize(5).build());
 		int numEvents = 1000000;
 		final int[] numEventsProcessed = new int[1];
@@ -159,7 +209,8 @@ public class EventLoopTest {
 
 	@Test
 	public void testEventsAreQueuedInMemeoryIfQueueIsFullAndStrategySaysSo() {
-		eventLoop = new EventLoop(new EventDispatchConfig.Builder().withDispatchThreadStrategy(DispatchThreadStrategy.DISPATCH_IN_SPECIFIC_THREAD)
+		eventLoop = new EventLoop(new EventDispatchConfig.Builder()
+				.withDispatchThreadStrategy(DispatchThreadStrategy.DISPATCH_IN_SPECIFIC_THREAD)
 				.withInsufficientCapacityStrategy(InsufficientCapacityStrategy.QUEUE_EVENTS).withEventBufferSize(1).build());
 		int numEvents = 3;
 		final CountDownLatch latch = new CountDownLatch(numEvents);
@@ -190,7 +241,8 @@ public class EventLoopTest {
 	@Test
 	public void testOutdatedEventsAreDroppedIfQueueIsFullAndStrategySaysSo() {
 		int numEvents = 1000000;
-		eventLoop = new EventLoop(new EventDispatchConfig.Builder().withDispatchThreadStrategy(DispatchThreadStrategy.DISPATCH_IN_SPECIFIC_THREAD)
+		eventLoop = new EventLoop(new EventDispatchConfig.Builder()
+				.withDispatchThreadStrategy(DispatchThreadStrategy.DISPATCH_IN_SPECIFIC_THREAD)
 				.withBatchProcessingStrategy(BatchProcessingStrategy.DROP_OUTDATED).withEventBufferSize(numEvents).build());
 		final int[] numEventsProcessed = new int[1];
 
@@ -216,8 +268,10 @@ public class EventLoopTest {
 	@Test
 	public void testNoDispatchingUntilSpaceAvailableIfQueueIsFullAndStrategySaysSo() {
 		int eventBufferSize = 4;
-		eventLoop = new EventLoop(new EventDispatchConfig.Builder().withDispatchThreadStrategy(DispatchThreadStrategy.DISPATCH_IN_SPECIFIC_THREAD).withNumberOfDispatchThreads(eventBufferSize)
-				.withInsufficientCapacityStrategy(InsufficientCapacityStrategy.WAIT_UNTIL_SPACE_AVAILABLE).withEventBufferSize(eventBufferSize).build());
+		eventLoop = new EventLoop(new EventDispatchConfig.Builder()
+				.withDispatchThreadStrategy(DispatchThreadStrategy.DISPATCH_IN_SPECIFIC_THREAD).withNumberOfConsumers(eventBufferSize)
+				.withInsufficientCapacityStrategy(InsufficientCapacityStrategy.WAIT_UNTIL_SPACE_AVAILABLE)
+				.withEventBufferSize(eventBufferSize).build());
 		final int numEvents = 100;
 		final CountDownLatch initialBlockingLatch = new CountDownLatch(1);
 		final AtomicInteger emitCountingInteger = new AtomicInteger();
