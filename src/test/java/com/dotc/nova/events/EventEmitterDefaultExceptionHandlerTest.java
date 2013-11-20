@@ -17,8 +17,8 @@ public class EventEmitterDefaultExceptionHandlerTest {
 
 	@Before
 	public void setup() {
-		EventDispatchConfig edc = new EventDispatchConfig.Builder().withDispatchThreadStrategy(DispatchThreadStrategy.DISPATCH_IN_SPECIFIC_THREAD).build();
-		eventEmitter = new Nova.Builder().withEventDispatchConfig(edc).build().eventEmitter;
+		EventDispatchConfig edc = new EventDispatchConfig.Builder().setDispatchThreadStrategy(DispatchThreadStrategy.DISPATCH_IN_SPECIFIC_THREAD).build();
+		eventEmitter = new Nova.Builder().setEventDispatchConfig(edc).build().eventEmitter;
 	}
 
 	@Test

@@ -17,13 +17,13 @@ public class NovaBuilderTest {
 
 	@Test
 	public void testBuildWithCurrentThreadEmitter() {
-		Nova nova = new Nova.Builder().withEventDispatchConfig(new EventDispatchConfig.Builder().withDispatchThreadStrategy(DispatchThreadStrategy.DISPATCH_IN_EMITTER_THREAD).build()).build();
+		Nova nova = new Nova.Builder().setEventDispatchConfig(new EventDispatchConfig.Builder().setDispatchThreadStrategy(DispatchThreadStrategy.DISPATCH_IN_EMITTER_THREAD).build()).build();
 		assertTrue(nova.eventEmitter instanceof CurrentThreadEventEmitter);
 	}
 
 	@Test
 	public void testBuildWithEventLoopEmitter() {
-		Nova nova = new Nova.Builder().withEventDispatchConfig(new EventDispatchConfig.Builder().withDispatchThreadStrategy(DispatchThreadStrategy.DISPATCH_IN_SPECIFIC_THREAD).build()).build();
+		Nova nova = new Nova.Builder().setEventDispatchConfig(new EventDispatchConfig.Builder().setDispatchThreadStrategy(DispatchThreadStrategy.DISPATCH_IN_SPECIFIC_THREAD).build()).build();
 		assertTrue(nova.eventEmitter instanceof EventLoopAwareEventEmitter);
 	}
 

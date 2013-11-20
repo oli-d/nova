@@ -1,6 +1,8 @@
 package com.dotc.nova.events;
 
-public class EventDispatchConfig {
+import java.beans.ConstructorProperties;
+
+public class CopyOfEventDispatchConfig {
 	public static enum WaitStrategy {
 		MIN_LATENCY, MIN_CPU_USAGE, LOW_CPU_DEFAULT_LATENCY, LOW_LATENCY_DEFAULT_CPU
 	};
@@ -35,8 +37,7 @@ public class EventDispatchConfig {
 	public final MultiConsumerDispatchStrategy multiConsumerDispatchStrategy;
 	public final boolean warnOnUnhandledEvent;
 
-	public EventDispatchConfig(Builder builder) {
-		builder.validate();
+	public CopyOfEventDispatchConfig(Builder builder) {
 		this.eventBufferSize = builder.eventBufferSize;
 		this.waitStrategy = builder.waitStrategy;
 		this.producerStrategy = builder.producerStrategy;
@@ -48,7 +49,6 @@ public class EventDispatchConfig {
 		this.warnOnUnhandledEvent = builder.warnOnUnhandledEvent;
 	}
 
-	// @Configurable
 	public static class Builder {
 		private WaitStrategy waitStrategy = WaitStrategy.MIN_CPU_USAGE;
 		private int eventBufferSize = 1000;
@@ -60,58 +60,75 @@ public class EventDispatchConfig {
 		private MultiConsumerDispatchStrategy multiConsumerDispatchStrategy = MultiConsumerDispatchStrategy.DISPATCH_EVENTS_TO_ONE_CONSUMER;
 		private boolean warnOnUnhandledEvent;
 
+		@ConstructorProperties({ "eventBufferSize", "waitStrategy", "producerStrategy", "dispatchThreadStrategy", "insufficientCapacityStrategy", "numberOfConsumers", "multiConsumerDispatchStrategy",
+				"batchProcessingStrategy", "warnOnUnhandledEvent" })
+		public Builder(int eventBufferSize, WaitStrategy waitStrategy, ProducerStrategy producerStrategy, DispatchThreadStrategy dispatchThreadStrategy,
+				InsufficientCapacityStrategy insufficientCapacityStrategy, int numberOfConsumers, MultiConsumerDispatchStrategy multiConsumerDispatchStrategy,
+				BatchProcessingStrategy batchProcessingStrategy, boolean warnOnUnhandledEvent) {
+			this.eventBufferSize = eventBufferSize;
+			this.waitStrategy = waitStrategy;
+			this.producerStrategy = producerStrategy;
+			this.dispatchThreadStrategy = dispatchThreadStrategy;
+			this.insufficientCapacityStrategy = insufficientCapacityStrategy;
+			this.numberOfConsumers = numberOfConsumers;
+			this.multiConsumerDispatchStrategy = multiConsumerDispatchStrategy;
+			this.batchProcessingStrategy = batchProcessingStrategy;
+			this.warnOnUnhandledEvent = warnOnUnhandledEvent;
+			validate();
+		}
+
 		public Builder() {
 		}
 
-		public Builder setEventBufferSize(int eventBufferSize) {
+		public Builder withEventBufferSize(int eventBufferSize) {
 			this.eventBufferSize = com.lmax.disruptor.util.Util.ceilingNextPowerOfTwo(eventBufferSize);
 			return this;
 		}
 
-		public Builder setProducerStrategy(ProducerStrategy producerStrategy) {
+		public Builder withProducerStrategy(ProducerStrategy producerStrategy) {
 			this.producerStrategy = producerStrategy;
 			return this;
 		}
 
-		public Builder setWaitStrategy(WaitStrategy waitStrategy) {
+		public Builder withWaitStrategy(WaitStrategy waitStrategy) {
 			this.waitStrategy = waitStrategy;
 			return this;
 		}
 
-		public Builder setInsufficientCapacityStrategy(InsufficientCapacityStrategy queueFullStrategy) {
+		public Builder withInsufficientCapacityStrategy(InsufficientCapacityStrategy queueFullStrategy) {
 			this.insufficientCapacityStrategy = queueFullStrategy;
 			return this;
 		}
 
-		public Builder setBatchProcessingStrategy(BatchProcessingStrategy batchProcessingStrategy) {
+		public Builder withBatchProcessingStrategy(BatchProcessingStrategy batchProcessingStrategy) {
 			this.batchProcessingStrategy = batchProcessingStrategy;
 			return this;
 		}
 
-		public Builder setNumberOfConsumers(int numberOfConsumers) {
+		public Builder withNumberOfConsumers(int numberOfConsumers) {
 			this.numberOfConsumers = numberOfConsumers;
-			if (numberOfConsumers <= 0) {
-				this.numberOfConsumers = 1;
-			}
 			return this;
 		}
 
-		public Builder setMultiConsumerDispatchStrategy(MultiConsumerDispatchStrategy multiConsumerDispatchStrategy) {
+		public Builder withMultiConsumerDispatchStrategy(MultiConsumerDispatchStrategy multiConsumerDispatchStrategy) {
 			this.multiConsumerDispatchStrategy = multiConsumerDispatchStrategy;
 			return this;
 		}
 
-		public Builder setDispatchThreadStrategy(DispatchThreadStrategy dispatchThreadStrategy) {
+		public Builder withDispatchThreadStrategy(DispatchThreadStrategy dispatchThreadStrategy) {
 			this.dispatchThreadStrategy = dispatchThreadStrategy;
 			return this;
 		}
 
-		public Builder setWarnOnUnhandledEvent(boolean warnOnUnhandledEvent) {
+		public Builder withWarnOnUnhandledEvent(boolean warnOnUnhandledEvent) {
 			this.warnOnUnhandledEvent = warnOnUnhandledEvent;
 			return this;
 		}
 
-		private void validate() {
+		public void validate() {
+			if (numberOfConsumers <= 0) {
+				numberOfConsumers = 1;
+			}
 			if (numberOfConsumers > 1 && dispatchThreadStrategy == DispatchThreadStrategy.DISPATCH_IN_EMITTER_THREAD) {
 				throw new IllegalArgumentException("DISPATCH_IN_EMITTER_THREAD strategy cannot be used with multiple consumers");
 			}
@@ -120,9 +137,9 @@ public class EventDispatchConfig {
 			}
 		}
 
-		public EventDispatchConfig build() {
+		public CopyOfEventDispatchConfig build() {
 			validate();
-			return new EventDispatchConfig(this);
+			return new CopyOfEventDispatchConfig(this);
 		}
 	}
 }

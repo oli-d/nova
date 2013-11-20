@@ -107,10 +107,10 @@ public class EventLoopTest {
 		int numberOfConsumers = 7;
 		int numberOfEvents = 100000;
 
-		eventLoop = new EventLoop(new EventDispatchConfig.Builder().withEventBufferSize(numberOfEvents)
-				.withDispatchThreadStrategy(DispatchThreadStrategy.DISPATCH_IN_SPECIFIC_THREAD)
-				.withMultiConsumerDispatchStrategy(MultiConsumerDispatchStrategy.DISPATCH_EVENTS_TO_ALL_CONSUMERS)
-				.withNumberOfConsumers(numberOfConsumers).build());
+		eventLoop = new EventLoop(new EventDispatchConfig.Builder().setEventBufferSize(numberOfEvents)
+				.setDispatchThreadStrategy(DispatchThreadStrategy.DISPATCH_IN_SPECIFIC_THREAD)
+				.setMultiConsumerDispatchStrategy(MultiConsumerDispatchStrategy.DISPATCH_EVENTS_TO_ALL_CONSUMERS)
+				.setNumberOfConsumers(numberOfConsumers).build());
 
 		final CountDownLatch latch = new CountDownLatch(numberOfConsumers);
 		final ConcurrentHashMap<Thread, Thread> threads = new ConcurrentHashMap<>();
@@ -146,10 +146,10 @@ public class EventLoopTest {
 		int numberOfThreads = 7;
 		int numberOfEvents = 100000;
 
-		eventLoop = new EventLoop(new EventDispatchConfig.Builder().withEventBufferSize(numberOfEvents)
-				.withDispatchThreadStrategy(DispatchThreadStrategy.DISPATCH_IN_SPECIFIC_THREAD)
-				.withMultiConsumerDispatchStrategy(MultiConsumerDispatchStrategy.DISPATCH_EVENTS_TO_ONE_CONSUMER)
-				.withNumberOfConsumers(numberOfThreads).build());
+		eventLoop = new EventLoop(new EventDispatchConfig.Builder().setEventBufferSize(numberOfEvents)
+				.setDispatchThreadStrategy(DispatchThreadStrategy.DISPATCH_IN_SPECIFIC_THREAD)
+				.setMultiConsumerDispatchStrategy(MultiConsumerDispatchStrategy.DISPATCH_EVENTS_TO_ONE_CONSUMER)
+				.setNumberOfConsumers(numberOfThreads).build());
 
 		final CountDownLatch latch = new CountDownLatch(1);
 		final ConcurrentHashMap<Thread, Thread> threads = new ConcurrentHashMap<>();
@@ -183,8 +183,8 @@ public class EventLoopTest {
 	@Test
 	public void testEventsAreDroppedIfQueueIsFullAndStrategySaysSo() {
 		eventLoop = new EventLoop(new EventDispatchConfig.Builder()
-				.withDispatchThreadStrategy(DispatchThreadStrategy.DISPATCH_IN_SPECIFIC_THREAD)
-				.withInsufficientCapacityStrategy(InsufficientCapacityStrategy.DROP_EVENTS).withEventBufferSize(5).build());
+				.setDispatchThreadStrategy(DispatchThreadStrategy.DISPATCH_IN_SPECIFIC_THREAD)
+				.setInsufficientCapacityStrategy(InsufficientCapacityStrategy.DROP_EVENTS).setEventBufferSize(5).build());
 		int numEvents = 1000000;
 		final int[] numEventsProcessed = new int[1];
 
@@ -210,8 +210,8 @@ public class EventLoopTest {
 	@Test
 	public void testEventsAreQueuedInMemeoryIfQueueIsFullAndStrategySaysSo() {
 		eventLoop = new EventLoop(new EventDispatchConfig.Builder()
-				.withDispatchThreadStrategy(DispatchThreadStrategy.DISPATCH_IN_SPECIFIC_THREAD)
-				.withInsufficientCapacityStrategy(InsufficientCapacityStrategy.QUEUE_EVENTS).withEventBufferSize(1).build());
+				.setDispatchThreadStrategy(DispatchThreadStrategy.DISPATCH_IN_SPECIFIC_THREAD)
+				.setInsufficientCapacityStrategy(InsufficientCapacityStrategy.QUEUE_EVENTS).setEventBufferSize(1).build());
 		int numEvents = 3;
 		final CountDownLatch latch = new CountDownLatch(numEvents);
 		EventListener listener = new NoParameterEventListener() {
@@ -242,8 +242,8 @@ public class EventLoopTest {
 	public void testOutdatedEventsAreDroppedIfQueueIsFullAndStrategySaysSo() {
 		int numEvents = 1000000;
 		eventLoop = new EventLoop(new EventDispatchConfig.Builder()
-				.withDispatchThreadStrategy(DispatchThreadStrategy.DISPATCH_IN_SPECIFIC_THREAD)
-				.withBatchProcessingStrategy(BatchProcessingStrategy.DROP_OUTDATED).withEventBufferSize(numEvents).build());
+				.setDispatchThreadStrategy(DispatchThreadStrategy.DISPATCH_IN_SPECIFIC_THREAD)
+				.setBatchProcessingStrategy(BatchProcessingStrategy.DROP_OUTDATED).setEventBufferSize(numEvents).build());
 		final int[] numEventsProcessed = new int[1];
 
 		EventListener listener = new NoParameterEventListener() {
@@ -269,9 +269,9 @@ public class EventLoopTest {
 	public void testNoDispatchingUntilSpaceAvailableIfQueueIsFullAndStrategySaysSo() {
 		int eventBufferSize = 4;
 		eventLoop = new EventLoop(new EventDispatchConfig.Builder()
-				.withDispatchThreadStrategy(DispatchThreadStrategy.DISPATCH_IN_SPECIFIC_THREAD).withNumberOfConsumers(eventBufferSize)
-				.withInsufficientCapacityStrategy(InsufficientCapacityStrategy.WAIT_UNTIL_SPACE_AVAILABLE)
-				.withEventBufferSize(eventBufferSize).build());
+				.setDispatchThreadStrategy(DispatchThreadStrategy.DISPATCH_IN_SPECIFIC_THREAD).setNumberOfConsumers(eventBufferSize)
+				.setInsufficientCapacityStrategy(InsufficientCapacityStrategy.WAIT_UNTIL_SPACE_AVAILABLE)
+				.setEventBufferSize(eventBufferSize).build());
 		final int numEvents = 100;
 		final CountDownLatch initialBlockingLatch = new CountDownLatch(1);
 		final AtomicInteger emitCountingInteger = new AtomicInteger();
