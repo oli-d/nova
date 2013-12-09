@@ -1,17 +1,23 @@
 package com.dotc.nova.events;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+@SuppressWarnings({ "rawtypes", "unchecked" })
 public abstract class EventEmitter {
 	private static final Logger LOGGER = LoggerFactory.getLogger(EventEmitter.class);
 
-	abstract <EventType, ParameterType> void dispatchEventAndDataToListeners(List<EventListener> listenerList, EventType event, ParameterType... data);
+	abstract <EventType, ParameterType> void dispatchEventAndDataToListeners(List<EventListener> listenerList, EventType event,
+			ParameterType... data);
 
-	private final HashMap<Object, List<EventListener>> mapEventToHandler = new HashMap<Object, List<EventListener>>();
-	private final HashMap<Object, List<EventListener>> mapEventToOneOffHandlers = new HashMap<Object, List<EventListener>>();
+	private final HashMap<Object, List<EventListener>> mapEventToHandler = new HashMap<>();
+	private final HashMap<Object, List<EventListener>> mapEventToOneOffHandlers = new HashMap<>();
 
 	private final boolean warnOnUnhandledEvents;
 
@@ -106,7 +112,8 @@ public abstract class EventEmitter {
 		return returnValue;
 	}
 
-	public <EventType, ParameterType> void emit(EventType event, ParameterType... data) {
+	@SafeVarargs
+	public final <EventType, ParameterType> void emit(EventType event, ParameterType... data) {
 		if (event == null) {
 			throw new IllegalArgumentException("event must not be null");
 		}

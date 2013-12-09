@@ -2,7 +2,7 @@ package com.dotc.nova.events.wrappers;
 
 import com.dotc.nova.events.EventListener;
 
-public abstract class TwoParametersEventListener<ParamOneType, ParamTwoType> implements EventListener {
+public abstract class TwoParametersEventListener<ParamOneType, ParamTwoType> implements EventListener<Object> {
 
 	public abstract void handle(ParamOneType param1, ParamTwoType param2);
 
