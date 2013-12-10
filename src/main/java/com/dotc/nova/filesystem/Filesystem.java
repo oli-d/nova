@@ -2,8 +2,14 @@ package com.dotc.nova.filesystem;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.nio.channels.*;
-import java.nio.file.*;
+import java.nio.channels.AsynchronousFileChannel;
+import java.nio.channels.CompletionHandler;
+import java.nio.channels.FileChannel;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.OpenOption;
+import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -65,7 +71,8 @@ public class Filesystem {
 
 	public void writeFile(final String content, String filePath, final FileWriteHandler handler) {
 		try {
-			AsynchronousFileChannel channel = AsynchronousFileChannel.open(Paths.get(filePath), StandardOpenOption.WRITE, StandardOpenOption.CREATE);
+			AsynchronousFileChannel channel = AsynchronousFileChannel.open(Paths.get(filePath), StandardOpenOption.WRITE,
+					StandardOpenOption.CREATE);
 			ByteBuffer contentBuffer = ByteBuffer.wrap(content.getBytes());
 			channel.write(contentBuffer, 0, null, new CompletionHandler<Integer, ByteBuffer>() {
 
@@ -95,6 +102,10 @@ public class Filesystem {
 	}
 
 	public void writeFileSync(String content, String filePath, boolean append) throws IOException {
+		writeFileSync(content, StandardCharsets.UTF_8, filePath, append);
+	}
+
+	public void writeFileSync(String content, Charset encoding, String filePath, boolean append) throws IOException {
 		Set<OpenOption> openOptions = new HashSet<>();
 		openOptions.add(StandardOpenOption.WRITE);
 		openOptions.add(StandardOpenOption.SYNC);
@@ -108,7 +119,7 @@ public class Filesystem {
 		}
 
 		try {
-			channel.write(ByteBuffer.wrap(content.getBytes()));
+			channel.write(ByteBuffer.wrap(content.getBytes(encoding)));
 		} finally {
 			channel.close();
 		}
