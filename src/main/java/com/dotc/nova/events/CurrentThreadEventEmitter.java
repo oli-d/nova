@@ -14,8 +14,8 @@ public class CurrentThreadEventEmitter extends EventEmitter {
 	}
 
 	@Override
-	<EventType, ParameterType> void dispatchEventAndDataToListeners(List<EventListener> listenerList, EventType event, ParameterType... data) {
-		ParameterType[] dataToPass = data.length == 0 ? null : data;
+	<EventType> void dispatchEventAndDataToListeners(List<EventListener> listenerList, EventType event, Object... data) {
+		Object[] dataToPass = data.length == 0 ? null : data;
 		for (EventListener listener : listenerList) {
 			try {
 				listener.handle(dataToPass);

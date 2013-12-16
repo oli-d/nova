@@ -9,12 +9,11 @@ import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-@SuppressWarnings({ "rawtypes", "unchecked" })
+@SuppressWarnings("rawtypes")
 public abstract class EventEmitter {
 	private static final Logger LOGGER = LoggerFactory.getLogger(EventEmitter.class);
 
-	abstract <EventType, ParameterType> void dispatchEventAndDataToListeners(List<EventListener> listenerList, EventType event,
-			ParameterType... data);
+	abstract <EventType> void dispatchEventAndDataToListeners(List<EventListener> listenerList, EventType event, Object... data);
 
 	private final HashMap<Object, List<EventListener>> mapEventToHandler = new HashMap<>();
 	private final HashMap<Object, List<EventListener>> mapEventToOneOffHandlers = new HashMap<>();
@@ -112,8 +111,7 @@ public abstract class EventEmitter {
 		return returnValue;
 	}
 
-	@SafeVarargs
-	public final <EventType, ParameterType> void emit(EventType event, ParameterType... data) {
+	public <EventType> void emit(EventType event, Object... data) {
 		if (event == null) {
 			throw new IllegalArgumentException("event must not be null");
 		}

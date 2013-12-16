@@ -11,7 +11,7 @@ public class EventLoopAwareEventEmitter extends EventEmitter {
 	}
 
 	@Override
-	<EventType, ParameterType> void dispatchEventAndDataToListeners(List<EventListener> listenerList, EventType event, ParameterType... data) {
+	<EventType> void dispatchEventAndDataToListeners(List<EventListener> listenerList, EventType event, Object... data) {
 		eventLoop.dispatch(event, listenerList, data);
 	}
 
