@@ -1,6 +1,12 @@
 package com.dotc.nova.events;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -39,7 +45,8 @@ class EventHandlerDroppingOutdatedEvents implements EventHandler<InvocationConte
 		Object[] previousData = batchedEventDataMap.put(event, invocationContext.getData());
 		if (previousData != null) {
 			if (LOGGER.isTraceEnabled()) {
-				LOGGER.trace("Dropping (outdated) event data " + previousData + ", since newer stuff came in: " + invocationContext.getData());
+				LOGGER.trace("Dropping (outdated) event data " + Arrays.toString(previousData) + ", since newer stuff came in: "
+						+ Arrays.toString(invocationContext.getData()));
 			}
 			return;
 		}

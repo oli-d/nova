@@ -3,7 +3,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>com.dotc.nova</groupId>
 	<artifactId>nova-core</artifactId>
-	<version>0.12.5</version>
+	<version>0.13.0</version>
 
 	<dependencies>
 		<dependency>

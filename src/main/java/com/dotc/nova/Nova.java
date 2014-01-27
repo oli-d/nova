@@ -1,12 +1,18 @@
 package com.dotc.nova;
 
-import com.dotc.nova.events.*;
+import com.dotc.nova.events.CurrentThreadEventEmitter;
+import com.dotc.nova.events.EventDispatchConfig;
 import com.dotc.nova.events.EventDispatchConfig.DispatchThreadStrategy;
+import com.dotc.nova.events.EventEmitter;
+import com.dotc.nova.events.EventLoop;
+import com.dotc.nova.events.EventLoopAwareEventEmitter;
 import com.dotc.nova.filesystem.Filesystem;
 import com.dotc.nova.timers.Timers;
 
 public class Nova {
 	private final EventLoop eventLoop;
+
+	public final String identifier;
 
 	public final Timers timers;
 	public final EventEmitter eventEmitter;
@@ -14,7 +20,8 @@ public class Nova {
 	public final Filesystem filesystem;
 
 	private Nova(Builder builder) {
-		eventLoop = new EventLoop(builder.eventDispatchConfig);
+		eventLoop = new EventLoop(builder.identifier, builder.eventDispatchConfig);
+		identifier = builder.identifier;
 
 		timers = new Timers(eventLoop);
 		if (builder.eventDispatchConfig.dispatchThreadStrategy == DispatchThreadStrategy.DISPATCH_IN_EMITTER_THREAD) {
@@ -35,7 +42,13 @@ public class Nova {
 	}
 
 	public static class Builder {
+		private String identifier;
 		private EventDispatchConfig eventDispatchConfig;
+
+		public Builder setIdentifier(String identifier) {
+			this.identifier = identifier;
+			return this;
+		}
 
 		public Builder setEventDispatchConfig(EventDispatchConfig eventDispatchConfig) {
 			this.eventDispatchConfig = eventDispatchConfig;
@@ -46,6 +59,10 @@ public class Nova {
 			if (eventDispatchConfig == null) {
 				eventDispatchConfig = new EventDispatchConfig.Builder().build();
 			}
+			if (identifier == null) {
+				identifier = "";
+			}
+
 			return new Nova(this);
 		}
 	}

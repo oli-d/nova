@@ -1,8 +1,11 @@
 package com.dotc.nova.timers;
 
-import static org.hamcrest.Matchers.*;
-import static org.junit.Assert.*;
-import static org.mockito.Mockito.*;
+import static org.hamcrest.Matchers.is;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertThat;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.timeout;
+import static org.mockito.Mockito.verify;
 
 import java.util.concurrent.TimeUnit;
 
@@ -10,7 +13,9 @@ import org.apache.log4j.BasicConfigurator;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 
-import com.dotc.nova.events.*;
+import com.dotc.nova.events.EventDispatchConfig;
+import com.dotc.nova.events.EventListener;
+import com.dotc.nova.events.EventLoop;
 
 public class TimersTest {
 
@@ -39,7 +44,7 @@ public class TimersTest {
 	@Test
 	public void testClearTimeout() throws Exception {
 		final int[] counter = new int[1];
-		EventLoop eventLoop = new EventLoop(new EventDispatchConfig.Builder().build()) {
+		EventLoop eventLoop = new EventLoop("test", new EventDispatchConfig.Builder().build()) {
 
 			@Override
 			public void dispatch(EventListener h) {
@@ -79,7 +84,7 @@ public class TimersTest {
 	@Test
 	public void testClearTimeoutCanBeInvokedMultipleTimes() throws Exception {
 		final int[] counter = new int[1];
-		EventLoop eventLoop = new EventLoop(new EventDispatchConfig.Builder().build()) {
+		EventLoop eventLoop = new EventLoop("test", new EventDispatchConfig.Builder().build()) {
 
 			@Override
 			public void dispatch(EventListener h) {
@@ -124,7 +129,7 @@ public class TimersTest {
 	@Test
 	public void testSetInterval() throws Throwable {
 		final int[] counter = new int[1];
-		EventLoop eventLoop = new EventLoop(new EventDispatchConfig.Builder().build()) {
+		EventLoop eventLoop = new EventLoop("test", new EventDispatchConfig.Builder().build()) {
 
 			@Override
 			public void dispatch(EventListener h) {
@@ -154,7 +159,7 @@ public class TimersTest {
 	@Test
 	public void testClearInterval() throws Exception {
 		final int[] counter = new int[1];
-		EventLoop eventLoop = new EventLoop(new EventDispatchConfig.Builder().build()) {
+		EventLoop eventLoop = new EventLoop("test", new EventDispatchConfig.Builder().build()) {
 
 			@Override
 			public void dispatch(EventListener h) {
@@ -194,7 +199,7 @@ public class TimersTest {
 	@Test
 	public void testClearIntervalCanBeInvokedMultipleTimes() throws Exception {
 		final int[] counter = new int[1];
-		EventLoop eventLoop = new EventLoop(new EventDispatchConfig.Builder().build()) {
+		EventLoop eventLoop = new EventLoop("test", new EventDispatchConfig.Builder().build()) {
 
 			@Override
 			public void dispatch(EventListener h) {

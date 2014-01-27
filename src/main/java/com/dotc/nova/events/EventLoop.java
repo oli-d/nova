@@ -28,16 +28,18 @@ import com.lmax.disruptor.dsl.ProducerType;
 public class EventLoop {
 	private static final Logger LOGGER = LoggerFactory.getLogger(EventLoop.class);
 
+	private final String identifier;
 	private final RingBuffer<InvocationContext> ringBuffer;
 	private final InsufficientCapacityStrategy insufficientCapacityStrategy;
 	private final Executor dispatchExecutor;
 	private final Executor dispatchLaterExecutor;
 
-	public EventLoop(EventDispatchConfig eventDispatchConfig) {
+	public EventLoop(String identifier, EventDispatchConfig eventDispatchConfig) {
+		this.identifier = identifier;
 		int eventBufferSize = com.lmax.disruptor.util.Util.ceilingNextPowerOfTwo(eventDispatchConfig.eventBufferSize);
 
 		if (LOGGER.isDebugEnabled()) {
-			LOGGER.debug("Instantiating event loop, using the following configuration:");
+			LOGGER.debug("Instantiating event loop " + identifier + ", using the following configuration:");
 			LOGGER.debug("\tRingBuffer size:                    " + eventBufferSize);
 			LOGGER.debug("\tDispatching thread strategy:        " + eventDispatchConfig.dispatchThreadStrategy);
 			LOGGER.debug("\tBatchProcessing strategy:           " + eventDispatchConfig.batchProcessingStrategy);
@@ -145,15 +147,17 @@ public class EventLoop {
 		switch (insufficientCapacityStrategy) {
 			case DROP_EVENTS:
 				if (LOGGER.isTraceEnabled()) {
-					LOGGER.trace("RingBuffer full. Dropping event " + event + " with parameters " + Arrays.toString(data));
+					LOGGER.trace("RingBuffer " + identifier + " full. Dropping event " + event + " with parameters "
+							+ Arrays.toString(data));
 				}
 				return;
 			case THROW_EXCEPTION:
+				LOGGER.trace("RingBuffer " + identifier + " full. Event " + event + " with parameters " + Arrays.toString(data));
 				throw new InsufficientCapacityException();
 			case QUEUE_EVENTS:
 				dispatchLaterExecutor.execute(new MyDispatchLaterRunnable<EventType, DataType>(event, listener, data));
 				if (LOGGER.isTraceEnabled()) {
-					LOGGER.trace("RingBuffer full. Queued event " + event + " for later processing");
+					LOGGER.trace("RingBuffer " + identifier + " full. Queued event " + event + " for later processing");
 				}
 				return;
 			case WAIT_UNTIL_SPACE_AVAILABLE:
@@ -190,7 +194,7 @@ public class EventLoop {
 
 		@Override
 		public synchronized Thread newThread(Runnable r) {
-			Thread t = new Thread(r, "EventLoopDispatcher" + (numInstances++));
+			Thread t = new Thread(r, "EventLoopDispatcher/" + identifier + (numInstances++));
 			t.setDaemon(true);
 			return t;
 		}
@@ -199,7 +203,7 @@ public class EventLoop {
 	private final class MyDispatchLaterThreadFactory implements ThreadFactory {
 		@Override
 		public Thread newThread(Runnable r) {
-			Thread t = new Thread(r, "EventLoopDispatchLater");
+			Thread t = new Thread(r, "EventLoopDispatchLater/" + identifier);
 			t.setDaemon(true);
 			return t;
 		}
