@@ -10,10 +10,10 @@ import com.dotc.nova.filesystem.Filesystem;
 import com.dotc.nova.timers.Timers;
 
 public class Nova {
-	private final EventLoop eventLoop;
 
 	public final String identifier;
 
+	public final EventLoop eventLoop;
 	public final Timers timers;
 	public final EventEmitter eventEmitter;
 	public final com.dotc.nova.process.Process process;

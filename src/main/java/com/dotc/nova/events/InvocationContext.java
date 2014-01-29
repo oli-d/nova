@@ -1,11 +1,14 @@
 package com.dotc.nova.events;
 
 import java.util.Arrays;
+import java.util.Map;
 
 class InvocationContext {
 	private Object event;
 	private EventListener eventListener;
 	private Object[] data;
+	private Object duplicateDetectionId;
+	private Map<Object, Object[]> currentDataLookupMap;
 
 	public InvocationContext(Object event, EventListener eventListener, Object... data) {
 		this.event = event;
@@ -20,6 +23,8 @@ class InvocationContext {
 		this.event = null;
 		this.eventListener = null;
 		this.data = null;
+		this.duplicateDetectionId = null;
+		this.currentDataLookupMap = null;
 	}
 
 	public Object getEvent() {
@@ -31,7 +36,11 @@ class InvocationContext {
 	}
 
 	public Object[] getData() {
-		return data;
+		if (duplicateDetectionId != null) {
+			return currentDataLookupMap.remove(duplicateDetectionId);
+		} else {
+			return data;
+		}
 	}
 
 	public void setEventListenerInfo(Object event, EventListener listener, Object... data) {
@@ -41,9 +50,20 @@ class InvocationContext {
 		this.data = data;
 	}
 
+	public void setEventListenerInfo(Object event, EventListener listener, Object duplicateDetectionId,
+			Map<Object, Object[]> currentDataLookupMap) {
+		reset();
+		this.event = event;
+		this.eventListener = listener;
+		this.duplicateDetectionId = duplicateDetectionId;
+		this.currentDataLookupMap = currentDataLookupMap;
+	}
+
 	@Override
 	public String toString() {
-		return "InvocationContext [event=" + event + ", eventListener=" + eventListener + ", data=" + Arrays.toString(data) + "]";
+		return "InvocationContext [event=" + event + ", eventListener=" + eventListener
+				+ (duplicateDetectionId == null ? ", data=" + Arrays.toString(data) : ", duplicateDetectionId=" + duplicateDetectionId)
+				+ "]";
 	}
 
 }

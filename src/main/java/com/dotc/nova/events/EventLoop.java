@@ -2,6 +2,8 @@ package com.dotc.nova.events;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
@@ -9,7 +11,6 @@ import java.util.concurrent.ThreadFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.dotc.nova.events.EventDispatchConfig.BatchProcessingStrategy;
 import com.dotc.nova.events.EventDispatchConfig.InsufficientCapacityStrategy;
 import com.dotc.nova.events.EventDispatchConfig.MultiConsumerDispatchStrategy;
 import com.dotc.nova.events.EventDispatchConfig.ProducerStrategy;
@@ -25,6 +26,7 @@ import com.lmax.disruptor.YieldingWaitStrategy;
 import com.lmax.disruptor.dsl.Disruptor;
 import com.lmax.disruptor.dsl.ProducerType;
 
+@SuppressWarnings("unchecked")
 public class EventLoop {
 	private static final Logger LOGGER = LoggerFactory.getLogger(EventLoop.class);
 
@@ -33,16 +35,19 @@ public class EventLoop {
 	private final InsufficientCapacityStrategy insufficientCapacityStrategy;
 	private final Executor dispatchExecutor;
 	private final Executor dispatchLaterExecutor;
+	private final Map<Object, IdProviderForDuplicateEventDetection> idProviderRegistry;
+	private final Map<Object, Object[]> mapIdToCurrentData;
 
 	public EventLoop(String identifier, EventDispatchConfig eventDispatchConfig) {
 		this.identifier = identifier;
+		this.idProviderRegistry = new ConcurrentHashMap<>();
+		this.mapIdToCurrentData = new ConcurrentHashMap<>();
 		int eventBufferSize = com.lmax.disruptor.util.Util.ceilingNextPowerOfTwo(eventDispatchConfig.eventBufferSize);
 
 		if (LOGGER.isDebugEnabled()) {
 			LOGGER.debug("Instantiating event loop " + identifier + ", using the following configuration:");
 			LOGGER.debug("\tRingBuffer size:                    " + eventBufferSize);
 			LOGGER.debug("\tDispatching thread strategy:        " + eventDispatchConfig.dispatchThreadStrategy);
-			LOGGER.debug("\tBatchProcessing strategy:           " + eventDispatchConfig.batchProcessingStrategy);
 			LOGGER.debug("\tProducer strategy:                  " + eventDispatchConfig.producerStrategy);
 			LOGGER.debug("\tInsufficientCapacity strategy:      " + eventDispatchConfig.insufficientCapacityStrategy);
 			LOGGER.debug("\tWait strategy:                      " + eventDispatchConfig.waitStrategy);
@@ -87,13 +92,7 @@ public class EventLoop {
 				producerType, waitStrategy);
 		disruptor.handleExceptionsWith(new DefaultExceptionHandler());
 		if (eventDispatchConfig.numberOfConsumers == 1) {
-			EventHandler eventHandler;
-			if (eventDispatchConfig.batchProcessingStrategy == BatchProcessingStrategy.DROP_OUTDATED) {
-				eventHandler = new EventHandlerDroppingOutdatedEvents();
-			} else {
-				eventHandler = new SingleConsumerEventHandler();
-			}
-			disruptor.handleEventsWith(eventHandler);
+			disruptor.handleEventsWith(new SingleConsumerEventHandler());
 		} else if (eventDispatchConfig.multiConsumerDispatchStrategy == MultiConsumerDispatchStrategy.DISPATCH_EVENTS_TO_ALL_CONSUMERS) {
 			EventHandler[] eventHandlers = new EventHandler[eventDispatchConfig.numberOfConsumers];
 			for (int i = 0; i < eventHandlers.length; i++) {
@@ -108,6 +107,10 @@ public class EventLoop {
 			disruptor.handleEventsWithWorkerPool(workHandlers);
 		}
 		ringBuffer = disruptor.start();
+	}
+
+	public void dispatch(EventListener listener) {
+		dispatch(null, listener);
 	}
 
 	public <EventType, DataType> void dispatch(EventType event, List<EventListener> listenerList) {
@@ -129,6 +132,31 @@ public class EventLoop {
 	}
 
 	public <EventType, DataType> void dispatch(EventType event, EventListener listener, DataType... data) {
+		// if this is an event for which duplicate detection was switched on, get the ID
+		Object duplicateDetectionId = null;
+		IdProviderForDuplicateEventDetection idProvider = null;
+		if (event != null) {
+			idProvider = idProviderRegistry.get(event);
+		}
+		if (idProvider != null) {
+			duplicateDetectionId = idProvider.provideIdFor(data);
+		}
+		if (duplicateDetectionId != null) {
+			Object currentData = mapIdToCurrentData.put(duplicateDetectionId, data);
+			if (currentData == null) {
+				// put trigger onto ringBuffer
+				putEventuallyDuplicateEventIntoRingBuffer(event, listener, duplicateDetectionId);
+			} else {
+				if (LOGGER.isTraceEnabled()) {
+					LOGGER.trace("Dropped outdated data for event " + event + ", since a more recent update came in");
+				}
+			}
+		} else {
+			putNormalEventIntoRingBuffer(event, listener, data);
+		}
+	}
+
+	private <EventType, DataType> void putNormalEventIntoRingBuffer(EventType event, EventListener listener, DataType... data) {
 		try {
 			long nextSequenceNumber = ringBuffer.tryNext();
 			InvocationContext ic = ringBuffer.get(nextSequenceNumber);
@@ -139,8 +167,15 @@ public class EventLoop {
 		}
 	}
 
-	public void dispatch(EventListener listener) {
-		dispatch(null, listener);
+	private <EventType> void putEventuallyDuplicateEventIntoRingBuffer(EventType event, EventListener listener, Object duplicateDetectionId) {
+		try {
+			long nextSequenceNumber = ringBuffer.tryNext();
+			InvocationContext ic = ringBuffer.get(nextSequenceNumber);
+			ic.setEventListenerInfo(event, listener, duplicateDetectionId, mapIdToCurrentData);
+			ringBuffer.publish(nextSequenceNumber);
+		} catch (com.lmax.disruptor.InsufficientCapacityException e) {
+			handleRingBufferFull(event, listener, mapIdToCurrentData.remove(duplicateDetectionId));
+		}
 	}
 
 	private <EventType, DataType> void handleRingBufferFull(EventType event, EventListener listener, DataType... data) {
@@ -153,7 +188,7 @@ public class EventLoop {
 				return;
 			case THROW_EXCEPTION:
 				LOGGER.trace("RingBuffer " + identifier + " full. Event " + event + " with parameters " + Arrays.toString(data));
-				throw new InsufficientCapacityException();
+				throw new InsufficientCapacityException(event, data);
 			case QUEUE_EVENTS:
 				dispatchLaterExecutor.execute(new MyDispatchLaterRunnable<EventType, DataType>(event, listener, data));
 				if (LOGGER.isTraceEnabled()) {
@@ -167,6 +202,14 @@ public class EventLoop {
 				ringBuffer.publish(nextSequenceNumber);
 				return;
 		}
+	}
+
+	public void registerIdProviderForDuplicateEventDetection(Object event, IdProviderForDuplicateEventDetection duplicateDetectionIdProvider) {
+		idProviderRegistry.put(event, duplicateDetectionIdProvider);
+	}
+
+	public void removeIdProviderForDuplicateEventDetection(Object event) {
+		idProviderRegistry.remove(event);
 	}
 
 	private class MyDispatchLaterRunnable<EventType, DataType> implements Runnable {
@@ -217,24 +260,19 @@ public class EventLoop {
 	}
 
 	public static class InsufficientCapacityException extends RuntimeException {
-		public InsufficientCapacityException() {
+		public final Object event;
+		public final Object[] data;
+
+		public InsufficientCapacityException(Object event, Object... data) {
+			this.event = event;
+			this.data = data;
 		}
 
-		public InsufficientCapacityException(String message, Throwable cause, boolean enableSuppression, boolean writableStackTrace) {
-			super(message, cause, enableSuppression, writableStackTrace);
+		@Override
+		public String toString() {
+			return "InsufficientCapacityException [event=" + event + ", data=" + Arrays.toString(data) + "]";
 		}
 
-		public InsufficientCapacityException(String message, Throwable cause) {
-			super(message, cause);
-		}
-
-		public InsufficientCapacityException(String message) {
-			super(message);
-		}
-
-		public InsufficientCapacityException(Throwable cause) {
-			super(cause);
-		}
 	}
 
 }

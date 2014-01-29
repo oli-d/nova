@@ -13,6 +13,7 @@ public class CurrentThreadEventEmitter extends EventEmitter {
 		super(warnOnUnhandledEvents);
 	}
 
+	@SuppressWarnings("unchecked")
 	@Override
 	<EventType> void dispatchEventAndDataToListeners(List<EventListener> listenerList, EventType event, Object... data) {
 		Object[] dataToPass = data.length == 0 ? null : data;

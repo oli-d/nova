@@ -1,6 +1,11 @@
 package com.dotc.nova.timers;
 
-import java.util.concurrent.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,7 +39,8 @@ public class Timers {
 	/**
 	 * To schedule execution of a one-time callback after delay milliseconds. Returns a timeoutId for possible use with clearTimeout().
 	 * 
-	 * It is important to note that your callback will probably not be called in exactly delay milliseconds - Nova makes no guarantees about the exact timing of when the callback will fire, nor of the
+	 * It is important to note that your callback will probably not be called in exactly delay milliseconds - Nova makes no guarantees about
+	 * the exact timing of when the callback will fire, nor of the
 	 * ordering things will fire in. The callback will be called as close as possible to the time specified.
 	 */
 	public String setTimeout(Runnable callback, long delay) {

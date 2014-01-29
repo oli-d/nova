@@ -13,15 +13,16 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.log4j.BasicConfigurator;
+import org.hamcrest.Matchers;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import com.dotc.nova.events.EventDispatchConfig.BatchProcessingStrategy;
 import com.dotc.nova.events.EventDispatchConfig.DispatchThreadStrategy;
 import com.dotc.nova.events.EventDispatchConfig.InsufficientCapacityStrategy;
 import com.dotc.nova.events.EventDispatchConfig.MultiConsumerDispatchStrategy;
 import com.dotc.nova.events.wrappers.NoParameterEventListener;
+import com.dotc.nova.events.wrappers.SingleParameterEventListener;
 
 public class EventLoopTest {
 	private EventLoop eventLoop;
@@ -239,33 +240,6 @@ public class EventLoopTest {
 	}
 
 	@Test
-	public void testOutdatedEventsAreDroppedIfQueueIsFullAndStrategySaysSo() {
-		int numEvents = 1000000;
-		eventLoop = new EventLoop("test", new EventDispatchConfig.Builder()
-				.setDispatchThreadStrategy(DispatchThreadStrategy.DISPATCH_IN_SPECIFIC_THREAD)
-				.setBatchProcessingStrategy(BatchProcessingStrategy.DROP_OUTDATED).setEventBufferSize(numEvents).build());
-		final int[] numEventsProcessed = new int[1];
-
-		EventListener listener = new NoParameterEventListener() {
-			@Override
-			public void handle() {
-				try {
-					Thread.sleep(100);
-				} catch (InterruptedException e) {
-					e.printStackTrace();
-				}
-				numEventsProcessed[0]++;
-			}
-		};
-
-		for (int i = 0; i < numEvents; i++) {
-			eventLoop.dispatch("bla", listener);
-		}
-
-		assertTrue(numEventsProcessed[0] < numEvents);
-	}
-
-	@Test
 	public void testNoDispatchingUntilSpaceAvailableIfQueueIsFullAndStrategySaysSo() {
 		int eventBufferSize = 4;
 		eventLoop = new EventLoop("test", new EventDispatchConfig.Builder()
@@ -335,4 +309,47 @@ public class EventLoopTest {
 		assertEquals(0, countingLatch.getCount());
 	}
 
+	@Test
+	public void testOutdatedEventsAreDroppedIfTheyAreProducedFasterThanConsumed() throws InterruptedException {
+		int numEvents = 1000000;
+		eventLoop = new EventLoop("test", new EventDispatchConfig.Builder()
+				.setDispatchThreadStrategy(DispatchThreadStrategy.DISPATCH_IN_SPECIFIC_THREAD).setEventBufferSize(numEvents).build());
+		eventLoop.registerIdProviderForDuplicateEventDetection("bla", new IdProviderForDuplicateEventDetection() {
+			@Override
+			public Object provideIdFor(Object... data) {
+				return "id";
+			}
+		});
+		final int[] numEventsProcessed = new int[1];
+		final String[] lastDataProcessed = new String[1];
+
+		final CountDownLatch countDownLatch = new CountDownLatch(1);
+
+		EventListener listener = new SingleParameterEventListener<String>() {
+			@Override
+			public void handle(String data) {
+				if ("bye".equals(data)) {
+					countDownLatch.countDown();
+					return;
+				}
+				try {
+					Thread.sleep(100);
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				}
+				numEventsProcessed[0]++;
+				lastDataProcessed[0] = data;
+			}
+		};
+
+		for (int i = 0; i < numEvents; i++) {
+			eventLoop.dispatch("bla", listener, "value" + i);
+		}
+		eventLoop.dispatch("blo", listener, "bye");
+
+		countDownLatch.await(2, TimeUnit.SECONDS);
+
+		assertTrue(numEventsProcessed[0] < numEvents);
+		assertThat(lastDataProcessed[0], Matchers.is("value" + (numEvents - 1)));
+	}
 }

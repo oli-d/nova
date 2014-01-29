@@ -9,10 +9,6 @@ public class EventDispatchConfig {
 		DROP_EVENTS, QUEUE_EVENTS, THROW_EXCEPTION, WAIT_UNTIL_SPACE_AVAILABLE
 	};
 
-	public static enum BatchProcessingStrategy {
-		PROCESS_ALL, DROP_OUTDATED
-	};
-
 	public static enum ProducerStrategy {
 		SINGLE, MULTIPLE
 	};
@@ -29,7 +25,6 @@ public class EventDispatchConfig {
 	public final WaitStrategy waitStrategy;
 	public final InsufficientCapacityStrategy insufficientCapacityStrategy;
 	public final ProducerStrategy producerStrategy;
-	public final BatchProcessingStrategy batchProcessingStrategy;
 	public final DispatchThreadStrategy dispatchThreadStrategy;
 	public final int numberOfConsumers;
 	public final MultiConsumerDispatchStrategy multiConsumerDispatchStrategy;
@@ -41,7 +36,6 @@ public class EventDispatchConfig {
 		this.waitStrategy = builder.waitStrategy;
 		this.producerStrategy = builder.producerStrategy;
 		this.insufficientCapacityStrategy = builder.insufficientCapacityStrategy;
-		this.batchProcessingStrategy = builder.batchProcessingStrategy;
 		this.numberOfConsumers = builder.numberOfConsumers;
 		this.dispatchThreadStrategy = builder.dispatchThreadStrategy;
 		this.multiConsumerDispatchStrategy = builder.multiConsumerDispatchStrategy;
@@ -54,7 +48,6 @@ public class EventDispatchConfig {
 		private int eventBufferSize = 1000;
 		private ProducerStrategy producerStrategy = ProducerStrategy.MULTIPLE;
 		private InsufficientCapacityStrategy insufficientCapacityStrategy = InsufficientCapacityStrategy.THROW_EXCEPTION;
-		private BatchProcessingStrategy batchProcessingStrategy = BatchProcessingStrategy.PROCESS_ALL;
 		private DispatchThreadStrategy dispatchThreadStrategy = DispatchThreadStrategy.DISPATCH_IN_SPECIFIC_THREAD;
 		private int numberOfConsumers = 1;
 		private MultiConsumerDispatchStrategy multiConsumerDispatchStrategy = MultiConsumerDispatchStrategy.DISPATCH_EVENTS_TO_ONE_CONSUMER;
@@ -80,11 +73,6 @@ public class EventDispatchConfig {
 
 		public Builder setInsufficientCapacityStrategy(InsufficientCapacityStrategy queueFullStrategy) {
 			this.insufficientCapacityStrategy = queueFullStrategy;
-			return this;
-		}
-
-		public Builder setBatchProcessingStrategy(BatchProcessingStrategy batchProcessingStrategy) {
-			this.batchProcessingStrategy = batchProcessingStrategy;
 			return this;
 		}
 
@@ -114,9 +102,6 @@ public class EventDispatchConfig {
 		private void validate() {
 			if (numberOfConsumers > 1 && dispatchThreadStrategy == DispatchThreadStrategy.DISPATCH_IN_EMITTER_THREAD) {
 				throw new IllegalArgumentException("DISPATCH_IN_EMITTER_THREAD strategy cannot be used with multiple consumers");
-			}
-			if (numberOfConsumers > 1 && batchProcessingStrategy != BatchProcessingStrategy.PROCESS_ALL) {
-				throw new IllegalArgumentException("specific batch processing strategy cannot be used with multiple consumers");
 			}
 		}
 
