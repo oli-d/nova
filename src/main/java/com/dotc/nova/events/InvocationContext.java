@@ -5,14 +5,14 @@ import java.util.Map;
 
 class InvocationContext {
 	private Object event;
-	private EventListener eventListener;
+	private EventListener[] eventListeners;
 	private Object[] data;
 	private Object duplicateDetectionId;
 	private Map<Object, Object[]> currentDataLookupMap;
 
-	public InvocationContext(Object event, EventListener eventListener, Object... data) {
+	public InvocationContext(Object event, EventListener[] eventListeners, Object... data) {
 		this.event = event;
-		this.eventListener = eventListener;
+		this.eventListeners = eventListeners;
 		this.data = data;
 	}
 
@@ -21,7 +21,7 @@ class InvocationContext {
 
 	void reset() {
 		this.event = null;
-		this.eventListener = null;
+		this.eventListeners = null;
 		this.data = null;
 		this.duplicateDetectionId = null;
 		this.currentDataLookupMap = null;
@@ -31,8 +31,8 @@ class InvocationContext {
 		return event;
 	}
 
-	public EventListener getEventListener() {
-		return eventListener;
+	public EventListener[] getEventListeners() {
+		return eventListeners;
 	}
 
 	public Object[] getData() {
@@ -43,25 +43,25 @@ class InvocationContext {
 		}
 	}
 
-	public void setEventListenerInfo(Object event, EventListener listener, Object... data) {
+	public void setEventListenerInfo(Object event, EventListener[] listeners, Object... data) {
 		reset();
 		this.event = event;
-		this.eventListener = listener;
+		this.eventListeners = listeners;
 		this.data = data;
 	}
 
-	public void setEventListenerInfo(Object event, EventListener listener, Object duplicateDetectionId,
+	public void setEventListenerInfo(Object event, EventListener[] listeners, Object duplicateDetectionId,
 			Map<Object, Object[]> currentDataLookupMap) {
 		reset();
 		this.event = event;
-		this.eventListener = listener;
+		this.eventListeners = listeners;
 		this.duplicateDetectionId = duplicateDetectionId;
 		this.currentDataLookupMap = currentDataLookupMap;
 	}
 
 	@Override
 	public String toString() {
-		return "InvocationContext [event=" + event + ", eventListener=" + eventListener
+		return "InvocationContext [event=" + event + ", eventListeners=" + Arrays.toString(eventListeners)
 				+ (duplicateDetectionId == null ? ", data=" + Arrays.toString(data) : ", duplicateDetectionId=" + duplicateDetectionId)
 				+ "]";
 	}

@@ -125,13 +125,11 @@ public class EventLoop {
 		dispatch(event, listenerArray, (DataType[]) null);
 	}
 
-	public <EventType, DataType> void dispatch(EventType event, EventListener[] listenerArray, DataType... data) {
-		for (EventListener el : listenerArray) {
-			dispatch(event, el, data);
-		}
+	public <EventType, DataType> void dispatch(EventType event, EventListener listener, DataType... data) {
+		dispatch(event, new EventListener[] { listener }, data);
 	}
 
-	public <EventType, DataType> void dispatch(EventType event, EventListener listener, DataType... data) {
+	public <EventType, DataType> void dispatch(EventType event, EventListener[] listeners, DataType... data) {
 		// if this is an event for which duplicate detection was switched on, get the ID
 		Object duplicateDetectionId = null;
 		IdProviderForDuplicateEventDetection idProvider = null;
@@ -145,40 +143,41 @@ public class EventLoop {
 			Object currentData = mapIdToCurrentData.put(duplicateDetectionId, data);
 			if (currentData == null) {
 				// put trigger onto ringBuffer
-				putEventuallyDuplicateEventIntoRingBuffer(event, listener, duplicateDetectionId);
+				putEventuallyDuplicateEventIntoRingBuffer(event, listeners, duplicateDetectionId);
 			} else {
 				if (LOGGER.isTraceEnabled()) {
 					LOGGER.trace("Dropped outdated data for event " + event + ", since a more recent update came in");
 				}
 			}
 		} else {
-			putNormalEventIntoRingBuffer(event, listener, data);
+			putNormalEventIntoRingBuffer(event, listeners, data);
 		}
 	}
 
-	private <EventType, DataType> void putNormalEventIntoRingBuffer(EventType event, EventListener listener, DataType... data) {
+	private <EventType, DataType> void putNormalEventIntoRingBuffer(EventType event, EventListener[] listeners, DataType... data) {
 		try {
 			long nextSequenceNumber = ringBuffer.tryNext();
 			InvocationContext ic = ringBuffer.get(nextSequenceNumber);
-			ic.setEventListenerInfo(event, listener, data);
+			ic.setEventListenerInfo(event, listeners, data);
 			ringBuffer.publish(nextSequenceNumber);
 		} catch (com.lmax.disruptor.InsufficientCapacityException e) {
-			handleRingBufferFull(event, listener, data);
+			handleRingBufferFull(event, listeners, data);
 		}
 	}
 
-	private <EventType> void putEventuallyDuplicateEventIntoRingBuffer(EventType event, EventListener listener, Object duplicateDetectionId) {
+	private <EventType> void putEventuallyDuplicateEventIntoRingBuffer(EventType event, EventListener[] listeners,
+			Object duplicateDetectionId) {
 		try {
 			long nextSequenceNumber = ringBuffer.tryNext();
 			InvocationContext ic = ringBuffer.get(nextSequenceNumber);
-			ic.setEventListenerInfo(event, listener, duplicateDetectionId, mapIdToCurrentData);
+			ic.setEventListenerInfo(event, listeners, duplicateDetectionId, mapIdToCurrentData);
 			ringBuffer.publish(nextSequenceNumber);
 		} catch (com.lmax.disruptor.InsufficientCapacityException e) {
-			handleRingBufferFull(event, listener, mapIdToCurrentData.remove(duplicateDetectionId));
+			handleRingBufferFull(event, listeners, mapIdToCurrentData.remove(duplicateDetectionId));
 		}
 	}
 
-	private <EventType, DataType> void handleRingBufferFull(EventType event, EventListener listener, DataType... data) {
+	private <EventType, DataType> void handleRingBufferFull(EventType event, EventListener[] listeners, DataType... data) {
 		switch (insufficientCapacityStrategy) {
 			case DROP_EVENTS:
 				if (LOGGER.isTraceEnabled()) {
@@ -190,7 +189,7 @@ public class EventLoop {
 				LOGGER.trace("RingBuffer " + identifier + " full. Event " + event + " with parameters " + Arrays.toString(data));
 				throw new InsufficientCapacityException(event, data);
 			case QUEUE_EVENTS:
-				dispatchLaterExecutor.execute(new MyDispatchLaterRunnable<EventType, DataType>(event, listener, data));
+				dispatchLaterExecutor.execute(new MyDispatchLaterRunnable<EventType, DataType>(event, listeners, data));
 				if (LOGGER.isTraceEnabled()) {
 					LOGGER.trace("RingBuffer " + identifier + " full. Queued event " + event + " for later processing");
 				}
@@ -198,7 +197,7 @@ public class EventLoop {
 			case WAIT_UNTIL_SPACE_AVAILABLE:
 				long nextSequenceNumber = ringBuffer.next();
 				InvocationContext ic = ringBuffer.get(nextSequenceNumber);
-				ic.setEventListenerInfo(event, listener, data);
+				ic.setEventListenerInfo(event, listeners, data);
 				ringBuffer.publish(nextSequenceNumber);
 				return;
 		}
@@ -214,12 +213,12 @@ public class EventLoop {
 
 	private class MyDispatchLaterRunnable<EventType, DataType> implements Runnable {
 		public final EventType event;
-		public final EventListener listener;
+		public final EventListener[] listeners;
 		public final DataType[] data;
 
-		public MyDispatchLaterRunnable(EventType event, EventListener listener, DataType... data) {
+		public MyDispatchLaterRunnable(EventType event, EventListener[] listeners, DataType... data) {
 			this.event = event;
-			this.listener = listener;
+			this.listeners = listeners;
 			this.data = data;
 		}
 
@@ -227,7 +226,7 @@ public class EventLoop {
 		public void run() {
 			long nextSequenceNumber = ringBuffer.next();
 			InvocationContext ic = ringBuffer.get(nextSequenceNumber);
-			ic.setEventListenerInfo(event, listener, data);
+			ic.setEventListenerInfo(event, listeners, data);
 			ringBuffer.publish(nextSequenceNumber);
 		}
 	}

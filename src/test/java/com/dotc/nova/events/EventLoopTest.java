@@ -5,8 +5,10 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -352,4 +354,22 @@ public class EventLoopTest {
 		assertTrue(numEventsProcessed[0] < numEvents);
 		assertThat(lastDataProcessed[0], Matchers.is("value" + (numEvents - 1)));
 	}
+
+	private void setIdToCurrentDataMap(EventLoop eventLoop, Map<Object, Object[]> mapIdToCurrentValue) throws Exception {
+		Field f = EventLoop.class.getDeclaredField("mapIdToCurrentData");
+		f.setAccessible(true);
+		f.set(eventLoop, mapIdToCurrentValue);
+	}
+
+	// @Test
+	// public void testThatAllListenerInvokedIfNoDuplicateRegistered() throws Exception {
+	// Map<Object, Object[]> mapIdToCurrentValue = mock(Map.class);
+	// setIdToCurrentDataMap(eventLoop, mapIdToCurrentValue);
+	//
+	// Object key = "key";
+	// when(mapIdToCurrentValue.get(key)).thenReturn(null);
+	// }
+	//
+	// @Test
+	// public void testThatAllListenerInvokedIfNoDuplicateRegistered() throws Exception {
 }
