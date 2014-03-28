@@ -54,12 +54,7 @@ public class TimersTest {
 		};
 		Timers timers = new Timers(eventLoop);
 
-		Runnable callback = new Runnable() {
-
-			@Override
-			public void run() {
-			}
-
+		Runnable callback = () -> {
 		};
 
 		long startDelay = 200;
@@ -94,12 +89,7 @@ public class TimersTest {
 		};
 		Timers timers = new Timers(eventLoop);
 
-		Runnable callback = new Runnable() {
-
-			@Override
-			public void run() {
-			}
-
+		Runnable callback = () -> {
 		};
 
 		long startDelay = 200;
@@ -139,12 +129,7 @@ public class TimersTest {
 		};
 		Timers timers = new Timers(eventLoop);
 
-		Runnable callback = new Runnable() {
-
-			@Override
-			public void run() {
-			}
-
+		Runnable callback = () -> {
 		};
 
 		long startDelay = 200;
@@ -169,12 +154,7 @@ public class TimersTest {
 		};
 		Timers timers = new Timers(eventLoop);
 
-		Runnable callback = new Runnable() {
-
-			@Override
-			public void run() {
-			}
-
+		Runnable callback = () -> {
 		};
 
 		long startDelay = 200;
@@ -209,12 +189,7 @@ public class TimersTest {
 		};
 		Timers timers = new Timers(eventLoop);
 
-		Runnable callback = new Runnable() {
-
-			@Override
-			public void run() {
-			}
-
+		Runnable callback = () -> {
 		};
 
 		long startDelay = 200;

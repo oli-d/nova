@@ -2,18 +2,16 @@ package com.dotc.nova.events.wrappers;
 
 import com.dotc.nova.events.EventListener;
 
-public abstract class SingleParameterEventListener<ParamType> implements EventListener<Object> {
-
-	public abstract void handle(ParamType param);
-
+public interface SingleParameterEventListener<ParamType> extends EventListener<Object> {
 	@SuppressWarnings("unchecked")
 	@Override
-	public void handle(Object... data) {
-		if (data == null || data.length == 0) {
-			handle((ParamType) null);
+	default void handle(Object... params) {
+		if (params == null || params.length == 0) {
+			doHandle(null);
 		} else {
-			handle((ParamType) data[0]);
+			doHandle((ParamType) params[0]);
 		}
 	}
 
+	void doHandle(ParamType p);
 }

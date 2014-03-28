@@ -19,23 +19,19 @@ public class MouseEventTranslator implements EventListener<MouseEvent> {
 	@Override
 	public void handle(MouseEvent... data) {
 		final MouseEvent event = data[0];
-		SwingUtilities.invokeLater(new Runnable() {
-
-			@Override
-			public void run() {
-				switch (event.getID()) {
-					case MouseEvent.MOUSE_MOVED:
-						handleMouseMove(event, false);
-						return;
-					case MouseEvent.MOUSE_DRAGGED:
-						handleMouseMove(event, true);
-						return;
-					case MouseEvent.MOUSE_CLICKED:
-						handleMouseClicked(event);
-						return;
-					default:
-						// no handling
-				}
+		SwingUtilities.invokeLater(() -> {
+			switch (event.getID()) {
+				case MouseEvent.MOUSE_MOVED:
+					handleMouseMove(event, false);
+					return;
+				case MouseEvent.MOUSE_DRAGGED:
+					handleMouseMove(event, true);
+					return;
+				case MouseEvent.MOUSE_CLICKED:
+					handleMouseClicked(event);
+					return;
+				default:
+					// no handling
 			}
 		});
 	}

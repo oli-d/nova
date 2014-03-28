@@ -43,13 +43,7 @@ public class EventLoopTest {
 		@SuppressWarnings("unchecked")
 		EventListener<String>[] listenersArray = new EventListener[(int) countDownLatch.getCount()];
 		for (int i = 0; i < listenersArray.length; i++) {
-			listenersArray[i] = new EventListener<String>() {
-
-				@Override
-				public void handle(String... data) {
-					countDownLatch.countDown();
-				}
-			};
+			listenersArray[i] = data -> countDownLatch.countDown();
 		}
 		return listenersArray;
 	}
@@ -88,12 +82,7 @@ public class EventLoopTest {
 	@Test
 	public void testDispatchHandlerWithoutEvent() {
 		final CountDownLatch countDownLatch = new CountDownLatch(1);
-		EventListener r = new EventListener() {
-			@Override
-			public void handle(Object... data) {
-				countDownLatch.countDown();
-			}
-		};
+		EventListener r = data -> countDownLatch.countDown();
 
 		eventLoop.dispatch(r);
 
@@ -117,18 +106,8 @@ public class EventLoopTest {
 
 		final CountDownLatch latch = new CountDownLatch(numberOfConsumers);
 		final ConcurrentHashMap<Thread, Thread> threads = new ConcurrentHashMap<>();
-		NoParameterEventListener threadDetectingListener = new NoParameterEventListener() {
-			@Override
-			public void handle() {
-				threads.put(Thread.currentThread(), Thread.currentThread());
-			}
-		};
-		NoParameterEventListener endListener = new NoParameterEventListener() {
-			@Override
-			public void handle() {
-				latch.countDown();
-			}
-		};
+		NoParameterEventListener threadDetectingListener = () -> threads.put(Thread.currentThread(), Thread.currentThread());
+		NoParameterEventListener endListener = () -> latch.countDown();
 
 		for (int i = 0; i < numberOfEvents; i++) {
 			eventLoop.dispatch("tick", threadDetectingListener);
@@ -156,18 +135,8 @@ public class EventLoopTest {
 
 		final CountDownLatch latch = new CountDownLatch(1);
 		final ConcurrentHashMap<Thread, Thread> threads = new ConcurrentHashMap<>();
-		NoParameterEventListener threadDetectingListener = new NoParameterEventListener() {
-			@Override
-			public void handle() {
-				threads.put(Thread.currentThread(), Thread.currentThread());
-			}
-		};
-		NoParameterEventListener endListener = new NoParameterEventListener() {
-			@Override
-			public void handle() {
-				latch.countDown();
-			}
-		};
+		NoParameterEventListener threadDetectingListener = () -> threads.put(Thread.currentThread(), Thread.currentThread());
+		NoParameterEventListener endListener = () -> latch.countDown();
 
 		for (int i = 0; i < numberOfEvents; i++) {
 			eventLoop.dispatch("tick", threadDetectingListener);
@@ -191,16 +160,13 @@ public class EventLoopTest {
 		int numEvents = 1000000;
 		final int[] numEventsProcessed = new int[1];
 
-		EventListener listener = new NoParameterEventListener() {
-			@Override
-			public void handle() {
-				try {
-					Thread.sleep(100);
-				} catch (InterruptedException e) {
-					e.printStackTrace();
-				}
-				numEventsProcessed[0]++;
+		NoParameterEventListener listener = () -> {
+			try {
+				Thread.sleep(100);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
 			}
+			numEventsProcessed[0]++;
 		};
 
 		for (int i = 0; i < numEvents; i++) {
@@ -217,16 +183,13 @@ public class EventLoopTest {
 				.setInsufficientCapacityStrategy(InsufficientCapacityStrategy.QUEUE_EVENTS).setEventBufferSize(1).build());
 		int numEvents = 3;
 		final CountDownLatch latch = new CountDownLatch(numEvents);
-		EventListener listener = new NoParameterEventListener() {
-			@Override
-			public void handle() {
-				try {
-					Thread.sleep(1000);
-				} catch (InterruptedException e) {
-					e.printStackTrace();
-				}
-				latch.countDown();
+		NoParameterEventListener listener = () -> {
+			try {
+				Thread.sleep(1000);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
 			}
+			latch.countDown();
 		};
 
 		for (int i = 0; i < numEvents; i++) {
@@ -253,17 +216,14 @@ public class EventLoopTest {
 		final AtomicInteger emitCountingInteger = new AtomicInteger();
 		final AtomicInteger initialCountingInteger = new AtomicInteger();
 		final CountDownLatch countingLatch = new CountDownLatch(numEvents);
-		final EventListener listener = new NoParameterEventListener() {
-			@Override
-			public void handle() {
-				initialCountingInteger.incrementAndGet();
-				try {
-					initialBlockingLatch.await();
-				} catch (InterruptedException e) {
-					e.printStackTrace();
-				}
-				countingLatch.countDown();
+		final NoParameterEventListener listener = () -> {
+			initialCountingInteger.incrementAndGet();
+			try {
+				initialBlockingLatch.await();
+			} catch (InterruptedException e) {
+				e.printStackTrace();
 			}
+			countingLatch.countDown();
 		};
 
 		// start producer in a separate thread
@@ -327,21 +287,18 @@ public class EventLoopTest {
 
 		final CountDownLatch countDownLatch = new CountDownLatch(1);
 
-		EventListener listener = new SingleParameterEventListener<String>() {
-			@Override
-			public void handle(String data) {
-				if ("bye".equals(data)) {
-					countDownLatch.countDown();
-					return;
-				}
-				try {
-					Thread.sleep(100);
-				} catch (InterruptedException e) {
-					e.printStackTrace();
-				}
-				numEventsProcessed[0]++;
-				lastDataProcessed[0] = data;
+		SingleParameterEventListener<String> listener = data -> {
+			if ("bye".equals(data)) {
+				countDownLatch.countDown();
+				return;
 			}
+			try {
+				Thread.sleep(100);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+			numEventsProcessed[0]++;
+			lastDataProcessed[0] = data;
 		};
 
 		for (int i = 0; i < numEvents; i++) {

@@ -2,15 +2,15 @@ package com.dotc.nova.events.wrappers;
 
 import com.dotc.nova.events.EventListener;
 
-public abstract class EightParametersEventListener<ParamOneType, ParamTwoType, ParamThreeType, ParamFourType, ParamFiveType, ParamSixType, ParamSevenType, ParamEightType>
-		implements EventListener<Object> {
+public interface EightParametersEventListener<ParamOneType, ParamTwoType, ParamThreeType, ParamFourType, ParamFiveType, ParamSixType, ParamSevenType, ParamEightType>
+extends EventListener {
 
-	public abstract void handle(ParamOneType param1, ParamTwoType param2, ParamThreeType param3, ParamFourType param4,
-			ParamFiveType param5, ParamSixType param6, ParamSevenType param7, ParamEightType param8);
+	void doHandle(ParamOneType param1, ParamTwoType param2, ParamThreeType param3, ParamFourType param4, ParamFiveType param5,
+			ParamSixType param6, ParamSevenType param7, ParamEightType param8);
 
 	@SuppressWarnings("unchecked")
 	@Override
-	public void handle(Object... data) {
+	default void handle(Object... data) {
 		ParamOneType param1 = null;
 		ParamTwoType param2 = null;
 		ParamThreeType param3 = null;
@@ -47,6 +47,7 @@ public abstract class EightParametersEventListener<ParamOneType, ParamTwoType, P
 			}
 		}
 
-		handle(param1, param2, param3, param4, param5, param6, param7, param8);
+		doHandle(param1, param2, param3, param4, param5, param6, param7, param8);
 	}
+
 }

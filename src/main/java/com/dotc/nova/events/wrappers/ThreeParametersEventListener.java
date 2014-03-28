@@ -2,13 +2,13 @@ package com.dotc.nova.events.wrappers;
 
 import com.dotc.nova.events.EventListener;
 
-public abstract class ThreeParametersEventListener<ParamOneType, ParamTwoType, ParamThreeType> implements EventListener<Object> {
+public interface ThreeParametersEventListener<ParamOneType, ParamTwoType, ParamThreeType> extends EventListener {
 
-	public abstract void handle(ParamOneType param1, ParamTwoType param2, ParamThreeType param3);
+	void doHandle(ParamOneType param1, ParamTwoType param2, ParamThreeType param3);
 
 	@SuppressWarnings("unchecked")
 	@Override
-	public void handle(Object... data) {
+	default void handle(Object... data) {
 		ParamOneType param1 = null;
 		ParamTwoType param2 = null;
 		ParamThreeType param3 = null;
@@ -25,6 +25,6 @@ public abstract class ThreeParametersEventListener<ParamOneType, ParamTwoType, P
 			}
 		}
 
-		handle(param1, param2, param3);
+		doHandle(param1, param2, param3);
 	}
 }

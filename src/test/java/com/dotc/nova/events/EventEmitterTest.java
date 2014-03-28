@@ -43,7 +43,7 @@ public class EventEmitterTest {
 
 	@Test(expected = IllegalArgumentException.class)
 	public void testRegisteringNullListenerThrows() {
-		eventEmitter.on(String.class, null);
+		eventEmitter.on(String.class, (EventListener) null);
 	}
 
 	@Test(expected = IllegalArgumentException.class)

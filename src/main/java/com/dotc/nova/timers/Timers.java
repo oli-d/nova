@@ -24,21 +24,17 @@ public class Timers {
 	public Timers(EventLoop eventLoop) {
 		this.eventLoop = eventLoop;
 
-		ThreadFactory tf = new ThreadFactory() {
-
-			@Override
-			public Thread newThread(Runnable arg0) {
-				Thread t = new Thread(arg0, "Timers");
-				t.setDaemon(true);
-				return t;
-			}
+		ThreadFactory tf = runnable -> {
+			Thread t = new Thread(runnable, "Timers");
+			t.setDaemon(true);
+			return t;
 		};
 		executor = Executors.newSingleThreadScheduledExecutor(tf);
 	}
 
 	/**
 	 * To schedule execution of a one-time callback after delay milliseconds. Returns a timeoutId for possible use with clearTimeout().
-	 * 
+	 *
 	 * It is important to note that your callback will probably not be called in exactly delay milliseconds - Nova makes no guarantees about
 	 * the exact timing of when the callback will fire, nor of the
 	 * ordering things will fire in. The callback will be called as close as possible to the time specified.
@@ -72,7 +68,7 @@ public class Timers {
 
 	/**
 	 * To schedule the repeated execution of callback every delay milliseconds. Returns a intervalId for possible use with clearInterval().
-	 * 
+	 *
 	 */
 	public String setInterval(Runnable callback, long delay) {
 		return setInterval(callback, delay, TimeUnit.MILLISECONDS);
@@ -80,7 +76,7 @@ public class Timers {
 
 	/**
 	 * To schedule the repeated execution of callback. Returns a intervalId for possible use with clearInterval().
-	 * 
+	 *
 	 */
 	public String setInterval(Runnable callback, long delay, TimeUnit timeUnit) {
 		if (callback == null) {
@@ -114,12 +110,9 @@ public class Timers {
 		private final EventListener handlerToInvoke;
 
 		public TimeoutCallbackWrapper(final String callbackId, final Runnable runnableToInvoke) {
-			this.handlerToInvoke = new EventListener() {
-				@Override
-				public void handle(Object... data) {
-					clearTimeout(callbackId);
-					runnableToInvoke.run();
-				}
+			this.handlerToInvoke = data -> {
+				clearTimeout(callbackId);
+				runnableToInvoke.run();
 			};
 		}
 
@@ -138,12 +131,7 @@ public class Timers {
 		private final EventListener handlerToInvoke;
 
 		public IntervalCallbackWrapper(final Runnable runnableToInvoke) {
-			this.handlerToInvoke = new EventListener() {
-				@Override
-				public void handle(Object... data) {
-					runnableToInvoke.run();
-				}
-			};
+			this.handlerToInvoke = data -> runnableToInvoke.run();
 		}
 
 		@Override

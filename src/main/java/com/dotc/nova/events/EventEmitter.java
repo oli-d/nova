@@ -9,6 +9,8 @@ import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.dotc.nova.events.wrappers.SingleParameterEventListener;
+
 @SuppressWarnings("rawtypes")
 public abstract class EventEmitter {
 	private static final Logger LOGGER = LoggerFactory.getLogger(EventEmitter.class);
@@ -28,11 +30,19 @@ public abstract class EventEmitter {
 		addListener(event, callback);
 	}
 
+	public void on(Object event, SingleParameterEventListener<?> callback) {
+		addListener(event, callback);
+	}
+
 	public void once(Object event, EventListener callback) {
 		addListener(event, callback, mapEventToOneOffHandlers);
 	}
 
 	public void addListener(Object event, EventListener callback) {
+		addListener(event, callback, mapEventToHandler);
+	}
+
+	public void addListener(Object event, SingleParameterEventListener<?> callback) {
 		addListener(event, callback, mapEventToHandler);
 	}
 
