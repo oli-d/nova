@@ -13,6 +13,8 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
+import com.dotc.nova.events.metrics.NoopEventMetricsCollector;
+
 @RunWith(MockitoJUnitRunner.class)
 public class EventLoopAwareEventEmitterTest {
 	@Mock
@@ -21,7 +23,7 @@ public class EventLoopAwareEventEmitterTest {
 
 	@Before
 	public void setup() {
-		eventEmitter = new EventLoopAwareEventEmitter(eventLoop, false);
+		eventEmitter = new EventLoopAwareEventEmitter(eventLoop, false, new NoopEventMetricsCollector());
 	}
 
 	@Test

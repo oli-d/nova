@@ -5,12 +5,14 @@ import static org.mockito.Mockito.*;
 import org.junit.Before;
 import org.junit.Test;
 
+import com.dotc.nova.events.metrics.NoopEventMetricsCollector;
+
 public class CurrentThreadEventEmitterTest {
 	private EventEmitter eventEmitter;
 
 	@Before
 	public void setup() {
-		eventEmitter = new CurrentThreadEventEmitter(false);
+		eventEmitter = new CurrentThreadEventEmitter(false, new NoopEventMetricsCollector());
 	}
 
 	@Test

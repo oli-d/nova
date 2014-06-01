@@ -1,12 +1,7 @@
 package com.dotc.nova.events;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadFactory;
+import java.util.*;
+import java.util.concurrent.*;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -14,15 +9,8 @@ import org.slf4j.LoggerFactory;
 import com.dotc.nova.events.EventDispatchConfig.InsufficientCapacityStrategy;
 import com.dotc.nova.events.EventDispatchConfig.MultiConsumerDispatchStrategy;
 import com.dotc.nova.events.EventDispatchConfig.ProducerStrategy;
-import com.lmax.disruptor.BlockingWaitStrategy;
-import com.lmax.disruptor.BusySpinWaitStrategy;
-import com.lmax.disruptor.EventFactory;
-import com.lmax.disruptor.EventHandler;
-import com.lmax.disruptor.RingBuffer;
-import com.lmax.disruptor.SleepingWaitStrategy;
-import com.lmax.disruptor.WaitStrategy;
-import com.lmax.disruptor.WorkHandler;
-import com.lmax.disruptor.YieldingWaitStrategy;
+import com.dotc.nova.events.metrics.EventMetricsCollector;
+import com.lmax.disruptor.*;
 import com.lmax.disruptor.dsl.Disruptor;
 import com.lmax.disruptor.dsl.ProducerType;
 
@@ -37,8 +25,10 @@ public class EventLoop {
 	private final Executor dispatchLaterExecutor;
 	private final Map<Object, IdProviderForDuplicateEventDetection> idProviderRegistry;
 	private final Map<Object, Object[]> mapIdToCurrentData;
+	private final EventMetricsCollector metricsCollector;
 
-	public EventLoop(String identifier, EventDispatchConfig eventDispatchConfig) {
+	public EventLoop(String identifier, EventDispatchConfig eventDispatchConfig,
+			EventMetricsCollector metricsCollector) {
 		this.identifier = identifier;
 		this.idProviderRegistry = new ConcurrentHashMap<>();
 		this.mapIdToCurrentData = new ConcurrentHashMap<>();
@@ -53,10 +43,13 @@ public class EventLoop {
 			LOGGER.debug("\tWait strategy:                      " + eventDispatchConfig.waitStrategy);
 			LOGGER.debug("\t# consumers:                        " + eventDispatchConfig.numberOfConsumers);
 			if (eventDispatchConfig.numberOfConsumers > 1) {
-				LOGGER.debug("\t# multi consumer dispatch strategy: " + eventDispatchConfig.multiConsumerDispatchStrategy);
+				LOGGER.debug("\t# multi consumer dispatch strategy: "
+						+ eventDispatchConfig.multiConsumerDispatchStrategy);
 			}
 			LOGGER.debug("\twarn on unhandled events:           " + eventDispatchConfig.warnOnUnhandledEvent);
 		}
+		this.metricsCollector = metricsCollector;
+
 		this.insufficientCapacityStrategy = eventDispatchConfig.insufficientCapacityStrategy;
 
 		WaitStrategy waitStrategy = null;
@@ -88,8 +81,8 @@ public class EventLoop {
 
 		EventFactory<InvocationContext> eventFactory = new MyEventFactory();
 
-		Disruptor<InvocationContext> disruptor = new Disruptor<InvocationContext>(eventFactory, eventBufferSize, dispatchExecutor,
-				producerType, waitStrategy);
+		Disruptor<InvocationContext> disruptor = new Disruptor<InvocationContext>(eventFactory, eventBufferSize,
+				dispatchExecutor, producerType, waitStrategy);
 		disruptor.handleExceptionsWith(new DefaultExceptionHandler());
 		if (eventDispatchConfig.numberOfConsumers == 1) {
 			disruptor.handleEventsWith(new SingleConsumerEventHandler());
@@ -148,18 +141,21 @@ public class EventLoop {
 				if (LOGGER.isTraceEnabled()) {
 					LOGGER.trace("Dropped outdated data for event " + event + ", since a more recent update came in");
 				}
+				metricsCollector.duplicateEventDetected(event);
 			}
 		} else {
 			putNormalEventIntoRingBuffer(event, listeners, data);
 		}
 	}
 
-	private <EventType, DataType> void putNormalEventIntoRingBuffer(EventType event, EventListener[] listeners, DataType... data) {
+	private <EventType, DataType> void putNormalEventIntoRingBuffer(EventType event, EventListener[] listeners,
+			DataType... data) {
 		try {
 			long nextSequenceNumber = ringBuffer.tryNext();
 			InvocationContext ic = ringBuffer.get(nextSequenceNumber);
 			ic.setEventListenerInfo(event, listeners, data);
 			ringBuffer.publish(nextSequenceNumber);
+			metricsCollector.eventDispatched(event);
 		} catch (com.lmax.disruptor.InsufficientCapacityException e) {
 			handleRingBufferFull(event, listeners, data);
 		}
@@ -172,38 +168,46 @@ public class EventLoop {
 			InvocationContext ic = ringBuffer.get(nextSequenceNumber);
 			ic.setEventListenerInfo(event, listeners, duplicateDetectionId, mapIdToCurrentData);
 			ringBuffer.publish(nextSequenceNumber);
+			metricsCollector.eventDispatched(event);
 		} catch (com.lmax.disruptor.InsufficientCapacityException e) {
 			handleRingBufferFull(event, listeners, mapIdToCurrentData.remove(duplicateDetectionId));
 		}
 	}
 
-	private <EventType, DataType> void handleRingBufferFull(EventType event, EventListener[] listeners, DataType... data) {
+	private <EventType, DataType> void handleRingBufferFull(EventType event, EventListener[] listeners,
+			DataType... data) {
 		switch (insufficientCapacityStrategy) {
 			case DROP_EVENTS:
 				if (LOGGER.isTraceEnabled()) {
 					LOGGER.trace("RingBuffer " + identifier + " full. Dropping event " + event + " with parameters "
 							+ Arrays.toString(data));
 				}
+				metricsCollector.eventDroppedBecauseOfFullQueue(event);
 				return;
 			case THROW_EXCEPTION:
-				LOGGER.trace("RingBuffer " + identifier + " full. Event " + event + " with parameters " + Arrays.toString(data));
+				LOGGER.trace("RingBuffer " + identifier + " full. Event " + event + " with parameters "
+						+ Arrays.toString(data));
+				metricsCollector.eventAddedToFullQueue(event);
 				throw new InsufficientCapacityException(event, data);
 			case QUEUE_EVENTS:
 				dispatchLaterExecutor.execute(new MyDispatchLaterRunnable<EventType, DataType>(event, listeners, data));
 				if (LOGGER.isTraceEnabled()) {
 					LOGGER.trace("RingBuffer " + identifier + " full. Queued event " + event + " for later processing");
 				}
+				metricsCollector.eventAddedToDispatchLaterQueue(event);
 				return;
 			case WAIT_UNTIL_SPACE_AVAILABLE:
 				long nextSequenceNumber = ringBuffer.next();
 				InvocationContext ic = ringBuffer.get(nextSequenceNumber);
 				ic.setEventListenerInfo(event, listeners, data);
 				ringBuffer.publish(nextSequenceNumber);
+				metricsCollector.eventDispatched(event);
 				return;
 		}
 	}
 
-	public void registerIdProviderForDuplicateEventDetection(Object event, IdProviderForDuplicateEventDetection duplicateDetectionIdProvider) {
+	public void registerIdProviderForDuplicateEventDetection(Object event,
+			IdProviderForDuplicateEventDetection duplicateDetectionIdProvider) {
 		idProviderRegistry.put(event, duplicateDetectionIdProvider);
 	}
 

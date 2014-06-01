@@ -101,7 +101,8 @@ public class EventDispatchConfig {
 
 		private void validate() {
 			if (numberOfConsumers > 1 && dispatchThreadStrategy == DispatchThreadStrategy.DISPATCH_IN_EMITTER_THREAD) {
-				throw new IllegalArgumentException("DISPATCH_IN_EMITTER_THREAD strategy cannot be used with multiple consumers");
+				throw new IllegalArgumentException(
+						"DISPATCH_IN_EMITTER_THREAD strategy cannot be used with multiple consumers");
 			}
 		}
 

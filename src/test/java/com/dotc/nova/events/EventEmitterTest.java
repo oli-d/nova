@@ -1,23 +1,19 @@
 package com.dotc.nova.events;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoMoreInteractions;
+import static org.junit.Assert.*;
+import static org.mockito.Matchers.*;
+import static org.mockito.Mockito.*;
 
 import java.util.List;
 
 import org.apache.log4j.BasicConfigurator;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.*;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
+
+import com.dotc.nova.events.metrics.NoopEventMetricsCollector;
 
 @RunWith(MockitoJUnitRunner.class)
 public class EventEmitterTest {
@@ -105,8 +101,10 @@ public class EventEmitterTest {
 
 		ArgumentCaptor<List> listenerCaptorEvent1 = ArgumentCaptor.forClass(List.class);
 		ArgumentCaptor<List> listenerCaptorEvent2 = ArgumentCaptor.forClass(List.class);
-		verify(delegate).dispatchEventAndDataToListeners(listenerCaptorEvent1.capture(), eq(String.class), eq("MyEvent1"));
-		verify(delegate).dispatchEventAndDataToListeners(listenerCaptorEvent2.capture(), eq(String.class), eq("MyEvent2"));
+		verify(delegate).dispatchEventAndDataToListeners(listenerCaptorEvent1.capture(), eq(String.class),
+				eq("MyEvent1"));
+		verify(delegate).dispatchEventAndDataToListeners(listenerCaptorEvent2.capture(), eq(String.class),
+				eq("MyEvent2"));
 		verifyNoMoreInteractions(delegate);
 
 		assertNotNull(listenerCaptorEvent1.getValue());
@@ -179,9 +177,12 @@ public class EventEmitterTest {
 		ArgumentCaptor<List> listenerCaptorEvent1 = ArgumentCaptor.forClass(List.class);
 		ArgumentCaptor<List> listenerCaptorEvent2 = ArgumentCaptor.forClass(List.class);
 		ArgumentCaptor<List> listenerCaptorEvent3 = ArgumentCaptor.forClass(List.class);
-		verify(delegate).dispatchEventAndDataToListeners(listenerCaptorEvent1.capture(), eq(String.class), eq("MyEvent1"));
-		verify(delegate).dispatchEventAndDataToListeners(listenerCaptorEvent2.capture(), eq(String.class), eq("MyEvent2"));
-		verify(delegate).dispatchEventAndDataToListeners(listenerCaptorEvent3.capture(), eq(String.class), eq("MyEvent3"), eq("MyEvent4"));
+		verify(delegate).dispatchEventAndDataToListeners(listenerCaptorEvent1.capture(), eq(String.class),
+				eq("MyEvent1"));
+		verify(delegate).dispatchEventAndDataToListeners(listenerCaptorEvent2.capture(), eq(String.class),
+				eq("MyEvent2"));
+		verify(delegate).dispatchEventAndDataToListeners(listenerCaptorEvent3.capture(), eq(String.class),
+				eq("MyEvent3"), eq("MyEvent4"));
 		verifyNoMoreInteractions(delegate);
 
 		assertNotNull(listenerCaptorEvent1.getValue());
@@ -205,7 +206,8 @@ public class EventEmitterTest {
 		eventEmitter.emit(String.class, "My String");
 
 		ArgumentCaptor<List> listenerCaptorEvent1 = ArgumentCaptor.forClass(List.class);
-		verify(delegate).dispatchEventAndDataToListeners(listenerCaptorEvent1.capture(), eq(String.class), eq("My String"));
+		verify(delegate).dispatchEventAndDataToListeners(listenerCaptorEvent1.capture(), eq(String.class),
+				eq("My String"));
 		verifyNoMoreInteractions(delegate);
 
 		assertNotNull(listenerCaptorEvent1.getValue());
@@ -228,7 +230,8 @@ public class EventEmitterTest {
 		ArgumentCaptor<List> listenerCaptorEvent1 = ArgumentCaptor.forClass(List.class);
 		ArgumentCaptor<List> listenerCaptorEvent2 = ArgumentCaptor.forClass(List.class);
 		verify(delegate).dispatchEventAndDataToListeners(listenerCaptorEvent1.capture(), eq(String.class), eq("First"));
-		verify(delegate).dispatchEventAndDataToListeners(listenerCaptorEvent2.capture(), eq(String.class), eq("Second"));
+		verify(delegate)
+				.dispatchEventAndDataToListeners(listenerCaptorEvent2.capture(), eq(String.class), eq("Second"));
 		verifyNoMoreInteractions(delegate);
 
 		assertNotNull(listenerCaptorEvent1.getValue());
@@ -246,12 +249,13 @@ public class EventEmitterTest {
 		private final EventEmitter delegate;
 
 		public MyEventEmitter(EventEmitter delegate) {
-			super(false);
+			super(false, new NoopEventMetricsCollector());
 			this.delegate = delegate;
 		}
 
 		@Override
-		<EventType> void dispatchEventAndDataToListeners(List<EventListener> listenerList, EventType event, Object... data) {
+		<EventType> void dispatchEventAndDataToListeners(List<EventListener> listenerList, EventType event,
+				Object... data) {
 			delegate.dispatchEventAndDataToListeners(listenerList, event, data);
 		}
 

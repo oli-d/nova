@@ -1,13 +1,13 @@
-package com.dotc.nova.examples.events;
+package com.dotc.nova.examples.events.mousemirror;
 
 import java.awt.event.MouseEvent;
+import java.util.concurrent.TimeUnit;
 
 import javax.swing.JFrame;
 
 import org.apache.log4j.BasicConfigurator;
 
 import com.dotc.nova.Nova;
-import com.dotc.nova.examples.events.mousemirror.*;
 
 /**
  * This simple example shows how to use the Nove event queue.
@@ -39,6 +39,7 @@ public class MouseMirror {
 		 * *********************************************************************** *
 		 */
 		final Nova nova = new Nova.Builder().build();
+		nova.metrics.dumpContinuouslyToLog(5, TimeUnit.SECONDS);
 
 		/**
 		 * <pre>
@@ -52,12 +53,10 @@ public class MouseMirror {
 		 * *************************************************************************************** *
 		 */
 		MouseEventForwarder eventForwarder = new MouseEventForwarder() {
-
 			@Override
 			public void forwardEvent(MouseEvent event) {
 				nova.eventEmitter.emit("MouseEvent", event);
 			}
-
 		};
 		sourceFrame.getGlassPane().addMouseListener(eventForwarder);
 		sourceFrame.getGlassPane().addMouseMotionListener(eventForwarder);

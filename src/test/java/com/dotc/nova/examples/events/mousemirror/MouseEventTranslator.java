@@ -7,9 +7,9 @@ import java.awt.event.MouseEvent;
 import javax.swing.JFrame;
 import javax.swing.SwingUtilities;
 
-import com.dotc.nova.events.EventListener;
+import com.dotc.nova.events.wrappers.SingleParameterEventListener;
 
-public class MouseEventTranslator implements EventListener<MouseEvent> {
+public class MouseEventTranslator extends SingleParameterEventListener<MouseEvent> {
 	private final JFrame targetFrame;
 
 	public MouseEventTranslator(JFrame targetFrame) {
@@ -17,8 +17,7 @@ public class MouseEventTranslator implements EventListener<MouseEvent> {
 	}
 
 	@Override
-	public void handle(MouseEvent... data) {
-		final MouseEvent event = data[0];
+	public void handle(final MouseEvent event) {
 		SwingUtilities.invokeLater(new Runnable() {
 
 			@Override

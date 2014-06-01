@@ -3,7 +3,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>com.dotc.nova</groupId>
 	<artifactId>nova-core</artifactId>
-	<version>0.14.1</version>
+	<version>0.15.0</version>
 
 	<dependencies>
 		<dependency>
@@ -52,6 +52,12 @@
 			<artifactId>slf4j-log4j12</artifactId>
 			<version>1.7.5</version>
 			<scope>test</scope>
+		</dependency>
+
+		<dependency>
+			<groupId>com.codahale.metrics</groupId>
+			<artifactId>metrics-core</artifactId>
+			<version>3.0.1</version>
 		</dependency>
 	</dependencies>
 	<build>

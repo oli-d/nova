@@ -1,27 +1,28 @@
 package com.dotc.nova.events;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.dotc.nova.events.metrics.EventMetricsCollector;
 
 @SuppressWarnings("rawtypes")
 public abstract class EventEmitter {
 	private static final Logger LOGGER = LoggerFactory.getLogger(EventEmitter.class);
 
-	abstract <EventType> void dispatchEventAndDataToListeners(List<EventListener> listenerList, EventType event, Object... data);
+	abstract <EventType> void dispatchEventAndDataToListeners(List<EventListener> listenerList, EventType event,
+			Object... data);
 
 	private final HashMap<Object, List<EventListener>> mapEventToHandler = new HashMap<>();
 	private final HashMap<Object, List<EventListener>> mapEventToOneOffHandlers = new HashMap<>();
 
 	private final boolean warnOnUnhandledEvents;
+	protected final EventMetricsCollector eventMetricsCollector;
 
-	protected EventEmitter(boolean warnOnUnhandledEvents) {
+	protected EventEmitter(boolean warnOnUnhandledEvents, EventMetricsCollector eventMetricsCollector) {
 		this.warnOnUnhandledEvents = warnOnUnhandledEvents;
+		this.eventMetricsCollector = eventMetricsCollector;
 	}
 
 	public void on(Object event, EventListener callback) {
@@ -51,6 +52,7 @@ public abstract class EventEmitter {
 		if (LOGGER.isTraceEnabled()) {
 			LOGGER.trace("Registered event " + event + " --> " + callback);
 		}
+		eventMetricsCollector.listenerAdded(event);
 		handlers.add(callback);
 	}
 
@@ -69,8 +71,9 @@ public abstract class EventEmitter {
 				mapEventToHandler.remove(event);
 			}
 			if (LOGGER.isTraceEnabled()) {
-				LOGGER.trace("Deregistered handler " + event + " --> " + handler);
+				LOGGER.trace("Deregistered listener " + event + " --> " + handler);
 			}
+			eventMetricsCollector.listenerRemoved(event);
 		}
 		// remove listener from one off list
 		handlers = mapEventToOneOffHandlers.get(event);
@@ -79,7 +82,8 @@ public abstract class EventEmitter {
 			if (handlers.isEmpty()) {
 				mapEventToHandler.remove(event);
 			}
-			LOGGER.trace("Deregistered one off handler " + event + " --> " + handler);
+			LOGGER.trace("Deregistered one off listener " + event + " --> " + handler);
+			eventMetricsCollector.listenerRemoved(event);
 		}
 	}
 
@@ -92,6 +96,7 @@ public abstract class EventEmitter {
 		if (LOGGER.isTraceEnabled()) {
 			LOGGER.trace("Deregistered all listeners for event " + event);
 		}
+		eventMetricsCollector.allListenersRemoved(event);
 	}
 
 	public List<EventListener> getListeners(Object event) {
@@ -127,8 +132,10 @@ public abstract class EventEmitter {
 		if (!listenerList.isEmpty()) {
 			dispatchEventAndDataToListeners(listenerList, event, data);
 		} else {
+			eventMetricsCollector.eventEmittedButNoListeners(event);
 			if (warnOnUnhandledEvents) {
-				LOGGER.warn("No listener registered for event " + event + ". Discarding dispatch with parameters " + Arrays.toString(data));
+				LOGGER.warn("No listener registered for event " + event + ". Discarding dispatch with parameters "
+						+ Arrays.toString(data));
 			}
 		}
 	}
