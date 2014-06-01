@@ -51,6 +51,17 @@ public class MetricsExample {
 		 */
 		nova.metrics.dumpContinuouslyToLog(10, TimeUnit.SECONDS);
 
+		/**
+		 * <pre>
+		 * *************************************************************************** * 
+		 * *************************************************************************** * 
+		 * ***                                                                     *** *
+		 * *** 3rd step:                                                           *** *
+		 * *** register dummy listeners and create events until <ENTER> is pressed *** *
+		 * ***                                                                     *** *
+		 * *************************************************************************** *
+		 * *************************************************************************** *
+		 */
 		nova.eventEmitter.on("Event", new NoParameterEventListener() {
 			@Override
 			public void handle() {
