@@ -7,8 +7,7 @@ import com.dotc.nova.events.metrics.EventMetricsCollector;
 public class EventLoopAwareEventEmitter extends EventEmitter {
 	private final EventLoop eventLoop;
 
-	public EventLoopAwareEventEmitter(EventLoop eventLoop, boolean warnOnUnhandledEvents,
-			EventMetricsCollector metricsCollector) {
+	public EventLoopAwareEventEmitter(EventLoop eventLoop, boolean warnOnUnhandledEvents, EventMetricsCollector metricsCollector) {
 		super(warnOnUnhandledEvents, metricsCollector);
 		this.eventLoop = eventLoop;
 	}

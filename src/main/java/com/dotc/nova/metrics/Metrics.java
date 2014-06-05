@@ -1,15 +1,20 @@
 package com.dotc.nova.metrics;
 
-import static com.codahale.metrics.MetricRegistry.*;
-
 import java.util.concurrent.TimeUnit;
 
 import org.slf4j.LoggerFactory;
 
-import com.codahale.metrics.*;
+import com.codahale.metrics.Counter;
+import com.codahale.metrics.Histogram;
+import com.codahale.metrics.Meter;
+import com.codahale.metrics.Metric;
+import com.codahale.metrics.MetricRegistry;
+import com.codahale.metrics.ScheduledReporter;
+import com.codahale.metrics.Slf4jReporter;
+import com.codahale.metrics.Timer;
 
 public class Metrics {
-	private final MetricRegistry metricRegistry = new MetricRegistry();
+	public final MetricRegistry metricRegistry = new MetricRegistry();
 	private Slf4jReporter logReporter;
 
 	public void dumpContinuously(ScheduledReporter reporter, long dumpInterval, TimeUnit timeUnit) {
@@ -39,27 +44,41 @@ public class Metrics {
 		dumpOnce(logReporter);
 	}
 
-	public <T extends Metric> void register(T metric, Class clazz, String... idPath) {
-		metricRegistry.register(name(clazz, idPath), metric);
+	public <T extends Metric> void register(T metric, String... idPath) {
+		metricRegistry.register(name(idPath), metric);
 	}
 
-	public void remove(Class clazz, String... idPath) {
-		metricRegistry.remove(name(clazz, idPath));
+	public void remove(String... idPath) {
+		metricRegistry.remove(name(idPath));
 	}
 
-	public Meter getMeter(Class clazz, String... idPath) {
-		return metricRegistry.meter(name(clazz, idPath));
+	public Meter getMeter(String... idPath) {
+		return metricRegistry.meter(name(idPath));
 	}
 
-	public Counter getCounter(Class clazz, String... idPath) {
-		return metricRegistry.counter(MetricRegistry.name(clazz, idPath));
+	public Counter getCounter(String... idPath) {
+		return metricRegistry.counter(name(idPath));
 	}
 
-	public Timer getTimer(Class clazz, String... idPath) {
-		return metricRegistry.timer(MetricRegistry.name(clazz, idPath));
+	public Timer getTimer(String... idPath) {
+		return metricRegistry.timer(name(idPath));
 	}
 
-	public Histogram getHistogramm(Class clazz, String... idPath) {
-		return metricRegistry.histogram(MetricRegistry.name(clazz, idPath));
+	public Histogram getHistogram(String... idPath) {
+		return metricRegistry.histogram(name(idPath));
+	}
+
+	private String name(String... idPath) {
+		int count = idPath.length;
+		StringBuilder sb = new StringBuilder();
+		int idx = 0;
+		for (String s : idPath) {
+			sb.append(s);
+			if (idx < count - 1) {
+				sb.append('.');
+			}
+			idx++;
+		}
+		return sb.toString();
 	}
 }

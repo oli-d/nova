@@ -22,7 +22,7 @@ public class CurrentThreadEventEmitter extends EventEmitter {
 		for (EventListener listener : listenerList) {
 			try {
 				listener.handle(dataToPass);
-				eventMetricsCollector.eventDispatched(event);
+				metricsCollector.eventDispatched(event);
 			} catch (Exception e) {
 				LOGGER.error("Uncaught exception while invoking eventListener " + listener, e);
 				LOGGER.error("\tparamters: " + Arrays.toString(data));

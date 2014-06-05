@@ -1,7 +1,10 @@
 package com.dotc.nova.timers;
 
-import static org.junit.Assert.*;
-import static org.mockito.Mockito.*;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.timeout;
+import static org.mockito.Mockito.verify;
 
 import java.lang.reflect.Field;
 import java.util.Map;
@@ -24,8 +27,7 @@ public class TimersMemLeakTest {
 	public void testSetTimeoutLeavesNothingAfterItWasInvoked() throws Throwable {
 
 		Runnable callback = mock(Runnable.class);
-		EventLoop eventLoop = new EventLoop("test", new EventDispatchConfig.Builder().build(),
-				new NoopEventMetricsCollector());
+		EventLoop eventLoop = new EventLoop("test", new EventDispatchConfig.Builder().build(), new NoopEventMetricsCollector());
 		Timers timers = new Timers(eventLoop);
 		Map<String, ScheduledFuture> internalMap = getInternalFutureMapFrom(timers);
 
@@ -41,8 +43,7 @@ public class TimersMemLeakTest {
 	@Test
 	public void testClearTimeoutRemovesEverything() throws Throwable {
 		Runnable callback = mock(Runnable.class);
-		EventLoop eventLoop = new EventLoop("test", new EventDispatchConfig.Builder().build(),
-				new NoopEventMetricsCollector());
+		EventLoop eventLoop = new EventLoop("test", new EventDispatchConfig.Builder().build(), new NoopEventMetricsCollector());
 		Timers timers = new Timers(eventLoop);
 		Map<String, ScheduledFuture> internalMap = getInternalFutureMapFrom(timers);
 
@@ -56,8 +57,7 @@ public class TimersMemLeakTest {
 	@Test
 	public void testClearIntervalRemovesEverything() throws Throwable {
 		Runnable callback = mock(Runnable.class);
-		EventLoop eventLoop = new EventLoop("test", new EventDispatchConfig.Builder().build(),
-				new NoopEventMetricsCollector());
+		EventLoop eventLoop = new EventLoop("test", new EventDispatchConfig.Builder().build(), new NoopEventMetricsCollector());
 		Timers timers = new Timers(eventLoop);
 		Map<String, ScheduledFuture> internalMap = getInternalFutureMapFrom(timers);
 

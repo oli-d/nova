@@ -3,7 +3,9 @@ package com.dotc.nova.events.wrappers;
 import org.junit.Assert;
 import org.junit.Test;
 
-import com.dotc.nova.events.*;
+import com.dotc.nova.events.CurrentThreadEventEmitter;
+import com.dotc.nova.events.EventEmitter;
+import com.dotc.nova.events.EventListener;
 import com.dotc.nova.events.metrics.NoopEventMetricsCollector;
 
 public class EventListenerWrappersTest {
@@ -13,8 +15,8 @@ public class EventListenerWrappersTest {
 
 		TenParametersEventListener<String, Integer, Double, Long, Float, Byte, Boolean, Character, String, Double> listener10 = new TenParametersEventListener<String, Integer, Double, Long, Float, Byte, Boolean, Character, String, Double>() {
 			@Override
-			public void handle(String param1, Integer param2, Double param3, Long param4, Float param5, Byte param6,
-					Boolean param7, Character param8, String param9, Double param10) {
+			public void handle(String param1, Integer param2, Double param3, Long param4, Float param5, Byte param6, Boolean param7,
+					Character param8, String param9, Double param10) {
 				listenersInvoked[0] = true;
 				Assert.assertNull(param1);
 				Assert.assertNull(param2);
@@ -30,8 +32,8 @@ public class EventListenerWrappersTest {
 		};
 		NineParametersEventListener<String, Integer, Double, Long, Float, Byte, Boolean, Character, String> listener9 = new NineParametersEventListener<String, Integer, Double, Long, Float, Byte, Boolean, Character, String>() {
 			@Override
-			public void handle(String param1, Integer param2, Double param3, Long param4, Float param5, Byte param6,
-					Boolean param7, Character param8, String param9) {
+			public void handle(String param1, Integer param2, Double param3, Long param4, Float param5, Byte param6, Boolean param7,
+					Character param8, String param9) {
 				listenersInvoked[1] = true;
 				Assert.assertNull(param1);
 				Assert.assertNull(param2);
@@ -46,8 +48,8 @@ public class EventListenerWrappersTest {
 		};
 		EightParametersEventListener<String, Integer, Double, Long, Float, Byte, Boolean, Character> listener8 = new EightParametersEventListener<String, Integer, Double, Long, Float, Byte, Boolean, Character>() {
 			@Override
-			public void handle(String param1, Integer param2, Double param3, Long param4, Float param5, Byte param6,
-					Boolean param7, Character param8) {
+			public void handle(String param1, Integer param2, Double param3, Long param4, Float param5, Byte param6, Boolean param7,
+					Character param8) {
 				listenersInvoked[2] = true;
 				Assert.assertNull(param1);
 				Assert.assertNull(param2);
@@ -61,8 +63,7 @@ public class EventListenerWrappersTest {
 		};
 		SevenParametersEventListener<String, Integer, Double, Long, Float, Byte, Boolean> listener7 = new SevenParametersEventListener<String, Integer, Double, Long, Float, Byte, Boolean>() {
 			@Override
-			public void handle(String param1, Integer param2, Double param3, Long param4, Float param5, Byte param6,
-					Boolean param7) {
+			public void handle(String param1, Integer param2, Double param3, Long param4, Float param5, Byte param6, Boolean param7) {
 				listenersInvoked[3] = true;
 				Assert.assertNull(param1);
 				Assert.assertNull(param2);
@@ -185,8 +186,8 @@ public class EventListenerWrappersTest {
 
 		TenParametersEventListener<String, Integer, Double, Long, Float, Byte, Boolean, Character, String, Double> listener10 = new TenParametersEventListener<String, Integer, Double, Long, Float, Byte, Boolean, Character, String, Double>() {
 			@Override
-			public void handle(String param1, Integer param2, Double param3, Long param4, Float param5, Byte param6,
-					Boolean param7, Character param8, String param9, Double param10) {
+			public void handle(String param1, Integer param2, Double param3, Long param4, Float param5, Byte param6, Boolean param7,
+					Character param8, String param9, Double param10) {
 				listenersInvoked[0] = true;
 				Assert.assertSame(param1, p1);
 				Assert.assertSame(param2, p2);
@@ -202,8 +203,8 @@ public class EventListenerWrappersTest {
 		};
 		NineParametersEventListener<String, Integer, Double, Long, Float, Byte, Boolean, Character, String> listener9 = new NineParametersEventListener<String, Integer, Double, Long, Float, Byte, Boolean, Character, String>() {
 			@Override
-			public void handle(String param1, Integer param2, Double param3, Long param4, Float param5, Byte param6,
-					Boolean param7, Character param8, String param9) {
+			public void handle(String param1, Integer param2, Double param3, Long param4, Float param5, Byte param6, Boolean param7,
+					Character param8, String param9) {
 				listenersInvoked[1] = true;
 				Assert.assertSame(param1, p1);
 				Assert.assertSame(param2, p2);
@@ -218,8 +219,8 @@ public class EventListenerWrappersTest {
 		};
 		EightParametersEventListener<String, Integer, Double, Long, Float, Byte, Boolean, Character> listener8 = new EightParametersEventListener<String, Integer, Double, Long, Float, Byte, Boolean, Character>() {
 			@Override
-			public void handle(String param1, Integer param2, Double param3, Long param4, Float param5, Byte param6,
-					Boolean param7, Character param8) {
+			public void handle(String param1, Integer param2, Double param3, Long param4, Float param5, Byte param6, Boolean param7,
+					Character param8) {
 				listenersInvoked[2] = true;
 				Assert.assertSame(param1, p1);
 				Assert.assertSame(param2, p2);
@@ -233,8 +234,7 @@ public class EventListenerWrappersTest {
 		};
 		SevenParametersEventListener<String, Integer, Double, Long, Float, Byte, Boolean> listener7 = new SevenParametersEventListener<String, Integer, Double, Long, Float, Byte, Boolean>() {
 			@Override
-			public void handle(String param1, Integer param2, Double param3, Long param4, Float param5, Byte param6,
-					Boolean param7) {
+			public void handle(String param1, Integer param2, Double param3, Long param4, Float param5, Byte param6, Boolean param7) {
 				listenersInvoked[3] = true;
 				Assert.assertSame(param1, p1);
 				Assert.assertSame(param2, p2);

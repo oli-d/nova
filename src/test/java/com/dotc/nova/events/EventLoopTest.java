@@ -1,16 +1,24 @@
 package com.dotc.nova.events;
 
-import static org.hamcrest.Matchers.*;
-import static org.junit.Assert.*;
+import static org.hamcrest.Matchers.is;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 
 import java.lang.reflect.Field;
-import java.util.*;
-import java.util.concurrent.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.log4j.BasicConfigurator;
 import org.hamcrest.Matchers;
-import org.junit.*;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Test;
 
 import com.dotc.nova.events.EventDispatchConfig.DispatchThreadStrategy;
 import com.dotc.nova.events.EventDispatchConfig.InsufficientCapacityStrategy;
@@ -179,9 +187,9 @@ public class EventLoopTest {
 	@Test
 	public void testEventsAreDroppedIfQueueIsFullAndStrategySaysSo() {
 		eventLoop = new EventLoop("test", new EventDispatchConfig.Builder()
-				.setDispatchThreadStrategy(DispatchThreadStrategy.DISPATCH_IN_SPECIFIC_THREAD)
-				.setInsufficientCapacityStrategy(InsufficientCapacityStrategy.DROP_EVENTS).setEventBufferSize(5)
-				.build(), new NoopEventMetricsCollector());
+		.setDispatchThreadStrategy(DispatchThreadStrategy.DISPATCH_IN_SPECIFIC_THREAD)
+		.setInsufficientCapacityStrategy(InsufficientCapacityStrategy.DROP_EVENTS).setEventBufferSize(5).build(),
+				new NoopEventMetricsCollector());
 		int numEvents = 1000000;
 		final int[] numEventsProcessed = new int[1];
 
@@ -207,9 +215,9 @@ public class EventLoopTest {
 	@Test
 	public void testEventsAreQueuedInMemeoryIfQueueIsFullAndStrategySaysSo() {
 		eventLoop = new EventLoop("test", new EventDispatchConfig.Builder()
-				.setDispatchThreadStrategy(DispatchThreadStrategy.DISPATCH_IN_SPECIFIC_THREAD)
-				.setInsufficientCapacityStrategy(InsufficientCapacityStrategy.QUEUE_EVENTS).setEventBufferSize(1)
-				.build(), new NoopEventMetricsCollector());
+		.setDispatchThreadStrategy(DispatchThreadStrategy.DISPATCH_IN_SPECIFIC_THREAD)
+		.setInsufficientCapacityStrategy(InsufficientCapacityStrategy.QUEUE_EVENTS).setEventBufferSize(1).build(),
+				new NoopEventMetricsCollector());
 		int numEvents = 3;
 		final CountDownLatch latch = new CountDownLatch(numEvents);
 		EventListener listener = new NoParameterEventListener() {
@@ -240,10 +248,9 @@ public class EventLoopTest {
 	public void testNoDispatchingUntilSpaceAvailableIfQueueIsFullAndStrategySaysSo() {
 		int eventBufferSize = 4;
 		eventLoop = new EventLoop("test", new EventDispatchConfig.Builder()
-				.setDispatchThreadStrategy(DispatchThreadStrategy.DISPATCH_IN_SPECIFIC_THREAD)
-				.setNumberOfConsumers(eventBufferSize)
-				.setInsufficientCapacityStrategy(InsufficientCapacityStrategy.WAIT_UNTIL_SPACE_AVAILABLE)
-				.setEventBufferSize(eventBufferSize).build(), new NoopEventMetricsCollector());
+		.setDispatchThreadStrategy(DispatchThreadStrategy.DISPATCH_IN_SPECIFIC_THREAD).setNumberOfConsumers(eventBufferSize)
+		.setInsufficientCapacityStrategy(InsufficientCapacityStrategy.WAIT_UNTIL_SPACE_AVAILABLE)
+		.setEventBufferSize(eventBufferSize).build(), new NoopEventMetricsCollector());
 		final int numEvents = 100;
 		final CountDownLatch initialBlockingLatch = new CountDownLatch(1);
 		final AtomicInteger emitCountingInteger = new AtomicInteger();
@@ -311,8 +318,8 @@ public class EventLoopTest {
 	public void testOutdatedEventsAreDroppedIfTheyAreProducedFasterThanConsumed() throws InterruptedException {
 		int numEvents = 1000000;
 		eventLoop = new EventLoop("test", new EventDispatchConfig.Builder()
-				.setDispatchThreadStrategy(DispatchThreadStrategy.DISPATCH_IN_SPECIFIC_THREAD)
-				.setEventBufferSize(numEvents).build(), new NoopEventMetricsCollector());
+		.setDispatchThreadStrategy(DispatchThreadStrategy.DISPATCH_IN_SPECIFIC_THREAD).setEventBufferSize(numEvents).build(),
+				new NoopEventMetricsCollector());
 		eventLoop.registerIdProviderForDuplicateEventDetection("bla", new IdProviderForDuplicateEventDetection() {
 			@Override
 			public Object provideIdFor(Object... data) {

@@ -1,6 +1,15 @@
 package com.dotc.nova.events.metrics;
 
-public class NoopEventMetricsCollector implements EventMetricsCollector {
+
+public class NoopEventMetricsCollector extends EventMetricsCollector {
+
+	public NoopEventMetricsCollector() {
+		super(null, null);
+	}
+
+	@Override
+	public void setTrackingEnabled(boolean enabled, Object... events) {
+	}
 
 	@Override
 	public void eventDispatched(Object event) {
