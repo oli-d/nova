@@ -2,13 +2,13 @@ package com.dotc.nova.events.wrappers;
 
 import com.dotc.nova.events.EventListener;
 
-public abstract class NoParameterEventListener implements EventListener<Object> {
+public interface NoParameterEventListener extends EventListener {
 
-	public abstract void handle();
+	void doHandle();
 
 	@Override
-	public void handle(Object... data) {
-		handle();
+	default void handle(Object... data) {
+		doHandle();
 	}
 
 }

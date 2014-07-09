@@ -13,12 +13,13 @@ import com.dotc.nova.events.wrappers.NoParameterEventListener;
 
 /**
  * This simple example shows how to use the Nove event queue.
- * 
+ *
  * It creates a source JFrame and translates that Frame's MouseEvents to 2 target JFrames.
- * 
- * The translation is done by the source frame putting all MouseEvents onto the Nove event queue, and register one Nova event queue listener per target frame, which takes the MouseEvents and applies
+ *
+ * The translation is done by the source frame putting all MouseEvents onto the Nove event queue, and register one Nova event queue listener
+ * per target frame, which takes the MouseEvents and applies
  * them to the target frame.
- * 
+ *
  */
 public class MetricsExample {
 	public static void main(String[] args) throws Exception {
@@ -27,8 +28,8 @@ public class MetricsExample {
 
 		/**
 		 * <pre>
-		 * *********************************************************************** * 
-		 * *********************************************************************** * 
+		 * *********************************************************************** *
+		 * *********************************************************************** *
 		 * ***                                                                 *** *
 		 * *** 1st step:                                                       *** *
 		 * *** Initilize Nova by creating a new instance of com.dotc.nova.Nova *** *
@@ -40,8 +41,8 @@ public class MetricsExample {
 
 		/**
 		 * <pre>
-		 * ******************************************************************* * 
-		 * ******************************************************************* * 
+		 * ******************************************************************* *
+		 * ******************************************************************* *
 		 * ***                                                             *** *
 		 * *** 2nd step:                                                   *** *
 		 * *** Specify that metrics should regularily be dumped to logfile *** *
@@ -53,8 +54,8 @@ public class MetricsExample {
 
 		/**
 		 * <pre>
-		 * *************************************************************************** * 
-		 * *************************************************************************** * 
+		 * *************************************************************************** *
+		 * *************************************************************************** *
 		 * ***                                                                     *** *
 		 * *** 3rd step:                                                           *** *
 		 * *** register dummy listeners and create events until <ENTER> is pressed *** *
@@ -62,15 +63,9 @@ public class MetricsExample {
 		 * *************************************************************************** *
 		 * *************************************************************************** *
 		 */
-		nova.eventEmitter.on("Event", new NoParameterEventListener() {
-			@Override
-			public void handle() {
-			}
+		nova.eventEmitter.on("Event", (NoParameterEventListener) () -> {
 		});
-		nova.eventEmitter.on("Event2", new NoParameterEventListener() {
-			@Override
-			public void handle() {
-			}
+		nova.eventEmitter.on("Event2", (NoParameterEventListener) () -> {
 		});
 		startEventCreation(nova.eventEmitter);
 

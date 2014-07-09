@@ -19,7 +19,7 @@ public class CurrentThreadEventEmitter extends EventEmitter {
 	@Override
 	<EventType> void dispatchEventAndDataToListeners(List<EventListener> listenerList, EventType event, Object... data) {
 		Object[] dataToPass = data.length == 0 ? null : data;
-		for (EventListener listener : listenerList) {
+		listenerList.forEach(listener -> {
 			try {
 				listener.handle(dataToPass);
 				metricsCollector.eventDispatched(event);
@@ -27,7 +27,7 @@ public class CurrentThreadEventEmitter extends EventEmitter {
 				LOGGER.error("Uncaught exception while invoking eventListener " + listener, e);
 				LOGGER.error("\tparamters: " + Arrays.toString(data));
 			}
-		}
+		});
 	}
 
 }

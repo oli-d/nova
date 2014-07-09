@@ -9,32 +9,27 @@ import javax.swing.SwingUtilities;
 
 import com.dotc.nova.events.wrappers.SingleParameterEventListener;
 
-public class MouseEventTranslator extends SingleParameterEventListener<MouseEvent> {
+public class MouseEventTranslator implements SingleParameterEventListener<MouseEvent> {
 	private final JFrame targetFrame;
 
 	public MouseEventTranslator(JFrame targetFrame) {
 		this.targetFrame = targetFrame;
 	}
 
-	@Override
-	public void handle(final MouseEvent event) {
-		SwingUtilities.invokeLater(new Runnable() {
-
-			@Override
-			public void run() {
-				switch (event.getID()) {
-					case MouseEvent.MOUSE_MOVED:
-						handleMouseMove(event, false);
-						return;
-					case MouseEvent.MOUSE_DRAGGED:
-						handleMouseMove(event, true);
-						return;
-					case MouseEvent.MOUSE_CLICKED:
-						handleMouseClicked(event);
-						return;
-					default:
-						// no handling
-				}
+	public void doHandle(MouseEvent event) {
+		SwingUtilities.invokeLater(() -> {
+			switch (event.getID()) {
+				case MouseEvent.MOUSE_MOVED:
+					handleMouseMove(event, false);
+					return;
+				case MouseEvent.MOUSE_DRAGGED:
+					handleMouseMove(event, true);
+					return;
+				case MouseEvent.MOUSE_CLICKED:
+					handleMouseClicked(event);
+					return;
+				default:
+					// no handling
 			}
 		});
 	}

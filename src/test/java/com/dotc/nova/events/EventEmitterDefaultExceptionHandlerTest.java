@@ -3,7 +3,9 @@ package com.dotc.nova.events;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import org.junit.*;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.runners.MockitoJUnitRunner;
 
@@ -17,7 +19,8 @@ public class EventEmitterDefaultExceptionHandlerTest {
 
 	@Before
 	public void setup() {
-		EventDispatchConfig edc = new EventDispatchConfig.Builder().setDispatchThreadStrategy(DispatchThreadStrategy.DISPATCH_IN_SPECIFIC_THREAD).build();
+		EventDispatchConfig edc = new EventDispatchConfig.Builder().setDispatchThreadStrategy(
+				DispatchThreadStrategy.DISPATCH_IN_SPECIFIC_THREAD).build();
 		eventEmitter = new Nova.Builder().setEventDispatchConfig(edc).build().eventEmitter;
 	}
 
@@ -26,16 +29,13 @@ public class EventEmitterDefaultExceptionHandlerTest {
 		final int[] counter = new int[1];
 		final CountDownLatch latch = new CountDownLatch(1);
 
-		SingleParameterEventListener<String> listener = new SingleParameterEventListener<String>() {
-			@Override
-			public void handle(String param) {
-				if ("throw".equals(param)) {
-					throw new RuntimeException("for test");
-				} else if ("end".equals(param)) {
-					latch.countDown();
-				} else {
-					counter[0]++;
-				}
+		SingleParameterEventListener<String> listener = param -> {
+			if ("throw".equals(param)) {
+				throw new RuntimeException("for test");
+			} else if ("end".equals(param)) {
+				latch.countDown();
+			} else {
+				counter[0]++;
 			}
 		};
 
@@ -52,5 +52,4 @@ public class EventEmitterDefaultExceptionHandlerTest {
 
 		Assert.assertEquals(4, counter[0]);
 	}
-
 }
