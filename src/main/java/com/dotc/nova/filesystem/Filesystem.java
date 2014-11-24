@@ -1,15 +1,12 @@
 package com.dotc.nova.filesystem;
 
 import java.io.IOException;
+import java.net.URL;
 import java.nio.ByteBuffer;
-import java.nio.channels.AsynchronousFileChannel;
-import java.nio.channels.CompletionHandler;
-import java.nio.channels.FileChannel;
+import java.nio.channels.*;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.OpenOption;
-import java.nio.file.Paths;
-import java.nio.file.StandardOpenOption;
+import java.nio.file.*;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -22,7 +19,8 @@ public class Filesystem {
 
 	public void readFile(String filePath, final FileReadHandler handler) {
 		try {
-			AsynchronousFileChannel channel = AsynchronousFileChannel.open(Paths.get(filePath), StandardOpenOption.READ);
+			AsynchronousFileChannel channel = AsynchronousFileChannel
+					.open(Paths.get(filePath), StandardOpenOption.READ);
 			long capacity = channel.size();
 			// TODO: hack for simplicity. do this properly
 			if (capacity > Integer.MAX_VALUE) {
@@ -57,6 +55,15 @@ public class Filesystem {
 		}
 	}
 
+	public void readFileFromClasspath(String resourcePath, FileReadHandler handler) {
+		URL resourceUri = getClass().getResource(resourcePath);
+		if (resourceUri == null) {
+			handler.errorOccurred(new NoSuchFileException(resourcePath));
+		} else {
+			readFile(getClass().getResource(resourcePath).getFile(), handler);
+		}
+	}
+
 	public String readFileSync(String filePath) throws IOException {
 		FileChannel channel = FileChannel.open(Paths.get(filePath), StandardOpenOption.READ);
 		long capacity = channel.size();
@@ -69,10 +76,19 @@ public class Filesystem {
 		return new String(buffer.array());
 	}
 
+	public String readFileFromClasspathSync(String resourcePath) throws IOException {
+		URL resourceUri = getClass().getResource(resourcePath);
+		if (resourceUri == null) {
+			throw new NoSuchFileException(resourcePath);
+		} else {
+			return readFileSync(resourceUri.getFile());
+		}
+	}
+
 	public void writeFile(final String content, String filePath, final FileWriteHandler handler) {
 		try {
-			AsynchronousFileChannel channel = AsynchronousFileChannel.open(Paths.get(filePath), StandardOpenOption.WRITE,
-					StandardOpenOption.CREATE);
+			AsynchronousFileChannel channel = AsynchronousFileChannel.open(Paths.get(filePath),
+					StandardOpenOption.WRITE, StandardOpenOption.CREATE);
 			ByteBuffer contentBuffer = ByteBuffer.wrap(content.getBytes());
 			channel.write(contentBuffer, 0, null, new CompletionHandler<Integer, ByteBuffer>() {
 
@@ -124,4 +140,5 @@ public class Filesystem {
 			channel.close();
 		}
 	}
+
 }

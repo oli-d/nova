@@ -132,16 +132,21 @@ public class FilesystemTest {
 
 	@Test
 	public void testReadFileFromClasspathSync() throws Throwable {
-		assertThat(filesystem.readFileFromClasspathSync("src/test/resources/someFile.txt"),
-				is("This is some content in some file."));
+		assertThat(filesystem.readFileFromClasspathSync("/someFile.txt"), is("This is some content in some file."));
+		verifyZeroInteractions(process);
+	}
+
+	@Test(expected = NoSuchFileException.class)
+	public void testReadFileFromClasspathSyncWithUnknownPathThrowsException() throws Throwable {
+		filesystem.readFileFromClasspathSync("src/test/resources/" + System.currentTimeMillis() + ".txt");
 		verifyZeroInteractions(process);
 	}
 
 	@Test
-	public void testReadFile() throws Throwable {
+	public void testReadFileFromClasspath() throws Throwable {
 		FileReadHandler handler = mock(FileReadHandler.class);
 
-		filesystem.readFile("src/test/resources/someFile.txt", handler);
+		filesystem.readFileFromClasspath("/someFile.txt", handler);
 
 		ArgumentCaptor<Runnable> captor = ArgumentCaptor.forClass(Runnable.class);
 		verify(process, timeout(500)).nextTick(captor.capture());
@@ -153,6 +158,23 @@ public class FilesystemTest {
 		verify(handler).fileRead(eq("This is some content in some file."));
 
 		verifyNoMoreInteractions(handler, process);
+	}
+
+	@Test
+	public void testReadFileFromClasspathWithUnknownPathCausesErrorCallbackToBeInvoked() throws Throwable {
+		FileReadHandler handler = mock(FileReadHandler.class);
+		filesystem.readFileFromClasspath("doesntExist.txt", handler);
+		verify(handler).errorOccurred((Throwable) anyObject());
+
+		verifyNoMoreInteractions(handler, process);
+	}
+
+	@Test
+	public void testReadFileWithLeadingPathSeparator() throws Throwable {
+		String pathWithLeadingSeparatorAndDrive = getClass().getResource("/someFile.txt").getFile();
+		System.out.println(pathWithLeadingSeparatorAndDrive);
+		assertThat(filesystem.readFileFromClasspathSync("/someFile.txt"), is("This is some content in some file."));
+		verifyZeroInteractions(process);
 	}
 
 }
