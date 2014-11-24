@@ -6,7 +6,6 @@ public interface FourParametersEventListener<ParamOneType, ParamTwoType, ParamTh
 
 	public abstract void doHandle(ParamOneType param1, ParamTwoType param2, ParamThreeType param3, ParamFourType param4);
 
-	@SuppressWarnings("unchecked")
 	@Override
 	public default void handle(Object... data) {
 		ParamOneType param1 = null;

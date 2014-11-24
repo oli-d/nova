@@ -2,8 +2,7 @@ package com.dotc.nova.events.wrappers;
 
 import com.dotc.nova.events.EventListener;
 
-public interface SingleParameterEventListener<ParamType> extends EventListener<Object> {
-	@SuppressWarnings("unchecked")
+public interface SingleParameterEventListener<ParamType> extends EventListener {
 	@Override
 	default void handle(Object... params) {
 		if (params == null || params.length == 0) {

@@ -1,5 +1,6 @@
 package com.dotc.nova.events;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -27,7 +28,6 @@ import com.lmax.disruptor.YieldingWaitStrategy;
 import com.lmax.disruptor.dsl.Disruptor;
 import com.lmax.disruptor.dsl.ProducerType;
 
-@SuppressWarnings("unchecked")
 public class EventLoop {
 	private static final Logger LOGGER = LoggerFactory.getLogger(EventLoop.class);
 
@@ -92,23 +92,24 @@ public class EventLoop {
 
 		EventFactory<InvocationContext> eventFactory = new MyEventFactory();
 
-		Disruptor<InvocationContext> disruptor = new Disruptor<InvocationContext>(eventFactory, eventBufferSize, dispatchExecutor,
-				producerType, waitStrategy);
+		Disruptor<InvocationContext> disruptor = new Disruptor<>(eventFactory, eventBufferSize, dispatchExecutor, producerType,
+				waitStrategy);
 		disruptor.handleExceptionsWith(new DefaultExceptionHandler());
 		if (eventDispatchConfig.numberOfConsumers == 1) {
-			disruptor.handleEventsWith(new SingleConsumerEventHandler());
+			EventHandler<InvocationContext> handler = new SingleConsumerEventHandler();
+			disruptor.handleEventsWith(handler);
 		} else if (eventDispatchConfig.multiConsumerDispatchStrategy == MultiConsumerDispatchStrategy.DISPATCH_EVENTS_TO_ALL_CONSUMERS) {
-			EventHandler[] eventHandlers = new EventHandler[eventDispatchConfig.numberOfConsumers];
-			for (int i = 0; i < eventHandlers.length; i++) {
-				eventHandlers[i] = new MultiConsumerEventHandler();
+			List<EventHandler<InvocationContext>> eventHandlers = new ArrayList<>();
+			for (int i = 0; i < eventDispatchConfig.numberOfConsumers; i++) {
+				eventHandlers.add(new MultiConsumerEventHandler());
 			}
-			disruptor.handleEventsWith(eventHandlers);
+			disruptor.handleEventsWith(eventHandlers.toArray(new EventHandler[eventHandlers.size()]));
 		} else {
-			WorkHandler[] workHandlers = new WorkHandler[eventDispatchConfig.numberOfConsumers];
-			for (int i = 0; i < workHandlers.length; i++) {
-				workHandlers[i] = new DefaultWorkHandler();
+			List<WorkHandler<InvocationContext>> workHandlers = new ArrayList<>();
+			for (int i = 0; i < eventDispatchConfig.numberOfConsumers; i++) {
+				workHandlers.add(new DefaultWorkHandler());
 			}
-			disruptor.handleEventsWithWorkerPool(workHandlers);
+			disruptor.handleEventsWithWorkerPool(workHandlers.toArray(new WorkHandler[workHandlers.size()]));
 		}
 		ringBuffer = disruptor.start();
 	}
