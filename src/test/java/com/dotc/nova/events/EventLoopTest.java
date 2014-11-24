@@ -1,24 +1,16 @@
 package com.dotc.nova.events;
 
-import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
+import static org.hamcrest.Matchers.*;
+import static org.junit.Assert.*;
 
-import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.log4j.BasicConfigurator;
 import org.hamcrest.Matchers;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.*;
 
 import com.dotc.nova.events.EventDispatchConfig.DispatchThreadStrategy;
 import com.dotc.nova.events.EventDispatchConfig.InsufficientCapacityStrategy;
@@ -40,9 +32,8 @@ public class EventLoopTest {
 		eventLoop = new EventLoop("test", new EventDispatchConfig.Builder().build(), new NoopEventMetricsCollector());
 	}
 
-	private EventListener<String>[] createListeners(final CountDownLatch countDownLatch) {
-		@SuppressWarnings("unchecked")
-		EventListener<String>[] listenersArray = new EventListener[(int) countDownLatch.getCount()];
+	private EventListener[] createListeners(final CountDownLatch countDownLatch) {
+		EventListener[] listenersArray = new EventListener[(int) countDownLatch.getCount()];
 		for (int i = 0; i < listenersArray.length; i++) {
 			listenersArray[i] = data -> countDownLatch.countDown();
 		}
@@ -53,7 +44,7 @@ public class EventLoopTest {
 	public void testDispatchEventWithListenerArray() {
 		int numberOfListeners = 5;
 		final CountDownLatch countDownLatch = new CountDownLatch(numberOfListeners);
-		EventListener<String>[] listenersArray = createListeners(countDownLatch);
+		EventListener[] listenersArray = createListeners(countDownLatch);
 
 		eventLoop.dispatch("Test", listenersArray);
 
@@ -68,9 +59,9 @@ public class EventLoopTest {
 	public void testDispatchEventWithListenerList() {
 		int numberOfListeners = 5;
 		final CountDownLatch countDownLatch = new CountDownLatch(numberOfListeners);
-		EventListener<String>[] listenersArray = createListeners(countDownLatch);
+		EventListener[] listenersArray = createListeners(countDownLatch);
 
-		ArrayList<EventListener> list = new ArrayList<EventListener>(Arrays.asList(listenersArray));
+		ArrayList<EventListener> list = new ArrayList<>(Arrays.asList(listenersArray));
 		eventLoop.dispatch("Test", list, "Data");
 
 		try {
@@ -107,7 +98,8 @@ public class EventLoopTest {
 
 		final CountDownLatch latch = new CountDownLatch(numberOfConsumers);
 		final ConcurrentHashMap<Thread, Thread> threads = new ConcurrentHashMap<>();
-		NoParameterEventListener threadDetectingListener = () -> threads.put(Thread.currentThread(), Thread.currentThread());
+		NoParameterEventListener threadDetectingListener = () -> threads.put(Thread.currentThread(),
+				Thread.currentThread());
 		NoParameterEventListener endListener = () -> latch.countDown();
 
 		for (int i = 0; i < numberOfEvents; i++) {
@@ -136,7 +128,8 @@ public class EventLoopTest {
 
 		final CountDownLatch latch = new CountDownLatch(1);
 		final ConcurrentHashMap<Thread, Thread> threads = new ConcurrentHashMap<>();
-		NoParameterEventListener threadDetectingListener = () -> threads.put(Thread.currentThread(), Thread.currentThread());
+		NoParameterEventListener threadDetectingListener = () -> threads.put(Thread.currentThread(),
+				Thread.currentThread());
 		NoParameterEventListener endListener = () -> latch.countDown();
 
 		for (int i = 0; i < numberOfEvents; i++) {
@@ -157,8 +150,8 @@ public class EventLoopTest {
 	public void testEventsAreDroppedIfQueueIsFullAndStrategySaysSo() {
 		eventLoop = new EventLoop("test", new EventDispatchConfig.Builder()
 		.setDispatchThreadStrategy(DispatchThreadStrategy.DISPATCH_IN_SPECIFIC_THREAD)
-		.setInsufficientCapacityStrategy(InsufficientCapacityStrategy.DROP_EVENTS).setEventBufferSize(5).build(),
-				new NoopEventMetricsCollector());
+		.setInsufficientCapacityStrategy(InsufficientCapacityStrategy.DROP_EVENTS).setEventBufferSize(5)
+		.build(), new NoopEventMetricsCollector());
 		int numEvents = 1000000;
 		final int[] numEventsProcessed = new int[1];
 
@@ -182,8 +175,8 @@ public class EventLoopTest {
 	public void testEventsAreQueuedInMemeoryIfQueueIsFullAndStrategySaysSo() {
 		eventLoop = new EventLoop("test", new EventDispatchConfig.Builder()
 		.setDispatchThreadStrategy(DispatchThreadStrategy.DISPATCH_IN_SPECIFIC_THREAD)
-		.setInsufficientCapacityStrategy(InsufficientCapacityStrategy.QUEUE_EVENTS).setEventBufferSize(1).build(),
-				new NoopEventMetricsCollector());
+		.setInsufficientCapacityStrategy(InsufficientCapacityStrategy.QUEUE_EVENTS).setEventBufferSize(1)
+		.build(), new NoopEventMetricsCollector());
 		int numEvents = 3;
 		final CountDownLatch latch = new CountDownLatch(numEvents);
 		NoParameterEventListener listener = () -> {
@@ -211,7 +204,8 @@ public class EventLoopTest {
 	public void testNoDispatchingUntilSpaceAvailableIfQueueIsFullAndStrategySaysSo() {
 		int eventBufferSize = 4;
 		eventLoop = new EventLoop("test", new EventDispatchConfig.Builder()
-		.setDispatchThreadStrategy(DispatchThreadStrategy.DISPATCH_IN_SPECIFIC_THREAD).setNumberOfConsumers(eventBufferSize)
+		.setDispatchThreadStrategy(DispatchThreadStrategy.DISPATCH_IN_SPECIFIC_THREAD)
+		.setNumberOfConsumers(eventBufferSize)
 		.setInsufficientCapacityStrategy(InsufficientCapacityStrategy.WAIT_UNTIL_SPACE_AVAILABLE)
 		.setEventBufferSize(eventBufferSize).build(), new NoopEventMetricsCollector());
 		final int numEvents = 100;
@@ -278,8 +272,8 @@ public class EventLoopTest {
 	public void testOutdatedEventsAreDroppedIfTheyAreProducedFasterThanConsumed() throws InterruptedException {
 		int numEvents = 1000000;
 		eventLoop = new EventLoop("test", new EventDispatchConfig.Builder()
-		.setDispatchThreadStrategy(DispatchThreadStrategy.DISPATCH_IN_SPECIFIC_THREAD).setEventBufferSize(numEvents).build(),
-				new NoopEventMetricsCollector());
+		.setDispatchThreadStrategy(DispatchThreadStrategy.DISPATCH_IN_SPECIFIC_THREAD)
+		.setEventBufferSize(numEvents).build(), new NoopEventMetricsCollector());
 		eventLoop.registerIdProviderForDuplicateEventDetection("bla", new IdProviderForDuplicateEventDetection() {
 			@Override
 			public Object provideIdFor(Object... data) {
@@ -316,21 +310,4 @@ public class EventLoopTest {
 		assertThat(lastDataProcessed[0], Matchers.is("value" + (numEvents - 1)));
 	}
 
-	private void setIdToCurrentDataMap(EventLoop eventLoop, Map<Object, Object[]> mapIdToCurrentValue) throws Exception {
-		Field f = EventLoop.class.getDeclaredField("mapIdToCurrentData");
-		f.setAccessible(true);
-		f.set(eventLoop, mapIdToCurrentValue);
-	}
-
-	// @Test
-	// public void testThatAllListenerInvokedIfNoDuplicateRegistered() throws Exception {
-	// Map<Object, Object[]> mapIdToCurrentValue = mock(Map.class);
-	// setIdToCurrentDataMap(eventLoop, mapIdToCurrentValue);
-	//
-	// Object key = "key";
-	// when(mapIdToCurrentValue.get(key)).thenReturn(null);
-	// }
-	//
-	// @Test
-	// public void testThatAllListenerInvokedIfNoDuplicateRegistered() throws Exception {
 }

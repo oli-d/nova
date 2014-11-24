@@ -1,9 +1,6 @@
 package com.dotc.nova.events;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -142,59 +139,63 @@ public abstract class EventEmitter {
 		} else {
 			metricsCollector.eventEmittedButNoListeners(event);
 			if (warnOnUnhandledEvents) {
-				LOGGER.warn("No listener registered for event " + event + ". Discarding dispatch with parameters " + data);
+				LOGGER.warn("No listener registered for event " + event + ". Discarding dispatch with parameters "
+						+ data);
 			}
 		}
 	}
 
-	public <EventType, ParamType> void emit(EventType event, ParamType data) {
-		doEmit(event, data);
+	public void emit(Object event) {
+		doEmit(event);
 	}
 
-	public <EventType, Param1Type, Param2Type> void emit(EventType event, Param1Type data1, Param2Type data2) {
-		doEmit(event, data1, data2);
+	public void emit(Object event, Object dataParam1) {
+		doEmit(event, dataParam1);
 	}
 
-	public <EventType, Param1Type, Param2Type, Param3Type> void emit(EventType event, Param1Type data1, Param2Type data2, Param3Type data3) {
-		doEmit(event, data1, data2, data3);
+	public void emit(Object event, Object dataParam1, Object dataParam2) {
+		doEmit(event, dataParam1, dataParam2);
 	}
 
-	public <EventType, Param1Type, Param2Type, Param3Type, Param4Type> void emit(EventType event, Param1Type data1, Param2Type data2,
-			Param3Type data3, Param4Type data4) {
-		doEmit(event, data1, data2, data3, data4);
+	public void emit(Object event, Object dataParam1, Object dataParam2, Object dataParam3) {
+		doEmit(event, dataParam1, dataParam2, dataParam3);
 	}
 
-	public <EventType, Param1Type, Param2Type, Param3Type, Param4Type, Param5Type> void emit(EventType event, Param1Type data1,
-			Param2Type data2, Param3Type data3, Param4Type data4, Param5Type data5) {
-		doEmit(event, data1, data2, data3, data4, data5);
+	public void emit(Object event, Object dataParam1, Object dataParam2, Object dataParam3, Object dataParam4) {
+		doEmit(event, dataParam1, dataParam2, dataParam3, dataParam4);
 	}
 
-	public <EventType, Param1Type, Param2Type, Param3Type, Param4Type, Param5Type, Param6Type> void emit(EventType event, Param1Type data1,
-			Param2Type data2, Param3Type data3, Param4Type data4, Param5Type data5, Param6Type data6) {
-		doEmit(event, data1, data2, data3, data4, data5, data6);
+	public void emit(Object event, Object dataParam1, Object dataParam2, Object dataParam3, Object dataParam4,
+			Object dataParam5) {
+		doEmit(event, dataParam1, dataParam2, dataParam3, dataParam4, dataParam5);
 	}
 
-	public <EventType, Param1Type, Param2Type, Param3Type, Param4Type, Param5Type, Param6Type, Param7Type> void emit(EventType event,
-			Param1Type data1, Param2Type data2, Param3Type data3, Param4Type data4, Param5Type data5, Param6Type data6, Param7Type data7) {
-		doEmit(event, data1, data2, data3, data4, data5, data6, data7);
+	public void emit(Object event, Object dataParam1, Object dataParam2, Object dataParam3, Object dataParam4,
+			Object dataParam5, Object dataParam6) {
+		doEmit(event, dataParam1, dataParam2, dataParam3, dataParam4, dataParam5, dataParam6);
 	}
 
-	public <EventType, Param1Type, Param2Type, Param3Type, Param4Type, Param5Type, Param6Type, Param7Type, Param8Type> void emit(
-			EventType event, Param1Type data1, Param2Type data2, Param3Type data3, Param4Type data4, Param5Type data5, Param6Type data6,
-			Param7Type data7, Param8Type data8) {
-		doEmit(event, data1, data2, data3, data4, data5, data6, data7, data8);
+	public void emit(Object event, Object dataParam1, Object dataParam2, Object dataParam3, Object dataParam4,
+			Object dataParam5, Object dataParam6, Object dataParam7) {
+		doEmit(event, dataParam1, dataParam2, dataParam3, dataParam4, dataParam5, dataParam6, dataParam7);
 	}
 
-	public <EventType, Param1Type, Param2Type, Param3Type, Param4Type, Param5Type, Param6Type, Param7Type, Param8Type, Param9Type> void emit(
-			EventType event, Param1Type data1, Param2Type data2, Param3Type data3, Param4Type data4, Param5Type data5, Param6Type data6,
-			Param7Type data7, Param8Type data8, Param9Type data9) {
-		doEmit(event, data1, data2, data3, data4, data5, data6, data7, data8, data9);
+	public void emit(Object event, Object dataParam1, Object dataParam2, Object dataParam3, Object dataParam4,
+			Object dataParam5, Object dataParam6, Object dataParam7, Object dataParam8) {
+		doEmit(event, dataParam1, dataParam2, dataParam3, dataParam4, dataParam5, dataParam6, dataParam7, dataParam8);
 	}
 
-	public <EventType, Param1Type, Param2Type, Param3Type, Param4Type, Param5Type, Param6Type, Param7Type, Param8Type, Param9Type, Param10Type> void emit(
-			EventType event, Param1Type data1, Param2Type data2, Param3Type data3, Param4Type data4, Param5Type data5, Param6Type data6,
-			Param7Type data7, Param8Type data8, Param9Type data9, Param10Type data10) {
-		doEmit(event, data1, data2, data3, data4, data5, data6, data7, data8, data9, data10);
+	public void emit(Object event, Object dataParam1, Object dataParam2, Object dataParam3, Object dataParam4,
+			Object dataParam5, Object dataParam6, Object dataParam7, Object dataParam8, Object dataParam9) {
+		doEmit(event, dataParam1, dataParam2, dataParam3, dataParam4, dataParam5, dataParam6, dataParam7, dataParam8,
+				dataParam9);
+	}
+
+	public void emit(Object event, Object dataParam1, Object dataParam2, Object dataParam3, Object dataParam4,
+			Object dataParam5, Object dataParam6, Object dataParam7, Object dataParam8, Object dataParam9,
+			Object dataParam10) {
+		doEmit(event, dataParam1, dataParam2, dataParam3, dataParam4, dataParam5, dataParam6, dataParam7, dataParam8,
+				dataParam9, dataParam10);
 	}
 
 	public void enableMetricsTrackingFor(Object... events) {

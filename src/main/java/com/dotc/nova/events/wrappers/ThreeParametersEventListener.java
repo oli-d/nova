@@ -6,6 +6,7 @@ public interface ThreeParametersEventListener<ParamOneType, ParamTwoType, ParamT
 
 	void doHandle(ParamOneType param1, ParamTwoType param2, ParamThreeType param3);
 
+	@SuppressWarnings("unchecked")
 	@Override
 	default void handle(Object... data) {
 		ParamOneType param1 = null;

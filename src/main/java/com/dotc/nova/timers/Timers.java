@@ -1,11 +1,6 @@
 package com.dotc.nova.timers;
 
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,7 +14,7 @@ public class Timers {
 	private final EventLoop eventLoop;
 	private final ScheduledExecutorService executor;
 	private long counter = 0;
-	private ConcurrentHashMap<String, ScheduledFuture> mapIdToFuture = new ConcurrentHashMap<String, ScheduledFuture>();
+	private ConcurrentHashMap<String, ScheduledFuture<?>> mapIdToFuture = new ConcurrentHashMap<>();
 
 	public Timers(EventLoop eventLoop) {
 		this.eventLoop = eventLoop;
@@ -35,8 +30,7 @@ public class Timers {
 	/**
 	 * To schedule execution of a one-time callback after delay milliseconds. Returns a timeoutId for possible use with clearTimeout().
 	 *
-	 * It is important to note that your callback will probably not be called in exactly delay milliseconds - Nova makes no guarantees about
-	 * the exact timing of when the callback will fire, nor of the
+	 * It is important to note that your callback will probably not be called in exactly delay milliseconds - Nova makes no guarantees about the exact timing of when the callback will fire, nor of the
 	 * ordering things will fire in. The callback will be called as close as possible to the time specified.
 	 */
 	public String setTimeout(Runnable callback, long delay) {
@@ -46,7 +40,8 @@ public class Timers {
 		long id = ++counter;
 		String idAsString = String.valueOf(id);
 
-		mapIdToFuture.put(idAsString, executor.schedule(new TimeoutCallbackWrapper(idAsString, callback), delay, TimeUnit.MILLISECONDS));
+		mapIdToFuture.put(idAsString,
+				executor.schedule(new TimeoutCallbackWrapper(idAsString, callback), delay, TimeUnit.MILLISECONDS));
 
 		return idAsString;
 	}
@@ -60,7 +55,7 @@ public class Timers {
 		if (timeoutId == null) {
 			throw new IllegalArgumentException("timeoutId must not be null");
 		}
-		ScheduledFuture sf = mapIdToFuture.remove(timeoutId);
+		ScheduledFuture<?> sf = mapIdToFuture.remove(timeoutId);
 		if (sf != null) {
 			sf.cancel(false);
 		}
@@ -88,7 +83,8 @@ public class Timers {
 		long id = ++counter;
 		String idAsString = String.valueOf(id);
 
-		mapIdToFuture.put(idAsString, executor.scheduleWithFixedDelay(new IntervalCallbackWrapper(callback), delay, delay, timeUnit));
+		mapIdToFuture.put(idAsString,
+				executor.scheduleWithFixedDelay(new IntervalCallbackWrapper(callback), delay, delay, timeUnit));
 
 		return idAsString;
 	}
@@ -100,7 +96,7 @@ public class Timers {
 		if (intervalId == null) {
 			throw new IllegalArgumentException("timeoutId must not be null");
 		}
-		ScheduledFuture sf = mapIdToFuture.remove(intervalId);
+		ScheduledFuture<?> sf = mapIdToFuture.remove(intervalId);
 		if (sf != null) {
 			sf.cancel(false);
 		}

@@ -3,11 +3,13 @@ package com.dotc.nova.events.wrappers;
 import com.dotc.nova.events.EventListener;
 
 public interface TenParametersEventListener<ParamOneType, ParamTwoType, ParamThreeType, ParamFourType, ParamFiveType, ParamSixType, ParamSevenType, ParamEightType, ParamNineType, ParamTenType>
-extends EventListener {
+		extends EventListener {
 
-	void doHandle(ParamOneType param1, ParamTwoType param2, ParamThreeType param3, ParamFourType param4, ParamFiveType param5,
-			ParamSixType param6, ParamSevenType param7, ParamEightType param8, ParamNineType param9, ParamTenType param10);
+	void doHandle(ParamOneType param1, ParamTwoType param2, ParamThreeType param3, ParamFourType param4,
+			ParamFiveType param5, ParamSixType param6, ParamSevenType param7, ParamEightType param8,
+			ParamNineType param9, ParamTenType param10);
 
+	@SuppressWarnings("unchecked")
 	@Override
 	default void handle(Object... data) {
 		ParamOneType param1 = null;

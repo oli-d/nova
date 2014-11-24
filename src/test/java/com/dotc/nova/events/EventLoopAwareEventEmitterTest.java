@@ -1,12 +1,8 @@
 package com.dotc.nova.events;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoMoreInteractions;
+import static org.junit.Assert.*;
+import static org.mockito.Matchers.*;
+import static org.mockito.Mockito.*;
 
 import java.util.List;
 
@@ -32,9 +28,9 @@ public class EventLoopAwareEventEmitterTest {
 
 	@Test
 	public void testListenerInvocationDelegatedToEventLoop() {
-		EventListener<String> listener1 = mock(EventListener.class);
-		EventListener<String> listener2 = mock(EventListener.class);
-		EventListener<String> listener3 = mock(EventListener.class);
+		EventListener listener1 = mock(EventListener.class);
+		EventListener listener2 = mock(EventListener.class);
+		EventListener listener3 = mock(EventListener.class);
 
 		eventEmitter.on(String.class, listener1);
 		eventEmitter.on(String.class, listener2);
@@ -45,7 +41,9 @@ public class EventLoopAwareEventEmitterTest {
 		eventEmitter.emit(String.class, "First");
 		eventEmitter.emit(String.class, "Second");
 
+		@SuppressWarnings("rawtypes")
 		ArgumentCaptor<List> listenerCaptorEvent1 = ArgumentCaptor.forClass(List.class);
+		@SuppressWarnings("rawtypes")
 		ArgumentCaptor<List> listenerCaptorEvent2 = ArgumentCaptor.forClass(List.class);
 		verify(eventLoop).dispatch(eq(String.class), listenerCaptorEvent1.capture(), eq("First"));
 		verify(eventLoop).dispatch(eq(String.class), listenerCaptorEvent2.capture(), eq("Second"));

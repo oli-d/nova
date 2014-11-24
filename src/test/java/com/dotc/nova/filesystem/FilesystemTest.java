@@ -1,23 +1,14 @@
 package com.dotc.nova.filesystem;
 
-import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
-import static org.mockito.Matchers.anyObject;
-import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.timeout;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoMoreInteractions;
-import static org.mockito.Mockito.verifyZeroInteractions;
+import static org.hamcrest.Matchers.*;
+import static org.junit.Assert.*;
+import static org.mockito.Matchers.*;
+import static org.mockito.Mockito.*;
 
 import java.io.File;
 import java.nio.file.NoSuchFileException;
 
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.*;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
@@ -66,13 +57,7 @@ public class FilesystemTest {
 	@Test
 	public void testReadFileAsyncWithUnknownPathCausesErrorCallbackToBeInvoked() throws Throwable {
 		FileReadHandler handler = mock(FileReadHandler.class);
-
-		/*
-		 * Java6 Capture<Runnable> runnableCapture = new Capture<Runnable>(); processingLoop.dispatch(capture(runnableCapture));
-		 */
-
 		filesystem.readFile("doesntExist.txt", handler);
-		// Java6: TestHelper.getCaptureValue(runnableCapture).run();
 		verify(handler).errorOccurred((Throwable) anyObject());
 
 		verifyNoMoreInteractions(handler, process);
@@ -143,6 +128,31 @@ public class FilesystemTest {
 
 		filesystem.writeFileSync("new content", "bla.txt", true);
 		assertThat(filesystem.readFileSync("bla.txt"), is("old loooong content\nnew content"));
+	}
+
+	@Test
+	public void testReadFileFromClasspathSync() throws Throwable {
+		assertThat(filesystem.readFileFromClasspathSync("src/test/resources/someFile.txt"),
+				is("This is some content in some file."));
+		verifyZeroInteractions(process);
+	}
+
+	@Test
+	public void testReadFile() throws Throwable {
+		FileReadHandler handler = mock(FileReadHandler.class);
+
+		filesystem.readFile("src/test/resources/someFile.txt", handler);
+
+		ArgumentCaptor<Runnable> captor = ArgumentCaptor.forClass(Runnable.class);
+		verify(process, timeout(500)).nextTick(captor.capture());
+
+		Runnable dispatchedRunnable = captor.getValue();
+		assertNotNull(dispatchedRunnable);
+		dispatchedRunnable.run();
+
+		verify(handler).fileRead(eq("This is some content in some file."));
+
+		verifyNoMoreInteractions(handler, process);
 	}
 
 }
