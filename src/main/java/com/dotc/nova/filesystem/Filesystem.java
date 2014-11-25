@@ -1,12 +1,18 @@
 package com.dotc.nova.filesystem;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.nio.ByteBuffer;
-import java.nio.channels.*;
+import java.nio.channels.AsynchronousFileChannel;
+import java.nio.channels.CompletionHandler;
+import java.nio.channels.FileChannel;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.*;
+import java.nio.file.NoSuchFileException;
+import java.nio.file.OpenOption;
+import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -18,9 +24,9 @@ public class Filesystem {
 	}
 
 	public void readFile(String filePath, final FileReadHandler handler) {
+		filePath = getWindowsPathUsableForNio(filePath);
 		try {
-			AsynchronousFileChannel channel = AsynchronousFileChannel
-					.open(Paths.get(filePath), StandardOpenOption.READ);
+			AsynchronousFileChannel channel = AsynchronousFileChannel.open(Paths.get(filePath), StandardOpenOption.READ);
 			long capacity = channel.size();
 			// TODO: hack for simplicity. do this properly
 			if (capacity > Integer.MAX_VALUE) {
@@ -65,6 +71,7 @@ public class Filesystem {
 	}
 
 	public String readFileSync(String filePath) throws IOException {
+		filePath = getWindowsPathUsableForNio(filePath);
 		FileChannel channel = FileChannel.open(Paths.get(filePath), StandardOpenOption.READ);
 		long capacity = channel.size();
 		if (capacity > Integer.MAX_VALUE) {
@@ -85,10 +92,29 @@ public class Filesystem {
 		}
 	}
 
+	/**
+	 * Java nio throws an exception for paths like /C:/temp/test.txt. It works if for such a path the leading character is cut off. This is
+	 * what this method does.
+	 */
+	private String getWindowsPathUsableForNio(String path) {
+		if (path == null) {
+			return null;
+		}
+		char[] pathAsChars = path.toCharArray();
+		if (pathAsChars.length > 2 //
+				&& (pathAsChars[0] == File.pathSeparatorChar || pathAsChars[0] == '/') //
+				&& Character.isAlphabetic(pathAsChars[1]) //
+				&& pathAsChars[2] == ':') {
+			return path.substring(1);
+		} else {
+			return path;
+		}
+	}
+
 	public void writeFile(final String content, String filePath, final FileWriteHandler handler) {
 		try {
-			AsynchronousFileChannel channel = AsynchronousFileChannel.open(Paths.get(filePath),
-					StandardOpenOption.WRITE, StandardOpenOption.CREATE);
+			AsynchronousFileChannel channel = AsynchronousFileChannel.open(Paths.get(filePath), StandardOpenOption.WRITE,
+					StandardOpenOption.CREATE);
 			ByteBuffer contentBuffer = ByteBuffer.wrap(content.getBytes());
 			channel.write(contentBuffer, 0, null, new CompletionHandler<Integer, ByteBuffer>() {
 
