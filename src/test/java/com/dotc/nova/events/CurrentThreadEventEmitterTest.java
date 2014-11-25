@@ -1,9 +1,6 @@
 package com.dotc.nova.events;
 
-import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoMoreInteractions;
+import static org.mockito.Mockito.*;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -20,9 +17,9 @@ public class CurrentThreadEventEmitterTest {
 
 	@Test
 	public void testAllListenerCalledDuringDispatchingAlthoughOneMightThrow() {
-		EventListener<String> listener1 = mock(EventListener.class);
-		EventListener<String> listener2 = mock(EventListener.class);
-		EventListener<String> listener3 = mock(EventListener.class);
+		EventListener listener1 = mock(EventListener.class);
+		EventListener listener2 = mock(EventListener.class);
+		EventListener listener3 = mock(EventListener.class);
 
 		doThrow(new RuntimeException("For test")).when(listener2).handle("Second");
 
@@ -42,5 +39,4 @@ public class CurrentThreadEventEmitterTest {
 
 		verifyNoMoreInteractions(listener1, listener2, listener3);
 	}
-
 }

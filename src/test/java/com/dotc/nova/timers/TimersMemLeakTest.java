@@ -1,10 +1,7 @@
 package com.dotc.nova.timers;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.timeout;
-import static org.mockito.Mockito.verify;
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
 
 import java.lang.reflect.Field;
 import java.util.Map;
@@ -27,9 +24,10 @@ public class TimersMemLeakTest {
 	public void testSetTimeoutLeavesNothingAfterItWasInvoked() throws Throwable {
 
 		Runnable callback = mock(Runnable.class);
-		EventLoop eventLoop = new EventLoop("test", new EventDispatchConfig.Builder().build(), new NoopEventMetricsCollector());
+		EventLoop eventLoop = new EventLoop("test", new EventDispatchConfig.Builder().build(),
+				new NoopEventMetricsCollector());
 		Timers timers = new Timers(eventLoop);
-		Map<String, ScheduledFuture> internalMap = getInternalFutureMapFrom(timers);
+		Map<String, ScheduledFuture<?>> internalMap = getInternalFutureMapFrom(timers);
 
 		assertTrue(internalMap.isEmpty());
 		timers.setTimeout(callback, 250, TimeUnit.MILLISECONDS);
@@ -43,9 +41,10 @@ public class TimersMemLeakTest {
 	@Test
 	public void testClearTimeoutRemovesEverything() throws Throwable {
 		Runnable callback = mock(Runnable.class);
-		EventLoop eventLoop = new EventLoop("test", new EventDispatchConfig.Builder().build(), new NoopEventMetricsCollector());
+		EventLoop eventLoop = new EventLoop("test", new EventDispatchConfig.Builder().build(),
+				new NoopEventMetricsCollector());
 		Timers timers = new Timers(eventLoop);
-		Map<String, ScheduledFuture> internalMap = getInternalFutureMapFrom(timers);
+		Map<String, ScheduledFuture<?>> internalMap = getInternalFutureMapFrom(timers);
 
 		assertTrue(internalMap.isEmpty());
 		String id = timers.setTimeout(callback, 250, TimeUnit.MILLISECONDS);
@@ -57,9 +56,10 @@ public class TimersMemLeakTest {
 	@Test
 	public void testClearIntervalRemovesEverything() throws Throwable {
 		Runnable callback = mock(Runnable.class);
-		EventLoop eventLoop = new EventLoop("test", new EventDispatchConfig.Builder().build(), new NoopEventMetricsCollector());
+		EventLoop eventLoop = new EventLoop("test", new EventDispatchConfig.Builder().build(),
+				new NoopEventMetricsCollector());
 		Timers timers = new Timers(eventLoop);
-		Map<String, ScheduledFuture> internalMap = getInternalFutureMapFrom(timers);
+		Map<String, ScheduledFuture<?>> internalMap = getInternalFutureMapFrom(timers);
 
 		assertTrue(internalMap.isEmpty());
 		String id = timers.setInterval(callback, 250, TimeUnit.MILLISECONDS);
@@ -68,10 +68,11 @@ public class TimersMemLeakTest {
 		assertTrue(internalMap.isEmpty());
 	}
 
-	private Map<String, ScheduledFuture> getInternalFutureMapFrom(Timers timers) throws Exception {
+	@SuppressWarnings("unchecked")
+	private Map<String, ScheduledFuture<?>> getInternalFutureMapFrom(Timers timers) throws Exception {
 		Field f = Timers.class.getDeclaredField("mapIdToFuture");
 		f.setAccessible(true);
-		return (Map<String, ScheduledFuture>) f.get(timers);
+		return (Map<String, ScheduledFuture<?>>) f.get(timers);
 	}
 
 }

@@ -3,10 +3,11 @@ package com.dotc.nova.events.wrappers;
 import com.dotc.nova.events.EventListener;
 
 public interface NineParametersEventListener<ParamOneType, ParamTwoType, ParamThreeType, ParamFourType, ParamFiveType, ParamSixType, ParamSevenType, ParamEightType, ParamNineType>
-extends EventListener<Object> {
+extends EventListener {
 
-	public abstract void doHandle(ParamOneType param1, ParamTwoType param2, ParamThreeType param3, ParamFourType param4,
-			ParamFiveType param5, ParamSixType param6, ParamSevenType param7, ParamEightType param8, ParamNineType param9);
+	public abstract void doHandle(ParamOneType param1, ParamTwoType param2, ParamThreeType param3,
+			ParamFourType param4, ParamFiveType param5, ParamSixType param6, ParamSevenType param7,
+			ParamEightType param8, ParamNineType param9);
 
 	@SuppressWarnings("unchecked")
 	@Override
@@ -53,4 +54,5 @@ extends EventListener<Object> {
 
 		doHandle(param1, param2, param3, param4, param5, param6, param7, param8, param9);
 	}
+
 }

@@ -9,7 +9,6 @@ class DefaultWorkHandler implements WorkHandler<InvocationContext> {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(DefaultWorkHandler.class);
 
-	@SuppressWarnings("unchecked")
 	@Override
 	public void onEvent(InvocationContext event) {
 		try {

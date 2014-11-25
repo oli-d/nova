@@ -1,12 +1,7 @@
 package com.dotc.nova.events;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadFactory;
+import java.util.*;
+import java.util.concurrent.*;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,19 +10,10 @@ import com.dotc.nova.events.EventDispatchConfig.InsufficientCapacityStrategy;
 import com.dotc.nova.events.EventDispatchConfig.MultiConsumerDispatchStrategy;
 import com.dotc.nova.events.EventDispatchConfig.ProducerStrategy;
 import com.dotc.nova.events.metrics.EventMetricsCollector;
-import com.lmax.disruptor.BlockingWaitStrategy;
-import com.lmax.disruptor.BusySpinWaitStrategy;
-import com.lmax.disruptor.EventFactory;
-import com.lmax.disruptor.EventHandler;
-import com.lmax.disruptor.RingBuffer;
-import com.lmax.disruptor.SleepingWaitStrategy;
-import com.lmax.disruptor.WaitStrategy;
-import com.lmax.disruptor.WorkHandler;
-import com.lmax.disruptor.YieldingWaitStrategy;
+import com.lmax.disruptor.*;
 import com.lmax.disruptor.dsl.Disruptor;
 import com.lmax.disruptor.dsl.ProducerType;
 
-@SuppressWarnings("unchecked")
 public class EventLoop {
 	private static final Logger LOGGER = LoggerFactory.getLogger(EventLoop.class);
 
@@ -55,7 +41,8 @@ public class EventLoop {
 			LOGGER.debug("\tWait strategy:                      " + eventDispatchConfig.waitStrategy);
 			LOGGER.debug("\t# consumers:                        " + eventDispatchConfig.numberOfConsumers);
 			if (eventDispatchConfig.numberOfConsumers > 1) {
-				LOGGER.debug("\t# multi consumer dispatch strategy: " + eventDispatchConfig.multiConsumerDispatchStrategy);
+				LOGGER.debug("\t# multi consumer dispatch strategy: "
+						+ eventDispatchConfig.multiConsumerDispatchStrategy);
 			}
 			LOGGER.debug("\twarn on unhandled events:           " + eventDispatchConfig.warnOnUnhandledEvent);
 		}
@@ -92,23 +79,25 @@ public class EventLoop {
 
 		EventFactory<InvocationContext> eventFactory = new MyEventFactory();
 
-		Disruptor<InvocationContext> disruptor = new Disruptor<InvocationContext>(eventFactory, eventBufferSize, dispatchExecutor,
+		Disruptor<InvocationContext> disruptor = new Disruptor<>(eventFactory, eventBufferSize, dispatchExecutor,
 				producerType, waitStrategy);
 		disruptor.handleExceptionsWith(new DefaultExceptionHandler());
 		if (eventDispatchConfig.numberOfConsumers == 1) {
-			disruptor.handleEventsWith(new SingleConsumerEventHandler());
+			List<EventHandler<InvocationContext>> dummyToGetRidOffCompilerWarning = new ArrayList<>();
+			dummyToGetRidOffCompilerWarning.add(new SingleConsumerEventHandler());
+			disruptor.handleEventsWith(dummyToGetRidOffCompilerWarning.toArray(new EventHandler[1]));
 		} else if (eventDispatchConfig.multiConsumerDispatchStrategy == MultiConsumerDispatchStrategy.DISPATCH_EVENTS_TO_ALL_CONSUMERS) {
-			EventHandler[] eventHandlers = new EventHandler[eventDispatchConfig.numberOfConsumers];
-			for (int i = 0; i < eventHandlers.length; i++) {
-				eventHandlers[i] = new MultiConsumerEventHandler();
+			List<EventHandler<InvocationContext>> eventHandlers = new ArrayList<>();
+			for (int i = 0; i < eventDispatchConfig.numberOfConsumers; i++) {
+				eventHandlers.add(new MultiConsumerEventHandler());
 			}
-			disruptor.handleEventsWith(eventHandlers);
+			disruptor.handleEventsWith(eventHandlers.toArray(new EventHandler[eventHandlers.size()]));
 		} else {
-			WorkHandler[] workHandlers = new WorkHandler[eventDispatchConfig.numberOfConsumers];
-			for (int i = 0; i < workHandlers.length; i++) {
-				workHandlers[i] = new DefaultWorkHandler();
+			List<WorkHandler<InvocationContext>> workHandlers = new ArrayList<>();
+			for (int i = 0; i < eventDispatchConfig.numberOfConsumers; i++) {
+				workHandlers.add(new DefaultWorkHandler());
 			}
-			disruptor.handleEventsWithWorkerPool(workHandlers);
+			disruptor.handleEventsWithWorkerPool(workHandlers.toArray(new WorkHandler[workHandlers.size()]));
 		}
 		ringBuffer = disruptor.start();
 	}
@@ -117,23 +106,23 @@ public class EventLoop {
 		dispatch(null, listener);
 	}
 
-	public <EventType, DataType> void dispatch(EventType event, List<EventListener> listenerList) {
-		dispatch(event, listenerList, (DataType[]) null);
+	public void dispatch(Object event, List<EventListener> listenerList) {
+		dispatch(event, listenerList, (Object[]) null);
 	}
 
-	public <EventType, DataType> void dispatch(EventType event, List<EventListener> listenerList, DataType... data) {
+	public void dispatch(Object event, List<EventListener> listenerList, Object... data) {
 		dispatch(event, listenerList.toArray(new EventListener[listenerList.size()]), data);
 	}
 
-	public <EventType, DataType> void dispatch(EventType event, EventListener[] listenerArray) {
-		dispatch(event, listenerArray, (DataType[]) null);
+	public void dispatch(Object event, EventListener[] listenerArray) {
+		dispatch(event, listenerArray, (Object[]) null);
 	}
 
-	public <EventType, DataType> void dispatch(EventType event, EventListener listener, DataType... data) {
+	public void dispatch(Object event, EventListener listener, Object... data) {
 		dispatch(event, new EventListener[] { listener }, data);
 	}
 
-	public <EventType, DataType> void dispatch(EventType event, EventListener[] listeners, DataType... data) {
+	public void dispatch(Object event, EventListener[] listeners, Object... data) {
 		// if this is an event for which duplicate detection was switched on, get the ID
 		Object duplicateDetectionId = null;
 		IdProviderForDuplicateEventDetection idProvider = null;
@@ -159,7 +148,7 @@ public class EventLoop {
 		}
 	}
 
-	private <EventType, DataType> void putNormalEventIntoRingBuffer(EventType event, EventListener[] listeners, DataType... data) {
+	private void putNormalEventIntoRingBuffer(Object event, EventListener[] listeners, Object... data) {
 		try {
 			long nextSequenceNumber = ringBuffer.tryNext();
 			InvocationContext ic = ringBuffer.get(nextSequenceNumber);
@@ -171,7 +160,7 @@ public class EventLoop {
 		}
 	}
 
-	private <EventType> void putEventuallyDuplicateEventIntoRingBuffer(EventType event, EventListener[] listeners,
+	private void putEventuallyDuplicateEventIntoRingBuffer(Object event, EventListener[] listeners,
 			Object duplicateDetectionId) {
 		try {
 			long nextSequenceNumber = ringBuffer.tryNext();
@@ -184,7 +173,7 @@ public class EventLoop {
 		}
 	}
 
-	private <EventType, DataType> void handleRingBufferFull(EventType event, EventListener[] listeners, DataType... data) {
+	private void handleRingBufferFull(Object event, EventListener[] listeners, Object... data) {
 		switch (insufficientCapacityStrategy) {
 			case DROP_EVENTS:
 				if (LOGGER.isTraceEnabled()) {
@@ -194,11 +183,12 @@ public class EventLoop {
 				metricsCollector.eventDroppedBecauseOfFullQueue(event);
 				return;
 			case THROW_EXCEPTION:
-				LOGGER.trace("RingBuffer " + identifier + " full. Event " + event + " with parameters " + Arrays.toString(data));
+				LOGGER.trace("RingBuffer " + identifier + " full. Event " + event + " with parameters "
+						+ Arrays.toString(data));
 				metricsCollector.eventAddedToFullQueue(event);
 				throw new InsufficientCapacityException(event, data);
 			case QUEUE_EVENTS:
-				dispatchLaterExecutor.execute(new MyDispatchLaterRunnable<EventType, DataType>(event, listeners, data));
+				dispatchLaterExecutor.execute(new MyDispatchLaterRunnable(event, listeners, data));
 				if (LOGGER.isTraceEnabled()) {
 					LOGGER.trace("RingBuffer " + identifier + " full. Queued event " + event + " for later processing");
 				}
@@ -214,7 +204,8 @@ public class EventLoop {
 		}
 	}
 
-	public void registerIdProviderForDuplicateEventDetection(Object event, IdProviderForDuplicateEventDetection duplicateDetectionIdProvider) {
+	public void registerIdProviderForDuplicateEventDetection(Object event,
+			IdProviderForDuplicateEventDetection duplicateDetectionIdProvider) {
 		idProviderRegistry.put(event, duplicateDetectionIdProvider);
 	}
 
@@ -222,12 +213,12 @@ public class EventLoop {
 		idProviderRegistry.remove(event);
 	}
 
-	private class MyDispatchLaterRunnable<EventType, DataType> implements Runnable {
-		public final EventType event;
+	private class MyDispatchLaterRunnable implements Runnable {
+		public final Object event;
 		public final EventListener[] listeners;
-		public final DataType[] data;
+		public final Object[] data;
 
-		public MyDispatchLaterRunnable(EventType event, EventListener[] listeners, DataType... data) {
+		public MyDispatchLaterRunnable(Object event, EventListener[] listeners, Object... data) {
 			this.event = event;
 			this.listeners = listeners;
 			this.data = data;

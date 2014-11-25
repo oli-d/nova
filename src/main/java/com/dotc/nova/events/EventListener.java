@@ -1,5 +1,5 @@
 package com.dotc.nova.events;
 
-public interface EventListener<DataType> {
-	public void handle(@SuppressWarnings("unchecked") DataType... data);
+public interface EventListener {
+	public void handle(Object... data);
 }

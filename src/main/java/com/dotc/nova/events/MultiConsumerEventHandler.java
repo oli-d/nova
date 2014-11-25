@@ -8,7 +8,6 @@ import com.lmax.disruptor.EventHandler;
 class MultiConsumerEventHandler implements EventHandler<InvocationContext> {
 	private static final Logger LOGGER = LoggerFactory.getLogger(MultiConsumerEventHandler.class);
 
-	@SuppressWarnings("unchecked")
 	@Override
 	public void onEvent(InvocationContext event, long sequence, boolean endOfBatch) {
 		Object[] data = event.getData();

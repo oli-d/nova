@@ -1,21 +1,14 @@
 package com.dotc.nova.events;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.dotc.nova.events.metrics.EventMetricsCollector;
 
-@SuppressWarnings("rawtypes")
 public abstract class EventEmitter {
 	private static final Logger LOGGER = LoggerFactory.getLogger(EventEmitter.class);
-
-	abstract <EventType> void dispatchEventAndDataToListeners(List<EventListener> listenerList, EventType event, Object... data);
 
 	private final HashMap<Object, List<EventListener>> mapEventToHandler = new HashMap<>();
 	private final HashMap<Object, List<EventListener>> mapEventToOneOffHandlers = new HashMap<>();
@@ -27,6 +20,8 @@ public abstract class EventEmitter {
 		this.warnOnUnhandledEvents = warnOnUnhandledEvents;
 		this.metricsCollector = eventMetricsCollector;
 	}
+
+	abstract void dispatchEventAndDataToListeners(List<EventListener> listenerList, Object event, Object... data);
 
 	public void on(Object event, EventListener callback) {
 		addListener(event, callback);
@@ -119,10 +114,7 @@ public abstract class EventEmitter {
 		return returnValue;
 	}
 
-	public <EventType> void emit(EventType event, Object... data) {
-		if (event == null) {
-			throw new IllegalArgumentException("event must not be null");
-		}
+	private List<EventListener> getListenersForEventDistribution(Object event) {
 		List<EventListener> listenerList = new ArrayList<>();
 		List<EventListener> normalListenerList = mapEventToHandler.get(event);
 		if (normalListenerList != null) {
@@ -132,14 +124,78 @@ public abstract class EventEmitter {
 		if (oneOffListeners != null) {
 			listenerList.addAll(oneOffListeners);
 		}
+
+		return listenerList;
+	}
+
+	private void doEmit(Object event, Object... data) {
+		if (event == null) {
+			throw new IllegalArgumentException("event must not be null");
+		}
+
+		List<EventListener> listenerList = getListenersForEventDistribution(event);
 		if (!listenerList.isEmpty()) {
 			dispatchEventAndDataToListeners(listenerList, event, data);
 		} else {
 			metricsCollector.eventEmittedButNoListeners(event);
 			if (warnOnUnhandledEvents) {
-				LOGGER.warn("No listener registered for event " + event + ". Discarding dispatch with parameters " + Arrays.toString(data));
+				LOGGER.warn("No listener registered for event " + event + ". Discarding dispatch with parameters "
+						+ data);
 			}
 		}
+	}
+
+	public void emit(Object event) {
+		doEmit(event);
+	}
+
+	public void emit(Object event, Object dataParam1) {
+		doEmit(event, dataParam1);
+	}
+
+	public void emit(Object event, Object dataParam1, Object dataParam2) {
+		doEmit(event, dataParam1, dataParam2);
+	}
+
+	public void emit(Object event, Object dataParam1, Object dataParam2, Object dataParam3) {
+		doEmit(event, dataParam1, dataParam2, dataParam3);
+	}
+
+	public void emit(Object event, Object dataParam1, Object dataParam2, Object dataParam3, Object dataParam4) {
+		doEmit(event, dataParam1, dataParam2, dataParam3, dataParam4);
+	}
+
+	public void emit(Object event, Object dataParam1, Object dataParam2, Object dataParam3, Object dataParam4,
+			Object dataParam5) {
+		doEmit(event, dataParam1, dataParam2, dataParam3, dataParam4, dataParam5);
+	}
+
+	public void emit(Object event, Object dataParam1, Object dataParam2, Object dataParam3, Object dataParam4,
+			Object dataParam5, Object dataParam6) {
+		doEmit(event, dataParam1, dataParam2, dataParam3, dataParam4, dataParam5, dataParam6);
+	}
+
+	public void emit(Object event, Object dataParam1, Object dataParam2, Object dataParam3, Object dataParam4,
+			Object dataParam5, Object dataParam6, Object dataParam7) {
+		doEmit(event, dataParam1, dataParam2, dataParam3, dataParam4, dataParam5, dataParam6, dataParam7);
+	}
+
+	public void emit(Object event, Object dataParam1, Object dataParam2, Object dataParam3, Object dataParam4,
+			Object dataParam5, Object dataParam6, Object dataParam7, Object dataParam8) {
+		doEmit(event, dataParam1, dataParam2, dataParam3, dataParam4, dataParam5, dataParam6, dataParam7, dataParam8);
+	}
+
+	public void emit(Object event, Object dataParam1, Object dataParam2, Object dataParam3, Object dataParam4,
+			Object dataParam5, Object dataParam6, Object dataParam7, Object dataParam8, Object dataParam9) {
+		doEmit(event, dataParam1, dataParam2, dataParam3, dataParam4, dataParam5, dataParam6, dataParam7, dataParam8,
+				dataParam9);
+	}
+
+	public void emit(Object event, Object dataParam1, Object dataParam2, Object dataParam3, Object dataParam4,
+			Object dataParam5, Object dataParam6, Object dataParam7, Object dataParam8, Object dataParam9,
+			Object dataParam10) {
+		doEmit(event, dataParam1, dataParam2, dataParam3, dataParam4, dataParam5, dataParam6, dataParam7, dataParam8,
+				dataParam9, dataParam10);
 	}
 
 	public void enableMetricsTrackingFor(Object... events) {
