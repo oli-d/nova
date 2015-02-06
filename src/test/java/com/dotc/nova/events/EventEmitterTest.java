@@ -1,13 +1,26 @@
 package com.dotc.nova.events;
 
-import static org.junit.Assert.*;
-import static org.mockito.Matchers.*;
-import static org.mockito.Mockito.*;
+import static org.hamcrest.Matchers.hasEntry;
+import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.hasItems;
+import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.is;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 
+import java.util.Arrays;
 import java.util.List;
 
 import org.apache.log4j.BasicConfigurator;
-import org.junit.*;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
@@ -76,6 +89,54 @@ public class EventEmitterTest {
 		assertEquals(2, eventEmitter.getListeners(String.class).size());
 		assertTrue(eventEmitter.getListeners(String.class).contains(listener1));
 		assertTrue(eventEmitter.getListeners(String.class).contains(listener2));
+	}
+
+	@Test
+	public void testGetAllRegisteredListeners() {
+		EventListener listener1 = mock(EventListener.class);
+		EventListener listener2 = mock(EventListener.class);
+		EventListener listener3 = mock(EventListener.class);
+		EventListener oneOffListener = mock(EventListener.class);
+
+		eventEmitter.on("key1", listener1);
+		eventEmitter.on("key2", listener2);
+		eventEmitter.on("key1", listener3);
+		eventEmitter.once("key3", oneOffListener);
+
+		assertThat(eventEmitter.getAllListeners().entrySet(), hasSize(3));
+		assertThat(eventEmitter.getAllListeners(), hasEntry(is("key1"), hasItems(listener1, listener3)));
+		assertThat(eventEmitter.getAllListeners(), hasEntry(is("key2"), hasItem(listener2)));
+		assertThat(eventEmitter.getAllListeners(), hasEntry(is("key3"), hasItem(oneOffListener)));
+	}
+
+	@Test
+	public void testThatManipulationOnAllRegisteredListenersIsNotPutBackIntoEventEmitter() {
+		EventListener listener1 = mock(EventListener.class);
+		EventListener listener2 = mock(EventListener.class);
+
+		eventEmitter.on("key1", listener1);
+		eventEmitter.on("key2", listener2);
+
+		assertThat(eventEmitter.getAllListeners().entrySet(), hasSize(2));
+		eventEmitter.getAllListeners().put("key3", Arrays.asList(listener1));
+
+		assertThat(eventEmitter.getAllListeners().entrySet(), hasSize(2));
+		assertThat(eventEmitter.getListeners("key3"), hasSize(0));
+	}
+
+	@Test
+	public void testGetAllRegisteredOneOffListeners() {
+		EventListener listener = mock(EventListener.class);
+		EventListener oneOffListener1 = mock(EventListener.class);
+		EventListener oneOffListener2 = mock(EventListener.class);
+
+		eventEmitter.once("key1", oneOffListener1);
+		eventEmitter.once("key2", oneOffListener2);
+		eventEmitter.on("key1", listener);
+
+		assertThat(eventEmitter.getAllOneOffListeners().entrySet(), hasSize(2));
+		assertThat(eventEmitter.getAllListeners(), hasEntry(is("key1"), hasItem(oneOffListener1)));
+		assertThat(eventEmitter.getAllListeners(), hasEntry(is("key2"), hasItem(oneOffListener2)));
 	}
 
 	@Test(expected = IllegalArgumentException.class)
@@ -240,7 +301,7 @@ public class EventEmitterTest {
 		ArgumentCaptor<List> listenerCaptorEvent2 = ArgumentCaptor.forClass(List.class);
 		verify(delegate).dispatchEventAndDataToListeners(listenerCaptorEvent1.capture(), eq(String.class), eq("First"));
 		verify(delegate)
-		.dispatchEventAndDataToListeners(listenerCaptorEvent2.capture(), eq(String.class), eq("Second"));
+				.dispatchEventAndDataToListeners(listenerCaptorEvent2.capture(), eq(String.class), eq("Second"));
 		verifyNoMoreInteractions(delegate);
 
 		assertNotNull(listenerCaptorEvent1.getValue());
