@@ -1,6 +1,9 @@
 package com.dotc.nova.events;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -112,6 +115,16 @@ public abstract class EventEmitter {
 		}
 
 		return returnValue;
+	}
+
+	public Map<Object, List<EventListener>> getAllListeners() {
+		Map<Object, List<EventListener>> allListeners = new HashMap<>(mapEventToHandler);
+		allListeners.putAll(mapEventToOneOffHandlers);
+		return allListeners;
+	}
+
+	public Map<Object, List<EventListener>> getAllOneOffListeners() {
+		return new HashMap<>(mapEventToOneOffHandlers);
 	}
 
 	private List<EventListener> getListenersForEventDistribution(Object event) {
