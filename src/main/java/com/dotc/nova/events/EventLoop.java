@@ -84,12 +84,12 @@ public class EventLoop {
 		disruptor.handleExceptionsWith(new DefaultExceptionHandler());
 		if (eventDispatchConfig.numberOfConsumers == 1) {
 			List<EventHandler<InvocationContext>> dummyToGetRidOffCompilerWarning = new ArrayList<>();
-			dummyToGetRidOffCompilerWarning.add(new SingleConsumerEventHandler());
+			dummyToGetRidOffCompilerWarning.add(new SingleConsumerEventHandler(metricsCollector));
 			disruptor.handleEventsWith(dummyToGetRidOffCompilerWarning.toArray(new EventHandler[1]));
 		} else if (eventDispatchConfig.multiConsumerDispatchStrategy == MultiConsumerDispatchStrategy.DISPATCH_EVENTS_TO_ALL_CONSUMERS) {
 			List<EventHandler<InvocationContext>> eventHandlers = new ArrayList<>();
 			for (int i = 0; i < eventDispatchConfig.numberOfConsumers; i++) {
-				eventHandlers.add(new MultiConsumerEventHandler());
+				eventHandlers.add(new MultiConsumerEventHandler(metricsCollector));
 			}
 			disruptor.handleEventsWith(eventHandlers.toArray(new EventHandler[eventHandlers.size()]));
 		} else {

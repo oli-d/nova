@@ -20,7 +20,7 @@ public class CurrentThreadEventEmitter extends EventEmitter {
 		Object[] dataToPass = data.length == 0 ? null : data;
 		listenerList.forEach(listener -> {
 			try {
-				listener.handle(dataToPass);
+				metricsCollector.monitorEventListenerTime(event, () -> listener.handle(dataToPass));
 				metricsCollector.eventDispatched(event);
 			} catch (Exception e) {
 				LOGGER.error("Uncaught exception while invoking eventListener " + listener, e);

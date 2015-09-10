@@ -4,8 +4,12 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Supplier;
 
 import com.codahale.metrics.Counter;
+import com.codahale.metrics.Gauge;
 import com.codahale.metrics.Meter;
 import com.dotc.nova.metrics.Metrics;
 
@@ -14,8 +18,10 @@ public class EventMetricsCollector {
 
 	private final Map<String, Map<Object, Counter>> mapType2EventSpecificCounters;
 	private final Map<String, Map<Object, Meter>> mapType2EventSpecificMeters;
+	private final Map<String, Map<Object, SettableGauge>> mapType2EventSpecificGauge;
 	private final Set<Object> eventsToBeTracked;
 	private final String idPrefix;
+    private final AtomicBoolean monitorEventListenerTime = new AtomicBoolean(false);
 
 	public EventMetricsCollector(Metrics metrics, String identifierPrefix) {
 		this.metrics = metrics;
@@ -23,6 +29,7 @@ public class EventMetricsCollector {
 
 		mapType2EventSpecificCounters = new ConcurrentHashMap<>();
 		mapType2EventSpecificMeters = new ConcurrentHashMap<>();
+		mapType2EventSpecificGauge = new ConcurrentHashMap<>();
 		eventsToBeTracked = Collections.newSetFromMap(new ConcurrentHashMap<Object, Boolean>());
 	}
 
@@ -39,6 +46,10 @@ public class EventMetricsCollector {
 			}
 		}
 	}
+
+    public void setMonitorEventListenerTime(boolean monitorEventListenerTime) {
+        this.monitorEventListenerTime.set(monitorEventListenerTime);
+    }
 
 	private void remove(String type, Object event) {
 		metrics.remove(idPrefix, type, String.valueOf(event));
@@ -73,8 +84,47 @@ public class EventMetricsCollector {
 		return counter;
 	}
 
+    private SettableGauge getGauge(String type, Object event) {
+        Map<Object, SettableGauge> mapEventToSpecificGauge = mapType2EventSpecificGauge.get(type);
+        if (mapEventToSpecificGauge == null) {
+            mapEventToSpecificGauge = new ConcurrentHashMap<>();
+            mapType2EventSpecificGauge.put(type, mapEventToSpecificGauge);
+        }
+        SettableGauge gauge = mapEventToSpecificGauge.get(event);
+        if (gauge == null) {
+            gauge = new SettableGauge();
+            metrics.register(gauge, idPrefix, type, String.valueOf(event));
+            mapEventToSpecificGauge.put(event, gauge);
+        }
+        return gauge;
+    }
+
+    private static class SettableGauge implements Gauge<Long> {
+        private final AtomicLong value = new AtomicLong();
+        @Override
+        public Long getValue() {
+            return value.get();
+        }
+
+        public void setValue(long value) {
+            this.value.set(value);
+        }
+    }
+
 	private boolean shouldBeTracked(Object event) {
 		return event != null && eventsToBeTracked.contains(event);
+	}
+
+	public void monitorEventListenerTime(Object event, Runnable codeBlockToMeasure) {
+        if (monitorEventListenerTime.get() || shouldBeTracked(event)) {
+            long start = System.nanoTime();
+            codeBlockToMeasure.run();
+            long differenceInNanos = System.nanoTime() - start;
+            long differenceInMillis = differenceInNanos / 1_000_000;
+            getGauge("eventListenerTime", event).setValue(differenceInMillis);
+        } else {
+            codeBlockToMeasure.run();
+        }
 	}
 
 	public void eventDispatched(Object event) {

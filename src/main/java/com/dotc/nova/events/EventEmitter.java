@@ -206,4 +206,8 @@ public abstract class EventEmitter {
 		metricsCollector.setTrackingEnabled(false, events);
 	}
 
+	public void setMonitorEventListenerTime(boolean monitorEventListenerTime) {
+		metricsCollector.setMonitorEventListenerTime(monitorEventListenerTime);
+	}
+
 }
