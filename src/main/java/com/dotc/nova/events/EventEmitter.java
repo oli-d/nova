@@ -197,17 +197,4 @@ public abstract class EventEmitter {
 		doEmit(event, dataParam1, dataParam2, dataParam3, dataParam4, dataParam5, dataParam6, dataParam7, dataParam8,
 				dataParam9, dataParam10);
 	}
-
-	public void enableMetricsTrackingFor(Object... events) {
-		metricsCollector.setTrackingEnabled(true, events);
-	}
-
-	public void disableMetricsTrackingFor(Object... events) {
-		metricsCollector.setTrackingEnabled(false, events);
-	}
-
-	public void setMonitorEventListenerTime(boolean monitorEventListenerTime) {
-		metricsCollector.setMonitorEventListenerTime(monitorEventListenerTime);
-	}
-
 }

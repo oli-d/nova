@@ -1,17 +1,12 @@
 package com.dotc.nova.metrics;
 
+import java.util.Map;
+import java.util.SortedMap;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 
+import com.codahale.metrics.*;
 import org.slf4j.LoggerFactory;
-
-import com.codahale.metrics.Counter;
-import com.codahale.metrics.Histogram;
-import com.codahale.metrics.Meter;
-import com.codahale.metrics.Metric;
-import com.codahale.metrics.MetricRegistry;
-import com.codahale.metrics.ScheduledReporter;
-import com.codahale.metrics.Slf4jReporter;
-import com.codahale.metrics.Timer;
 
 public class Metrics {
 	public final MetricRegistry metricRegistry = new MetricRegistry();
@@ -48,8 +43,8 @@ public class Metrics {
 		metricRegistry.register(name(idPath), metric);
 	}
 
-	public void remove(String... idPath) {
-		metricRegistry.remove(name(idPath));
+	public boolean remove(String... idPath) {
+		return metricRegistry.remove(name(idPath));
 	}
 
 	public Meter getMeter(String... idPath) {
@@ -68,6 +63,18 @@ public class Metrics {
 		return metricRegistry.histogram(name(idPath));
 	}
 
+	public SettableGauge getGauge(String... idPath) {
+        SortedMap<String, Gauge> gauges = metricRegistry.getGauges((metricName, metric) -> name(idPath).equals(metricName));
+        if (gauges.isEmpty()) {
+            return metricRegistry.register(name(idPath), new SettableGauge());
+        }
+        return (SettableGauge) gauges.get(name(idPath));
+	}
+
+	public Map<String, Metric> getMetrics() {
+		return metricRegistry.getMetrics();
+	}
+
 	private String name(String... idPath) {
 		int count = idPath.length;
 		StringBuilder sb = new StringBuilder();
@@ -80,5 +87,17 @@ public class Metrics {
 			idx++;
 		}
 		return sb.toString();
+	}
+
+	public static class SettableGauge implements Gauge<Long> {
+		private final AtomicLong value = new AtomicLong();
+		@Override
+		public Long getValue() {
+			return value.get();
+		}
+
+		public void setValue(long value) {
+			this.value.set(value);
+		}
 	}
 }

@@ -7,9 +7,12 @@ import com.dotc.nova.events.EventEmitter;
 import com.dotc.nova.events.EventLoop;
 import com.dotc.nova.events.EventLoopAwareEventEmitter;
 import com.dotc.nova.events.metrics.EventMetricsCollector;
+import com.dotc.nova.events.metrics.RunnableTimer;
 import com.dotc.nova.filesystem.Filesystem;
 import com.dotc.nova.metrics.Metrics;
 import com.dotc.nova.timers.Timers;
+
+import java.util.Arrays;
 
 public class Nova {
 
@@ -22,18 +25,22 @@ public class Nova {
 	public final Filesystem filesystem;
 	public final Metrics metrics;
 
+    private final EventMetricsCollector eventMetricsCollector;
+    private final RunnableTimer runnableTimer;
+
 	private Nova(Builder builder) {
 		metrics = new Metrics();
 		identifier = builder.identifier;
 
-		EventMetricsCollector metricsCollector = new EventMetricsCollector(metrics, identifier);
-		eventLoop = new EventLoop(builder.identifier, builder.eventDispatchConfig, metricsCollector);
+        eventMetricsCollector = new EventMetricsCollector(metrics, identifier);
+        runnableTimer = new RunnableTimer(metrics, identifier);
+		eventLoop = new EventLoop(builder.identifier, builder.eventDispatchConfig, eventMetricsCollector,runnableTimer);
 
 		timers = new Timers(eventLoop);
 		if (builder.eventDispatchConfig.dispatchThreadStrategy == DispatchThreadStrategy.DISPATCH_IN_EMITTER_THREAD) {
-			eventEmitter = new CurrentThreadEventEmitter(builder.eventDispatchConfig.warnOnUnhandledEvent, metricsCollector);
+			eventEmitter = new CurrentThreadEventEmitter(builder.eventDispatchConfig.warnOnUnhandledEvent, eventMetricsCollector);
 		} else {
-			eventEmitter = new EventLoopAwareEventEmitter(eventLoop, builder.eventDispatchConfig.warnOnUnhandledEvent, metricsCollector);
+			eventEmitter = new EventLoopAwareEventEmitter(eventLoop, builder.eventDispatchConfig.warnOnUnhandledEvent, eventMetricsCollector);
 		}
 		process = new com.dotc.nova.process.Process(eventLoop);
 		filesystem = new Filesystem(process);
@@ -46,6 +53,28 @@ public class Nova {
 	public EventEmitter getEventEmitter() {
 		return eventEmitter;
 	}
+
+	public void enableMetricsTrackingFor(Object... events) {
+		if (events != null && events.length > 0) {
+			Arrays.stream(events).forEach(event -> {
+                eventMetricsCollector.setTrackingEnabled(true, event);
+                runnableTimer.setTrackingEnabled(true, event);
+            });
+		}
+	}
+
+	public void disableMetricsTrackingFor(Object... events) {
+		if (events != null && events.length > 0) {
+			Arrays.stream(events).forEach(event -> {
+                eventMetricsCollector.setTrackingEnabled(false, event);
+                runnableTimer.setTrackingEnabled(true, event);
+            });
+		}
+	}
+
+    public void monitorEventHandlerRuntime(boolean monitorRuntime) {
+        runnableTimer.setMonitorRuntime(monitorRuntime);
+    }
 
 	public static class Builder {
 		private String identifier;

@@ -3,6 +3,7 @@ package com.dotc.nova.events;
 import java.util.*;
 import java.util.concurrent.*;
 
+import com.dotc.nova.events.metrics.RunnableTimer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -25,8 +26,10 @@ public class EventLoop {
 	private final Map<Object, IdProviderForDuplicateEventDetection> idProviderRegistry;
 	private final Map<Object, Object[]> mapIdToCurrentData;
 	private final EventMetricsCollector metricsCollector;
+	private final RunnableTimer runnableTimer;
 
-	public EventLoop(String identifier, EventDispatchConfig eventDispatchConfig, EventMetricsCollector metricsCollector) {
+	public EventLoop(String identifier, EventDispatchConfig eventDispatchConfig, EventMetricsCollector metricsCollector,
+					 RunnableTimer runnableTimer) {
 		this.identifier = identifier;
 		this.idProviderRegistry = new ConcurrentHashMap<>();
 		this.mapIdToCurrentData = new ConcurrentHashMap<>();
@@ -47,6 +50,7 @@ public class EventLoop {
 			LOGGER.debug("\twarn on unhandled events:           " + eventDispatchConfig.warnOnUnhandledEvent);
 		}
 		this.metricsCollector = metricsCollector;
+		this.runnableTimer = runnableTimer;
 
 		this.insufficientCapacityStrategy = eventDispatchConfig.insufficientCapacityStrategy;
 
@@ -84,12 +88,12 @@ public class EventLoop {
 		disruptor.handleExceptionsWith(new DefaultExceptionHandler());
 		if (eventDispatchConfig.numberOfConsumers == 1) {
 			List<EventHandler<InvocationContext>> dummyToGetRidOffCompilerWarning = new ArrayList<>();
-			dummyToGetRidOffCompilerWarning.add(new SingleConsumerEventHandler(metricsCollector));
+			dummyToGetRidOffCompilerWarning.add(new SingleConsumerEventHandler(runnableTimer));
 			disruptor.handleEventsWith(dummyToGetRidOffCompilerWarning.toArray(new EventHandler[1]));
 		} else if (eventDispatchConfig.multiConsumerDispatchStrategy == MultiConsumerDispatchStrategy.DISPATCH_EVENTS_TO_ALL_CONSUMERS) {
 			List<EventHandler<InvocationContext>> eventHandlers = new ArrayList<>();
 			for (int i = 0; i < eventDispatchConfig.numberOfConsumers; i++) {
-				eventHandlers.add(new MultiConsumerEventHandler(metricsCollector));
+				eventHandlers.add(new MultiConsumerEventHandler(runnableTimer));
 			}
 			disruptor.handleEventsWith(eventHandlers.toArray(new EventHandler[eventHandlers.size()]));
 		} else {

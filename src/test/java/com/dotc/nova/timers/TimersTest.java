@@ -9,6 +9,8 @@ import static org.mockito.Mockito.verify;
 
 import java.util.concurrent.TimeUnit;
 
+import com.dotc.nova.events.metrics.NoopRunnableTimer;
+import com.dotc.nova.events.metrics.RunnableTimer;
 import org.apache.log4j.BasicConfigurator;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
@@ -45,7 +47,8 @@ public class TimersTest {
 	@Test
 	public void testClearTimeout() throws Exception {
 		final int[] counter = new int[1];
-		EventLoop eventLoop = new EventLoop("test", new EventDispatchConfig.Builder().build(), new NoopEventMetricsCollector()) {
+		EventLoop eventLoop = new EventLoop("test", new EventDispatchConfig.Builder().build(),
+				new NoopEventMetricsCollector(), new NoopRunnableTimer()) {
 
 			@Override
 			public void dispatch(EventListener h) {
@@ -80,7 +83,8 @@ public class TimersTest {
 	@Test
 	public void testClearTimeoutCanBeInvokedMultipleTimes() throws Exception {
 		final int[] counter = new int[1];
-		EventLoop eventLoop = new EventLoop("test", new EventDispatchConfig.Builder().build(), new NoopEventMetricsCollector()) {
+		EventLoop eventLoop = new EventLoop("test", new EventDispatchConfig.Builder().build(),
+                new NoopEventMetricsCollector(), new NoopRunnableTimer()) {
 
 			@Override
 			public void dispatch(EventListener h) {
@@ -120,7 +124,8 @@ public class TimersTest {
 	@Test
 	public void testSetInterval() throws Throwable {
 		final int[] counter = new int[1];
-		EventLoop eventLoop = new EventLoop("test", new EventDispatchConfig.Builder().build(), new NoopEventMetricsCollector()) {
+		EventLoop eventLoop = new EventLoop("test", new EventDispatchConfig.Builder().build(),
+                new NoopEventMetricsCollector(), new NoopRunnableTimer()) {
 
 			@Override
 			public void dispatch(EventListener h) {
@@ -145,7 +150,8 @@ public class TimersTest {
 	@Test
 	public void testClearInterval() throws Exception {
 		final int[] counter = new int[1];
-		EventLoop eventLoop = new EventLoop("test", new EventDispatchConfig.Builder().build(), new NoopEventMetricsCollector()) {
+		EventLoop eventLoop = new EventLoop("test", new EventDispatchConfig.Builder().build(),
+                new NoopEventMetricsCollector(), new NoopRunnableTimer()) {
 
 			@Override
 			public void dispatch(EventListener h) {
@@ -180,7 +186,8 @@ public class TimersTest {
 	@Test
 	public void testClearIntervalCanBeInvokedMultipleTimes() throws Exception {
 		final int[] counter = new int[1];
-		EventLoop eventLoop = new EventLoop("test", new EventDispatchConfig.Builder().build(), new NoopEventMetricsCollector()) {
+		EventLoop eventLoop = new EventLoop("test", new EventDispatchConfig.Builder().build(),
+                new NoopEventMetricsCollector(), new NoopRunnableTimer()) {
 
 			@Override
 			public void dispatch(EventListener h) {

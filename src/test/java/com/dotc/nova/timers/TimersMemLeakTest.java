@@ -8,6 +8,7 @@ import java.util.Map;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
+import com.dotc.nova.events.metrics.NoopRunnableTimer;
 import org.apache.log4j.BasicConfigurator;
 import org.junit.Test;
 
@@ -25,7 +26,7 @@ public class TimersMemLeakTest {
 
 		Runnable callback = mock(Runnable.class);
 		EventLoop eventLoop = new EventLoop("test", new EventDispatchConfig.Builder().build(),
-				new NoopEventMetricsCollector());
+				new NoopEventMetricsCollector(), new NoopRunnableTimer());
 		Timers timers = new Timers(eventLoop);
 		Map<String, ScheduledFuture<?>> internalMap = getInternalFutureMapFrom(timers);
 
@@ -42,7 +43,7 @@ public class TimersMemLeakTest {
 	public void testClearTimeoutRemovesEverything() throws Throwable {
 		Runnable callback = mock(Runnable.class);
 		EventLoop eventLoop = new EventLoop("test", new EventDispatchConfig.Builder().build(),
-				new NoopEventMetricsCollector());
+				new NoopEventMetricsCollector(), new NoopRunnableTimer());
 		Timers timers = new Timers(eventLoop);
 		Map<String, ScheduledFuture<?>> internalMap = getInternalFutureMapFrom(timers);
 
@@ -57,7 +58,7 @@ public class TimersMemLeakTest {
 	public void testClearIntervalRemovesEverything() throws Throwable {
 		Runnable callback = mock(Runnable.class);
 		EventLoop eventLoop = new EventLoop("test", new EventDispatchConfig.Builder().build(),
-				new NoopEventMetricsCollector());
+				new NoopEventMetricsCollector(), new NoopRunnableTimer());
 		Timers timers = new Timers(eventLoop);
 		Map<String, ScheduledFuture<?>> internalMap = getInternalFutureMapFrom(timers);
 

@@ -8,10 +8,6 @@ public class NoopEventMetricsCollector extends EventMetricsCollector {
 	}
 
 	@Override
-	public void setTrackingEnabled(boolean enabled, Object... events) {
-	}
-
-	@Override
 	public void eventDispatched(Object event) {
 	}
 
