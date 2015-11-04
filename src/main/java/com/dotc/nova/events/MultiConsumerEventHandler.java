@@ -9,10 +9,10 @@ import com.lmax.disruptor.EventHandler;
 class MultiConsumerEventHandler implements EventHandler<InvocationContext> {
 	private static final Logger LOGGER = LoggerFactory.getLogger(MultiConsumerEventHandler.class);
 
-	private final ExecutionTimeMeasurer runnableTimer;
+	private final ExecutionTimeMeasurer executionTimeMeasurer;
 
-	public MultiConsumerEventHandler(ExecutionTimeMeasurer runnableTimer) {
-		this.runnableTimer = runnableTimer;
+	public MultiConsumerEventHandler(ExecutionTimeMeasurer executionTimeMeasurer) {
+		this.executionTimeMeasurer = executionTimeMeasurer;
 	}
 
 	@Override
@@ -20,7 +20,7 @@ class MultiConsumerEventHandler implements EventHandler<InvocationContext> {
 		Object[] data = event.getData();
 		for (EventListener listener : event.getEventListeners()) {
 			try {
-				runnableTimer.monitorRuntimeIfEnabled(event.getEvent(), () -> listener.handle(data));
+				executionTimeMeasurer.monitorRuntimeIfEnabled(event.getEvent(), () -> listener.handle(data));
 			} catch (Exception e) {
 				LOGGER.error("Caught exception, trying to invoke listener for event " + event, e);
 			}

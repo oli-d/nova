@@ -26,10 +26,10 @@ public class EventLoop {
 	private final Map<Object, IdProviderForDuplicateEventDetection> idProviderRegistry;
 	private final Map<Object, Object[]> mapIdToCurrentData;
 	private final EventMetricsCollector metricsCollector;
-	private final ExecutionTimeMeasurer runnableTimer;
+	private final ExecutionTimeMeasurer executionTimeMeasurer;
 
 	public EventLoop(String identifier, EventDispatchConfig eventDispatchConfig, EventMetricsCollector metricsCollector,
-					 ExecutionTimeMeasurer runnableTimer) {
+					 ExecutionTimeMeasurer executionTimeMeasurer) {
 		this.identifier = identifier;
 		this.idProviderRegistry = new ConcurrentHashMap<>();
 		this.mapIdToCurrentData = new ConcurrentHashMap<>();
@@ -50,7 +50,7 @@ public class EventLoop {
 			LOGGER.debug("\twarn on unhandled events:           " + eventDispatchConfig.warnOnUnhandledEvent);
 		}
 		this.metricsCollector = metricsCollector;
-		this.runnableTimer = runnableTimer;
+		this.executionTimeMeasurer = executionTimeMeasurer;
 
 		this.insufficientCapacityStrategy = eventDispatchConfig.insufficientCapacityStrategy;
 
@@ -88,12 +88,12 @@ public class EventLoop {
 		disruptor.handleExceptionsWith(new DefaultExceptionHandler());
 		if (eventDispatchConfig.numberOfConsumers == 1) {
 			List<EventHandler<InvocationContext>> dummyToGetRidOffCompilerWarning = new ArrayList<>();
-			dummyToGetRidOffCompilerWarning.add(new SingleConsumerEventHandler(runnableTimer));
+			dummyToGetRidOffCompilerWarning.add(new SingleConsumerEventHandler(executionTimeMeasurer));
 			disruptor.handleEventsWith(dummyToGetRidOffCompilerWarning.toArray(new EventHandler[1]));
 		} else if (eventDispatchConfig.multiConsumerDispatchStrategy == MultiConsumerDispatchStrategy.DISPATCH_EVENTS_TO_ALL_CONSUMERS) {
 			List<EventHandler<InvocationContext>> eventHandlers = new ArrayList<>();
 			for (int i = 0; i < eventDispatchConfig.numberOfConsumers; i++) {
-				eventHandlers.add(new MultiConsumerEventHandler(runnableTimer));
+				eventHandlers.add(new MultiConsumerEventHandler(executionTimeMeasurer));
 			}
 			disruptor.handleEventsWith(eventHandlers.toArray(new EventHandler[eventHandlers.size()]));
 		} else {
