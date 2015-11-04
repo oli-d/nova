@@ -1,7 +1,6 @@
 package com.dotc.nova.events;
 
-import com.dotc.nova.events.metrics.EventMetricsCollector;
-import com.dotc.nova.events.metrics.RunnableTimer;
+import com.dotc.nova.events.metrics.ExecutionTimeMeasurer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -10,9 +9,9 @@ import com.lmax.disruptor.EventHandler;
 class SingleConsumerEventHandler implements EventHandler<InvocationContext> {
 	private static final Logger LOGGER = LoggerFactory.getLogger(SingleConsumerEventHandler.class);
 
-	private final RunnableTimer runnableTimer;
+	private final ExecutionTimeMeasurer runnableTimer;
 
-	public SingleConsumerEventHandler(RunnableTimer runnableTimer) {
+	public SingleConsumerEventHandler(ExecutionTimeMeasurer runnableTimer) {
 		this.runnableTimer = runnableTimer;
 	}
 

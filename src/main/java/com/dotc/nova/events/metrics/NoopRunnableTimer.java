@@ -1,8 +1,6 @@
 package com.dotc.nova.events.metrics;
 
-import com.dotc.nova.metrics.Metrics;
-
-public class NoopRunnableTimer extends RunnableTimer {
+public class NoopRunnableTimer extends ExecutionTimeMeasurer {
     public NoopRunnableTimer() {
         super(null, null);
     }

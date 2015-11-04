@@ -3,7 +3,7 @@ package com.dotc.nova.events;
 import java.util.*;
 import java.util.concurrent.*;
 
-import com.dotc.nova.events.metrics.RunnableTimer;
+import com.dotc.nova.events.metrics.ExecutionTimeMeasurer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -26,10 +26,10 @@ public class EventLoop {
 	private final Map<Object, IdProviderForDuplicateEventDetection> idProviderRegistry;
 	private final Map<Object, Object[]> mapIdToCurrentData;
 	private final EventMetricsCollector metricsCollector;
-	private final RunnableTimer runnableTimer;
+	private final ExecutionTimeMeasurer runnableTimer;
 
 	public EventLoop(String identifier, EventDispatchConfig eventDispatchConfig, EventMetricsCollector metricsCollector,
-					 RunnableTimer runnableTimer) {
+					 ExecutionTimeMeasurer runnableTimer) {
 		this.identifier = identifier;
 		this.idProviderRegistry = new ConcurrentHashMap<>();
 		this.mapIdToCurrentData = new ConcurrentHashMap<>();

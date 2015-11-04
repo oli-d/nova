@@ -10,7 +10,6 @@ import static org.mockito.Mockito.verify;
 import java.util.concurrent.TimeUnit;
 
 import com.dotc.nova.events.metrics.NoopRunnableTimer;
-import com.dotc.nova.events.metrics.RunnableTimer;
 import org.apache.log4j.BasicConfigurator;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;

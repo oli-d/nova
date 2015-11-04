@@ -4,11 +4,11 @@ import com.dotc.nova.metrics.Metrics;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
-public class RunnableTimer extends MetricsCollector {
+public class ExecutionTimeMeasurer extends MetricsCollector {
 
     private final AtomicBoolean monitorRuntime = new AtomicBoolean(false);
 
-    public RunnableTimer(Metrics metrics, String identifierPrefix) {
+    public ExecutionTimeMeasurer(Metrics metrics, String identifierPrefix) {
         super(metrics, "EventHandler".equalsIgnoreCase(identifierPrefix) ? identifierPrefix :
                 "EventHandler." + identifierPrefix);
     }

@@ -7,7 +7,7 @@ import com.dotc.nova.events.EventEmitter;
 import com.dotc.nova.events.EventLoop;
 import com.dotc.nova.events.EventLoopAwareEventEmitter;
 import com.dotc.nova.events.metrics.EventMetricsCollector;
-import com.dotc.nova.events.metrics.RunnableTimer;
+import com.dotc.nova.events.metrics.ExecutionTimeMeasurer;
 import com.dotc.nova.filesystem.Filesystem;
 import com.dotc.nova.metrics.Metrics;
 import com.dotc.nova.timers.Timers;
@@ -26,14 +26,14 @@ public class Nova {
 	public final Metrics metrics;
 
     private final EventMetricsCollector eventMetricsCollector;
-    private final RunnableTimer runnableTimer;
+    private final ExecutionTimeMeasurer runnableTimer;
 
 	private Nova(Builder builder) {
 		metrics = new Metrics();
 		identifier = builder.identifier;
 
         eventMetricsCollector = new EventMetricsCollector(metrics, identifier);
-        runnableTimer = new RunnableTimer(metrics, identifier);
+        runnableTimer = new ExecutionTimeMeasurer(metrics, identifier);
 		eventLoop = new EventLoop(builder.identifier, builder.eventDispatchConfig, eventMetricsCollector,runnableTimer);
 
 		timers = new Timers(eventLoop);
