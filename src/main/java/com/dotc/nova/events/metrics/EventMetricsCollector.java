@@ -3,6 +3,8 @@ package com.dotc.nova.events.metrics;
 import com.codahale.metrics.Counter;
 import com.dotc.nova.metrics.Metrics;
 
+import java.util.concurrent.TimeUnit;
+
 public class EventMetricsCollector extends MetricsCollector {
 	public EventMetricsCollector(Metrics metrics, String identifierPrefix) {
 		super(metrics, "EventEmitter".equalsIgnoreCase(identifierPrefix) ? identifierPrefix :
@@ -15,11 +17,19 @@ public class EventMetricsCollector extends MetricsCollector {
 	}
 
 	public void eventDispatched(Object event) {
-        String eventString = String.valueOf(event);
-        if (shouldBeTracked(eventString)) {
+		String eventString = String.valueOf(event);
+		if (shouldBeTracked(eventString)) {
 			getMeter("dispatchedEvents", eventString).mark();
 		}
 		getMeter("dispatchedEvents", "total").mark();
+	}
+
+	public void waitedForEventToBeDispatched(Object event, long waitTime) {
+		String eventString = String.valueOf(event);
+		if (shouldBeTracked(eventString)) {
+			getTimer("waiting", "dispatchEvent", eventString).update(waitTime, TimeUnit.NANOSECONDS);
+		}
+        getTimer("waiting", "dispatchEvent", "total").update(waitTime, TimeUnit.NANOSECONDS);
 	}
 
 	public void duplicateEventDetected(Object event) {
@@ -86,13 +96,4 @@ public class EventMetricsCollector extends MetricsCollector {
         }
         getCounter("emitsWithNoListener", "total").inc();
     }
-
-	public void errorOccurredForEventDispatch(Object event) {
-        String eventString = String.valueOf(event);
-		if (shouldBeTracked(eventString)) {
-		    getCounter("errorsOnDispatch", eventString).inc();
-		}
-        getCounter("errorsOnDispatch", "total").inc();
-	}
-
 }
