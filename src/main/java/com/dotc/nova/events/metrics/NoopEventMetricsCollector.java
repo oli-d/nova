@@ -45,6 +45,6 @@ public class NoopEventMetricsCollector extends EventMetricsCollector {
 
 	@Override
 	public void waitedForEventToBeDispatched(Object event, long waitTime) {
-        
+
 	}
 }
