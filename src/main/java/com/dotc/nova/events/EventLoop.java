@@ -199,7 +199,10 @@ public class EventLoop {
 				metricsCollector.eventAddedToDispatchLaterQueue(event);
 				return;
 			case WAIT_UNTIL_SPACE_AVAILABLE:
+				long start = System.nanoTime();
 				long nextSequenceNumber = ringBuffer.next();
+				long stop = System.nanoTime();
+				metricsCollector.waitedForEventToBeDispatched(event, stop - start);
 				InvocationContext ic = ringBuffer.get(nextSequenceNumber);
 				ic.setEventListenerInfo(event, listeners, data);
 				ringBuffer.publish(nextSequenceNumber);

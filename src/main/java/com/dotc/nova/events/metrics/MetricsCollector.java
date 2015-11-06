@@ -48,6 +48,11 @@ public abstract class MetricsCollector {
         }
     }
 
+    protected com.codahale.metrics.Timer getTimer(String... identifier) {
+        String[] prefixedIdentifier = concatPrefixWithIdentifier(identifier);
+        return metrics.getTimer(prefixedIdentifier);
+    }
+
     protected Meter getMeter(String... identifier) {
         String[] prefixedIdentifier = concatPrefixWithIdentifier(identifier);
         return metrics.getMeter(prefixedIdentifier);
