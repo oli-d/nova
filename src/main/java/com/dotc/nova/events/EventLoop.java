@@ -3,7 +3,9 @@ package com.dotc.nova.events;
 import java.util.*;
 import java.util.concurrent.*;
 
+import com.codahale.metrics.MetricSet;
 import com.dotc.nova.events.metrics.ExecutionTimeMeasurer;
+import com.dotc.nova.events.metrics.RingBufferMetricSet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -26,7 +28,6 @@ public class EventLoop {
 	private final Map<Object, IdProviderForDuplicateEventDetection> idProviderRegistry;
 	private final Map<Object, Object[]> mapIdToCurrentData;
 	private final EventMetricsCollector metricsCollector;
-	private final ExecutionTimeMeasurer executionTimeMeasurer;
 
 	public EventLoop(String identifier, EventDispatchConfig eventDispatchConfig, EventMetricsCollector metricsCollector,
 					 ExecutionTimeMeasurer executionTimeMeasurer) {
@@ -50,8 +51,6 @@ public class EventLoop {
 			LOGGER.debug("\twarn on unhandled events:           " + eventDispatchConfig.warnOnUnhandledEvent);
 		}
 		this.metricsCollector = metricsCollector;
-		this.executionTimeMeasurer = executionTimeMeasurer;
-
 		this.insufficientCapacityStrategy = eventDispatchConfig.insufficientCapacityStrategy;
 
 		WaitStrategy waitStrategy = null;
@@ -105,6 +104,10 @@ public class EventLoop {
 		}
 		ringBuffer = disruptor.start();
 	}
+
+    public MetricSet getMetrics() {
+        return new RingBufferMetricSet(ringBuffer);
+    }
 
 	public void dispatch(EventListener listener) {
 		dispatch(null, listener);
