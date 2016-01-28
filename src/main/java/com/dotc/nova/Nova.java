@@ -35,6 +35,7 @@ public class Nova {
         eventMetricsCollector = new EventMetricsCollector(metrics, identifier);
         runnableTimer = new ExecutionTimeMeasurer(metrics, identifier);
 		eventLoop = new EventLoop(builder.identifier, builder.eventDispatchConfig, eventMetricsCollector,runnableTimer);
+		metrics.register(eventLoop.getMetrics(), identifier);
 
 		timers = new Timers(eventLoop);
 		if (builder.eventDispatchConfig.dispatchThreadStrategy == DispatchThreadStrategy.DISPATCH_IN_EMITTER_THREAD) {
