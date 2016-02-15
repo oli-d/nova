@@ -29,7 +29,7 @@ public class Nova {
     private final ExecutionTimeMeasurer runnableTimer;
 
 	private Nova(Builder builder) {
-		metrics = new Metrics();
+		metrics = builder.metrics;
 		identifier = builder.identifier;
 
         eventMetricsCollector = new EventMetricsCollector(metrics, identifier);
@@ -80,6 +80,7 @@ public class Nova {
 	public static class Builder {
 		private String identifier;
 		private EventDispatchConfig eventDispatchConfig;
+		private Metrics metrics;
 
 		public Builder setIdentifier(String identifier) {
 			this.identifier = identifier;
@@ -91,12 +92,20 @@ public class Nova {
 			return this;
 		}
 
+		public Builder setMetrics(Metrics metrics) {
+			this.metrics = metrics;
+			return this;
+		}
+
 		public Nova build() {
 			if (eventDispatchConfig == null) {
 				eventDispatchConfig = new EventDispatchConfig.Builder().build();
 			}
 			if (identifier == null) {
 				identifier = "";
+			}
+			if (metrics == null) {
+				metrics = new Metrics();
 			}
 
 			return new Nova(this);
