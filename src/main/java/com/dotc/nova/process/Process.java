@@ -1,9 +1,10 @@
 package com.dotc.nova.process;
 
-import com.dotc.nova.events.EventListener;
 import com.dotc.nova.events.EventLoop;
 
-public class Process {
+import java.util.concurrent.Executor;
+
+public class Process implements Executor {
 	private final EventLoop eventLoop;
 
 	public Process(EventLoop eventLoop) {
@@ -14,11 +15,11 @@ public class Process {
 		if (callback == null) {
 			throw new IllegalArgumentException("callback must not be null");
 		}
-		eventLoop.dispatch(new EventListener() {
-			@Override
-			public void handle(Object... data) {
-				callback.run();
-			}
-		});
+		eventLoop.dispatch(data -> callback.run());
 	}
+
+    @Override
+    public void execute(Runnable command) {
+        nextTick(command);
+    }
 }
