@@ -1,18 +1,21 @@
 /*
  * Copyright (c) Squaredesk GmbH and Oliver Dotzauer.
  *
- * This program is distributed under the license described in the "LICENSE" file in the root directory
- * of the distribution package.
+ * This program is distributed under the squaredesk open source license. See the LICENSE file
+ * distributed with this work for additional information regarding copyright ownership. You may also
+ * obtain a copy of the license at
+ *
+ *   https://squaredesk.ch/license/oss/LICENSE
  */
 
 package ch.squaredesk.nova;
-
-import static org.junit.Assert.*;
 
 import ch.squaredesk.nova.events.CurrentThreadEventEmitter;
 import ch.squaredesk.nova.events.EventDispatchConfig;
 import ch.squaredesk.nova.events.EventLoopAwareEventEmitter;
 import org.junit.Test;
+
+import static org.junit.Assert.assertTrue;
 
 public class NovaBuilderTest {
 
