@@ -77,25 +77,25 @@ public class EventMetricsCollector extends MetricsCollector {
 	public void listenerAdded(Object event) {
         String eventString = String.valueOf(event);
         if (shouldBeTracked(eventString)) {
-			getCounter("listeners", eventString).inc();
+			getCounter("emitters", eventString).inc();
 		}
-        getCounter("listeners", "total").inc();
+        getCounter("emitters", "total").inc();
     }
 
 	public void listenerRemoved(Object event) {
         String eventString = String.valueOf(event);
         if (shouldBeTracked(eventString)) {
-			getCounter("listeners", eventString).dec();
+			getCounter("emitters", eventString).dec();
 		}
-        getCounter("listeners", "total").dec();
+        getCounter("emitters", "total").dec();
     }
 
 	public void allListenersRemoved(Object event) {
         String eventString = String.valueOf(event);
         if (shouldBeTracked(eventString)) {
-			remove("listeners", eventString);
+			remove("emitters", eventString);
         }
-        Counter counter = getCounter("listeners", "total");
+        Counter counter = getCounter("emitters", "total");
         counter.dec(counter.getCount());
     }
 

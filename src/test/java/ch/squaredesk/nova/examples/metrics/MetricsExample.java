@@ -67,7 +67,7 @@ public class MetricsExample {
 		 * *************************************************************************** *
 		 * ***                                                                     *** *
 		 * *** 3rd step:                                                           *** *
-		 * *** register dummy listeners and create events until <ENTER> is pressed *** *
+		 * *** register dummy emitters and create events until <ENTER> is pressed *** *
 		 * ***                                                                     *** *
 		 * *************************************************************************** *
 		 * *************************************************************************** *

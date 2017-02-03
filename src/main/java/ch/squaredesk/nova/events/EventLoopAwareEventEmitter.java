@@ -11,6 +11,7 @@
 package ch.squaredesk.nova.events;
 
 import ch.squaredesk.nova.events.metrics.EventMetricsCollector;
+import io.reactivex.Emitter;
 
 import java.util.List;
 
@@ -23,8 +24,8 @@ public class EventLoopAwareEventEmitter extends EventEmitter {
 	}
 
 	@Override
-	void dispatchEventAndDataToListeners(List<EventListener> listenerList, Object event, Object... data) {
-		eventLoop.dispatch(event, listenerList, data);
+	void dispatchEventAndData(List<Emitter<Object[]>> emitterList, Object event, Object... data) {
+		eventLoop.dispatch(event, emitterList, data);
 	}
 
 }

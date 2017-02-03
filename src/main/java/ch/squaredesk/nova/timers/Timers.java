@@ -12,8 +12,8 @@ package ch.squaredesk.nova.timers;
 
 import java.util.concurrent.*;
 
-import ch.squaredesk.nova.events.EventListener;
 import ch.squaredesk.nova.events.EventLoop;
+import io.reactivex.Emitter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -112,7 +112,7 @@ public class Timers {
 	}
 
 	private class TimeoutCallbackWrapper implements Runnable {
-		private final EventListener handlerToInvoke;
+		private final Emitter<Object[]> handlerToInvoke;
 
 		public TimeoutCallbackWrapper(final String callbackId, final Runnable runnableToInvoke) {
 			this.handlerToInvoke = data -> {
@@ -133,7 +133,7 @@ public class Timers {
 	}
 
 	private class IntervalCallbackWrapper implements Runnable {
-		private final EventListener handlerToInvoke;
+		private final Emitter<Object[]> handlerToInvoke;
 
 		public IntervalCallbackWrapper(final Runnable runnableToInvoke) {
 			this.handlerToInvoke = data -> runnableToInvoke.run();
@@ -149,4 +149,24 @@ public class Timers {
 		}
 
 	}
+
+    private class EmittingWrapper implements Emitter<Object[]> {
+	    private final Runnable callback;
+
+        private EmittingWrapper(Runnable callback) {
+            this.callback = callback;
+        }
+
+        @Override
+        public void onNext(Object[] value) {
+            callback.run();;
+        }
+        @Override
+        public void onError(Throwable error) {
+        }
+        @Override
+        public void onComplete() {
+        }
+    };
+
 }

@@ -19,6 +19,7 @@ import com.codahale.metrics.MetricSet;
 import com.lmax.disruptor.*;
 import com.lmax.disruptor.dsl.Disruptor;
 import com.lmax.disruptor.dsl.ProducerType;
+import io.reactivex.Emitter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -122,27 +123,27 @@ public class EventLoop {
         return new RingBufferMetricSet(ringBuffer);
     }
 
-	public void dispatch(ch.squaredesk.nova.events.EventListener listener) {
-		dispatch(null, listener);
+	public void dispatch(Emitter<Object[]> emitter) {
+		dispatch(null, emitter);
 	}
 
-	public void dispatch(Object event, List<ch.squaredesk.nova.events.EventListener> listenerList) {
+	public void dispatch(Object event, List<Emitter<Object[]>> listenerList) {
 		dispatch(event, listenerList, (Object[]) null);
 	}
 
-	public void dispatch(Object event, List<ch.squaredesk.nova.events.EventListener> listenerList, Object... data) {
-		dispatch(event, listenerList.toArray(new ch.squaredesk.nova.events.EventListener[listenerList.size()]), data);
+	public void dispatch(Object event, List<Emitter<Object[]>> emitterList, Object... data) {
+		dispatch(event, emitterList.toArray(new Emitter[emitterList.size()]), data);
 	}
 
-	public void dispatch(Object event, ch.squaredesk.nova.events.EventListener[] listenerArray) {
-		dispatch(event, listenerArray, (Object[]) null);
+	public void dispatch(Object event, Emitter<Object[]>[] emitters) {
+		dispatch(event, emitters, (Object[]) null);
 	}
 
-	public void dispatch(Object event, ch.squaredesk.nova.events.EventListener listener, Object... data) {
-		dispatch(event, new ch.squaredesk.nova.events.EventListener[] { listener }, data);
+	public void dispatch(Object event, Emitter<Object[]> emitter, Object... data) {
+		dispatch(event, new Emitter[] { emitter }, data);
 	}
 
-	public void dispatch(Object event, ch.squaredesk.nova.events.EventListener[] listeners, Object... data) {
+	public void dispatch(Object event, Emitter<Object[]>[] emitters, Object... data) {
 		// if this is an event for which duplicate detection was switched on, get the ID
 		Object duplicateDetectionId = null;
 		IdProviderForDuplicateEventDetection idProvider = null;
@@ -156,7 +157,7 @@ public class EventLoop {
 			Object currentData = mapIdToCurrentData.put(duplicateDetectionId, data);
 			if (currentData == null) {
 				// put trigger onto ringBuffer
-				putEventuallyDuplicateEventIntoRingBuffer(event, listeners, duplicateDetectionId);
+				putEventuallyDuplicateEventIntoRingBuffer(event, emitters, duplicateDetectionId);
 			} else {
 				if (LOGGER.isTraceEnabled()) {
 					LOGGER.trace("Dropped outdated data for event " + event + ", since a more recent update came in");
@@ -164,36 +165,36 @@ public class EventLoop {
 				metricsCollector.duplicateEventDetected(event);
 			}
 		} else {
-			putNormalEventIntoRingBuffer(event, listeners, data);
+			putNormalEventIntoRingBuffer(event, emitters, data);
 		}
 	}
 
-	private void putNormalEventIntoRingBuffer(Object event, ch.squaredesk.nova.events.EventListener[] listeners, Object... data) {
+	private void putNormalEventIntoRingBuffer(Object event, Emitter<Object[]>[] emitters, Object... data) {
 		try {
 			long nextSequenceNumber = ringBuffer.tryNext();
 			InvocationContext ic = ringBuffer.get(nextSequenceNumber);
-			ic.setEventListenerInfo(event, listeners, data);
+			ic.setEmitInfo(event, emitters, data);
 			ringBuffer.publish(nextSequenceNumber);
 			metricsCollector.eventDispatched(event);
 		} catch (com.lmax.disruptor.InsufficientCapacityException e) {
-			handleRingBufferFull(event, listeners, data);
+			handleRingBufferFull(event, emitters, data);
 		}
 	}
 
-	private void putEventuallyDuplicateEventIntoRingBuffer(Object event, ch.squaredesk.nova.events.EventListener[] listeners,
+	private void putEventuallyDuplicateEventIntoRingBuffer(Object event, Emitter<Object[]>[] emitters,
 			Object duplicateDetectionId) {
 		try {
 			long nextSequenceNumber = ringBuffer.tryNext();
 			InvocationContext ic = ringBuffer.get(nextSequenceNumber);
-			ic.setEventListenerInfo(event, listeners, duplicateDetectionId, mapIdToCurrentData);
+			ic.setEmitInfo(event, emitters, duplicateDetectionId, mapIdToCurrentData);
 			ringBuffer.publish(nextSequenceNumber);
 			metricsCollector.eventDispatched(event);
 		} catch (com.lmax.disruptor.InsufficientCapacityException e) {
-			handleRingBufferFull(event, listeners, mapIdToCurrentData.remove(duplicateDetectionId));
+			handleRingBufferFull(event, emitters, mapIdToCurrentData.remove(duplicateDetectionId));
 		}
 	}
 
-	private void handleRingBufferFull(Object event, ch.squaredesk.nova.events.EventListener[] listeners, Object... data) {
+	private void handleRingBufferFull(Object event, Emitter<Object[]>[] emitters, Object... data) {
 		switch (insufficientCapacityStrategy) {
 			case DROP_EVENTS:
 				if (LOGGER.isTraceEnabled()) {
@@ -208,7 +209,7 @@ public class EventLoop {
 				metricsCollector.eventAddedToFullQueue(event);
 				throw new InsufficientCapacityException(event, data);
 			case QUEUE_EVENTS:
-				dispatchLaterExecutor.execute(new MyDispatchLaterRunnable(event, listeners, data));
+				dispatchLaterExecutor.execute(new MyDispatchLaterRunnable(event, emitters, data));
 				if (LOGGER.isTraceEnabled()) {
 					LOGGER.trace("RingBuffer " + identifier + " full. Queued event " + event + " for later processing");
 				}
@@ -220,7 +221,7 @@ public class EventLoop {
 				long stop = System.nanoTime();
 				metricsCollector.waitedForEventToBeDispatched(event, stop - start);
 				InvocationContext ic = ringBuffer.get(nextSequenceNumber);
-				ic.setEventListenerInfo(event, listeners, data);
+				ic.setEmitInfo(event, emitters, data);
 				ringBuffer.publish(nextSequenceNumber);
 				metricsCollector.eventDispatched(event);
 				return;
@@ -238,12 +239,12 @@ public class EventLoop {
 
 	private class MyDispatchLaterRunnable implements Runnable {
 		public final Object event;
-		public final ch.squaredesk.nova.events.EventListener[] listeners;
+		public final Emitter<Object[]>[] emitters;
 		public final Object[] data;
 
-		public MyDispatchLaterRunnable(Object event, ch.squaredesk.nova.events.EventListener[] listeners, Object... data) {
+		public MyDispatchLaterRunnable(Object event, Emitter<Object[]>[] emitters, Object... data) {
 			this.event = event;
-			this.listeners = listeners;
+			this.emitters = emitters;
 			this.data = data;
 		}
 
@@ -251,7 +252,7 @@ public class EventLoop {
 		public void run() {
 			long nextSequenceNumber = ringBuffer.next();
 			InvocationContext ic = ringBuffer.get(nextSequenceNumber);
-			ic.setEventListenerInfo(event, listeners, data);
+			ic.setEmitInfo(event, emitters, data);
 			ringBuffer.publish(nextSequenceNumber);
 		}
 	}

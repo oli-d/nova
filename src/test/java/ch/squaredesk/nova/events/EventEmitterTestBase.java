@@ -12,6 +12,7 @@ package ch.squaredesk.nova.events;
 
 import org.apache.log4j.BasicConfigurator;
 import org.hamcrest.Matchers;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -40,42 +41,28 @@ public abstract class EventEmitterTestBase {
         BasicConfigurator.configure();
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = NullPointerException.class)
     public void testRegisteringNullEventThrows() {
-        EventListener listener = data -> {
-        };
-        eventEmitter.on(null, listener);
+        eventEmitter.observe(null);
+    }
+
+//    @Test(expected = NullPointerException.class)
+//    public void testRemovingAllWithNullEventThrows() {
+//        eventEmitter.removeAllListeners(null);
+//    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testUnsubscribingObserverUnregistersListener() {
+        Assert.fail();
+//        eventEmitter.removeListener(String.class, null);
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void testRegisteringNullListenerThrows() {
-        eventEmitter.on(String.class, null);
+    public void testEmmittingNullThrows() {
+        eventEmitter.emit(null);
     }
 
-    @Test(expected = IllegalArgumentException.class)
-    public void testRemovingAllWithNullEventThrows() {
-        eventEmitter.removeAllListeners(null);
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void testRemovingWithNullEventThrows() {
-        EventListener listener = data -> {
-        };
-        eventEmitter.removeListener(null, listener);
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void testRemovingWithNullListenerThrows() {
-        eventEmitter.removeListener(String.class, null);
-    }
-
-    @Test
-    public void testRemovingNotYetRegisteredListenerIsSilentlyIgnored() {
-        EventListener listener = data -> {
-        };
-        eventEmitter.removeListener(String.class, listener);
-    }
-
+    /*
     @Test
     public void testGetAllListeners() {
         EventListener listener1 = data -> {
@@ -166,11 +153,6 @@ public abstract class EventEmitterTestBase {
         }
         assertFalse(invocationFlag[0]);
         assertTrue(eventEmitter.getListeners(String.class).isEmpty());
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void testEmmittingNullThrows() {
-        eventEmitter.emit(null);
     }
 
     @Test
@@ -315,5 +297,5 @@ public abstract class EventEmitterTestBase {
         assertThat(invocationCounts[2], is(2));
         assertThat(throwFlag[0], is(true));
     }
-
+*/
 }

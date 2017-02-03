@@ -10,6 +10,7 @@
 
 package ch.squaredesk.nova.events;
 
+import io.reactivex.Emitter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -21,11 +22,11 @@ class MultiConsumerEventHandler implements EventHandler<InvocationContext> {
 	@Override
 	public void onEvent(InvocationContext event, long sequence, boolean endOfBatch) {
 		Object[] data = event.getData();
-		for (EventListener listener : event.getEventListeners()) {
+		for (Emitter<Object[]> emitter : event.getEmitters()) {
 			try {
-				listener.handle(data);
+				emitter.onNext(data);
 			} catch (Exception e) {
-				LOGGER.error("Caught exception, trying to invoke listener for event " + event, e);
+				LOGGER.error("Caught exception, trying to invoke emitter for event " + event, e);
 			}
 		}
 	}

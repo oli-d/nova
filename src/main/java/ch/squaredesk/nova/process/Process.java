@@ -11,6 +11,7 @@
 package ch.squaredesk.nova.process;
 
 import ch.squaredesk.nova.events.EventLoop;
+import io.reactivex.Emitter;
 
 import java.util.concurrent.Executor;
 
@@ -21,11 +22,23 @@ public class Process implements Executor {
 		this.eventLoop = eventLoop;
 	}
 
-	public void nextTick(final Runnable callback) {
+	public void nextTick(Runnable callback) {
 		if (callback == null) {
 			throw new IllegalArgumentException("callback must not be null");
 		}
-		eventLoop.dispatch(data -> callback.run());
+        Emitter<Object[]> wrapper = new Emitter<Object[]>() {
+            @Override
+            public void onNext(Object[] value) {
+                callback.run();;
+            }
+            @Override
+            public void onError(Throwable error) {
+            }
+            @Override
+            public void onComplete() {
+            }
+        };
+		eventLoop.dispatch(wrapper);
 	}
 
     @Override

@@ -11,17 +11,25 @@
 package ch.squaredesk.nova.events;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.function.Consumer;
 
+import io.reactivex.*;
+import io.reactivex.Observable;
+import io.reactivex.disposables.Disposable;
+import io.reactivex.subjects.Subject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import ch.squaredesk.nova.events.metrics.EventMetricsCollector;
 
+import static java.util.Objects.requireNonNull;
+
 public abstract class EventEmitter {
 	private static final Logger LOGGER = LoggerFactory.getLogger(EventEmitter.class);
 
-	private final HashMap<Object, List<ch.squaredesk.nova.events.EventListener>> mapEventToHandler = new HashMap<>();
-	private final HashMap<Object, List<ch.squaredesk.nova.events.EventListener>> mapEventToOneOffHandlers = new HashMap<>();
+	private final ConcurrentHashMap<Object, List<Emitter<Object[]>>> mapEventToHandler = new ConcurrentHashMap<>();
 
 	private final boolean warnOnUnhandledEvents;
 	protected final EventMetricsCollector metricsCollector;
@@ -62,111 +70,112 @@ public abstract class EventEmitter {
      *                                   *
      * ***********************************
      */
-	abstract void dispatchEventAndDataToListeners(List<ch.squaredesk.nova.events.EventListener> listenerList, Object event, Object... data);
+	abstract void dispatchEventAndData(List<Emitter<Object[]>> listenerList, Object event, Object... data);
 
-	public void on(Object event, ch.squaredesk.nova.events.EventListener callback) {
-		addListener(event, callback);
-	}
+	private void registerEventSpecificEmitter(Object event, Emitter<Object[]> eventListener) {
+	    requireNonNull(event, "event must not be null");
+	    requireNonNull(eventListener, "eventListener must not be null");
 
-	public void once(Object event, ch.squaredesk.nova.events.EventListener callback) {
-		addListener(event, callback, mapEventToOneOffHandlers);
-	}
+	    // TODO: performance optimization for CurrentThreadEventEmitter
+        List<Emitter<Object[]>> newList = new CopyOnWriteArrayList<>();
+        List<Emitter<Object[]>> existingList = mapEventToHandler.putIfAbsent(event, newList);
+        List<Emitter<Object[]>> handlers = existingList == null ? newList : existingList;
+        metricsCollector.listenerAdded(event);
+        handlers.add(eventListener);
+        LOGGER.trace("Registered listener for event {}", event);
+    }
 
-	public void addListener(Object event, ch.squaredesk.nova.events.EventListener callback) {
-		addListener(event, callback, mapEventToHandler);
-	}
+	private void deregisterEventSpecificEmitter(Object event, Emitter<Object[]> eventListener) {
+	    requireNonNull(event, "event must not be null");
+	    requireNonNull(eventListener, "eventListener must not be null");
 
-	private void addListener(Object event, ch.squaredesk.nova.events.EventListener callback, Map<Object, List<ch.squaredesk.nova.events.EventListener>> listenerMap) {
-		if (event == null) {
-			throw new IllegalArgumentException("event must not be null");
-		}
-		if (callback == null) {
-			throw new IllegalArgumentException("handler must not be null");
-		}
-		List<ch.squaredesk.nova.events.EventListener> handlers = listenerMap.get(event);
-		if (handlers == null) {
-			handlers = new ArrayList<>();
-			listenerMap.put(event, handlers);
-		}
-		if (LOGGER.isTraceEnabled()) {
-			LOGGER.trace("Registered event " + event + " --> " + callback);
-		}
-		metricsCollector.listenerAdded(event);
-		handlers.add(callback);
-	}
+	    List<Emitter<Object[]>> handlers = mapEventToHandler.get(event);
+        if (handlers==null) {
+            return;
+        }
 
-	public void removeListener(Object event, ch.squaredesk.nova.events.EventListener handler) {
-		if (event == null) {
-			throw new IllegalArgumentException("event must not be null");
-		}
-		if (handler == null) {
-			throw new IllegalArgumentException("handler must not be null");
-		}
-		// remove listener from normal list
-		List<ch.squaredesk.nova.events.EventListener> handlers = mapEventToHandler.get(event);
-		if (handlers != null) {
-			handlers.remove(handler);
-			if (handlers.isEmpty()) {
-				mapEventToHandler.remove(event);
-			}
-			if (LOGGER.isTraceEnabled()) {
-				LOGGER.trace("Deregistered listener " + event + " --> " + handler);
-			}
-			metricsCollector.listenerRemoved(event);
-		}
-		// remove listener from one off list
-		handlers = mapEventToOneOffHandlers.get(event);
-		if (handlers != null) {
-			handlers.remove(handler);
-			if (handlers.isEmpty()) {
-				mapEventToHandler.remove(event);
-			}
-			LOGGER.trace("Deregistered one off listener " + event + " --> " + handler);
-			metricsCollector.listenerRemoved(event);
-		}
-	}
+        if (handlers.remove(eventListener)) {
+            LOGGER.trace("Registered listener for event {}", event);
+            metricsCollector.listenerRemoved(event);
+        }
+    }
 
-	public void removeAllListeners(Object event) {
-		if (event == null) {
-			throw new IllegalArgumentException("event must not be null");
-		}
-		mapEventToHandler.remove(event);
-		mapEventToOneOffHandlers.remove(event);
-		if (LOGGER.isTraceEnabled()) {
-			LOGGER.trace("Deregistered all listeners for event " + event);
-		}
-		metricsCollector.allListenersRemoved(event);
-	}
+	public Observable<Object[]> observe (Object event) {
+		requireNonNull(event, "event must not be null");
+		Observable<Object[]> returnValue = Subject.create(s -> {
+            Consumer<Object[]> listener = data -> s.onNext(data);
+            registerEventSpecificEmitter(event, s);
+            // deregister in case the Observalble consumer unsubscribes
+            s.setDisposable(new Disposable() {
+                private boolean disposed = false;
 
-	public List<ch.squaredesk.nova.events.EventListener> getListeners(Object event) {
-		if (event == null) {
-			throw new IllegalArgumentException("event must not be null");
-		}
-		List<ch.squaredesk.nova.events.EventListener> returnValue = new ArrayList<>();
-		List<ch.squaredesk.nova.events.EventListener> listeners = mapEventToHandler.get(event);
-		if (listeners != null) {
-			returnValue.addAll(listeners);
-		}
-		listeners = mapEventToOneOffHandlers.get(event);
-		if (listeners != null) {
-			returnValue.addAll(listeners);
-		}
+                @Override
+                public void dispose() {
+                    if (!disposed) {
+                        deregisterEventSpecificEmitter(event, s);
+                        disposed = true;
+                    }
+                }
 
+                @Override
+                public boolean isDisposed() {
+                    return false;
+                }
+            });
+        });
 		return returnValue;
 	}
 
-	private List<ch.squaredesk.nova.events.EventListener> getListenersForEventDistribution(Object event) {
-		List<ch.squaredesk.nova.events.EventListener> listenerList = new ArrayList<>();
-		List<ch.squaredesk.nova.events.EventListener> normalListenerList = mapEventToHandler.get(event);
-		if (normalListenerList != null) {
-			listenerList.addAll(normalListenerList);
-		}
-		List<ch.squaredesk.nova.events.EventListener> oneOffListeners = mapEventToOneOffHandlers.remove(event);
-		if (oneOffListeners != null) {
-			listenerList.addAll(oneOffListeners);
-		}
+	public Single<Object[]> single (Object event) {
+        requireNonNull(event, "event must not be null");
+        Single<Object[]> returnValue = Single.create(s -> {
+            // Unfortunately, for Single's, we have to ship around the funny RxJava class hierarchy
+            Emitter<Object[]> emitterWrapper = new Emitter<Object[]>() {
+                @Override
+                public void onNext(Object[] value) {
+                    s.onSuccess(value);
+                }
 
-		return listenerList;
+                @Override
+                public void onError(Throwable error) {
+                    s.onError(error);
+                }
+
+                @Override
+                public void onComplete() {
+                    s.onError(new RuntimeException("Unexpected onComplete() for SingleEmitter"));
+                }
+            };
+            registerEventSpecificEmitter(event, emitterWrapper);
+            // deregister in case the Observalble consumer unsubscribes
+            s.setDisposable(new Disposable() {
+                private boolean disposed = false;
+
+                @Override
+                public void dispose() {
+                    if (!disposed) {
+                        deregisterEventSpecificEmitter(event, emitterWrapper);
+                        disposed = true;
+                    }
+                }
+
+                @Override
+                public boolean isDisposed() {
+                    return false;
+                }
+            });
+        });
+        return returnValue;
+	}
+
+	protected List<Emitter<Object[]>> getListeners(Object event) {
+		requireNonNull (event,"event must not be null");
+		List<Emitter<Object[]>> returnValue = new ArrayList<>();
+        List<Emitter<Object[]>> eventListeners = mapEventToHandler.get(event);
+        if (eventListeners!=null) {
+            returnValue.addAll(eventListeners);
+        }
+		return returnValue;
 	}
 
 	private void doEmit(Object event, Object... data) {
@@ -174,9 +183,9 @@ public abstract class EventEmitter {
 			throw new IllegalArgumentException("event must not be null");
 		}
 
-		List<ch.squaredesk.nova.events.EventListener> listenerList = getListenersForEventDistribution(event);
+		List<Emitter<Object[]>> listenerList = getListeners(event);
 		if (!listenerList.isEmpty()) {
-			dispatchEventAndDataToListeners(listenerList, event, data);
+			dispatchEventAndData(listenerList, event, data);
 		} else {
 			metricsCollector.eventEmittedButNoListeners(event);
 			if (warnOnUnhandledEvents) {
