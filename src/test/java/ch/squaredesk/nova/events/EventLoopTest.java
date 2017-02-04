@@ -30,6 +30,7 @@ import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.*;
 
 public class EventLoopTest {
+	/*
 	private EventLoop eventLoop;
 
 	@BeforeClass
@@ -316,5 +317,5 @@ public class EventLoopTest {
 		assertTrue(numEventsProcessed[0] < numEvents);
 		assertThat(lastDataProcessed[0], Matchers.is("value" + (numEvents - 1)));
 	}
-
+*/
 }

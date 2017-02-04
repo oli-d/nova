@@ -11,7 +11,6 @@
 package ch.squaredesk.nova.events;
 
 import org.apache.log4j.BasicConfigurator;
-import org.hamcrest.Matchers;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -22,9 +21,8 @@ import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertThat;
 
 public abstract class EventEmitterTestBase {
     private EventEmitter eventEmitter;
@@ -46,14 +44,10 @@ public abstract class EventEmitterTestBase {
         eventEmitter.observe(null);
     }
 
-//    @Test(expected = NullPointerException.class)
-//    public void testRemovingAllWithNullEventThrows() {
-//        eventEmitter.removeAllListeners(null);
-//    }
 
     @Test(expected = IllegalArgumentException.class)
     public void testUnsubscribingObserverUnregistersListener() {
-        Assert.fail();
+        Assert.fail("not implemented yet");
 //        eventEmitter.removeListener(String.class, null);
     }
 
@@ -62,6 +56,31 @@ public abstract class EventEmitterTestBase {
         eventEmitter.emit(null);
     }
 
+    @Test
+    public void testRegisteredListenerCalledEverytimeAnEventIsEmitted() throws Exception {
+        List<Object[]> listener1InvocationParams = new ArrayList<>();
+        CountDownLatch countDownLatch = new CountDownLatch(3);
+
+        eventEmitter.observe(String.class).subscribe(data -> {
+            listener1InvocationParams.add(data);
+            countDownLatch.countDown();
+        });
+
+        eventEmitter.emit(String.class, "MyEvent1");
+        eventEmitter.emit(String.class, "MyEvent2");
+        eventEmitter.emit(String.class, "MyEvent3", "MyEvent4");
+
+        countDownLatch.await(500,TimeUnit.MILLISECONDS);
+        assertThat(countDownLatch.getCount(), is(0L));
+        assertThat(listener1InvocationParams.size(), is(3));
+        assertThat(listener1InvocationParams.get(0).length, is(1));
+        assertThat(listener1InvocationParams.get(0)[0], is("MyEvent1"));
+        assertThat(listener1InvocationParams.get(1).length, is(1));
+        assertThat(listener1InvocationParams.get(1)[0], is("MyEvent2"));
+        assertThat(listener1InvocationParams.get(2).length, is(2));
+        assertThat(listener1InvocationParams.get(2)[0], is("MyEvent3"));
+        assertThat(listener1InvocationParams.get(2)[1], is("MyEvent4"));
+    }
     /*
     @Test
     public void testGetAllListeners() {
@@ -73,15 +92,15 @@ public abstract class EventEmitterTestBase {
         eventEmitter.on(String.class, listener1);
         eventEmitter.once(String.class, listener2);
 
-        assertTrue(eventEmitter.getListeners("String.class").isEmpty());
-        assertEquals(2, eventEmitter.getListeners(String.class).size());
-        assertTrue(eventEmitter.getListeners(String.class).contains(listener1));
-        assertTrue(eventEmitter.getListeners(String.class).contains(listener2));
+        assertTrue(eventEmitter.getEmitters("String.class").isEmpty());
+        assertEquals(2, eventEmitter.getEmitters(String.class).size());
+        assertTrue(eventEmitter.getEmitters(String.class).contains(listener1));
+        assertTrue(eventEmitter.getEmitters(String.class).contains(listener2));
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testGetAllListenersWithNullEventThrows() {
-        eventEmitter.getListeners(null);
+        eventEmitter.getEmitters(null);
     }
 
     @Test
@@ -134,7 +153,7 @@ public abstract class EventEmitterTestBase {
             Thread.sleep(500);
         }
         assertFalse(invocationFlag[0]);
-        assertTrue(eventEmitter.getListeners(String.class).isEmpty());
+        assertTrue(eventEmitter.getEmitters(String.class).isEmpty());
     }
 
     @Test
@@ -152,7 +171,7 @@ public abstract class EventEmitterTestBase {
             Thread.sleep(500);
         }
         assertFalse(invocationFlag[0]);
-        assertTrue(eventEmitter.getListeners(String.class).isEmpty());
+        assertTrue(eventEmitter.getEmitters(String.class).isEmpty());
     }
 
     @Test
@@ -171,36 +190,9 @@ public abstract class EventEmitterTestBase {
         countDownLatch.await(500, TimeUnit.MILLISECONDS);
         assertThat(countDownLatch.getCount(), is(0L));
         assertTrue(invocationFlag[0]);
-        assertFalse(eventEmitter.getListeners(String.class).isEmpty());
+        assertFalse(eventEmitter.getEmitters(String.class).isEmpty());
     }
 
-    @Test
-    public void testRegisteredListenerCalledEverytimeAnEventIsEmitted() throws Exception {
-        List<Object[]> listener1InvocationParams = new ArrayList<>();
-        CountDownLatch countDownLatch = new CountDownLatch(3);
-        EventListener listener1 = data -> {
-            listener1InvocationParams.add(data);
-            countDownLatch.countDown();
-        };
-
-
-        eventEmitter.on(String.class, listener1);
-
-        eventEmitter.emit(String.class, "MyEvent1");
-        eventEmitter.emit(String.class, "MyEvent2");
-        eventEmitter.emit(String.class, "MyEvent3", "MyEvent4");
-
-        countDownLatch.await(500,TimeUnit.MILLISECONDS);
-        assertThat(countDownLatch.getCount(), is(0L));
-        assertThat(listener1InvocationParams.size(), is(3));
-        assertThat(listener1InvocationParams.get(0).length, is(1));
-        assertThat(listener1InvocationParams.get(0)[0], is("MyEvent1"));
-        assertThat(listener1InvocationParams.get(1).length, is(1));
-        assertThat(listener1InvocationParams.get(1)[0], is("MyEvent2"));
-        assertThat(listener1InvocationParams.get(2).length, is(2));
-        assertThat(listener1InvocationParams.get(2)[0], is("MyEvent3"));
-        assertThat(listener1InvocationParams.get(2)[1], is("MyEvent4"));
-    }
 
     @Test
     public void testAllRegisteredListenersMatchingEventAreCalledWhenEventIsEmitted() throws Exception {
@@ -258,7 +250,7 @@ public abstract class EventEmitterTestBase {
         assertThat(oneOffListenerInvocationParams.size(), is(1));
         assertThat(listenerInvocationParams, contains("First", "Second"));
         assertThat(oneOffListenerInvocationParams, contains("First"));
-        assertThat(eventEmitter.getListeners(String.class).size(), is(1));
+        assertThat(eventEmitter.getEmitters(String.class).size(), is(1));
     }
 
     @Test

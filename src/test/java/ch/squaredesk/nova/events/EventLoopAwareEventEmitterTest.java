@@ -16,11 +16,12 @@ public class EventLoopAwareEventEmitterTest extends EventEmitterTestBase {
 
 	@Override
 	public EventEmitter createEventEmitter() {
-        EventDispatchConfig edc = new EventDispatchConfig.Builder()
-                .setDispatchThreadStrategy(EventDispatchConfig.DispatchThreadStrategy.DISPATCH_IN_EMITTER_THREAD)
-                .build();
-        EventLoop eventLoop = new EventLoop("id",edc,new NoopEventMetricsCollector());
-		return new EventLoopAwareEventEmitter(eventLoop, new NoopEventMetricsCollector(), false);
+//        EventDispatchConfig edc = new EventDispatchConfig.Builder()
+//                .setDispatchThreadStrategy(EventDispatchConfig.DispatchThreadStrategy.DISPATCH_IN_EMITTER_THREAD)
+//                .build();
+//        EventLoop eventLoop = new EventLoop("id",edc,new NoopEventMetricsCollector());
+//		return new EventLoopAwareEventEmitter(eventLoop, new NoopEventMetricsCollector(), false);
+		return null;
 	}
 
 }

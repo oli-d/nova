@@ -27,17 +27,12 @@ public class EventDispatchConfig {
 		DISPATCH_IN_EMITTER_THREAD, DISPATCH_IN_SPECIFIC_THREAD
 	};
 
-	public static enum MultiConsumerDispatchStrategy {
-		DISPATCH_EVENTS_TO_ALL_CONSUMERS, DISPATCH_EVENTS_TO_ONE_CONSUMER
-	};
-
 	public final int eventBufferSize;
 	public final WaitStrategy waitStrategy;
 	public final InsufficientCapacityStrategy insufficientCapacityStrategy;
 	public final ProducerStrategy producerStrategy;
 	public final DispatchThreadStrategy dispatchThreadStrategy;
 	public final int numberOfConsumers;
-	public final MultiConsumerDispatchStrategy multiConsumerDispatchStrategy;
 	public final boolean warnOnUnhandledEvent;
 
 	public EventDispatchConfig(Builder builder) {
@@ -48,7 +43,6 @@ public class EventDispatchConfig {
 		this.insufficientCapacityStrategy = builder.insufficientCapacityStrategy;
 		this.numberOfConsumers = builder.numberOfConsumers;
 		this.dispatchThreadStrategy = builder.dispatchThreadStrategy;
-		this.multiConsumerDispatchStrategy = builder.multiConsumerDispatchStrategy;
 		this.warnOnUnhandledEvent = builder.warnOnUnhandledEvent;
 	}
 
@@ -60,7 +54,6 @@ public class EventDispatchConfig {
 		private InsufficientCapacityStrategy insufficientCapacityStrategy = InsufficientCapacityStrategy.THROW_EXCEPTION;
 		private DispatchThreadStrategy dispatchThreadStrategy = DispatchThreadStrategy.DISPATCH_IN_SPECIFIC_THREAD;
 		private int numberOfConsumers = 1;
-		private MultiConsumerDispatchStrategy multiConsumerDispatchStrategy = MultiConsumerDispatchStrategy.DISPATCH_EVENTS_TO_ONE_CONSUMER;
 		private boolean warnOnUnhandledEvent;
 
 		public Builder() {
@@ -91,11 +84,6 @@ public class EventDispatchConfig {
 			if (numberOfConsumers <= 0) {
 				this.numberOfConsumers = 1;
 			}
-			return this;
-		}
-
-		public Builder setMultiConsumerDispatchStrategy(MultiConsumerDispatchStrategy multiConsumerDispatchStrategy) {
-			this.multiConsumerDispatchStrategy = multiConsumerDispatchStrategy;
 			return this;
 		}
 

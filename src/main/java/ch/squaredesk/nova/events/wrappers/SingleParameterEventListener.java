@@ -10,11 +10,9 @@
 
 package ch.squaredesk.nova.events.wrappers;
 
-import ch.squaredesk.nova.events.EventListener;
 
-public interface SingleParameterEventListener<ParamType> extends EventListener {
+public interface SingleParameterEventListener<ParamType> {
 	@SuppressWarnings("unchecked")
-	@Override
 	default void handle(Object... params) {
 		if (params == null || params.length == 0) {
 			doHandle(null);

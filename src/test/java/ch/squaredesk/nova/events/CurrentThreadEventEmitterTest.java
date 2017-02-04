@@ -10,13 +10,17 @@
 
 package ch.squaredesk.nova.events;
 
+import ch.squaredesk.nova.Nova;
 import ch.squaredesk.nova.events.metrics.NoopEventMetricsCollector;
 
 public class CurrentThreadEventEmitterTest extends EventEmitterTestBase {
 
     @Override
     public EventEmitter createEventEmitter() {
-        return new CurrentThreadEventEmitter(new NoopEventMetricsCollector(), false);
+        EventDispatchConfig edc = new EventDispatchConfig.Builder().setDispatchThreadStrategy(EventDispatchConfig.DispatchThreadStrategy.DISPATCH_IN_EMITTER_THREAD).build();
+        Nova nova = new Nova.Builder().setEventDispatchConfig(edc).build();
+
+        return new CurrentThreadEventEmitter("testInstance", edc, nova.metrics);
     }
 
 }

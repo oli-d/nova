@@ -10,35 +10,26 @@
 
 package ch.squaredesk.nova.process;
 
-import ch.squaredesk.nova.events.EventLoop;
-import io.reactivex.Emitter;
+import ch.squaredesk.nova.events.EventEmitter;
 
 import java.util.concurrent.Executor;
+import java.util.concurrent.atomic.AtomicLong;
+
+import static java.util.Objects.requireNonNull;
 
 public class Process implements Executor {
-	private final EventLoop eventLoop;
+	private final EventEmitter eventEmitter;
+	private final AtomicLong counter = new AtomicLong();
 
-	public Process(EventLoop eventLoop) {
-		this.eventLoop = eventLoop;
+	public Process(EventEmitter eventEmitter) {
+		this.eventEmitter = eventEmitter;
 	}
 
 	public void nextTick(Runnable callback) {
-		if (callback == null) {
-			throw new IllegalArgumentException("callback must not be null");
-		}
-        Emitter<Object[]> wrapper = new Emitter<Object[]>() {
-            @Override
-            public void onNext(Object[] value) {
-                callback.run();;
-            }
-            @Override
-            public void onError(Throwable error) {
-            }
-            @Override
-            public void onComplete() {
-            }
-        };
-		eventLoop.dispatch(wrapper);
+        requireNonNull(callback, "callback must not be null");
+        String processNextTickDummyEvent = "ProcessNextTickDummyEvent" + counter.incrementAndGet();
+        eventEmitter.single(processNextTickDummyEvent).subscribe(x -> callback.run());
+		eventEmitter.emit(processNextTickDummyEvent);
 	}
 
     @Override

@@ -10,24 +10,8 @@
 
 package ch.squaredesk.nova.timers;
 
-import ch.squaredesk.nova.events.EventDispatchConfig;
-import ch.squaredesk.nova.events.EventLoop;
-import ch.squaredesk.nova.events.metrics.NoopEventMetricsCollector;
-import org.apache.log4j.BasicConfigurator;
-import org.hamcrest.Matchers;
-import org.junit.Test;
-
-import java.lang.reflect.Field;
-import java.util.Map;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.TimeUnit;
-
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
-
 public class TimersMemLeakTest {
+	/*
 	static {
 		BasicConfigurator.configure();
 	}
@@ -88,5 +72,5 @@ public class TimersMemLeakTest {
 		f.setAccessible(true);
 		return (Map<String, ScheduledFuture<?>>) f.get(timers);
 	}
-
+*/
 }

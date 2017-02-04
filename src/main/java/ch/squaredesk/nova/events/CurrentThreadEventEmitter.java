@@ -10,32 +10,34 @@
 
 package ch.squaredesk.nova.events;
 
-import ch.squaredesk.nova.events.metrics.EventMetricsCollector;
+import ch.squaredesk.nova.metrics.Metrics;
 import io.reactivex.Emitter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.function.Consumer;
 
 public class CurrentThreadEventEmitter extends EventEmitter {
-	private static final Logger LOGGER = LoggerFactory.getLogger(CurrentThreadEventEmitter.class);
+	private final Logger logger = LoggerFactory.getLogger(CurrentThreadEventEmitter.class);
 
-	public CurrentThreadEventEmitter(EventMetricsCollector eventMetricsCollector, boolean warnOnUnhandledEvents) {
-		super(eventMetricsCollector, warnOnUnhandledEvents);
+	public CurrentThreadEventEmitter(
+			String identifier,
+			EventDispatchConfig eventDispatchConfig,
+			Metrics metrics) {
+		super(identifier, metrics, eventDispatchConfig.warnOnUnhandledEvent);
 	}
 
 	@Override
-	void dispatchEventAndData(List<Emitter<Object[]>> emitterList, Object event, Object... data) {
+	void dispatchEventAndData(Emitter<Object[]>[] emitters, Object event, Object... data) {
 		Object[] dataToPass = data.length == 0 ? null : data;
-		emitterList.forEach(emitter -> {
+		Arrays.stream(emitters).forEach(emitter -> {
 			try {
 				emitter.onNext(dataToPass);
 				metricsCollector.eventDispatched(event);
 			} catch (Exception e) {
-				LOGGER.error("Uncaught exception while invoking onNext() on " + emitter, e);
-				LOGGER.error("\tparamters: " + Arrays.toString(data));
+				logger.error("Uncaught exception while invoking onNext() on " + emitter, e);
+				logger.error("\tparamters: " + Arrays.toString(data));
 			}
 		});
 	}

@@ -21,7 +21,7 @@ import java.util.concurrent.TimeUnit;
 
 public class EventEmitterDefaultExceptionHandlerTest {
 	private EventEmitter eventEmitter;
-
+	/*
 	@Before
 	public void setup() {
 		EventDispatchConfig edc = new EventDispatchConfig.Builder().setDispatchThreadStrategy(
@@ -57,4 +57,5 @@ public class EventEmitterDefaultExceptionHandlerTest {
 
 		Assert.assertEquals(4, counter[0]);
 	}
+	*/
 }

@@ -15,6 +15,9 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Consumer;
 
+import ch.squaredesk.nova.events.metrics.RingBufferMetricSet;
+import ch.squaredesk.nova.metrics.Metrics;
+import com.codahale.metrics.MetricSet;
 import io.reactivex.*;
 import io.reactivex.Observable;
 import io.reactivex.disposables.Disposable;
@@ -34,10 +37,11 @@ public abstract class EventEmitter {
 	private final boolean warnOnUnhandledEvents;
 	protected final EventMetricsCollector metricsCollector;
 
-	protected EventEmitter(EventMetricsCollector eventMetricsCollector, boolean warnOnUnhandledEvents) {
+	protected EventEmitter(String identifier, Metrics metrics, boolean warnOnUnhandledEvents) {
         this.warnOnUnhandledEvents = warnOnUnhandledEvents;
-		this.metricsCollector = eventMetricsCollector;
-	}
+        this.metricsCollector = new EventMetricsCollector(metrics, identifier);
+        registerImplementationSpecificMetrics(metrics, identifier);
+    }
 
 
     /*
@@ -63,6 +67,12 @@ public abstract class EventEmitter {
         }
     }
 
+    /**
+     * extension point for sub classes
+     */
+    void registerImplementationSpecificMetrics(Metrics metrics, String identifier) {
+    }
+
     /*
      *************************************
      *                                   *
@@ -70,31 +80,31 @@ public abstract class EventEmitter {
      *                                   *
      * ***********************************
      */
-	abstract void dispatchEventAndData(List<Emitter<Object[]>> listenerList, Object event, Object... data);
+	abstract void dispatchEventAndData(Emitter<Object[]>[] emitters, Object event, Object... data);
 
-	private void registerEventSpecificEmitter(Object event, Emitter<Object[]> eventListener) {
+	private void registerEventSpecificEmitter(Object event, Emitter<Object[]> emitter) {
 	    requireNonNull(event, "event must not be null");
-	    requireNonNull(eventListener, "eventListener must not be null");
+	    requireNonNull(emitter, "emitter must not be null");
 
 	    // TODO: performance optimization for CurrentThreadEventEmitter
         List<Emitter<Object[]>> newList = new CopyOnWriteArrayList<>();
         List<Emitter<Object[]>> existingList = mapEventToHandler.putIfAbsent(event, newList);
         List<Emitter<Object[]>> handlers = existingList == null ? newList : existingList;
         metricsCollector.listenerAdded(event);
-        handlers.add(eventListener);
+        handlers.add(emitter);
         LOGGER.trace("Registered listener for event {}", event);
     }
 
-	private void deregisterEventSpecificEmitter(Object event, Emitter<Object[]> eventListener) {
+	private void deregisterEventSpecificEmitter(Object event, Emitter<Object[]> emitter) {
 	    requireNonNull(event, "event must not be null");
-	    requireNonNull(eventListener, "eventListener must not be null");
+	    requireNonNull(emitter, "emitter must not be null");
 
 	    List<Emitter<Object[]>> handlers = mapEventToHandler.get(event);
         if (handlers==null) {
             return;
         }
 
-        if (handlers.remove(eventListener)) {
+        if (handlers.remove(emitter)) {
             LOGGER.trace("Registered listener for event {}", event);
             metricsCollector.listenerRemoved(event);
         }
@@ -105,7 +115,7 @@ public abstract class EventEmitter {
 		Observable<Object[]> returnValue = Subject.create(s -> {
             Consumer<Object[]> listener = data -> s.onNext(data);
             registerEventSpecificEmitter(event, s);
-            // deregister in case the Observalble consumer unsubscribes
+            // deregister in case the Observable consumer unsubscribes
             s.setDisposable(new Disposable() {
                 private boolean disposed = false;
 
@@ -129,7 +139,7 @@ public abstract class EventEmitter {
 	public Single<Object[]> single (Object event) {
         requireNonNull(event, "event must not be null");
         Single<Object[]> returnValue = Single.create(s -> {
-            // Unfortunately, for Single's, we have to ship around the funny RxJava class hierarchy
+            // Unfortunately, for Single's, we have to work around the funny RxJava class hierarchy
             Emitter<Object[]> emitterWrapper = new Emitter<Object[]>() {
                 @Override
                 public void onNext(Object[] value) {
@@ -168,24 +178,24 @@ public abstract class EventEmitter {
         return returnValue;
 	}
 
-	protected List<Emitter<Object[]>> getListeners(Object event) {
+	protected Emitter<Object[]>[] getEmitters(Object event) {
 		requireNonNull (event,"event must not be null");
-		List<Emitter<Object[]>> returnValue = new ArrayList<>();
         List<Emitter<Object[]>> eventListeners = mapEventToHandler.get(event);
         if (eventListeners!=null) {
-            returnValue.addAll(eventListeners);
+            return eventListeners.toArray(new Emitter[eventListeners.size()]);
+        } else {
+            return new Emitter[0];
         }
-		return returnValue;
 	}
 
-	private void doEmit(Object event, Object... data) {
+	public void emit(Object event, Object... data) {
 		if (event == null) {
 			throw new IllegalArgumentException("event must not be null");
 		}
 
-		List<Emitter<Object[]>> listenerList = getListeners(event);
-		if (!listenerList.isEmpty()) {
-			dispatchEventAndData(listenerList, event, data);
+		Emitter<Object[]>[] emitters = getEmitters(event);
+		if (emitters.length>0) {
+			dispatchEventAndData(emitters, event, data);
 		} else {
 			metricsCollector.eventEmittedButNoListeners(event);
 			if (warnOnUnhandledEvents) {
@@ -195,56 +205,4 @@ public abstract class EventEmitter {
 		}
 	}
 
-	public void emit(Object event) {
-		doEmit(event);
-	}
-
-	public void emit(Object event, Object dataParam1) {
-		doEmit(event, dataParam1);
-	}
-
-	public void emit(Object event, Object dataParam1, Object dataParam2) {
-		doEmit(event, dataParam1, dataParam2);
-	}
-
-	public void emit(Object event, Object dataParam1, Object dataParam2, Object dataParam3) {
-		doEmit(event, dataParam1, dataParam2, dataParam3);
-	}
-
-	public void emit(Object event, Object dataParam1, Object dataParam2, Object dataParam3, Object dataParam4) {
-		doEmit(event, dataParam1, dataParam2, dataParam3, dataParam4);
-	}
-
-	public void emit(Object event, Object dataParam1, Object dataParam2, Object dataParam3, Object dataParam4,
-			Object dataParam5) {
-		doEmit(event, dataParam1, dataParam2, dataParam3, dataParam4, dataParam5);
-	}
-
-	public void emit(Object event, Object dataParam1, Object dataParam2, Object dataParam3, Object dataParam4,
-			Object dataParam5, Object dataParam6) {
-		doEmit(event, dataParam1, dataParam2, dataParam3, dataParam4, dataParam5, dataParam6);
-	}
-
-	public void emit(Object event, Object dataParam1, Object dataParam2, Object dataParam3, Object dataParam4,
-			Object dataParam5, Object dataParam6, Object dataParam7) {
-		doEmit(event, dataParam1, dataParam2, dataParam3, dataParam4, dataParam5, dataParam6, dataParam7);
-	}
-
-	public void emit(Object event, Object dataParam1, Object dataParam2, Object dataParam3, Object dataParam4,
-			Object dataParam5, Object dataParam6, Object dataParam7, Object dataParam8) {
-		doEmit(event, dataParam1, dataParam2, dataParam3, dataParam4, dataParam5, dataParam6, dataParam7, dataParam8);
-	}
-
-	public void emit(Object event, Object dataParam1, Object dataParam2, Object dataParam3, Object dataParam4,
-			Object dataParam5, Object dataParam6, Object dataParam7, Object dataParam8, Object dataParam9) {
-		doEmit(event, dataParam1, dataParam2, dataParam3, dataParam4, dataParam5, dataParam6, dataParam7, dataParam8,
-				dataParam9);
-	}
-
-	public void emit(Object event, Object dataParam1, Object dataParam2, Object dataParam3, Object dataParam4,
-			Object dataParam5, Object dataParam6, Object dataParam7, Object dataParam8, Object dataParam9,
-			Object dataParam10) {
-		doEmit(event, dataParam1, dataParam2, dataParam3, dataParam4, dataParam5, dataParam6, dataParam7, dataParam8,
-				dataParam9, dataParam10);
-	}
 }

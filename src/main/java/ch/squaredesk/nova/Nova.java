@@ -12,8 +12,6 @@ package ch.squaredesk.nova;
 
 import ch.squaredesk.nova.events.EventDispatchConfig;
 import ch.squaredesk.nova.events.EventEmitter;
-import ch.squaredesk.nova.events.EventLoop;
-import ch.squaredesk.nova.events.metrics.EventMetricsCollector;
 import ch.squaredesk.nova.filesystem.Filesystem;
 import ch.squaredesk.nova.process.Process;
 import ch.squaredesk.nova.events.CurrentThreadEventEmitter;
@@ -25,7 +23,6 @@ public class Nova {
 
 	public final String identifier;
 
-	public final EventLoop eventLoop;
 	public final Timers timers;
 	public final EventEmitter eventEmitter;
 	public final Process process;
@@ -36,37 +33,24 @@ public class Nova {
 		metrics = builder.metrics;
 		identifier = builder.identifier;
 
-		EventMetricsCollector eventMetricsCollector = new EventMetricsCollector(builder.metrics, builder.identifier);
-		eventLoop = createEventLoop(
+		eventEmitter = createEventEmitter(
 				identifier,
 				builder.eventDispatchConfig,
-				eventMetricsCollector);
-		metrics.register(eventLoop.getMetrics(), identifier);
-		eventEmitter = createEventEmitter(
-				builder.eventDispatchConfig,
-				eventMetricsCollector);
-		timers = new Timers(eventLoop);
-		process = new Process(eventLoop);
+				metrics);
+		timers = new Timers(eventEmitter);
+		process = new Process(eventEmitter);
 		filesystem = new Filesystem(process);
 	}
 
-	private EventLoop createEventLoop(
+	private EventEmitter createEventEmitter(
 			String identifier,
 			EventDispatchConfig eventDispatchConfig,
-			EventMetricsCollector eventMetricsCollector) {
-		return new EventLoop(identifier, eventDispatchConfig, eventMetricsCollector);
-	}
-
-	private EventEmitter createEventEmitter(
-			EventDispatchConfig eventDispatchConfig,
-			EventMetricsCollector eventMetricsCollector) {
+			Metrics metrics) {
 		EventEmitter retVal;
 		if (eventDispatchConfig.dispatchThreadStrategy == EventDispatchConfig.DispatchThreadStrategy.DISPATCH_IN_EMITTER_THREAD) {
-			retVal = new CurrentThreadEventEmitter(
-					eventMetricsCollector,eventDispatchConfig.warnOnUnhandledEvent);
+			retVal = new CurrentThreadEventEmitter(identifier, eventDispatchConfig, metrics);
 		} else {
-			retVal = new EventLoopAwareEventEmitter(
-					eventLoop, eventMetricsCollector,eventDispatchConfig.warnOnUnhandledEvent);
+			retVal = new EventLoopAwareEventEmitter(identifier, eventDispatchConfig, metrics);
 		}
 		return retVal;
 	}

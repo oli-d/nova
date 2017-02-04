@@ -11,162 +11,112 @@
 package ch.squaredesk.nova.timers;
 
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicLong;
 
-import ch.squaredesk.nova.events.EventLoop;
-import io.reactivex.Emitter;
+import ch.squaredesk.nova.events.EventEmitter;
+import io.reactivex.Observable;
+import io.reactivex.disposables.Disposable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static java.util.Objects.requireNonNull;
+
 public class Timers {
-	private static final Logger LOGGER = LoggerFactory.getLogger(Timers.class);
+	private static final Logger logger = LoggerFactory.getLogger(Timers.class);
 
-	private final EventLoop eventLoop;
-	private final ScheduledExecutorService executor;
-	private long counter = 0;
-	private ConcurrentHashMap<String, ScheduledFuture<?>> mapIdToFuture = new ConcurrentHashMap<>();
+	private final AtomicLong counter = new AtomicLong();
 
-	public Timers(EventLoop eventLoop) {
-		this.eventLoop = eventLoop;
+	private final EventEmitter eventEmitter;
+	private ConcurrentHashMap<String, Disposable> mapIdToDisposable = new ConcurrentHashMap<>();
 
-		ThreadFactory tf = runnable -> {
-			Thread t = new Thread(runnable, "Timers");
-			t.setDaemon(true);
-			return t;
-		};
-		executor = Executors.newSingleThreadScheduledExecutor(tf);
+	public Timers(EventEmitter eventEmitter) {
+		this.eventEmitter = eventEmitter;
 	}
 
-	/**
-	 * To schedule execution of a one-time callback after delay milliseconds. Returns a timeoutId for possible use with clearTimeout().
-	 *
-	 * It is important to note that your callback will probably not be called in exactly delay milliseconds - Nova makes no guarantees about the exact timing of when the callback will fire, nor of the
-	 * ordering things will fire in. The callback will be called as close as possible to the time specified.
-	 */
+    /**
+     * To schedule execution of a one-time callback after delay milliseconds. Returns a timeoutId for possible use with clearTimeout().
+     *
+     * It is important to note that your callback will probably not be called in exactly <delay> ms - Nova makes no guarantees about the
+     * exact timing of when the callback will fire, nor of the ordering things will fire in. The callback will be called as close as
+     * possible to the time specified.
+     */
 	public String setTimeout(Runnable callback, long delay) {
-		if (callback == null) {
-			throw new IllegalArgumentException("callback must not be null");
-		}
-		long id = ++counter;
-		String idAsString = String.valueOf(id);
+	    return setTimeout(callback, delay, TimeUnit.MILLISECONDS);
+    }
 
-		mapIdToFuture.put(idAsString,
-				executor.schedule(new TimeoutCallbackWrapper(idAsString, callback), delay, TimeUnit.MILLISECONDS));
-
-		return idAsString;
-	}
-
+    /**
+     * To schedule execution of a one-time callback after a specified delay . Returns a timeoutId for possible use with clearTimeout().
+     *
+     * It is important to note that your callback will probably not be called in exactly <delay> - Nova makes no guarantees about the
+     * exact timing of when the callback will fire, nor of the ordering things will fire in. The callback will be called as close as
+     * possible to the time specified.
+     */
 	public String setTimeout(Runnable callback, long delay, TimeUnit timeUnit) {
-		return setTimeout(callback, timeUnit.toMillis(delay));
+		requireNonNull(callback, "callback must not be null");
+		requireNonNull(timeUnit, "timeUnit must not be null");
+        String newId = String.valueOf(counter.incrementAndGet());
+        String timeoutDummyEvent = "TimersTimeoutDummyEvent" + newId;
+        Disposable single = eventEmitter
+                .single(timeoutDummyEvent)
+                .delay(delay, timeUnit)
+                .subscribe(x -> callback.run());;
+        mapIdToDisposable.put(newId, single);
+		eventEmitter.emit(timeoutDummyEvent);
+		return newId;
 	}
 
-	/** Prevents the timeout with the passed ID from triggering. */
-	public void clearTimeout(String timeoutId) {
-		if (timeoutId == null) {
-			throw new IllegalArgumentException("timeoutId must not be null");
-		}
-		ScheduledFuture<?> sf = mapIdToFuture.remove(timeoutId);
-		if (sf != null) {
-			sf.cancel(false);
-		}
-	}
+    /** Prevents the timeout with the passed ID from triggering. */
+    public void clearTimeout(String timeoutId) {
+        dispose(timeoutId);
+    }
 
 	/**
-	 * To schedule the repeated execution of callback every delay milliseconds. Returns a intervalId for possible use with clearInterval().
+	 * To schedule the repeated execution of callback every interval milliseconds. Returns a intervalId for possible use with clearInterval().
 	 *
 	 */
-	public String setInterval(Runnable callback, long delay) {
-		return setInterval(callback, delay, TimeUnit.MILLISECONDS);
+	public String setInterval(Runnable callback, long interval) {
+		return setInterval(callback, 0, interval, TimeUnit.MILLISECONDS);
 	}
 
 	/**
 	 * To schedule the repeated execution of callback. Returns a intervalId for possible use with clearInterval().
 	 *
 	 */
-	public String setInterval(Runnable callback, long delay, TimeUnit timeUnit) {
-		if (callback == null) {
-			throw new IllegalArgumentException("callback must not be null");
-		}
-		if (timeUnit == null) {
-			throw new IllegalArgumentException("timeUnit must not be null");
-		}
-		long id = ++counter;
-		String idAsString = String.valueOf(id);
+	public String setInterval(Runnable callback, long initialDelay, long interval, TimeUnit timeUnit) {
+        requireNonNull(callback, "callback must not be null");
+        requireNonNull(timeUnit, "timeUnit must not be null");
+        String newId = String.valueOf(counter.incrementAndGet());
+        String intervalDummyEvent = "TimersIntervalDummyEvent" + newId;
+        Disposable callbackInvoker = eventEmitter
+                .observe(intervalDummyEvent)
+                .subscribe(x -> callback.run());
+        // we create another "wrapper Observable" to trigger the callback invovation over the EventEmitter
+        // if we would invoke it from the Observable directly, we would be on the RxJava scheduler thread, not the
+        // (user configured) Nova event handler thread(s)
+        Disposable recurringEventEmitter = Observable
+                .interval(initialDelay, interval, timeUnit)
+                .subscribe(
+                        counter -> eventEmitter.emit(intervalDummyEvent),
+                        error -> logger.error("An error occurred on interval invocation for intervalId " + newId, error),
+                        () -> callbackInvoker.dispose());
+        mapIdToDisposable.put(newId, recurringEventEmitter);
 
-		mapIdToFuture.put(idAsString,
-				executor.scheduleWithFixedDelay(new IntervalCallbackWrapper(callback), delay, delay, timeUnit));
-
-		return idAsString;
+        return newId;
 	}
 
 	/**
 	 * Stops an interval from triggering.
 	 */
 	public void clearInterval(String intervalId) {
-		if (intervalId == null) {
-			throw new IllegalArgumentException("timeoutId must not be null");
-		}
-		ScheduledFuture<?> sf = mapIdToFuture.remove(intervalId);
-		if (sf != null) {
-			sf.cancel(false);
-		}
+	    dispose(intervalId);
 	}
 
-	private class TimeoutCallbackWrapper implements Runnable {
-		private final Emitter<Object[]> handlerToInvoke;
-
-		public TimeoutCallbackWrapper(final String callbackId, final Runnable runnableToInvoke) {
-			this.handlerToInvoke = data -> {
-				clearTimeout(callbackId);
-				runnableToInvoke.run();
-			};
-		}
-
-		@Override
-		public void run() {
-			try {
-				eventLoop.dispatch(handlerToInvoke);
-			} catch (Throwable t) {
-				LOGGER.error("Unable to put timeout callback on processing loop", t);
-			}
-		}
-
-	}
-
-	private class IntervalCallbackWrapper implements Runnable {
-		private final Emitter<Object[]> handlerToInvoke;
-
-		public IntervalCallbackWrapper(final Runnable runnableToInvoke) {
-			this.handlerToInvoke = data -> runnableToInvoke.run();
-		}
-
-		@Override
-		public void run() {
-			try {
-				eventLoop.dispatch(handlerToInvoke);
-			} catch (Throwable t) {
-				LOGGER.error("Unable to put interval callback on processing loop", t);
-			}
-		}
-
-	}
-
-    private class EmittingWrapper implements Emitter<Object[]> {
-	    private final Runnable callback;
-
-        private EmittingWrapper(Runnable callback) {
-            this.callback = callback;
+	private void dispose (String disposableId) {
+        requireNonNull(disposableId, "ID must not be null");
+        Disposable disposable = mapIdToDisposable.remove(disposableId);
+        if (disposable != null) {
+            disposable.dispose();
         }
-
-        @Override
-        public void onNext(Object[] value) {
-            callback.run();;
-        }
-        @Override
-        public void onError(Throwable error) {
-        }
-        @Override
-        public void onComplete() {
-        }
-    };
+    }
 
 }

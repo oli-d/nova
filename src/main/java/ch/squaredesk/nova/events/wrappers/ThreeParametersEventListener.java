@@ -10,14 +10,12 @@
 
 package ch.squaredesk.nova.events.wrappers;
 
-import ch.squaredesk.nova.events.EventListener;
 
-public interface ThreeParametersEventListener<ParamOneType, ParamTwoType, ParamThreeType> extends EventListener {
+public interface ThreeParametersEventListener<ParamOneType, ParamTwoType, ParamThreeType>  {
 
 	void doHandle(ParamOneType param1, ParamTwoType param2, ParamThreeType param3);
 
 	@SuppressWarnings("unchecked")
-	@Override
 	default void handle(Object... data) {
 		ParamOneType param1 = null;
 		ParamTwoType param2 = null;

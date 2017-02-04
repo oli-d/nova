@@ -10,13 +10,11 @@
 
 package ch.squaredesk.nova.events.wrappers;
 
-import ch.squaredesk.nova.events.EventListener;
 
-public interface NoParameterEventListener extends EventListener {
+public interface NoParameterEventListener  {
 
 	void doHandle();
 
-	@Override
 	default void handle(Object... data) {
 		doHandle();
 	}

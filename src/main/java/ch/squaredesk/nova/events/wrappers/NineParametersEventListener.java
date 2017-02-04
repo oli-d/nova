@@ -10,17 +10,15 @@
 
 package ch.squaredesk.nova.events.wrappers;
 
-import ch.squaredesk.nova.events.EventListener;
 
 public interface NineParametersEventListener<ParamOneType, ParamTwoType, ParamThreeType, ParamFourType, ParamFiveType, ParamSixType, ParamSevenType, ParamEightType, ParamNineType>
-extends EventListener {
+ {
 
 	public abstract void doHandle(ParamOneType param1, ParamTwoType param2, ParamThreeType param3,
 			ParamFourType param4, ParamFiveType param5, ParamSixType param6, ParamSevenType param7,
 			ParamEightType param8, ParamNineType param9);
 
 	@SuppressWarnings("unchecked")
-	@Override
 	public default void handle(Object... data) {
 		ParamOneType param1 = null;
 		ParamTwoType param2 = null;
