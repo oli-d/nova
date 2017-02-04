@@ -17,7 +17,6 @@ import java.util.concurrent.TimeUnit;
 
 import ch.squaredesk.nova.Nova;
 import ch.squaredesk.nova.events.EventEmitter;
-import ch.squaredesk.nova.events.wrappers.NoParameterEventListener;
 import org.apache.log4j.BasicConfigurator;
 
 /**
@@ -46,7 +45,7 @@ public class MetricsExample {
 		 * *********************************************************************** *
 		 * *********************************************************************** *
 		 */
-		final Nova nova = new Nova.Builder().build();
+		final Nova nova = Nova.builder().build();
 
 		/**
 		 * <pre>
@@ -72,10 +71,8 @@ public class MetricsExample {
 		 * *************************************************************************** *
 		 * *************************************************************************** *
 		 */
-		nova.eventEmitter.on("Event", (NoParameterEventListener) () -> {
-		});
-		nova.eventEmitter.on("Event2", (NoParameterEventListener) () -> {
-		});
+		nova.eventEmitter.observe("Event").subscribe(data -> {});
+		nova.eventEmitter.observe("Event2").subscribe(data -> {});
 		startEventCreation(nova.eventEmitter);
 
 		new BufferedReader(new InputStreamReader(System.in)).readLine();

@@ -40,11 +40,10 @@ public abstract class EventEmitter {
 	protected EventEmitter(String identifier, Metrics metrics, boolean warnOnUnhandledEvents) {
         this.warnOnUnhandledEvents = warnOnUnhandledEvents;
         this.metricsCollector = new EventMetricsCollector(metrics, identifier);
-        registerImplementationSpecificMetrics(metrics, identifier);
     }
 
 
-    /*
+    /**
      ***************************
      *                         *
      * Metrics related methods *
@@ -68,12 +67,6 @@ public abstract class EventEmitter {
     }
 
     /**
-     * extension point for sub classes
-     */
-    void registerImplementationSpecificMetrics(Metrics metrics, String identifier) {
-    }
-
-    /*
      *************************************
      *                                   *
      * Methods related to event handling *
@@ -178,7 +171,8 @@ public abstract class EventEmitter {
         return returnValue;
 	}
 
-	protected Emitter<Object[]>[] getEmitters(Object event) {
+	// package private for testing
+	Emitter<Object[]>[] getEmitters(Object event) {
 		requireNonNull (event,"event must not be null");
         List<Emitter<Object[]>> eventListeners = mapEventToHandler.get(event);
         if (eventListeners!=null) {

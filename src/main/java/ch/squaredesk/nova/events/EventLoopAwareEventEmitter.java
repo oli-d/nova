@@ -111,9 +111,7 @@ public class EventLoopAwareEventEmitter extends EventEmitter {
             disruptor.handleEventsWithWorkerPool(workHandlers.toArray(new WorkHandler[workHandlers.size()]));
         }
         ringBuffer = disruptor.start();
-    }
 
-    void registerImplementationSpecificMetrics(Metrics metrics, String identifier) {
         metrics.register(new RingBufferMetricSet(ringBuffer), identifier);
     }
 

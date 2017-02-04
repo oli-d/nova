@@ -44,12 +44,12 @@ public class Clock extends JFrame {
 		 * *********************************************************************** * 
 		 * ***                                                                 *** *
 		 * *** 1st step:                                                       *** *
-		 * *** Initilize Nova by creating a new instance of Nova *** *
+		 * *** Initilize Nova by creating a new instance of Nova               *** *
 		 * ***                                                                 *** *
 		 * *********************************************************************** *
 		 * *********************************************************************** *
 		 */
-		Nova nova = new Nova.Builder().build();
+		Nova nova = Nova.builder().build();
 
 		/**
 		 * <pre>

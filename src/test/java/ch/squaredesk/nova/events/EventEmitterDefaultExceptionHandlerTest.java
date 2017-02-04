@@ -11,7 +11,8 @@
 package ch.squaredesk.nova.events;
 
 import ch.squaredesk.nova.Nova;
-import ch.squaredesk.nova.events.wrappers.SingleParameterEventListener;
+import ch.squaredesk.nova.events.consumers.SingleParameterConsumer;
+import io.reactivex.Observable;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -21,12 +22,12 @@ import java.util.concurrent.TimeUnit;
 
 public class EventEmitterDefaultExceptionHandlerTest {
 	private EventEmitter eventEmitter;
-	/*
+
 	@Before
 	public void setup() {
-		EventDispatchConfig edc = new EventDispatchConfig.Builder().setDispatchThreadStrategy(
+		EventDispatchConfig edc = EventDispatchConfig.builder().setDispatchThreadStrategy(
 				EventDispatchConfig.DispatchThreadStrategy.DISPATCH_IN_SPECIFIC_THREAD).build();
-		eventEmitter = new Nova.Builder().setEventDispatchConfig(edc).build().eventEmitter;
+		eventEmitter = Nova.builder().setEventDispatchConfig(edc).build().eventEmitter;
 	}
 
 	@Test
@@ -34,7 +35,7 @@ public class EventEmitterDefaultExceptionHandlerTest {
 		final int[] counter = new int[1];
 		final CountDownLatch latch = new CountDownLatch(1);
 
-		SingleParameterEventListener<String> listener = param -> {
+		SingleParameterConsumer<String> listener = param -> {
 			if ("throw".equals(param)) {
 				throw new RuntimeException("for test");
 			} else if ("end".equals(param)) {
@@ -44,11 +45,13 @@ public class EventEmitterDefaultExceptionHandlerTest {
 			}
 		};
 
-		eventEmitter.on("xxx", listener);
+        Observable observable = eventEmitter.observe("xxx");
 
-		eventEmitter.emit("xxx", "count");
+        observable.subscribe(listener);
+        eventEmitter.emit("xxx", "count");
 		eventEmitter.emit("xxx", "count");
 		eventEmitter.emit("xxx", "throw");
+		observable.subscribe(listener);
 		eventEmitter.emit("xxx", "count");
 		eventEmitter.emit("xxx", "count");
 		eventEmitter.emit("xxx", "end");
@@ -57,5 +60,35 @@ public class EventEmitterDefaultExceptionHandlerTest {
 
 		Assert.assertEquals(4, counter[0]);
 	}
-	*/
+
+	@Test
+	public void testSubscriptionDiesOnUnhandledException() throws InterruptedException {
+		final int[] counter = new int[1];
+		final CountDownLatch latch = new CountDownLatch(1);
+
+		SingleParameterConsumer<String> listener = param -> {
+			if ("throw".equals(param)) {
+				throw new RuntimeException("for test");
+			} else if ("end".equals(param)) {
+				latch.countDown();
+			} else {
+				counter[0]++;
+			}
+		};
+
+        Observable observable = eventEmitter.observe("xxx");
+
+        observable.subscribe(listener);
+        eventEmitter.emit("xxx", "count");
+		eventEmitter.emit("xxx", "count");
+		eventEmitter.emit("xxx", "throw");
+		eventEmitter.emit("xxx", "count");
+		eventEmitter.emit("xxx", "count");
+		eventEmitter.emit("xxx", "end");
+
+		latch.await(2, TimeUnit.SECONDS);
+
+		Assert.assertEquals(2, counter[0]);
+	}
+
 }

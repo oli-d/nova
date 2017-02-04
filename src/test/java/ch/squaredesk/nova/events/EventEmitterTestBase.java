@@ -10,6 +10,10 @@
 
 package ch.squaredesk.nova.events;
 
+import ch.squaredesk.nova.events.consumers.NoParameterConsumer;
+import ch.squaredesk.nova.metrics.Metrics;
+import io.reactivex.Observable;
+import io.reactivex.functions.Consumer;
 import org.apache.log4j.BasicConfigurator;
 import org.junit.Assert;
 import org.junit.Before;
@@ -23,6 +27,7 @@ import java.util.concurrent.TimeUnit;
 
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 
 public abstract class EventEmitterTestBase {
     private EventEmitter eventEmitter;
@@ -33,6 +38,8 @@ public abstract class EventEmitterTestBase {
     }
 
     protected abstract EventEmitter createEventEmitter();
+
+    protected abstract EventEmitter createEventEmitter(EventDispatchConfig eventDispatchConfig);
 
     @BeforeClass
     public static void initLogging() {
@@ -47,6 +54,18 @@ public abstract class EventEmitterTestBase {
 
     @Test(expected = IllegalArgumentException.class)
     public void testUnsubscribingObserverUnregistersListener() {
+        Assert.fail("not implemented yet");
+//        eventEmitter.removeListener(String.class, null);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testErrorInSubscriberRemovesListener() {
+        Assert.fail("not implemented yet");
+//        eventEmitter.removeListener(String.class, null);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testListenerLazilyRegistered() {
         Assert.fail("not implemented yet");
 //        eventEmitter.removeListener(String.class, null);
     }
@@ -81,27 +100,49 @@ public abstract class EventEmitterTestBase {
         assertThat(listener1InvocationParams.get(2)[0], is("MyEvent3"));
         assertThat(listener1InvocationParams.get(2)[1], is("MyEvent4"));
     }
-    /*
+
     @Test
-    public void testGetAllListeners() {
-        EventListener listener1 = data -> {
-        };
-        EventListener listener2 = data -> {
-        };
+    public void allObserversForEventInformedWhenEventIsEmitted() {
+        int numberOfObservers = 5;
+        final CountDownLatch countDownLatch = new CountDownLatch(numberOfObservers);
+        NoParameterConsumer consumer = () -> countDownLatch.countDown();
 
-        eventEmitter.on(String.class, listener1);
-        eventEmitter.once(String.class, listener2);
+        for (int i=0; i<numberOfObservers; i++) {
+            eventEmitter.observe("Test").subscribe(consumer);
+        }
+        eventEmitter.emit("Test");
 
-        assertTrue(eventEmitter.getEmitters("String.class").isEmpty());
-        assertEquals(2, eventEmitter.getEmitters(String.class).size());
-        assertTrue(eventEmitter.getEmitters(String.class).contains(listener1));
-        assertTrue(eventEmitter.getEmitters(String.class).contains(listener2));
+        try {
+            countDownLatch.await(1, TimeUnit.SECONDS);
+        } catch (InterruptedException e) {
+        }
+        assertThat(countDownLatch.getCount(), is(0L));
     }
 
-    @Test(expected = IllegalArgumentException.class)
-    public void testGetAllListenersWithNullEventThrows() {
-        eventEmitter.getEmitters(null);
+    @Test
+    public void allSubscribersOfAllObserversForEventInformedWhenEventIsEmitted() {
+        int numberOfObservers = 5;
+        int numberOfSubscriptions = 5;
+        final CountDownLatch countDownLatch = new CountDownLatch(numberOfObservers * numberOfSubscriptions);
+        NoParameterConsumer consumer = () -> countDownLatch.countDown();
+
+        for (int i=0; i<numberOfObservers; i++) {
+            Observable<Object[]> observable = eventEmitter.observe("Test");
+            for (int j=0; j<numberOfSubscriptions; j++) {
+                observable.subscribe(consumer);
+            }
+        }
+        eventEmitter.emit("Test");
+
+        try {
+            countDownLatch.await(1, TimeUnit.SECONDS);
+        } catch (InterruptedException e) {
+        }
+        assertThat(countDownLatch.getCount(), is(0L));
     }
+
+    /*
+
 
     @Test
     public void testListenerCanBeRemovedSeparately() throws Exception {

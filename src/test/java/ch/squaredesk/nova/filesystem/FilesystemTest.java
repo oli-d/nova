@@ -28,7 +28,7 @@ public class FilesystemTest {
 
 	@Before
 	public void setup() {
-		filesystem = new Nova.Builder().build().filesystem;
+		filesystem = Nova.builder().build().filesystem;
 	}
 
 	@AfterClass

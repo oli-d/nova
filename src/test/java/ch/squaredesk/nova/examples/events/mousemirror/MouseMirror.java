@@ -48,7 +48,7 @@ public class MouseMirror {
 		 * *********************************************************************** *
 		 * *********************************************************************** *
 		 */
-		final Nova nova = new Nova.Builder().build();
+		final Nova nova = Nova.builder().build();
 		nova.metrics.dumpContinuouslyToLog(5, TimeUnit.SECONDS);
 
 		/**
@@ -83,7 +83,7 @@ public class MouseMirror {
 		 * ********************************************************************************************** *
 		 */
 		for (JFrame targetFrame : targetFrames) {
-			nova.eventEmitter.addListener("MouseEvent", new MouseEventTranslator(targetFrame));
+			nova.eventEmitter.observe("MouseEvent").subscribe(new MouseEventTranslator(targetFrame));
 		}
 
 	}

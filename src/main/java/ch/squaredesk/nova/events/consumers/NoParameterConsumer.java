@@ -8,18 +8,17 @@
  *   https://squaredesk.ch/license/oss/LICENSE
  */
 
-package ch.squaredesk.nova.events.wrappers;
+package ch.squaredesk.nova.events.consumers;
 
 
-public interface SingleParameterEventListener<ParamType> {
-	@SuppressWarnings("unchecked")
-	default void handle(Object... params) {
-		if (params == null || params.length == 0) {
-			doHandle(null);
-		} else {
-			doHandle((ParamType) params[0]);
-		}
+import io.reactivex.functions.Consumer;
+
+@FunctionalInterface
+public interface NoParameterConsumer extends Consumer<Object[]> {
+
+	void accept();
+
+	default void accept(Object... data) {
+		accept();
 	}
-
-	void doHandle(ParamType p);
 }

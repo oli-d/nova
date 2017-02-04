@@ -17,16 +17,17 @@ import java.awt.event.MouseEvent;
 import javax.swing.JFrame;
 import javax.swing.SwingUtilities;
 
-import ch.squaredesk.nova.events.wrappers.SingleParameterEventListener;
+import ch.squaredesk.nova.events.consumers.SingleParameterConsumer;
 
-public class MouseEventTranslator implements SingleParameterEventListener<MouseEvent> {
+public class MouseEventTranslator implements SingleParameterConsumer<MouseEvent> {
 	private final JFrame targetFrame;
 
 	public MouseEventTranslator(JFrame targetFrame) {
 		this.targetFrame = targetFrame;
 	}
 
-	public void doHandle(MouseEvent event) {
+	@Override
+	public void consume(MouseEvent event) {
 		SwingUtilities.invokeLater(() -> {
 			switch (event.getID()) {
 				case MouseEvent.MOUSE_MOVED:

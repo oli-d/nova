@@ -41,12 +41,12 @@ public class FileReader extends JFrame {
 		 * *********************************************************************** * 
 		 * ***                                                                 *** *
 		 * *** 1st step:                                                       *** *
-		 * *** Initilize Nova by creating a new instance of Nova *** *
+		 * *** Initilize Nova by creating a new instance of Nova               *** *
 		 * ***                                                                 *** *
 		 * *********************************************************************** *
 		 * *********************************************************************** *
 		 */
-		nova = new Nova.Builder().build();
+		nova = Nova.builder().build();
 
 	}
 

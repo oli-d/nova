@@ -31,10 +31,10 @@ public class ProcessTest {
 
 	@Before
 	public void setup() {
-		process = new Nova.Builder().build().process;
+		process = Nova.builder().build().process;
 	}
 
-	@Test(expected = IllegalArgumentException.class)
+	@Test(expected = NullPointerException.class)
 	public void testNextTickPassingNullThrows() {
 		process.nextTick(null);
 	}

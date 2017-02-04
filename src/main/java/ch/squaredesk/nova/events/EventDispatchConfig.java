@@ -46,6 +46,10 @@ public class EventDispatchConfig {
 		this.warnOnUnhandledEvent = builder.warnOnUnhandledEvent;
 	}
 
+	public static Builder builder() {
+		return new Builder();
+	}
+
 	// @Configurable
 	public static class Builder {
 		private WaitStrategy waitStrategy = WaitStrategy.MIN_CPU_USAGE;
@@ -56,7 +60,7 @@ public class EventDispatchConfig {
 		private int numberOfConsumers = 1;
 		private boolean warnOnUnhandledEvent;
 
-		public Builder() {
+		private Builder() {
 		}
 
 		public Builder setEventBufferSize(int eventBufferSize) {

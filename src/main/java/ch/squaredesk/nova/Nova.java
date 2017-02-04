@@ -22,7 +22,6 @@ import ch.squaredesk.nova.timers.Timers;
 public class Nova {
 
 	public final String identifier;
-
 	public final Timers timers;
 	public final EventEmitter eventEmitter;
 	public final Process process;
@@ -48,17 +47,24 @@ public class Nova {
 			Metrics metrics) {
 		EventEmitter retVal;
 		if (eventDispatchConfig.dispatchThreadStrategy == EventDispatchConfig.DispatchThreadStrategy.DISPATCH_IN_EMITTER_THREAD) {
-			retVal = new CurrentThreadEventEmitter(identifier, eventDispatchConfig, metrics);
+			retVal = new CurrentThreadEventEmitter(identifier, eventDispatchConfig.warnOnUnhandledEvent, metrics);
 		} else {
 			retVal = new EventLoopAwareEventEmitter(identifier, eventDispatchConfig, metrics);
 		}
 		return retVal;
 	}
 
+	public static Builder builder() {
+	    return new Builder();
+    }
+
 	public static class Builder {
 		private String identifier;
 		private EventDispatchConfig eventDispatchConfig;
 		private Metrics metrics;
+
+		private Builder() {
+        }
 
 		public Builder setIdentifier(String identifier) {
 			this.identifier = identifier;
@@ -77,7 +83,7 @@ public class Nova {
 
 		public Nova build() {
 			if (eventDispatchConfig == null) {
-				eventDispatchConfig = new EventDispatchConfig.Builder().build();
+				eventDispatchConfig = EventDispatchConfig.builder().build();
 			}
 			if (identifier == null) {
 				identifier = "";

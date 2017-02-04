@@ -23,17 +23,16 @@ public class CurrentThreadEventEmitter extends EventEmitter {
 
 	public CurrentThreadEventEmitter(
 			String identifier,
-			EventDispatchConfig eventDispatchConfig,
+			boolean warnOnUnhandledEvent,
 			Metrics metrics) {
-		super(identifier, metrics, eventDispatchConfig.warnOnUnhandledEvent);
+		super(identifier, metrics, warnOnUnhandledEvent);
 	}
 
 	@Override
 	void dispatchEventAndData(Emitter<Object[]>[] emitters, Object event, Object... data) {
-		Object[] dataToPass = data.length == 0 ? null : data;
 		Arrays.stream(emitters).forEach(emitter -> {
 			try {
-				emitter.onNext(dataToPass);
+				emitter.onNext(data);
 				metricsCollector.eventDispatched(event);
 			} catch (Exception e) {
 				logger.error("Uncaught exception while invoking onNext() on " + emitter, e);
