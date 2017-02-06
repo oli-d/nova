@@ -10,29 +10,25 @@
 
 package ch.squaredesk.nova.events;
 
-import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.function.Consumer;
-
-import ch.squaredesk.nova.events.metrics.RingBufferMetricSet;
+import ch.squaredesk.nova.events.metrics.EventMetricsCollector;
 import ch.squaredesk.nova.metrics.Metrics;
-import com.codahale.metrics.MetricSet;
-import io.reactivex.*;
 import io.reactivex.Observable;
+import io.reactivex.Single;
 import io.reactivex.disposables.Disposable;
-import io.reactivex.subjects.Subject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import ch.squaredesk.nova.events.metrics.EventMetricsCollector;
+import java.util.Arrays;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Consumer;
 
 import static java.util.Objects.requireNonNull;
 
 public abstract class EventEmitter {
 	private static final Logger LOGGER = LoggerFactory.getLogger(EventEmitter.class);
 
-	private final ConcurrentHashMap<Object, List<Emitter<Object[]>>> mapEventToHandler = new ConcurrentHashMap<>();
+	private final ConcurrentHashMap<Object, Consumer<Object[]>> mapEventToConsumer = new ConcurrentHashMap<>();
+	private final ConcurrentHashMap<Object, Observable<Object[]>> mapEventToObservable = new ConcurrentHashMap<>();
 
 	private final boolean warnOnUnhandledEvents;
 	protected final EventMetricsCollector metricsCollector;
@@ -73,113 +69,62 @@ public abstract class EventEmitter {
      *                                   *
      * ***********************************
      */
-	abstract void dispatchEventAndData(Emitter<Object[]>[] emitters, Object event, Object... data);
+	abstract void dispatchEventAndData(Consumer<Object[]> consumer, Object event, Object... data);
 
-	private void registerEventSpecificEmitter(Object event, Emitter<Object[]> emitter) {
+	private void registerEventConsumer(Object event, Consumer<Object[]> subject) {
 	    requireNonNull(event, "event must not be null");
-	    requireNonNull(emitter, "emitter must not be null");
+	    requireNonNull(subject, "consumer must not be null");
 
-	    // TODO: performance optimization for CurrentThreadEventEmitter
-        List<Emitter<Object[]>> newList = new CopyOnWriteArrayList<>();
-        List<Emitter<Object[]>> existingList = mapEventToHandler.putIfAbsent(event, newList);
-        List<Emitter<Object[]>> handlers = existingList == null ? newList : existingList;
+        if (mapEventToConsumer.put(event, subject) != null) {
+            throw new IllegalStateException("registered a second consumer for event " + event);
+        }
         metricsCollector.listenerAdded(event);
-        handlers.add(emitter);
         LOGGER.trace("Registered listener for event {}", event);
     }
 
-	private void deregisterEventSpecificEmitter(Object event, Emitter<Object[]> emitter) {
+	private void deregisterEventConsumer(Object event) {
 	    requireNonNull(event, "event must not be null");
-	    requireNonNull(emitter, "emitter must not be null");
-
-	    List<Emitter<Object[]>> handlers = mapEventToHandler.get(event);
-        if (handlers==null) {
-            return;
-        }
-
-        if (handlers.remove(emitter)) {
-            LOGGER.trace("Registered listener for event {}", event);
-            metricsCollector.listenerRemoved(event);
-        }
+        mapEventToConsumer.remove(event);
+        metricsCollector.listenerRemoved(event);
+        LOGGER.trace("Removed listener for event {}", event);
     }
 
 	public Observable<Object[]> observe (Object event) {
 		requireNonNull(event, "event must not be null");
-		Observable<Object[]> returnValue = Subject.create(s -> {
-            Consumer<Object[]> listener = data -> s.onNext(data);
-            registerEventSpecificEmitter(event, s);
-            // deregister in case the Observable consumer unsubscribes
-            s.setDisposable(new Disposable() {
-                private boolean disposed = false;
+		Observable<Object[]> retVal = mapEventToObservable.computeIfAbsent(event, x -> {
+            Observable<Object[]> inner = Observable.create(s -> {
+                s.setDisposable(new Disposable() {
+                    private boolean disposed = false;
 
-                @Override
-                public void dispose() {
-                    if (!disposed) {
-                        deregisterEventSpecificEmitter(event, s);
-                        disposed = true;
+                    @Override
+                    public void dispose() {
+                        if (!disposed) {
+                            deregisterEventConsumer(event);
+                            disposed = true;
+                        }
                     }
-                }
 
-                @Override
-                public boolean isDisposed() {
-                    return false;
-                }
+                    @Override
+                    public boolean isDisposed() {
+                        return disposed;
+                    }
+                });
+                registerEventConsumer(x, data -> s.onNext(data));
             });
+            return inner.publish().refCount();
         });
-		return returnValue;
+
+        return retVal;
 	}
 
 	public Single<Object[]> single (Object event) {
-        requireNonNull(event, "event must not be null");
-        Single<Object[]> returnValue = Single.create(s -> {
-            // Unfortunately, for Single's, we have to work around the funny RxJava class hierarchy
-            Emitter<Object[]> emitterWrapper = new Emitter<Object[]>() {
-                @Override
-                public void onNext(Object[] value) {
-                    s.onSuccess(value);
-                }
-
-                @Override
-                public void onError(Throwable error) {
-                    s.onError(error);
-                }
-
-                @Override
-                public void onComplete() {
-                    s.onError(new RuntimeException("Unexpected onComplete() for SingleEmitter"));
-                }
-            };
-            registerEventSpecificEmitter(event, emitterWrapper);
-            // deregister in case the Observalble consumer unsubscribes
-            s.setDisposable(new Disposable() {
-                private boolean disposed = false;
-
-                @Override
-                public void dispose() {
-                    if (!disposed) {
-                        deregisterEventSpecificEmitter(event, emitterWrapper);
-                        disposed = true;
-                    }
-                }
-
-                @Override
-                public boolean isDisposed() {
-                    return false;
-                }
-            });
-        });
-        return returnValue;
+        return observe(event).first(new Object[0]);
 	}
 
 	// package private for testing
-	Emitter<Object[]>[] getEmitters(Object event) {
+    Consumer<Object[]> consumerFor(Object event) {
 		requireNonNull (event,"event must not be null");
-        List<Emitter<Object[]>> eventListeners = mapEventToHandler.get(event);
-        if (eventListeners!=null) {
-            return eventListeners.toArray(new Emitter[eventListeners.size()]);
-        } else {
-            return new Emitter[0];
-        }
+        return mapEventToConsumer.get(event);
 	}
 
 	public void emit(Object event, Object... data) {
@@ -187,9 +132,9 @@ public abstract class EventEmitter {
 			throw new IllegalArgumentException("event must not be null");
 		}
 
-		Emitter<Object[]>[] emitters = getEmitters(event);
-		if (emitters.length>0) {
-			dispatchEventAndData(emitters, event, data);
+        Consumer<Object[]> consumer = consumerFor(event);
+		if (consumer!=null) {
+			dispatchEventAndData(consumer, event, data);
 		} else {
 			metricsCollector.eventEmittedButNoListeners(event);
 			if (warnOnUnhandledEvents) {

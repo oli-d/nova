@@ -12,6 +12,9 @@ package ch.squaredesk.nova.events.consumers;
 
 
 import io.reactivex.functions.Consumer;
+import org.slf4j.LoggerFactory;
+
+import java.util.Arrays;
 
 @FunctionalInterface
 public interface ThreeParameterConsumer<
@@ -34,6 +37,12 @@ public interface ThreeParameterConsumer<
             }
         }
 
-		accept(p1, p2, p3);
-	}
+        try {
+            accept(p1, p2, p3);
+        } catch (Throwable t) {
+            LoggerFactory.getLogger("ch.squaredesk.nova.event.consumers")
+                    .error("Error, trying to consume event with parameters " +
+                            Arrays.toString(data));
+        }
+    }
 }

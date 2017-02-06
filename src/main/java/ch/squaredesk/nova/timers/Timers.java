@@ -10,14 +10,15 @@
 
 package ch.squaredesk.nova.timers;
 
-import java.util.concurrent.*;
-import java.util.concurrent.atomic.AtomicLong;
-
 import ch.squaredesk.nova.events.EventEmitter;
 import io.reactivex.Observable;
 import io.reactivex.disposables.Disposable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 
 import static java.util.Objects.requireNonNull;
 
@@ -59,7 +60,20 @@ public class Timers {
         Disposable single = eventEmitter
                 .single(timeoutDummyEvent)
                 .delay(delay, timeUnit)
-                .subscribe(x -> callback.run());;
+                .subscribe(
+                		x -> {
+							dispose(newId);
+							try {
+								callback.run();
+							} catch (Throwable t) {
+								logger.error("An error occurred trying to invoke timeout with ID " + newId,t);
+							}
+						},
+						throwable -> {
+							logger.error("An error occurred trying to invoke timeout with ID " + newId, throwable);
+							dispose(newId);
+						}
+				);
         mapIdToDisposable.put(newId, single);
 		eventEmitter.emit(timeoutDummyEvent);
 		return newId;
@@ -89,7 +103,15 @@ public class Timers {
         String intervalDummyEvent = "TimersIntervalDummyEvent" + newId;
         Disposable callbackInvoker = eventEmitter
                 .observe(intervalDummyEvent)
-                .subscribe(x -> callback.run());
+                .subscribe(
+                		x -> {
+                			try {
+								callback.run();
+							} catch (Throwable t) {
+								logger.error("An error occurred trying to invoke timeout with ID " + newId,t);
+								dispose(newId);
+							}
+						});
         // we create another "wrapper Observable" to trigger the callback invovation over the EventEmitter
         // if we would invoke it from the Observable directly, we would be on the RxJava scheduler thread, not the
         // (user configured) Nova event handler thread(s)

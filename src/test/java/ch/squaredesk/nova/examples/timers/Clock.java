@@ -10,14 +10,12 @@
 
 package ch.squaredesk.nova.examples.timers;
 
-import java.awt.BorderLayout;
+import ch.squaredesk.nova.Nova;
+
+import javax.swing.*;
+import java.awt.*;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-
-import javax.swing.JFrame;
-import javax.swing.JLabel;
-
-import ch.squaredesk.nova.Nova;
 
 public class Clock extends JFrame {
 	private SimpleDateFormat dateFormatter = new SimpleDateFormat("HH:mm:ss");
@@ -62,12 +60,6 @@ public class Clock extends JFrame {
 		 * *********************************************************************** *
 		 * *********************************************************************** *
 		 */
-		nova.timers.setInterval(new Runnable() {
-
-			@Override
-			public void run() {
-				label.setText(dateFormatter.format(new Date()));
-			}
-		}, 1000); // 1000ms == 1sec
+		nova.timers.setInterval(() -> label.setText(dateFormatter.format(new Date())), 1000);
 	}
 }

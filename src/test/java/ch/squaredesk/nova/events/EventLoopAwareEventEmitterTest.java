@@ -138,10 +138,8 @@ public class EventLoopAwareEventEmitterTest extends EventEmitterTestBase {
         final int numEvents = 100;
         final CountDownLatch initialBlockingLatch = new CountDownLatch(1);
         final AtomicInteger emitCountingInteger = new AtomicInteger();
-        final AtomicInteger initialCountingInteger = new AtomicInteger();
         final CountDownLatch countingLatch = new CountDownLatch(numEvents);
         final NoParameterConsumer consumer = () -> {
-            initialCountingInteger.incrementAndGet();
             try {
                 initialBlockingLatch.await();
             } catch (InterruptedException e) {
@@ -162,8 +160,9 @@ public class EventLoopAwareEventEmitterTest extends EventEmitterTestBase {
             }
         }.start();
 
+        // fill the ring buffer
         long endTime = System.currentTimeMillis() + 1750;
-        while (initialCountingInteger.intValue() < eventBufferSize && System.currentTimeMillis() < endTime) {
+        while (emitCountingInteger.intValue() < eventBufferSize && System.currentTimeMillis() < endTime) {
             try {
                 Thread.sleep(50);
             } catch (InterruptedException e) {
@@ -171,18 +170,17 @@ public class EventLoopAwareEventEmitterTest extends EventEmitterTestBase {
             }
         }
         // assert that all buffer places were filled
-        assertEquals(eventBufferSize, initialCountingInteger.intValue());
-        assertEquals(eventBufferSize, emitCountingInteger.intValue());
-        assertEquals(numEvents, countingLatch.getCount());
+        assertThat(emitCountingInteger.intValue(),is(eventBufferSize));
+        // and none consumed yet
+        assertThat(countingLatch.getCount(), is((long)numEvents));
         try {
             Thread.sleep(500);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
-        // and nothing happens at the moment
-        assertEquals(eventBufferSize, initialCountingInteger.intValue());
-        assertEquals(eventBufferSize, emitCountingInteger.intValue());
-        assertEquals(numEvents, countingLatch.getCount());
+        // after a little wait, nothing should have been processed so far
+        assertThat(emitCountingInteger.intValue(), is(eventBufferSize));
+        assertThat(countingLatch.getCount(), is((long) numEvents));
 
         // let it rock
         initialBlockingLatch.countDown();
@@ -193,7 +191,7 @@ public class EventLoopAwareEventEmitterTest extends EventEmitterTestBase {
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
-        assertEquals(0, countingLatch.getCount());
+        assertThat(countingLatch.getCount(), is(0L));
     }
 
     @Test

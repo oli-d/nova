@@ -12,6 +12,9 @@ package ch.squaredesk.nova.events.consumers;
 
 
 import io.reactivex.functions.Consumer;
+import org.slf4j.LoggerFactory;
+
+import java.util.Arrays;
 
 @FunctionalInterface
 public interface NoParameterConsumer extends Consumer<Object[]> {
@@ -19,6 +22,12 @@ public interface NoParameterConsumer extends Consumer<Object[]> {
 	void accept();
 
 	default void accept(Object... data) {
-		accept();
+		try {
+			accept();
+		} catch (Throwable t) {
+			LoggerFactory.getLogger("ch.squaredesk.nova.event.consumers")
+					.error("Error, trying to consume event with parameters " +
+							Arrays.toString(data));
+		}
 	}
 }

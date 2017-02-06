@@ -10,13 +10,9 @@
 
 package ch.squaredesk.nova.events;
 
-import io.reactivex.Emitter;
+import com.lmax.disruptor.WorkHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.lmax.disruptor.WorkHandler;
-
-import java.util.function.Consumer;
 
 class DefaultWorkHandler implements WorkHandler<InvocationContext> {
 
@@ -25,14 +21,9 @@ class DefaultWorkHandler implements WorkHandler<InvocationContext> {
 	@Override
 	public void onEvent(InvocationContext event) {
 		try {
-			Object[] data = event.getData();
-			for (Emitter<Object[]> emitter : event.getEmitters()) {
-				try {
-					emitter.onNext(data);
-				} catch (Exception e) {
-					LOGGER.error("Caught exception, trying to invoke emitter for event " + event, e);
-				}
-			}
+			event.getConsumer().accept(event.getData());
+		} catch (Exception e) {
+			LOGGER.error("Caught exception, trying to invoke emitter for event " + event, e);
 		} finally {
 			event.reset();
 		}

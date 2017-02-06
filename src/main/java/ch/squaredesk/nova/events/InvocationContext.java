@@ -10,21 +10,20 @@
 
 package ch.squaredesk.nova.events;
 
-import io.reactivex.Emitter;
-
 import java.util.Arrays;
 import java.util.Map;
+import java.util.function.Consumer;
 
 class InvocationContext {
 	private Object event;
-	private Emitter<Object[]>[] emitters;
+	private Consumer<Object[]> consumer;
 	private Object[] data;
 	private Object duplicateDetectionId;
 	private Map<Object, Object[]> currentDataLookupMap;
 
-	public InvocationContext(Object event, Emitter<Object[]>[] emitters, Object... data) {
+	public InvocationContext(Object event, Consumer<Object[]> consumer, Object... data) {
 		this.event = event;
-		this.emitters = emitters;
+		this.consumer = consumer;
 		this.data = data;
 	}
 
@@ -33,7 +32,7 @@ class InvocationContext {
 
 	void reset() {
 		this.event = null;
-		this.emitters = null;
+		this.consumer = null;
 		this.data = null;
 		this.duplicateDetectionId = null;
 		this.currentDataLookupMap = null;
@@ -43,8 +42,8 @@ class InvocationContext {
 		return event;
 	}
 
-	public Emitter<Object[]>[] getEmitters() {
-		return emitters;
+	public Consumer<Object[]> getConsumer() {
+		return consumer;
 	}
 
 	public Object[] getData() {
@@ -55,25 +54,25 @@ class InvocationContext {
 		}
 	}
 
-	public void setEmitInfo(Object event, Emitter<Object[]>[] emitters, Object... data) {
+	public void setEmitInfo(Object event, Consumer<Object[]> consumer, Object... data) {
 		reset();
 		this.event = event;
-		this.emitters = emitters;
+		this.consumer = consumer;
 		this.data = data;
 	}
 
-	public void setEmitInfo(Object event, Emitter<Object[]>[] emitters, Object duplicateDetectionId,
+	public void setEmitInfo(Object event, Consumer<Object[]> consumer, Object duplicateDetectionId,
 							Map<Object, Object[]> currentDataLookupMap) {
 		reset();
 		this.event = event;
-		this.emitters = emitters;
+		this.consumer = consumer;
 		this.duplicateDetectionId = duplicateDetectionId;
 		this.currentDataLookupMap = currentDataLookupMap;
 	}
 
 	@Override
 	public String toString() {
-		return "InvocationContext [event=" + event + ", emitters=" + Arrays.toString(emitters)
+		return "InvocationContext [event=" + event + ", consumer=" + consumer
 				+ (duplicateDetectionId == null ? ", data=" + Arrays.toString(data) : ", duplicateDetectionId=" + duplicateDetectionId)
 				+ "]";
 	}

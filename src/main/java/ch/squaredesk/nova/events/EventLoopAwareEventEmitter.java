@@ -10,14 +10,11 @@
 
 package ch.squaredesk.nova.events;
 
-import ch.squaredesk.nova.events.metrics.EventMetricsCollector;
 import ch.squaredesk.nova.events.metrics.RingBufferMetricSet;
 import ch.squaredesk.nova.metrics.Metrics;
-import com.codahale.metrics.MetricSet;
 import com.lmax.disruptor.*;
 import com.lmax.disruptor.dsl.Disruptor;
 import com.lmax.disruptor.dsl.ProducerType;
-import io.reactivex.Emitter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -29,6 +26,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
+import java.util.function.Consumer;
 
 public class EventLoopAwareEventEmitter extends EventEmitter {
 	private final Logger logger = LoggerFactory.getLogger(EventLoopAwareEventEmitter.class);
@@ -117,7 +115,7 @@ public class EventLoopAwareEventEmitter extends EventEmitter {
 
 
     @Override
-	void dispatchEventAndData(Emitter<Object[]>[] emitters, Object event, Object... data) {
+	void dispatchEventAndData(Consumer<Object[]> consumer, Object event, Object... data) {
 		// if this is an event for which duplicate detection was switched on, get the ID
 		Object duplicateDetectionId = null;
 		IdProviderForDuplicateEventDetection idProvider = null;
@@ -131,62 +129,54 @@ public class EventLoopAwareEventEmitter extends EventEmitter {
 			Object currentData = mapIdToCurrentData.put(duplicateDetectionId, data);
 			if (currentData == null) {
 				// put trigger onto ringBuffer
-				putEventuallyDuplicateEventIntoRingBuffer(event, emitters, duplicateDetectionId);
+				putEventuallyDuplicateEventIntoRingBuffer(event, consumer, duplicateDetectionId);
 			} else {
-				if (logger.isTraceEnabled()) {
-					logger.trace("Dropped outdated data for event " + event + ", since a more recent update came in");
-				}
+				logger.trace("Dropped outdated data for event {}, since a more recent update came in", event);
 				metricsCollector.duplicateEventDetected(event);
 			}
 		} else {
-			putNormalEventIntoRingBuffer(event, emitters, data);
+			putNormalEventIntoRingBuffer(event, consumer, data);
 		}
 	}
 
-	private void putNormalEventIntoRingBuffer(Object event, Emitter<Object[]>[] emitters, Object... data) {
+	private void putNormalEventIntoRingBuffer(Object event, Consumer<Object[]> consumer, Object... data) {
 		try {
 			long nextSequenceNumber = ringBuffer.tryNext();
 			InvocationContext ic = ringBuffer.get(nextSequenceNumber);
-			ic.setEmitInfo(event, emitters, data);
+			ic.setEmitInfo(event, consumer, data);
 			ringBuffer.publish(nextSequenceNumber);
 			metricsCollector.eventDispatched(event);
 		} catch (com.lmax.disruptor.InsufficientCapacityException e) {
-			handleRingBufferFull(event, emitters, data);
+			handleRingBufferFull(event, consumer, data);
 		}
 	}
 
-	private void putEventuallyDuplicateEventIntoRingBuffer(Object event, Emitter<Object[]>[] emitters,
+	private void putEventuallyDuplicateEventIntoRingBuffer(Object event, Consumer<Object[]> consumer,
 														   Object duplicateDetectionId) {
 		try {
 			long nextSequenceNumber = ringBuffer.tryNext();
 			InvocationContext ic = ringBuffer.get(nextSequenceNumber);
-			ic.setEmitInfo(event, emitters, duplicateDetectionId, mapIdToCurrentData);
+			ic.setEmitInfo(event, consumer, duplicateDetectionId, mapIdToCurrentData);
 			ringBuffer.publish(nextSequenceNumber);
 			metricsCollector.eventDispatched(event);
 		} catch (com.lmax.disruptor.InsufficientCapacityException e) {
-			handleRingBufferFull(event, emitters, mapIdToCurrentData.remove(duplicateDetectionId));
+			handleRingBufferFull(event, consumer, mapIdToCurrentData.remove(duplicateDetectionId));
 		}
 	}
 
-	private void handleRingBufferFull(Object event, Emitter<Object[]>[] emitters, Object... data) {
+	private void handleRingBufferFull(Object event, Consumer<Object[]> consumer, Object... data) {
 		switch (eventDispatchConfig.insufficientCapacityStrategy) {
 			case DROP_EVENTS:
-				if (logger.isTraceEnabled()) {
-					logger.trace("RingBuffer " + identifier + " full. Dropping event " + event + " with parameters "
-							+ Arrays.toString(data));
-				}
+				logger.trace("RingBuffer {} full. Dropping event {} with parameters {}", identifier, event, Arrays.toString(data));
 				metricsCollector.eventDroppedBecauseOfFullQueue(event);
 				return;
 			case THROW_EXCEPTION:
-				logger.trace("RingBuffer " + identifier + " full. Event " + event + " with parameters "
-						+ Arrays.toString(data));
+				logger.trace("RingBuffer {} full. Event {} with parameters {}", identifier, event, Arrays.toString(data));
 				metricsCollector.eventAddedToFullQueue(event);
 				throw new InsufficientCapacityException(event, data);
 			case QUEUE_EVENTS:
-				dispatchLaterExecutor.execute(new MyDispatchLaterRunnable(event, emitters, data));
-				if (logger.isTraceEnabled()) {
-					logger.trace("RingBuffer " + identifier + " full. Queued event " + event + " for later processing");
-				}
+				dispatchLaterExecutor.execute(new MyDispatchLaterRunnable(event, consumer, data));
+				logger.trace("RingBuffer {} full. Queued event {} for later processing", identifier, event);
 				metricsCollector.eventAddedToDispatchLaterQueue(event);
 				return;
 			case WAIT_UNTIL_SPACE_AVAILABLE:
@@ -195,7 +185,7 @@ public class EventLoopAwareEventEmitter extends EventEmitter {
 				long stop = System.nanoTime();
 				metricsCollector.waitedForEventToBeDispatched(event, stop - start);
 				InvocationContext ic = ringBuffer.get(nextSequenceNumber);
-				ic.setEmitInfo(event, emitters, data);
+				ic.setEmitInfo(event, consumer, data);
 				ringBuffer.publish(nextSequenceNumber);
 				metricsCollector.eventDispatched(event);
 				return;
@@ -213,12 +203,12 @@ public class EventLoopAwareEventEmitter extends EventEmitter {
 
 	private class MyDispatchLaterRunnable implements Runnable {
 		public final Object event;
-		public final Emitter<Object[]>[] emitters;
+		public final Consumer<Object[]> consumer;
 		public final Object[] data;
 
-		public MyDispatchLaterRunnable(Object event, Emitter<Object[]>[] emitters, Object... data) {
+		public MyDispatchLaterRunnable(Object event, Consumer<Object[]> consumer, Object... data) {
 			this.event = event;
-			this.emitters = emitters;
+			this.consumer = consumer;
 			this.data = data;
 		}
 
@@ -226,7 +216,7 @@ public class EventLoopAwareEventEmitter extends EventEmitter {
 		public void run() {
 			long nextSequenceNumber = ringBuffer.next();
 			InvocationContext ic = ringBuffer.get(nextSequenceNumber);
-			ic.setEmitInfo(event, emitters, data);
+			ic.setEmitInfo(event, consumer, data);
 			ringBuffer.publish(nextSequenceNumber);
 		}
 	}

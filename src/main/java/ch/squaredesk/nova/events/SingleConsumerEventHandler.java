@@ -10,11 +10,9 @@
 
 package ch.squaredesk.nova.events;
 
-import io.reactivex.Emitter;
+import com.lmax.disruptor.EventHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.lmax.disruptor.EventHandler;
 
 class SingleConsumerEventHandler implements EventHandler<InvocationContext> {
 	private static final Logger LOGGER = LoggerFactory.getLogger(SingleConsumerEventHandler.class);
@@ -22,14 +20,9 @@ class SingleConsumerEventHandler implements EventHandler<InvocationContext> {
 	@Override
 	public void onEvent(InvocationContext event, long sequence, boolean endOfBatch) {
 		try {
-			Object[] data = event.getData();
-			for (Emitter<Object[]> emitter : event.getEmitters()) {
-				try {
-					emitter.onNext(data);
-				} catch (Exception e) {
-					LOGGER.error("Caught exception, trying to invoke emitter for event " + event, e);
-				}
-			}
+			event.getConsumer().accept(event.getData());
+		} catch (Exception e) {
+			LOGGER.error("Caught exception, trying to invoke emitter for event " + event, e);
 		} finally {
 			event.reset();
 		}

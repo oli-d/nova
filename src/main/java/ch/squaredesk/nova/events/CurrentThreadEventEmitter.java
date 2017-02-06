@@ -11,12 +11,11 @@
 package ch.squaredesk.nova.events;
 
 import ch.squaredesk.nova.metrics.Metrics;
-import io.reactivex.Emitter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Arrays;
-import java.util.List;
+import java.util.function.Consumer;
 
 public class CurrentThreadEventEmitter extends EventEmitter {
 	private final Logger logger = LoggerFactory.getLogger(CurrentThreadEventEmitter.class);
@@ -29,16 +28,14 @@ public class CurrentThreadEventEmitter extends EventEmitter {
 	}
 
 	@Override
-	void dispatchEventAndData(Emitter<Object[]>[] emitters, Object event, Object... data) {
-		Arrays.stream(emitters).forEach(emitter -> {
-			try {
-				emitter.onNext(data);
-				metricsCollector.eventDispatched(event);
-			} catch (Exception e) {
-				logger.error("Uncaught exception while invoking onNext() on " + emitter, e);
-				logger.error("\tparamters: " + Arrays.toString(data));
-			}
-		});
+	void dispatchEventAndData(Consumer<Object[]> consumer, Object event, Object... data) {
+		try {
+			consumer.accept(data);
+			metricsCollector.eventDispatched(event);
+		} catch (Exception e) {
+			logger.error("Uncaught exception while invoking onNext() for event " + event, e);
+			logger.error("\tparamters: " + Arrays.toString(data));
+		}
 	}
 
 }

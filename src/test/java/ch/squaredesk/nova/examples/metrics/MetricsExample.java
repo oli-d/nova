@@ -10,14 +10,14 @@
 
 package ch.squaredesk.nova.examples.metrics;
 
+import ch.squaredesk.nova.Nova;
+import ch.squaredesk.nova.events.EventEmitter;
+import org.apache.log4j.BasicConfigurator;
+
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
-
-import ch.squaredesk.nova.Nova;
-import ch.squaredesk.nova.events.EventEmitter;
-import org.apache.log4j.BasicConfigurator;
 
 /**
  * This simple example shows how to use the Nove event queue.
@@ -71,8 +71,8 @@ public class MetricsExample {
 		 * *************************************************************************** *
 		 * *************************************************************************** *
 		 */
-		nova.eventEmitter.observe("Event").subscribe(data -> {});
-		nova.eventEmitter.observe("Event2").subscribe(data -> {});
+		nova.eventEmitter.observe("Event").subscribe();
+		nova.eventEmitter.observe("Event2").subscribe();
 		startEventCreation(nova.eventEmitter);
 
 		new BufferedReader(new InputStreamReader(System.in)).readLine();
