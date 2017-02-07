@@ -33,7 +33,7 @@
 			<artifactId>metrics-core</artifactId>
 			<version>3.0.1</version>
 		</dependency>
-		<!-- https://mvnrepository.com/artifact/io.reactivex.rxjava2/rxjava -->
+		
 		<dependency>
 			<groupId>io.reactivex.rxjava2</groupId>
 			<artifactId>rxjava</artifactId>

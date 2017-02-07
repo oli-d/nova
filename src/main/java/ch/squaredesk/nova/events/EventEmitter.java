@@ -71,11 +71,11 @@ public abstract class EventEmitter {
      */
 	abstract void dispatchEventAndData(Consumer<Object[]> consumer, Object event, Object... data);
 
-	private void registerEventConsumer(Object event, Consumer<Object[]> subject) {
+	private void registerEventConsumer(Object event, Consumer<Object[]> consumer) {
 	    requireNonNull(event, "event must not be null");
-	    requireNonNull(subject, "consumer must not be null");
+	    requireNonNull(consumer, "consumer must not be null");
 
-        if (mapEventToConsumer.put(event, subject) != null) {
+        if (mapEventToConsumer.put(event, consumer) != null) {
             throw new IllegalStateException("registered a second consumer for event " + event);
         }
         metricsCollector.listenerAdded(event);
@@ -85,6 +85,7 @@ public abstract class EventEmitter {
 	private void deregisterEventConsumer(Object event) {
 	    requireNonNull(event, "event must not be null");
         mapEventToConsumer.remove(event);
+        mapEventToObservable.remove(event);
         metricsCollector.listenerRemoved(event);
         LOGGER.trace("Removed listener for event {}", event);
     }
