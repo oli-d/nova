@@ -33,7 +33,7 @@ public class Nova {
 		eventLoop = new EventLoop(identifier, builder.eventLoopConfig, metrics);
 		timers = new Timers(eventLoop);
 		process = new Process(eventLoop);
-		filesystem = new Filesystem(process);
+		filesystem = new Filesystem();
 	}
 
 	public static Builder builder() {
