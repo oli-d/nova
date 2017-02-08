@@ -124,22 +124,22 @@ public class ConsumerWrappersTest {
 
         EventLoopConfig eventLoopConfig =
                 EventLoopConfig.builder()
-                        .setDispatchThreadStrategy(EventLoopConfig.DispatchThreadStrategy.DISPATCH_IN_EMITTER_THREAD)
+                        .setDispatchInEmitterThread(true)
                         .build();
         EventLoop eventLoop = new EventLoop("id", eventLoopConfig, new Metrics());
 
-        eventLoop.observe("e").subscribe(noParamsListener);
-        eventLoop.observe("e").subscribe(genericListener);
-        eventLoop.observe("e").subscribe(listener1);
-        eventLoop.observe("e").subscribe(listener2);
-        eventLoop.observe("e").subscribe(listener3);
-        eventLoop.observe("e").subscribe(listener4);
-        eventLoop.observe("e").subscribe(listener5);
-        eventLoop.observe("e").subscribe(listener6);
-        eventLoop.observe("e").subscribe(listener7);
-        eventLoop.observe("e").subscribe(listener8);
-        eventLoop.observe("e").subscribe(listener9);
-        eventLoop.observe("e").subscribe(listener10);
+        eventLoop.on("e").subscribe(noParamsListener);
+        eventLoop.on("e").subscribe(genericListener);
+        eventLoop.on("e").subscribe(listener1);
+        eventLoop.on("e").subscribe(listener2);
+        eventLoop.on("e").subscribe(listener3);
+        eventLoop.on("e").subscribe(listener4);
+        eventLoop.on("e").subscribe(listener5);
+        eventLoop.on("e").subscribe(listener6);
+        eventLoop.on("e").subscribe(listener7);
+        eventLoop.on("e").subscribe(listener8);
+        eventLoop.on("e").subscribe(listener9);
+        eventLoop.on("e").subscribe(listener10);
 
         eventLoop.emit("e");
 
@@ -281,22 +281,22 @@ public class ConsumerWrappersTest {
 
         EventLoopConfig eventLoopConfig =
                 EventLoopConfig.builder()
-                        .setDispatchThreadStrategy(EventLoopConfig.DispatchThreadStrategy.DISPATCH_IN_EMITTER_THREAD)
+                        .setDispatchInEmitterThread(true)
                         .build();
         EventLoop eventLoop = new EventLoop("id", eventLoopConfig, new Metrics());
 
-		eventLoop.observe("e").subscribe(noParamsListener);
-		eventLoop.observe("e").subscribe(genericListener);
-		eventLoop.observe("e").subscribe(listener1);
-		eventLoop.observe("e").subscribe(listener2);
-		eventLoop.observe("e").subscribe(listener3);
-		eventLoop.observe("e").subscribe(listener4);
-		eventLoop.observe("e").subscribe(listener5);
-		eventLoop.observe("e").subscribe(listener6);
-		eventLoop.observe("e").subscribe(listener7);
-		eventLoop.observe("e").subscribe(listener8);
-		eventLoop.observe("e").subscribe(listener9);
-		eventLoop.observe("e").subscribe(listener10);
+		eventLoop.on("e").subscribe(noParamsListener);
+		eventLoop.on("e").subscribe(genericListener);
+		eventLoop.on("e").subscribe(listener1);
+		eventLoop.on("e").subscribe(listener2);
+		eventLoop.on("e").subscribe(listener3);
+		eventLoop.on("e").subscribe(listener4);
+		eventLoop.on("e").subscribe(listener5);
+		eventLoop.on("e").subscribe(listener6);
+		eventLoop.on("e").subscribe(listener7);
+		eventLoop.on("e").subscribe(listener8);
+		eventLoop.on("e").subscribe(listener9);
+		eventLoop.on("e").subscribe(listener10);
 
 		eventLoop.emit("e", p1, p2, p3, p4, p5, p6, p7, p8, p9, p10);
 

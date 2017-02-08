@@ -71,8 +71,8 @@ public class MetricsExample {
 		 * *************************************************************************** *
 		 * *************************************************************************** *
 		 */
-		nova.eventLoop.observe("Event").subscribe();
-		nova.eventLoop.observe("Event2").subscribe();
+		nova.eventLoop.on("Event").subscribe();
+		nova.eventLoop.on("Event2").subscribe();
 		startEventCreation(nova.eventLoop);
 
 		new BufferedReader(new InputStreamReader(System.in)).readLine();

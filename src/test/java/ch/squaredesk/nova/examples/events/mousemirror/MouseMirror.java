@@ -83,7 +83,7 @@ public class MouseMirror {
 		 * ********************************************************************************************** *
 		 */
 		for (JFrame targetFrame : targetFrames) {
-			nova.eventLoop.observe("MouseEvent").subscribe(new MouseEventTranslator(targetFrame));
+			nova.eventLoop.on("MouseEvent").subscribe(new MouseEventTranslator(targetFrame));
 		}
 
 	}

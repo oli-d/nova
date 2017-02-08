@@ -11,38 +11,21 @@
 package ch.squaredesk.nova.events;
 
 import java.util.Arrays;
-import java.util.Map;
 
 class InvocationContext {
 	public final Object event;
-	private final Object[] data;
-	public final Object duplicateDetectionId;
-	public final Map<Object, Object[]> currentDataLookupMap;
+	public final Object[] data;
 
 	InvocationContext(Object event, Object[] data) {
-		this(event, data, null, null);
-	}
-
-	InvocationContext(Object event, Object[] data, Object duplicateDetectionId, Map<Object, Object[]> currentDataLookupMap) {
 		this.event = event;
 		this.data = data;
-		this.duplicateDetectionId = duplicateDetectionId;
-		this.currentDataLookupMap = currentDataLookupMap;
-	}
-
-	public Object[] getData() {
-		if (duplicateDetectionId != null) {
-			return currentDataLookupMap.remove(duplicateDetectionId);
-		} else {
-			return data;
-		}
 	}
 
 
 	@Override
 	public String toString() {
 		return "InvocationContext [event=" + event
-				+ (duplicateDetectionId == null ? ", data=" + Arrays.toString(data) : ", duplicateDetectionId=" + duplicateDetectionId)
+				+ ", data=" + Arrays.toString(data)
 				+ "]";
 	}
 

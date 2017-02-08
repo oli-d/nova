@@ -94,7 +94,7 @@ public class Timers {
         String newId = String.valueOf(counter.incrementAndGet());
         String intervalDummyEvent = DUMMY_INTERVAL_EVENT_PREFIX + newId;
         Disposable callbackInvoker = eventLoop
-                .observe(intervalDummyEvent)
+                .on(intervalDummyEvent)
                 .subscribe(
                 		x -> {
                 			try {

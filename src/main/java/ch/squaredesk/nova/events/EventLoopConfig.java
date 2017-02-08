@@ -10,23 +10,16 @@
 
 package ch.squaredesk.nova.events;
 
+import io.reactivex.BackpressureStrategy;
+
 public class EventLoopConfig {
-	public static enum InsufficientCapacityStrategy {
-		DROP_EVENTS, QUEUE_EVENTS, THROW_EXCEPTION, WAIT_UNTIL_SPACE_AVAILABLE
-	};
-
-	public static enum DispatchThreadStrategy {
-		DISPATCH_IN_EMITTER_THREAD, DISPATCH_IN_SPECIFIC_THREAD
-	};
-
-	public final InsufficientCapacityStrategy insufficientCapacityStrategy;
-	public final DispatchThreadStrategy dispatchThreadStrategy;
+	public final BackpressureStrategy defaultBackpressureStrategy;
+	public final boolean dispatchInEmitterThread;
 	public final boolean warnOnUnhandledEvent;
 
 	public EventLoopConfig(Builder builder) {
-		builder.validate();
-		this.insufficientCapacityStrategy = builder.insufficientCapacityStrategy;
-		this.dispatchThreadStrategy = builder.dispatchThreadStrategy;
+		this.defaultBackpressureStrategy = builder.defaultBackpressureStrategy;
+		this.dispatchInEmitterThread = builder.dispatchInEmitterThread;
 		this.warnOnUnhandledEvent = builder.warnOnUnhandledEvent;
 	}
 
@@ -35,20 +28,20 @@ public class EventLoopConfig {
 	}
 
 	public static class Builder {
-		private InsufficientCapacityStrategy insufficientCapacityStrategy = InsufficientCapacityStrategy.THROW_EXCEPTION;
-		private DispatchThreadStrategy dispatchThreadStrategy = DispatchThreadStrategy.DISPATCH_IN_SPECIFIC_THREAD;
+		private BackpressureStrategy defaultBackpressureStrategy = BackpressureStrategy.BUFFER;
+		private boolean dispatchInEmitterThread = false;
 		private boolean warnOnUnhandledEvent;
 
 		private Builder() {
 		}
 
-		public Builder setInsufficientCapacityStrategy(InsufficientCapacityStrategy queueFullStrategy) {
-			this.insufficientCapacityStrategy = queueFullStrategy;
+		public Builder setDefaultBackpressureStrategy(BackpressureStrategy defaultBackpressureStrategy) {
+			this.defaultBackpressureStrategy = defaultBackpressureStrategy;
 			return this;
 		}
 
-		public Builder setDispatchThreadStrategy(DispatchThreadStrategy dispatchThreadStrategy) {
-			this.dispatchThreadStrategy = dispatchThreadStrategy;
+		public Builder setDispatchInEmitterThread(boolean dispatchInEmitterThread) {
+			this.dispatchInEmitterThread = dispatchInEmitterThread;
 			return this;
 		}
 
