@@ -8,24 +8,22 @@
  *   https://squaredesk.ch/license/oss/LICENSE
  */
 
-package ch.squaredesk.nova.timers;
+package ch.squaredesk.nova.events;
 
 import ch.squaredesk.nova.Nova;
+import io.reactivex.disposables.Disposable;
 import org.apache.log4j.BasicConfigurator;
 import org.hamcrest.Matchers;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.lang.reflect.Field;
-import java.util.Map;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 
 public class TimersMemLeakTest {
 	static {
@@ -33,28 +31,29 @@ public class TimersMemLeakTest {
 	}
 
 	private Timers sut;
+	private EventLoop eventLoop;
 
 	@Before
     public void setup() {
         Nova nova = Nova.builder().build();
 		sut = nova.timers;
+		eventLoop = nova.eventLoop;
     }
 
 	@Test
 	public void setTimeoutLeavesNothingAfterItWasInvoked() throws Throwable {
 		CountDownLatch countDownLatch = new CountDownLatch(1);
 		Runnable callback = countDownLatch::countDown;
-		Map<String, ScheduledFuture<?>> internalMap = getInternalFutureMapFrom(sut);
 
-		assertTrue(internalMap.isEmpty());
+		assertNull(eventLoop.subjectFor(Timers.DUMMY_TIMEOUT_EVENT_PREFIX +1));
 		assertThat(countDownLatch.getCount(), Matchers.is(1L));
 		sut.setTimeout(callback, 250, TimeUnit.MILLISECONDS);
-		assertFalse(internalMap.isEmpty());
+        assertNotNull(eventLoop.subjectFor(Timers.DUMMY_TIMEOUT_EVENT_PREFIX +1));
 
 		countDownLatch.await(500, TimeUnit.MILLISECONDS);
 		assertThat(countDownLatch.getCount(), Matchers.is(0L));
 
-		assertTrue(internalMap.isEmpty());
+        assertNull(eventLoop.subjectFor(Timers.DUMMY_TIMEOUT_EVENT_PREFIX +1));
 	}
 
 	@Test
@@ -64,67 +63,62 @@ public class TimersMemLeakTest {
 		        countDownLatch.countDown();
 		        throw new RuntimeException("for test");
         };
-		Map<String, ScheduledFuture<?>> internalMap = getInternalFutureMapFrom(sut);
 
-		assertTrue(internalMap.isEmpty());
+        assertNull(eventLoop.subjectFor(Timers.DUMMY_TIMEOUT_EVENT_PREFIX +1));
 		assertThat(countDownLatch.getCount(), Matchers.is(1L));
 		sut.setTimeout(callback, 250, TimeUnit.MILLISECONDS);
-		assertFalse(internalMap.isEmpty());
+        assertNotNull(eventLoop.subjectFor(Timers.DUMMY_TIMEOUT_EVENT_PREFIX +1));
 
 		countDownLatch.await(500, TimeUnit.MILLISECONDS);
 		assertThat(countDownLatch.getCount(), Matchers.is(0L));
 
-		assertTrue(internalMap.isEmpty());
+        assertNull(eventLoop.subjectFor(Timers.DUMMY_TIMEOUT_EVENT_PREFIX +1));
 	}
 
 	@Test
 	public void clearTimeoutRemovesEverything() throws Throwable {
 		Runnable callback = () -> {};
-		Map<String, ScheduledFuture<?>> internalMap = getInternalFutureMapFrom(sut);
 
-		assertTrue(internalMap.isEmpty());
-		String id = sut.setTimeout(callback, 250, TimeUnit.MILLISECONDS);
-		assertFalse(internalMap.isEmpty());
-		sut.clearTimeout(id);
-		assertTrue(internalMap.isEmpty());
+        assertNull(eventLoop.subjectFor(Timers.DUMMY_TIMEOUT_EVENT_PREFIX +1));
+		Disposable disposable = sut.setTimeout(callback, 250, TimeUnit.MILLISECONDS);
+        assertNotNull(eventLoop.subjectFor(Timers.DUMMY_TIMEOUT_EVENT_PREFIX +1));
+		disposable.dispose();
+        assertNull(eventLoop.subjectFor(Timers.DUMMY_TIMEOUT_EVENT_PREFIX +1));
 	}
 
 	@Test
 	public void clearIntervalRemovesEverything() throws Throwable {
 		Runnable callback = () -> {};
-		Map<String, ScheduledFuture<?>> internalMap = getInternalFutureMapFrom(sut);
 
-		assertTrue(internalMap.isEmpty());
-		String id = sut.setInterval(callback,0, 250, TimeUnit.MILLISECONDS);
-		assertFalse(internalMap.isEmpty());
-		sut.clearTimeout(id);
-		assertTrue(internalMap.isEmpty());
+        assertNull(eventLoop.subjectFor(Timers.DUMMY_INTERVAL_EVENT_PREFIX +1));
+		Disposable disposable = sut.setInterval(callback,0, 250, TimeUnit.MILLISECONDS);
+        assertNotNull(eventLoop.subjectFor(Timers.DUMMY_INTERVAL_EVENT_PREFIX +1));
+		disposable.dispose();
+
+		assertNull(eventLoop.subjectFor(Timers.DUMMY_INTERVAL_EVENT_PREFIX +1));
+
+
 	}
 
 	@Test
 	public void intervalThatThrowsIsKilledAndRemovesEverything() throws Throwable {
-		CountDownLatch countDownLatch = new CountDownLatch(1);
+        CountDownLatch countDownLatch = new CountDownLatch(1);
         AtomicInteger atomicInteger = new AtomicInteger(0);
-	    Runnable callback = () -> {
-	        if (atomicInteger.incrementAndGet() % 7 == 0) {
+        Runnable callback = () -> {
+            if (atomicInteger.incrementAndGet() % 7 == 0) {
                 countDownLatch.countDown();
                 throw new RuntimeException("for test");
             }
-		};
-		Map<String, ScheduledFuture<?>> internalMap = getInternalFutureMapFrom(sut);
+        };
 
-		assertTrue(internalMap.isEmpty());
-		sut.setInterval(callback,0, 25, TimeUnit.MILLISECONDS);
-		assertFalse(internalMap.isEmpty());
-		countDownLatch.await(1, TimeUnit.SECONDS);
-		assertThat(countDownLatch.getCount(), Matchers.is (0L));
-		assertTrue(internalMap.isEmpty());
+        assertNull(eventLoop.subjectFor(Timers.DUMMY_INTERVAL_EVENT_PREFIX + 1));
+        sut.setInterval(callback, 0, 155, TimeUnit.MILLISECONDS);
+        assertNotNull(eventLoop.subjectFor(Timers.DUMMY_INTERVAL_EVENT_PREFIX + 1));
+        countDownLatch.await(1, TimeUnit.SECONDS);
+        assertThat(countDownLatch.getCount(), Matchers.is(0L));
+        // unfortunately, the disposal does not run synchronously, so we have to wait a little
+        Thread.sleep(100);
+        assertNull(eventLoop.subjectFor(Timers.DUMMY_INTERVAL_EVENT_PREFIX + 1));
 	}
 
-	@SuppressWarnings("unchecked")
-	private Map<String, ScheduledFuture<?>> getInternalFutureMapFrom(Timers timers) throws Exception {
-		Field f = Timers.class.getDeclaredField("mapIdToDisposable");
-		f.setAccessible(true);
-		return (Map<String, ScheduledFuture<?>>) f.get(timers);
-	}
 }

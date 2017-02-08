@@ -41,9 +41,9 @@ public class EventMetricsCollectorTest {
 
         Map<String, Metric> registeredMetrics = metrics.getMetrics();
         assertThat(registeredMetrics.size(), is(2));
-        Meter totalMeter = (Meter)registeredMetrics.get("EventEmitter.TestCollector.dispatchedEvents.total");
+        Meter totalMeter = (Meter)registeredMetrics.get("EventLoop.TestCollector.dispatchedEvents.total");
         assertThat(totalMeter.getCount(), is(2L));
-        Meter fooMeter = (Meter)registeredMetrics.get("EventEmitter.TestCollector.dispatchedEvents.foo");
+        Meter fooMeter = (Meter)registeredMetrics.get("EventLoop.TestCollector.dispatchedEvents.foo");
         assertThat(fooMeter.getCount(), is(1L));
     }
 }

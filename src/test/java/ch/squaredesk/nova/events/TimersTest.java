@@ -8,9 +8,12 @@
  *   https://squaredesk.ch/license/oss/LICENSE
  */
 
-package ch.squaredesk.nova.timers;
+package ch.squaredesk.nova.events;
 
 import ch.squaredesk.nova.Nova;
+import ch.squaredesk.nova.events.EventLoop;
+import ch.squaredesk.nova.events.Timers;
+import io.reactivex.disposables.Disposable;
 import org.apache.log4j.BasicConfigurator;
 import org.junit.Before;
 import org.junit.Test;
@@ -62,35 +65,11 @@ public class TimersTest {
         Runnable callback = () -> counter.incrementAndGet();
 
 		long startDelay = 200;
-		String id = sut.setTimeout(callback, startDelay);
-		sut.clearTimeout(id);
+		Disposable disposable = sut.setTimeout(callback, startDelay);
+
+		disposable.dispose();
 		Thread.sleep(2 * startDelay);
-		assertNotNull(id);
-
-		assertThat(counter.intValue(), is(0));
-	}
-
-	@Test(expected = NullPointerException.class)
-	public void testClearTimeoutWithNullIdThrows() throws Exception {
-		new Timers(null).clearTimeout(null);
-	}
-
-	@Test
-	public void testClearTimeoutCanBeInvokedWithoutProblemsWithUnknownId() throws Exception {
-		new Timers(null).clearTimeout("id");
-	}
-
-	@Test
-	public void testClearTimeoutCanBeInvokedMultipleTimes() throws Exception {
-        AtomicInteger counter = new AtomicInteger();
-
-		long startDelay = 200;
-		String id = sut.setTimeout(() -> counter.incrementAndGet(), startDelay);
-		sut.clearTimeout(id);
-		sut.clearTimeout(id);
-		sut.clearTimeout(id);
-		Thread.sleep(2 * startDelay);
-		assertNotNull(id);
+		assertNotNull(disposable);
 
 		assertThat(counter.intValue(), is(0));
 	}
@@ -110,10 +89,10 @@ public class TimersTest {
         AtomicInteger counter = new AtomicInteger();
 
 		long startDelay = 200;
-		String id = sut.setInterval(() -> counter.incrementAndGet(), startDelay, startDelay, TimeUnit.MILLISECONDS);
-		assertNotNull(id);
+		Disposable disposable = sut.setInterval(() -> counter.incrementAndGet(), startDelay, startDelay, TimeUnit.MILLISECONDS);
+		assertNotNull(disposable);
 		Thread.sleep((4 * startDelay) + 100);
-		sut.clearInterval(id);
+		disposable.dispose();
 
 		assertThat(counter.intValue(), is(4));
 	}
@@ -123,36 +102,12 @@ public class TimersTest {
         AtomicInteger counter = new AtomicInteger();
 
 		long startDelay = 200;
-		String id = sut.setInterval(()->counter.incrementAndGet(), startDelay);
-		sut.clearInterval(id);
+		Disposable disposable = sut.setInterval(()->counter.incrementAndGet(), startDelay);
+		disposable.dispose();
 		Thread.sleep(2 * startDelay);
-		assertNotNull(id);
+		assertNotNull(disposable);
 
 		assertThat(counter.intValue(), is(0));
 	}
 
-	@Test(expected = NullPointerException.class)
-	public void testClearIntervalWithNullIdThrows() throws Exception {
-		sut.clearInterval(null);
-	}
-
-	@Test
-	public void testClearIntervalCanBeInvokedWithoutProblemsWithUnknownId() throws Exception {
-		sut.clearInterval("id");
-	}
-
-	@Test
-	public void testClearIntervalCanBeInvokedMultipleTimes() throws Exception {
-        AtomicInteger counter = new AtomicInteger();
-
-		long startDelay = 200;
-		String id = sut.setInterval(()->counter.incrementAndGet(), startDelay, startDelay, TimeUnit.MILLISECONDS);
-		sut.clearInterval(id);
-		sut.clearInterval(id);
-		sut.clearInterval(id);
-		Thread.sleep(2 * startDelay);
-		assertNotNull(id);
-
-		assertThat(counter.intValue(), is(0));
-	}
 }

@@ -12,38 +12,22 @@ package ch.squaredesk.nova.events;
 
 import java.util.Arrays;
 import java.util.Map;
-import java.util.function.Consumer;
 
 class InvocationContext {
-	private Object event;
-	private Consumer<Object[]> consumer;
-	private Object[] data;
-	private Object duplicateDetectionId;
-	private Map<Object, Object[]> currentDataLookupMap;
+	public final Object event;
+	private final Object[] data;
+	public final Object duplicateDetectionId;
+	public final Map<Object, Object[]> currentDataLookupMap;
 
-	public InvocationContext(Object event, Consumer<Object[]> consumer, Object... data) {
+	InvocationContext(Object event, Object[] data) {
+		this(event, data, null, null);
+	}
+
+	InvocationContext(Object event, Object[] data, Object duplicateDetectionId, Map<Object, Object[]> currentDataLookupMap) {
 		this.event = event;
-		this.consumer = consumer;
 		this.data = data;
-	}
-
-	public InvocationContext() {
-	}
-
-	void reset() {
-		this.event = null;
-		this.consumer = null;
-		this.data = null;
-		this.duplicateDetectionId = null;
-		this.currentDataLookupMap = null;
-	}
-
-	public Object getEvent() {
-		return event;
-	}
-
-	public Consumer<Object[]> getConsumer() {
-		return consumer;
+		this.duplicateDetectionId = duplicateDetectionId;
+		this.currentDataLookupMap = currentDataLookupMap;
 	}
 
 	public Object[] getData() {
@@ -54,25 +38,10 @@ class InvocationContext {
 		}
 	}
 
-	public void setEmitInfo(Object event, Consumer<Object[]> consumer, Object... data) {
-		reset();
-		this.event = event;
-		this.consumer = consumer;
-		this.data = data;
-	}
-
-	public void setEmitInfo(Object event, Consumer<Object[]> consumer, Object duplicateDetectionId,
-							Map<Object, Object[]> currentDataLookupMap) {
-		reset();
-		this.event = event;
-		this.consumer = consumer;
-		this.duplicateDetectionId = duplicateDetectionId;
-		this.currentDataLookupMap = currentDataLookupMap;
-	}
 
 	@Override
 	public String toString() {
-		return "InvocationContext [event=" + event + ", consumer=" + consumer
+		return "InvocationContext [event=" + event
 				+ (duplicateDetectionId == null ? ", data=" + Arrays.toString(data) : ", duplicateDetectionId=" + duplicateDetectionId)
 				+ "]";
 	}

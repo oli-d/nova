@@ -10,7 +10,7 @@
 
 package ch.squaredesk.nova.filesystem;
 
-import ch.squaredesk.nova.process.Process;
+import ch.squaredesk.nova.events.Process;
 
 import java.io.File;
 import java.io.IOException;

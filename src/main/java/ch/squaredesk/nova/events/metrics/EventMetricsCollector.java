@@ -17,8 +17,8 @@ import java.util.concurrent.TimeUnit;
 
 public class EventMetricsCollector extends MetricsCollector {
 	public EventMetricsCollector(Metrics metrics, String identifierPrefix) {
-		super(metrics, "EventEmitter".equalsIgnoreCase(identifierPrefix) ? identifierPrefix :
-                "EventEmitter." + identifierPrefix);
+		super(metrics, "EventLoop".equalsIgnoreCase(identifierPrefix) ? identifierPrefix :
+                "EventLoop." + identifierPrefix);
 	}
 
 

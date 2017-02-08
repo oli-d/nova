@@ -10,8 +10,8 @@
 
 package ch.squaredesk.nova.events.consumers;
 
-import ch.squaredesk.nova.events.CurrentThreadEventEmitter;
-import ch.squaredesk.nova.events.EventEmitter;
+import ch.squaredesk.nova.events.EventLoopConfig;
+import ch.squaredesk.nova.events.EventLoop;
 import ch.squaredesk.nova.metrics.Metrics;
 import io.reactivex.functions.Consumer;
 import org.junit.Test;
@@ -122,22 +122,26 @@ public class ConsumerWrappersTest {
         };
         NoParameterConsumer noParamsListener = () -> listenersInvoked[11] = true;
 
-        EventEmitter ee = new CurrentThreadEventEmitter("id", false, new Metrics());
+        EventLoopConfig eventLoopConfig =
+                EventLoopConfig.builder()
+                        .setDispatchThreadStrategy(EventLoopConfig.DispatchThreadStrategy.DISPATCH_IN_EMITTER_THREAD)
+                        .build();
+        EventLoop eventLoop = new EventLoop("id", eventLoopConfig, new Metrics());
 
-        ee.observe("e").subscribe(noParamsListener);
-        ee.observe("e").subscribe(genericListener);
-        ee.observe("e").subscribe(listener1);
-        ee.observe("e").subscribe(listener2);
-        ee.observe("e").subscribe(listener3);
-        ee.observe("e").subscribe(listener4);
-        ee.observe("e").subscribe(listener5);
-        ee.observe("e").subscribe(listener6);
-        ee.observe("e").subscribe(listener7);
-        ee.observe("e").subscribe(listener8);
-        ee.observe("e").subscribe(listener9);
-        ee.observe("e").subscribe(listener10);
+        eventLoop.observe("e").subscribe(noParamsListener);
+        eventLoop.observe("e").subscribe(genericListener);
+        eventLoop.observe("e").subscribe(listener1);
+        eventLoop.observe("e").subscribe(listener2);
+        eventLoop.observe("e").subscribe(listener3);
+        eventLoop.observe("e").subscribe(listener4);
+        eventLoop.observe("e").subscribe(listener5);
+        eventLoop.observe("e").subscribe(listener6);
+        eventLoop.observe("e").subscribe(listener7);
+        eventLoop.observe("e").subscribe(listener8);
+        eventLoop.observe("e").subscribe(listener9);
+        eventLoop.observe("e").subscribe(listener10);
 
-        ee.emit("e");
+        eventLoop.emit("e");
 
         for (boolean aListenersInvoked : listenersInvoked) {
             assertTrue(aListenersInvoked);
@@ -275,22 +279,26 @@ public class ConsumerWrappersTest {
         };
 		NoParameterConsumer noParamsListener = () -> listenersInvoked[11] = true;
 
-        EventEmitter ee = new CurrentThreadEventEmitter("id", false, new Metrics());
+        EventLoopConfig eventLoopConfig =
+                EventLoopConfig.builder()
+                        .setDispatchThreadStrategy(EventLoopConfig.DispatchThreadStrategy.DISPATCH_IN_EMITTER_THREAD)
+                        .build();
+        EventLoop eventLoop = new EventLoop("id", eventLoopConfig, new Metrics());
 
-		ee.observe("e").subscribe(noParamsListener);
-		ee.observe("e").subscribe(genericListener);
-		ee.observe("e").subscribe(listener1);
-		ee.observe("e").subscribe(listener2);
-		ee.observe("e").subscribe(listener3);
-		ee.observe("e").subscribe(listener4);
-		ee.observe("e").subscribe(listener5);
-		ee.observe("e").subscribe(listener6);
-		ee.observe("e").subscribe(listener7);
-		ee.observe("e").subscribe(listener8);
-		ee.observe("e").subscribe(listener9);
-		ee.observe("e").subscribe(listener10);
+		eventLoop.observe("e").subscribe(noParamsListener);
+		eventLoop.observe("e").subscribe(genericListener);
+		eventLoop.observe("e").subscribe(listener1);
+		eventLoop.observe("e").subscribe(listener2);
+		eventLoop.observe("e").subscribe(listener3);
+		eventLoop.observe("e").subscribe(listener4);
+		eventLoop.observe("e").subscribe(listener5);
+		eventLoop.observe("e").subscribe(listener6);
+		eventLoop.observe("e").subscribe(listener7);
+		eventLoop.observe("e").subscribe(listener8);
+		eventLoop.observe("e").subscribe(listener9);
+		eventLoop.observe("e").subscribe(listener10);
 
-		ee.emit("e", p1, p2, p3, p4, p5, p6, p7, p8, p9, p10);
+		eventLoop.emit("e", p1, p2, p3, p4, p5, p6, p7, p8, p9, p10);
 
 		for (boolean aListenersInvoked : listenersInvoked) {
 			assertTrue(aListenersInvoked);

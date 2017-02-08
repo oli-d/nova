@@ -8,9 +8,10 @@
  *   https://squaredesk.ch/license/oss/LICENSE
  */
 
-package ch.squaredesk.nova.process;
+package ch.squaredesk.nova.events;
 
 import ch.squaredesk.nova.Nova;
+import ch.squaredesk.nova.events.Process;
 import org.apache.log4j.BasicConfigurator;
 import org.hamcrest.Matchers;
 import org.junit.Assert;
@@ -21,8 +22,12 @@ import org.junit.Test;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.assertNull;
+
 public class ProcessTest {
 	private Process process;
+	private EventLoop eventLoop;
 
 	@BeforeClass
 	public static void initLogging() {
@@ -31,7 +36,9 @@ public class ProcessTest {
 
 	@Before
 	public void setup() {
-		process = Nova.builder().build().process;
+		Nova nova = Nova.builder().build();
+		process = nova.process;
+		eventLoop = nova.eventLoop;
 	}
 
 	@Test(expected = NullPointerException.class)
@@ -49,4 +56,23 @@ public class ProcessTest {
 		countDownLatch.await(500, TimeUnit.MILLISECONDS);
 		Assert.assertThat(countDownLatch.getCount(), Matchers.is(0L));
 	}
+
+	@Test
+	public void nextTickThatThrowsDoesNotLeak() throws Throwable {
+		CountDownLatch countDownLatch = new CountDownLatch(1);
+		Runnable callback = () -> {
+			countDownLatch.countDown();
+			throw new RuntimeException("for test");
+		};
+
+		assertNull(eventLoop.subjectFor(Process.DUMMY_NEXT_TICK_EVENT_PREFIX + 1));
+		process.nextTick(callback);
+		countDownLatch.await(1, TimeUnit.SECONDS);
+		assertThat(countDownLatch.getCount(), Matchers.is(0L));
+		// unfortunately, the disposal does not run synchronously, so we have to wait a little
+		Thread.sleep(100);
+		assertNull(eventLoop.subjectFor(Process.DUMMY_NEXT_TICK_EVENT_PREFIX + 1));
+	}
+
+
 }

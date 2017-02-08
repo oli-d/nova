@@ -10,20 +10,18 @@
 
 package ch.squaredesk.nova;
 
-import ch.squaredesk.nova.events.EventDispatchConfig;
-import ch.squaredesk.nova.events.EventEmitter;
+import ch.squaredesk.nova.events.EventLoopConfig;
+import ch.squaredesk.nova.events.EventLoop;
 import ch.squaredesk.nova.filesystem.Filesystem;
-import ch.squaredesk.nova.process.Process;
-import ch.squaredesk.nova.events.CurrentThreadEventEmitter;
-import ch.squaredesk.nova.events.EventLoopAwareEventEmitter;
+import ch.squaredesk.nova.events.Process;
 import ch.squaredesk.nova.metrics.Metrics;
-import ch.squaredesk.nova.timers.Timers;
+import ch.squaredesk.nova.events.Timers;
 
 public class Nova {
 
 	public final String identifier;
 	public final Timers timers;
-	public final EventEmitter eventEmitter;
+	public final EventLoop eventLoop;
 	public final Process process;
 	public final Filesystem filesystem;
 	public final Metrics metrics;
@@ -32,26 +30,10 @@ public class Nova {
 		metrics = builder.metrics;
 		identifier = builder.identifier;
 
-		eventEmitter = createEventEmitter(
-				identifier,
-				builder.eventDispatchConfig,
-				metrics);
-		timers = new Timers(eventEmitter);
-		process = new Process(eventEmitter);
+		eventLoop = new EventLoop(identifier, builder.eventLoopConfig, metrics);
+		timers = new Timers(eventLoop);
+		process = new Process(eventLoop);
 		filesystem = new Filesystem(process);
-	}
-
-	private EventEmitter createEventEmitter(
-			String identifier,
-			EventDispatchConfig eventDispatchConfig,
-			Metrics metrics) {
-		EventEmitter retVal;
-		if (eventDispatchConfig.dispatchThreadStrategy == EventDispatchConfig.DispatchThreadStrategy.DISPATCH_IN_EMITTER_THREAD) {
-			retVal = new CurrentThreadEventEmitter(identifier, eventDispatchConfig.warnOnUnhandledEvent, metrics);
-		} else {
-			retVal = new EventLoopAwareEventEmitter(identifier, eventDispatchConfig, metrics);
-		}
-		return retVal;
 	}
 
 	public static Builder builder() {
@@ -60,7 +42,7 @@ public class Nova {
 
 	public static class Builder {
 		private String identifier;
-		private EventDispatchConfig eventDispatchConfig;
+		private EventLoopConfig eventLoopConfig;
 		private Metrics metrics;
 
 		private Builder() {
@@ -71,8 +53,8 @@ public class Nova {
 			return this;
 		}
 
-		public Builder setEventDispatchConfig(EventDispatchConfig eventDispatchConfig) {
-			this.eventDispatchConfig = eventDispatchConfig;
+		public Builder setEventLoopConfig(EventLoopConfig eventLoopConfig) {
+			this.eventLoopConfig = eventLoopConfig;
 			return this;
 		}
 
@@ -82,8 +64,8 @@ public class Nova {
 		}
 
 		public Nova build() {
-			if (eventDispatchConfig == null) {
-				eventDispatchConfig = EventDispatchConfig.builder().build();
+			if (eventLoopConfig == null) {
+				eventLoopConfig = EventLoopConfig.builder().build();
 			}
 			if (identifier == null) {
 				identifier = "";
