@@ -54,8 +54,7 @@ public class EventLoop {
         this.metricsCollector = new EventMetricsCollector(metrics, identifier);
 
         if (logger.isDebugEnabled()) {
-            logger.debug("Instantiating event loop " + identifier + ", using the following configuration:");
-            logger.debug("\tDispatching in emitter thread: " + eventLoopConfig.dispatchInEmitterThread);
+            logger.debug("Instantiating event loop " + identifier);
             logger.debug("\tdefaultBackpressureStrategy:   " + eventLoopConfig.defaultBackpressureStrategy);
             logger.debug("\twarn on unhandled events:      " + eventLoopConfig.warnOnUnhandledEvent);
         }
@@ -64,12 +63,15 @@ public class EventLoop {
         Observable<InvocationContext> threadedSource = theSource;
         if (!eventLoopConfig.dispatchInEmitterThread) {
             Executor dispatchExecutor = Executors.newSingleThreadExecutor(r -> {
-                Thread t = new Thread(r, "EventLoop/" + identifier);
+                Thread t = new Thread(r, "EventLoop[" + identifier + ']');
                 t.setDaemon(true);
                 return t;
             });
 
             threadedSource = theSource.observeOn(Schedulers.from(dispatchExecutor));
+            logger.debug("\tDispatching events in specific thread");
+        } else {
+            logger.warn("\tDispatching events in emitting thread. Use at your own risk!!!");
         }
 
         Disposable sourceDisposable = threadedSource
