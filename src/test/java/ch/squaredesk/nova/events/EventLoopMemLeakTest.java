@@ -25,19 +25,16 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 
-public class TimersMemLeakTest {
+public class EventLoopMemLeakTest {
 	static {
 		BasicConfigurator.configure();
 	}
 
-	private Timers sut;
-	private EventLoop eventLoop;
+	private EventLoop sut;
 
 	@Before
     public void setup() {
-        Nova nova = Nova.builder().build();
-		sut = nova.timers;
-		eventLoop = nova.eventLoop;
+		sut = Nova.builder().build().eventLoop;
     }
 
 	@Test
@@ -45,15 +42,15 @@ public class TimersMemLeakTest {
 		CountDownLatch countDownLatch = new CountDownLatch(1);
 		Runnable callback = countDownLatch::countDown;
 
-		assertNull(eventLoop.subjectFor(Timers.DUMMY_TIMEOUT_EVENT_PREFIX +1));
+		assertNull(sut.subjectFor(EventLoop.DUMMY_TIMEOUT_EVENT_PREFIX +1));
 		assertThat(countDownLatch.getCount(), Matchers.is(1L));
 		sut.setTimeout(callback, 250, TimeUnit.MILLISECONDS);
-        assertNotNull(eventLoop.subjectFor(Timers.DUMMY_TIMEOUT_EVENT_PREFIX +1));
+        assertNotNull(sut.subjectFor(EventLoop.DUMMY_TIMEOUT_EVENT_PREFIX +1));
 
 		countDownLatch.await(500, TimeUnit.MILLISECONDS);
 		assertThat(countDownLatch.getCount(), Matchers.is(0L));
 
-        assertNull(eventLoop.subjectFor(Timers.DUMMY_TIMEOUT_EVENT_PREFIX +1));
+        assertNull(sut.subjectFor(EventLoop.DUMMY_TIMEOUT_EVENT_PREFIX +1));
 	}
 
 	@Test
@@ -64,38 +61,38 @@ public class TimersMemLeakTest {
 		        throw new RuntimeException("for test");
         };
 
-        assertNull(eventLoop.subjectFor(Timers.DUMMY_TIMEOUT_EVENT_PREFIX +1));
+        assertNull(sut.subjectFor(EventLoop.DUMMY_TIMEOUT_EVENT_PREFIX +1));
 		assertThat(countDownLatch.getCount(), Matchers.is(1L));
 		sut.setTimeout(callback, 250, TimeUnit.MILLISECONDS);
-        assertNotNull(eventLoop.subjectFor(Timers.DUMMY_TIMEOUT_EVENT_PREFIX +1));
+        assertNotNull(sut.subjectFor(EventLoop.DUMMY_TIMEOUT_EVENT_PREFIX +1));
 
 		countDownLatch.await(500, TimeUnit.MILLISECONDS);
 		assertThat(countDownLatch.getCount(), Matchers.is(0L));
 
-        assertNull(eventLoop.subjectFor(Timers.DUMMY_TIMEOUT_EVENT_PREFIX +1));
+        assertNull(sut.subjectFor(EventLoop.DUMMY_TIMEOUT_EVENT_PREFIX +1));
 	}
 
 	@Test
 	public void clearTimeoutRemovesEverything() throws Throwable {
 		Runnable callback = () -> {};
 
-        assertNull(eventLoop.subjectFor(Timers.DUMMY_TIMEOUT_EVENT_PREFIX +1));
+        assertNull(sut.subjectFor(EventLoop.DUMMY_TIMEOUT_EVENT_PREFIX +1));
 		Disposable disposable = sut.setTimeout(callback, 250, TimeUnit.MILLISECONDS);
-        assertNotNull(eventLoop.subjectFor(Timers.DUMMY_TIMEOUT_EVENT_PREFIX +1));
+        assertNotNull(sut.subjectFor(EventLoop.DUMMY_TIMEOUT_EVENT_PREFIX +1));
 		disposable.dispose();
-        assertNull(eventLoop.subjectFor(Timers.DUMMY_TIMEOUT_EVENT_PREFIX +1));
+        assertNull(sut.subjectFor(EventLoop.DUMMY_TIMEOUT_EVENT_PREFIX +1));
 	}
 
 	@Test
 	public void clearIntervalRemovesEverything() throws Throwable {
 		Runnable callback = () -> {};
 
-        assertNull(eventLoop.subjectFor(Timers.DUMMY_INTERVAL_EVENT_PREFIX +1));
+        assertNull(sut.subjectFor(EventLoop.DUMMY_INTERVAL_EVENT_PREFIX +1));
 		Disposable disposable = sut.setInterval(callback,0, 250, TimeUnit.MILLISECONDS);
-        assertNotNull(eventLoop.subjectFor(Timers.DUMMY_INTERVAL_EVENT_PREFIX +1));
+        assertNotNull(sut.subjectFor(EventLoop.DUMMY_INTERVAL_EVENT_PREFIX +1));
 		disposable.dispose();
 
-		assertNull(eventLoop.subjectFor(Timers.DUMMY_INTERVAL_EVENT_PREFIX +1));
+		assertNull(sut.subjectFor(EventLoop.DUMMY_INTERVAL_EVENT_PREFIX +1));
 
 
 	}
@@ -111,14 +108,14 @@ public class TimersMemLeakTest {
             }
         };
 
-        assertNull(eventLoop.subjectFor(Timers.DUMMY_INTERVAL_EVENT_PREFIX + 1));
+        assertNull(sut.subjectFor(EventLoop.DUMMY_INTERVAL_EVENT_PREFIX + 1));
         sut.setInterval(callback, 0, 155, TimeUnit.MILLISECONDS);
-        assertNotNull(eventLoop.subjectFor(Timers.DUMMY_INTERVAL_EVENT_PREFIX + 1));
+        assertNotNull(sut.subjectFor(EventLoop.DUMMY_INTERVAL_EVENT_PREFIX + 1));
         countDownLatch.await(1, TimeUnit.SECONDS);
         assertThat(countDownLatch.getCount(), Matchers.is(0L));
         // unfortunately, the disposal does not run synchronously, so we have to wait a little
         Thread.sleep(100);
-        assertNull(eventLoop.subjectFor(Timers.DUMMY_INTERVAL_EVENT_PREFIX + 1));
+        assertNull(sut.subjectFor(EventLoop.DUMMY_INTERVAL_EVENT_PREFIX + 1));
 	}
 
 }

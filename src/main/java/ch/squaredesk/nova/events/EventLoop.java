@@ -16,6 +16,7 @@ import io.reactivex.Flowable;
 import io.reactivex.Observable;
 import io.reactivex.Single;
 import io.reactivex.disposables.Disposable;
+import io.reactivex.exceptions.Exceptions;
 import io.reactivex.schedulers.Schedulers;
 import io.reactivex.subjects.PublishSubject;
 import io.reactivex.subjects.Subject;
@@ -26,12 +27,18 @@ import java.util.Arrays;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 
 import static java.util.Objects.requireNonNull;
 
 public class EventLoop {
-	private final Logger logger = LoggerFactory.getLogger(EventLoop.class);
+    static final String DUMMY_NEXT_TICK_EVENT_PREFIX = "ProcessNextTickDummyEvent";
+    static final String DUMMY_TIMEOUT_EVENT_PREFIX = "TimersTimeoutDummyEvent";
+    static final String DUMMY_INTERVAL_EVENT_PREFIX = "TimersIntervalDummyEvent";
 
+    private final AtomicLong counter = new AtomicLong();
+	private final Logger logger = LoggerFactory.getLogger(EventLoop.class);
 	private final EventMetricsCollector metricsCollector;
 
     // the source of all events
@@ -132,4 +139,112 @@ public class EventLoop {
         return eventSpecificSubjects.get(event);
 	}
 
+    /**
+     *************************************
+     *                                   *
+     * Timeouts, interval and nextTick() *
+     *                                   *
+     *************************************
+     **/
+    public void nextTick(Runnable callback) {
+        requireNonNull(callback, "callback must not be null");
+        String newId = String.valueOf(counter.incrementAndGet());
+        String timeoutDummyEvent = DUMMY_NEXT_TICK_EVENT_PREFIX + newId;
+        single(timeoutDummyEvent).subscribe(
+                        x -> {
+                            try {
+                                callback.run();
+                            } catch (Throwable t) {
+                                logger.error("An error occurred trying to invoke nextTick() ",t);
+                            }
+                        },
+                        throwable -> {
+                            logger.error("An error was pushed to nextTick() invoker", throwable);
+                        }
+                );
+        emit(timeoutDummyEvent);
+    }
+
+    /**
+     * To schedule execution of a one-time callback after delay milliseconds. Returns a timeoutId for possible use with clearTimeout().
+     *
+     * It is important to note that your callback will probably not be called in exactly <delay> ms - Nova makes no guarantees about the
+     * exact timing of when the callback will fire, nor of the ordering things will fire in. The callback will be called as close as
+     * possible to the time specified.
+     */
+    public Disposable setTimeout(Runnable callback, long delay) {
+        return setTimeout(callback, delay, TimeUnit.MILLISECONDS);
+    }
+
+    /**
+     * To schedule execution of a one-time callback after a specified delay . Returns a timeoutId for possible use with clearTimeout().
+     *
+     * It is important to note that your callback will probably not be called in exactly <delay> - Nova makes no guarantees about the
+     * exact timing of when the callback will fire, nor of the ordering things will fire in. The callback will be called as close as
+     * possible to the time specified.
+     */
+    public Disposable setTimeout(Runnable callback, long delay, TimeUnit timeUnit) {
+        requireNonNull(callback, "callback must not be null");
+        requireNonNull(timeUnit, "timeUnit must not be null");
+        String newId = String.valueOf(counter.incrementAndGet());
+        String timeoutDummyEvent = DUMMY_TIMEOUT_EVENT_PREFIX + newId;
+        Disposable single = single(timeoutDummyEvent)
+                .delay(delay, timeUnit)
+                .subscribe(
+                        x -> {
+                            try {
+                                callback.run();
+                            } catch (Throwable t) {
+                                logger.error("An error occurred trying to invoke timeout with ID " + newId,t);
+                            }
+                        },
+                        throwable -> {
+                            logger.error("An error was pushed to timeout with ID " + newId, throwable);
+                        }
+                );
+        emit(timeoutDummyEvent);
+        return single;
+    }
+
+    /**
+     * To schedule the repeated execution of callback every interval milliseconds. Returns a intervalId for possible use with clearInterval().
+     *
+     */
+    public Disposable setInterval(Runnable callback, long interval) {
+        return setInterval(callback, 0, interval, TimeUnit.MILLISECONDS);
+    }
+
+    /**
+     * To schedule the repeated execution of callback. Returns a intervalId for possible use with clearInterval().
+     *
+     */
+    public Disposable setInterval(Runnable callback, long initialDelay, long interval, TimeUnit timeUnit) {
+        requireNonNull(callback, "callback must not be null");
+        requireNonNull(timeUnit, "timeUnit must not be null");
+        String newId = String.valueOf(counter.incrementAndGet());
+        String intervalDummyEvent = DUMMY_INTERVAL_EVENT_PREFIX + newId;
+        Disposable callbackInvoker = on(intervalDummyEvent)
+                .subscribe(
+                        x -> {
+                            try {
+                                callback.run();
+                            } catch (Throwable t) {
+                                //	logger.error("An error occurred trying to invoke timeout with ID " + newId,t);
+                                // if we do not propagate the error, the interval will not stop
+                                Exceptions.propagate(t);
+                            }
+                        });
+        // we create another "wrapper Observable" to trigger the callback invocation over the EventLoop
+        // thus we make sure that the event is always propagated via the EventLoop dispatch thread
+        Disposable recurringEventEmitter = Observable
+                .interval(initialDelay, interval, timeUnit)
+                .takeWhile(counter -> !callbackInvoker.isDisposed()) // important! stops the interval when callBackInvoker dies because of error
+                .doFinally(() -> callbackInvoker.dispose())
+                .subscribe(
+                        counter -> emit(intervalDummyEvent),
+                        error -> logger.error("An error was pushed to interval dummy event emitter for intervalId " + newId, error),
+                        () -> callbackInvoker.dispose());
+
+        return recurringEventEmitter;
+    }
 }

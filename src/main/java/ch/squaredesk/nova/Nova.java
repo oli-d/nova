@@ -13,16 +13,12 @@ package ch.squaredesk.nova;
 import ch.squaredesk.nova.events.EventLoopConfig;
 import ch.squaredesk.nova.events.EventLoop;
 import ch.squaredesk.nova.filesystem.Filesystem;
-import ch.squaredesk.nova.events.Process;
 import ch.squaredesk.nova.metrics.Metrics;
-import ch.squaredesk.nova.events.Timers;
 
 public class Nova {
 
 	public final String identifier;
-	public final Timers timers;
 	public final EventLoop eventLoop;
-	public final Process process;
 	public final Filesystem filesystem;
 	public final Metrics metrics;
 
@@ -31,8 +27,6 @@ public class Nova {
 		identifier = builder.identifier;
 
 		eventLoop = new EventLoop(identifier, builder.eventLoopConfig, metrics);
-		timers = new Timers(eventLoop);
-		process = new Process(eventLoop);
 		filesystem = new Filesystem();
 	}
 

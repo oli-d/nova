@@ -11,7 +11,6 @@
 package ch.squaredesk.nova.events;
 
 import ch.squaredesk.nova.Nova;
-import ch.squaredesk.nova.events.Process;
 import org.apache.log4j.BasicConfigurator;
 import org.hamcrest.Matchers;
 import org.junit.Assert;
@@ -26,7 +25,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertNull;
 
 public class ProcessTest {
-	private Process process;
 	private EventLoop eventLoop;
 
 	@BeforeClass
@@ -36,14 +34,12 @@ public class ProcessTest {
 
 	@Before
 	public void setup() {
-		Nova nova = Nova.builder().build();
-		process = nova.process;
-		eventLoop = nova.eventLoop;
+		eventLoop = Nova.builder().build().eventLoop;
 	}
 
 	@Test(expected = NullPointerException.class)
 	public void testNextTickPassingNullThrows() {
-		process.nextTick(null);
+		eventLoop.nextTick(null);
 	}
 
 	@Test
@@ -51,7 +47,7 @@ public class ProcessTest {
 		CountDownLatch countDownLatch = new CountDownLatch(1);
 		Runnable myCallback = () -> countDownLatch.countDown();
 
-		process.nextTick(myCallback);
+		eventLoop.nextTick(myCallback);
 
 		countDownLatch.await(500, TimeUnit.MILLISECONDS);
 		Assert.assertThat(countDownLatch.getCount(), Matchers.is(0L));
@@ -65,13 +61,13 @@ public class ProcessTest {
 			throw new RuntimeException("for test");
 		};
 
-		assertNull(eventLoop.subjectFor(Process.DUMMY_NEXT_TICK_EVENT_PREFIX + 1));
-		process.nextTick(callback);
+		assertNull(eventLoop.subjectFor(EventLoop.DUMMY_NEXT_TICK_EVENT_PREFIX + 1));
+		eventLoop.nextTick(callback);
 		countDownLatch.await(1, TimeUnit.SECONDS);
 		assertThat(countDownLatch.getCount(), Matchers.is(0L));
 		// unfortunately, the disposal does not run synchronously, so we have to wait a little
 		Thread.sleep(100);
-		assertNull(eventLoop.subjectFor(Process.DUMMY_NEXT_TICK_EVENT_PREFIX + 1));
+		assertNull(eventLoop.subjectFor(EventLoop.DUMMY_NEXT_TICK_EVENT_PREFIX + 1));
 	}
 
 

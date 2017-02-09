@@ -11,8 +11,6 @@
 package ch.squaredesk.nova.events;
 
 import ch.squaredesk.nova.Nova;
-import ch.squaredesk.nova.events.EventLoop;
-import ch.squaredesk.nova.events.Timers;
 import io.reactivex.disposables.Disposable;
 import org.apache.log4j.BasicConfigurator;
 import org.junit.Before;
@@ -27,12 +25,11 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 
 public class TimersTest {
-    private Timers sut;
+    private EventLoop sut;
 
     @Before
     public void setup() {
-        Nova nova = Nova.builder().build();
-        sut = nova.timers;
+        sut = Nova.builder().build().eventLoop;
     }
 
     @Test(expected = NullPointerException.class)

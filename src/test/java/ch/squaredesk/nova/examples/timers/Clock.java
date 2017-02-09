@@ -60,6 +60,6 @@ public class Clock extends JFrame {
 		 * *********************************************************************** *
 		 * *********************************************************************** *
 		 */
-		nova.timers.setInterval(() -> label.setText(dateFormatter.format(new Date())), 1000);
+		nova.eventLoop.setInterval(() -> label.setText(dateFormatter.format(new Date())), 1000);
 	}
 }
