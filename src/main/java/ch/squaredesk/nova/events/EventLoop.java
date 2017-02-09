@@ -146,11 +146,6 @@ public class EventLoop {
         });
 	}
 
-	public Single<Object[]> single (Object event) {
-        return on(event)
-                .first(new Object[0]);
-	}
-
 	// package private for testing
     Subject<Object[]> subjectFor(Object event) {
 		requireNonNull (event,"event must not be null");
@@ -169,7 +164,7 @@ public class EventLoop {
         String newId = String.valueOf(counter.incrementAndGet());
         String nextTickDummyEvent = DUMMY_NEXT_TICK_EVENT_PREFIX + newId;
         on(nextTickDummyEvent,BackpressureStrategy.BUFFER,metricsCollector::nextTickSet,null)
-                .first(new Object[0])
+                .take(1)
                 .subscribe(
                         x -> {
                             try {
@@ -210,7 +205,7 @@ public class EventLoop {
         String timeoutDummyEvent = DUMMY_TIMEOUT_EVENT_PREFIX + newId;
         Disposable single =
                 on(timeoutDummyEvent,BackpressureStrategy.BUFFER,metricsCollector::timeoutSet,null)
-                .first(new Object[0])
+                .take(1)
                 .delay(delay, timeUnit)
                 .subscribe(
                         x -> {

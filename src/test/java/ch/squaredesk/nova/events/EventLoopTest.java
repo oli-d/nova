@@ -235,32 +235,6 @@ public class EventLoopTest {
     }
 
     @Test
-    public void testOneOffListenerOnlyCalledOnce() throws Exception {
-        CountDownLatch countDownLatch = new CountDownLatch(3);
-        List<String> listenerInvocationParams = new ArrayList<>();
-        List<String> oneOffListenerInvocationParams = new ArrayList<>();
-        eventLoop.on(String.class).subscribe(data -> {
-            listenerInvocationParams.add((String) data[0]);
-            countDownLatch.countDown();
-        });
-        eventLoop.single(String.class).subscribe(data -> {
-            oneOffListenerInvocationParams.add((String) data[0]);
-            countDownLatch.countDown();
-        });
-
-        eventLoop.emit(String.class, "First");
-        eventLoop.emit(String.class, "Second");
-
-        countDownLatch.await(500, TimeUnit.MILLISECONDS);
-        assertThat(countDownLatch.getCount(), is(0L));
-        assertThat(listenerInvocationParams.size(), is(2));
-        assertThat(oneOffListenerInvocationParams.size(), is(1));
-        assertThat(listenerInvocationParams, contains("First", "Second"));
-        assertThat(oneOffListenerInvocationParams, contains("First"));
-        assertNotNull(eventLoop.subjectFor(String.class));
-    }
-
-    @Test
     @Ignore("Listeners don't get regsitered. WTF????") // FIXME fix test
     public void testListenerCanBeRemovedSeparately() throws Exception {
         CountDownLatch countDownLatch = new CountDownLatch(3);
@@ -300,7 +274,7 @@ public class EventLoopTest {
     public void allListenersCanBeRemoved() throws Exception {
         boolean[] invocationFlag = new boolean[1];
         Disposable d1 = eventLoop.on(String.class).subscribe(data -> invocationFlag[0] = true);
-        Disposable d2 = eventLoop.single(String.class).subscribe(data -> invocationFlag[0] = true);
+        Disposable d2 = eventLoop.on(String.class).take(1).subscribe(data -> invocationFlag[0] = true);
 
         assertNotNull(eventLoop.subjectFor(String.class));
 
