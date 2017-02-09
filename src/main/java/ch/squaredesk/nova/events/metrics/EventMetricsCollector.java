@@ -12,98 +12,37 @@ package ch.squaredesk.nova.events.metrics;
 
 import com.codahale.metrics.Counter;
 import ch.squaredesk.nova.metrics.Metrics;
+import com.codahale.metrics.Meter;
 
 import java.util.concurrent.TimeUnit;
 
-public class EventMetricsCollector extends MetricsCollector {
+public class EventMetricsCollector {
+	private final Metrics metrics;
+	private final String identifierPrefix;
+
 	public EventMetricsCollector(Metrics metrics, String identifierPrefix) {
-		super(metrics, "EventLoop".equalsIgnoreCase(identifierPrefix) ? identifierPrefix :
-                "EventLoop." + identifierPrefix);
+		this.metrics = metrics;
+		this.identifierPrefix = "EventLoop".equalsIgnoreCase(identifierPrefix) ? identifierPrefix : "EventLoop." + identifierPrefix;
 	}
 
-
-	public void setTrackingEnabled(boolean enabled, Object event) {
-		super.setTrackingEnabled(enabled, String.valueOf(event));
-	}
 
 	public void eventDispatched(Object event) {
 		String eventString = String.valueOf(event);
-		if (shouldBeTracked(eventString)) {
-			getMeter("dispatchedEvents", eventString).mark();
-		}
-		getMeter("dispatchedEvents", "total").mark();
+        metrics.getMeter(identifierPrefix,"dispatchedEvents", eventString).mark();
+		metrics.getMeter(identifierPrefix,"dispatchedEvents", "total").mark();
 	}
 
-	public void waitedForEventToBeDispatched(Object event, long waitTime) {
-		String eventString = String.valueOf(event);
-		if (shouldBeTracked(eventString)) {
-			getTimer("waiting", "dispatchEvent", eventString).update(waitTime, TimeUnit.NANOSECONDS);
-		}
-        getTimer("waiting", "dispatchEvent", "total").update(waitTime, TimeUnit.NANOSECONDS);
-	}
-
-	public void duplicateEventDetected(Object event) {
-        String eventString = String.valueOf(event);
-        if (shouldBeTracked(eventString)) {
-			getMeter("duplicateEvents", eventString).mark();
-		}
-		getMeter("duplicateEvents", "total").mark();
-	}
-
-	public void eventDroppedBecauseOfFullQueue(Object event) {
-        String eventString = String.valueOf(event);
-        if (shouldBeTracked(eventString)) {
-			getMeter("droppedEvents", eventString).mark();
-		}
-		getMeter("droppedEvents", "total").mark();
-	}
-
-	public void eventAddedToFullQueue(Object event) {
-        String eventString = String.valueOf(event);
-        if (shouldBeTracked(eventString)) {
-			getMeter("fullQueueAdds", eventString).mark();
-		}
-		getMeter("fullQueueAdds", "total").mark();
-	}
-
-	public void eventAddedToDispatchLaterQueue(Object event) {
-        String eventString = String.valueOf(event);
-        if (shouldBeTracked(eventString)) {
-            getMeter("dispatchLaterEvents", eventString).mark();
-        }
-		getMeter("dispatchLaterEvents", "total").mark();
-	}
-
-	public void listenerAdded(Object event) {
-        String eventString = String.valueOf(event);
-        if (shouldBeTracked(eventString)) {
-			getCounter("emitters", eventString).inc();
-		}
-        getCounter("emitters", "total").inc();
+    public void eventSubjectAdded (Object event) {
+        metrics.getCounter(identifierPrefix, "eventSubjects", "total").inc();
     }
 
-	public void listenerRemoved(Object event) {
-        String eventString = String.valueOf(event);
-        if (shouldBeTracked(eventString)) {
-			getCounter("emitters", eventString).dec();
-		}
-        getCounter("emitters", "total").dec();
+	public void eventSubjectRemoved(Object event) {
+        metrics.getCounter(identifierPrefix,"eventSubjects", "total").dec();
     }
 
-	public void allListenersRemoved(Object event) {
+	public void eventEmittedButNoObservers(Object event) {
         String eventString = String.valueOf(event);
-        if (shouldBeTracked(eventString)) {
-			remove("emitters", eventString);
-        }
-        Counter counter = getCounter("emitters", "total");
-        counter.dec(counter.getCount());
-    }
-
-	public void eventEmittedButNoListeners(Object event) {
-        String eventString = String.valueOf(event);
-		if (shouldBeTracked(eventString)) {
-            getCounter("emitsWithNoListener", eventString).inc();
-        }
-        getCounter("emitsWithNoListener", "total").inc();
+        metrics.getCounter(identifierPrefix,"emitsWithNoListener", eventString).inc();
+        metrics.getCounter(identifierPrefix,"emitsWithNoListener", "total").inc();
     }
 }

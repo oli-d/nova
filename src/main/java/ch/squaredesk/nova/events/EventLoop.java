@@ -23,7 +23,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Arrays;
-import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
@@ -72,15 +71,17 @@ public class EventLoop {
                                 s.onNext(invocationContext.data);
                             } else {
                                 logger.debug("No observers for event {}, disposing subject.", invocationContext.event);
-                                eventSpecificSubjects.remove(invocationContext.event);
-                                metricsCollector.eventEmittedButNoListeners(invocationContext.event);
+                                if (eventSpecificSubjects.remove(invocationContext.event)!=null) {
+                                    metricsCollector.eventSubjectRemoved(invocationContext.event);
+                                }
+                                metricsCollector.eventEmittedButNoObservers(invocationContext.event);
                                 if (eventLoopConfig.warnOnUnhandledEvent) {
                                     logger.warn("No listener registered for event " + invocationContext.event
                                             + ". Discarding dispatch with parameters " + Arrays.toString(invocationContext.data));
                                 }
                             }
                         } else {
-                            metricsCollector.eventEmittedButNoListeners(invocationContext.event);
+                            metricsCollector.eventEmittedButNoObservers(invocationContext.event);
                             logger.warn("No listener registered for event " + invocationContext.event
                                     + ". Discarding dispatch with parameters " + Arrays.toString(invocationContext.data));
                         }
@@ -88,29 +89,6 @@ public class EventLoop {
                         logger.error("An error occurred, trying to dispatch event " + invocationContext, e);
                     }
                 });
-    }
-
-    /**
-     ***************************
-     *                         *
-     * Metrics related methods *
-     *                         *
-     ***************************
-     **/
-    public void enableMetricsTrackingFor(Object... events) {
-        if (events != null && events.length > 0) {
-            Arrays.stream(events).forEach(event -> {
-                metricsCollector.setTrackingEnabled(true, event);
-            });
-        }
-    }
-
-    public void disableMetricsTrackingFor(Object... events) {
-        if (events != null && events.length > 0) {
-            Arrays.stream(events).forEach(event -> {
-                metricsCollector.setTrackingEnabled(false, event);
-            });
-        }
     }
 
     /**
@@ -129,13 +107,16 @@ public class EventLoop {
 		requireNonNull(event, "event must not be null");
         Subject<Object[]> eventSpecificSubject = eventSpecificSubjects.computeIfAbsent(event, key -> {
             PublishSubject<Object[]> ps = PublishSubject.create();
+            metricsCollector.eventSubjectAdded(event);
             return ps;
         });
         return eventSpecificSubject.toFlowable(eventLoopConfig.defaultBackpressureStrategy).doFinally(() -> {
             if (!eventSpecificSubject.hasObservers()) {
                 logger.info("No observers left for event {}, nuking subject...",event);
                 eventSpecificSubject.onComplete();
-                eventSpecificSubjects.remove(event);
+                if (eventSpecificSubjects.remove(event)!=null) {
+                    metricsCollector.eventSubjectRemoved(event);
+                }
             }
         });
 	}
