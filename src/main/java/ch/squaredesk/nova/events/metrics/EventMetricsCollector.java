@@ -10,11 +10,7 @@
 
 package ch.squaredesk.nova.events.metrics;
 
-import com.codahale.metrics.Counter;
 import ch.squaredesk.nova.metrics.Metrics;
-import com.codahale.metrics.Meter;
-
-import java.util.concurrent.TimeUnit;
 
 public class EventMetricsCollector {
 	private final Metrics metrics;
@@ -44,5 +40,17 @@ public class EventMetricsCollector {
         String eventString = String.valueOf(event);
         metrics.getCounter(identifierPrefix,"emitsWithNoListener", eventString).inc();
         metrics.getCounter(identifierPrefix,"emitsWithNoListener", "total").inc();
+    }
+
+    public void nextTickSet(Object event) {
+        metrics.getCounter(identifierPrefix,"nextTicks", "total").inc();
+    }
+
+    public void intervalSet(Object event) {
+        metrics.getCounter(identifierPrefix,"intervals", "total").inc();
+    }
+
+    public void timeoutSet(Object event) {
+        metrics.getCounter(identifierPrefix,"timeouts", "total").inc();
     }
 }

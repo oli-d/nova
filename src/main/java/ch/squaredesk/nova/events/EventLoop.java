@@ -12,9 +12,7 @@ package ch.squaredesk.nova.events;
 
 import ch.squaredesk.nova.events.metrics.EventMetricsCollector;
 import ch.squaredesk.nova.metrics.Metrics;
-import io.reactivex.Flowable;
-import io.reactivex.Observable;
-import io.reactivex.Single;
+import io.reactivex.*;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.exceptions.Exceptions;
 import io.reactivex.schedulers.Schedulers;
@@ -29,6 +27,7 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Consumer;
 
 import static java.util.Objects.requireNonNull;
 
@@ -37,8 +36,12 @@ public class EventLoop {
     static final String DUMMY_TIMEOUT_EVENT_PREFIX = "TimersTimeoutDummyEvent";
     static final String DUMMY_INTERVAL_EVENT_PREFIX = "TimersIntervalDummyEvent";
 
-    private final AtomicLong counter = new AtomicLong();
 	private final Logger logger = LoggerFactory.getLogger(EventLoop.class);
+
+	// counter for dummy events
+	private final AtomicLong counter = new AtomicLong();
+
+	// metrics
 	private final EventMetricsCollector metricsCollector;
 
     // the source of all events
@@ -57,6 +60,7 @@ public class EventLoop {
             logger.debug("\twarn on unhandled events:      " + eventLoopConfig.warnOnUnhandledEvent);
         }
 
+        // create the mother of all events
         Observable<InvocationContext> threadedSource = theSource;
         if (!eventLoopConfig.dispatchInEmitterThread) {
             Executor dispatchExecutor = Executors.newSingleThreadExecutor(r -> {
@@ -111,18 +115,32 @@ public class EventLoop {
     }
 
 	public Flowable<Object[]> on(Object event) {
-		requireNonNull(event, "event must not be null");
+        return on(event, eventLoopConfig.defaultBackpressureStrategy);
+    }
+
+	public Flowable<Object[]> on(Object event,
+                                 BackpressureStrategy backpressureStrategy) {
+        requireNonNull(event, "event must not be null");
+        requireNonNull(backpressureStrategy, "backpressureStrategy must not be null");
+        return on (event, backpressureStrategy, metricsCollector::eventSubjectAdded, metricsCollector::eventSubjectRemoved);
+
+    }
+
+	private Flowable<Object[]> on(Object event,
+                                  BackpressureStrategy backpressureStrategy,
+                                  Consumer<Object> metricsUpdaterCreation,
+                                  Consumer<Object> metricsUpdaterTearDown) {
         Subject<Object[]> eventSpecificSubject = eventSpecificSubjects.computeIfAbsent(event, key -> {
             PublishSubject<Object[]> ps = PublishSubject.create();
-            metricsCollector.eventSubjectAdded(event);
+            metricsUpdaterCreation.accept(event);
             return ps;
         });
-        return eventSpecificSubject.toFlowable(eventLoopConfig.defaultBackpressureStrategy).doFinally(() -> {
+        return eventSpecificSubject.toFlowable(backpressureStrategy).doFinally(() -> {
             if (!eventSpecificSubject.hasObservers()) {
                 logger.info("No observers left for event {}, nuking subject...",event);
                 eventSpecificSubject.onComplete();
-                if (eventSpecificSubjects.remove(event)!=null) {
-                    metricsCollector.eventSubjectRemoved(event);
+                if (eventSpecificSubjects.remove(event)!=null && metricsUpdaterTearDown != null) {
+                    metricsUpdaterTearDown.accept(event);
                 }
             }
         });
@@ -149,8 +167,10 @@ public class EventLoop {
     public void nextTick(Runnable callback) {
         requireNonNull(callback, "callback must not be null");
         String newId = String.valueOf(counter.incrementAndGet());
-        String timeoutDummyEvent = DUMMY_NEXT_TICK_EVENT_PREFIX + newId;
-        single(timeoutDummyEvent).subscribe(
+        String nextTickDummyEvent = DUMMY_NEXT_TICK_EVENT_PREFIX + newId;
+        on(nextTickDummyEvent,BackpressureStrategy.BUFFER,metricsCollector::nextTickSet,null)
+                .first(new Object[0])
+                .subscribe(
                         x -> {
                             try {
                                 callback.run();
@@ -162,7 +182,7 @@ public class EventLoop {
                             logger.error("An error was pushed to nextTick() invoker", throwable);
                         }
                 );
-        emit(timeoutDummyEvent);
+        emit(nextTickDummyEvent);
     }
 
     /**
@@ -188,7 +208,9 @@ public class EventLoop {
         requireNonNull(timeUnit, "timeUnit must not be null");
         String newId = String.valueOf(counter.incrementAndGet());
         String timeoutDummyEvent = DUMMY_TIMEOUT_EVENT_PREFIX + newId;
-        Disposable single = single(timeoutDummyEvent)
+        Disposable single =
+                on(timeoutDummyEvent,BackpressureStrategy.BUFFER,metricsCollector::timeoutSet,null)
+                .first(new Object[0])
                 .delay(delay, timeUnit)
                 .subscribe(
                         x -> {
@@ -223,7 +245,8 @@ public class EventLoop {
         requireNonNull(timeUnit, "timeUnit must not be null");
         String newId = String.valueOf(counter.incrementAndGet());
         String intervalDummyEvent = DUMMY_INTERVAL_EVENT_PREFIX + newId;
-        Disposable callbackInvoker = on(intervalDummyEvent)
+        Disposable callbackInvoker =
+                on(intervalDummyEvent, BackpressureStrategy.BUFFER, metricsCollector::intervalSet, null)
                 .subscribe(
                         x -> {
                             try {
