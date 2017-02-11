@@ -32,13 +32,13 @@ public class EventLoop {
     static final String DUMMY_TIMEOUT_EVENT_PREFIX = "TimersTimeoutDummyEvent";
     static final String DUMMY_INTERVAL_EVENT_PREFIX = "TimersIntervalDummyEvent";
 
-	private final Logger logger = LoggerFactory.getLogger(EventLoop.class);
+    private final Logger logger = LoggerFactory.getLogger(EventLoop.class);
 
-	// counter for dummy event creation
-	private final AtomicLong counter = new AtomicLong();
+    // counter for dummy event creation
+    private final AtomicLong counter = new AtomicLong();
 
-	// metrics
-	private final EventMetricsCollector metricsCollector;
+    // metrics
+    private final EventMetricsCollector metricsCollector;
 
     // the source of all events
     private final LinkedBlockingQueue<DispatchContext> sourceQueue;
@@ -125,12 +125,12 @@ public class EventLoop {
         }
     }
 
-	public Observable<Object[]> on(Object event) {
+    public Observable<Object[]> on(Object event) {
         return on(event, metricsCollector::eventSubjectAdded, metricsCollector::eventSubjectRemoved);
     }
 
 
-	private Observable<Object[]> on(Object event,
+    private Observable<Object[]> on(Object event,
                                   Consumer<Object> metricsUpdaterCreation,
                                   Consumer<Object> metricsUpdaterTearDown) {
         requireNonNull(event, "event must not be null");
@@ -152,7 +152,7 @@ public class EventLoop {
                     })
                     .share();
         });
-	}
+    }
 
     /**
      *************************************
@@ -249,7 +249,7 @@ public class EventLoop {
                             try {
                                 callback.run();
                             } catch (Throwable t) {
-                                //	logger.error("An error occurred trying to invoke timeout with ID " + newId,t);
+                                //  logger.error("An error occurred trying to invoke timeout with ID " + newId,t);
                                 // if we do not propagate the error, the interval will not stop
                                 Exceptions.propagate(t);
                             }

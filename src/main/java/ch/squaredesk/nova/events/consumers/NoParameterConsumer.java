@@ -19,15 +19,15 @@ import java.util.Arrays;
 @FunctionalInterface
 public interface NoParameterConsumer extends Consumer<Object[]> {
 
-	void accept();
+    void accept();
 
-	default void accept(Object... data) {
-		try {
-			accept();
-		} catch (Throwable t) {
-			LoggerFactory.getLogger("ch.squaredesk.nova.event.consumers")
-					.error("Error, trying to consume event with parameters " +
-							Arrays.toString(data));
-		}
-	}
+    default void accept(Object... data) {
+        try {
+            accept();
+        } catch (Throwable t) {
+            LoggerFactory.getLogger("ch.squaredesk.nova.event.consumers")
+                    .error("Error, trying to consume event with parameters " +
+                            Arrays.toString(data));
+        }
+    }
 }

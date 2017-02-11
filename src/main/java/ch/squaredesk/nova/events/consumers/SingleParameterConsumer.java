@@ -19,9 +19,9 @@ import java.util.Arrays;
 @FunctionalInterface
 public interface SingleParameterConsumer<P1>  extends Consumer<Object[]> {
 
-	void consume(P1 param1);
+    void consume(P1 param1);
 
-	default void accept(Object... data) {
+    default void accept(Object... data) {
         P1 p1 = null;
         if (data != null && data.length > 0) {
             switch (data.length) {

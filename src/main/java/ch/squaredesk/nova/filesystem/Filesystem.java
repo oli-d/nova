@@ -31,62 +31,62 @@ import java.util.Set;
 
 public class Filesystem {
 
-	public Single<String> readFile(String pathToFile) {
-		String filePath = getWindowsPathUsableForNio(pathToFile);
-	    return Single.create(s -> {
-			AsynchronousFileChannel channel = AsynchronousFileChannel.open(Paths.get(filePath), StandardOpenOption.READ);
-			long capacity = channel.size();
-			// TODO: hack for simplicity. do this properly
-			if (capacity > Integer.MAX_VALUE) {
-				throw new IllegalArgumentException("File is too big. Max size is " + Integer.MAX_VALUE + " bytes.");
-			}
+    public Single<String> readFile(String pathToFile) {
+        String filePath = getWindowsPathUsableForNio(pathToFile);
+        return Single.create(s -> {
+            AsynchronousFileChannel channel = AsynchronousFileChannel.open(Paths.get(filePath), StandardOpenOption.READ);
+            long capacity = channel.size();
+            // TODO: hack for simplicity. do this properly
+            if (capacity > Integer.MAX_VALUE) {
+                throw new IllegalArgumentException("File is too big. Max size is " + Integer.MAX_VALUE + " bytes.");
+            }
 
 
-			ByteBuffer buffer = ByteBuffer.allocate((int) channel.size());
-			channel.read(buffer, 0, buffer, new CompletionHandler<Integer, ByteBuffer>() {
-				@Override
-				public void completed(Integer result, final ByteBuffer attachment) {
-				    s.onSuccess(new String(attachment.array()));
-				}
+            ByteBuffer buffer = ByteBuffer.allocate((int) channel.size());
+            channel.read(buffer, 0, buffer, new CompletionHandler<Integer, ByteBuffer>() {
+                @Override
+                public void completed(Integer result, final ByteBuffer attachment) {
+                    s.onSuccess(new String(attachment.array()));
+                }
 
-				@Override
-				public void failed(final Throwable exc, final ByteBuffer attachment) {
-				    s.onError(exc);
-				}
-			});
+                @Override
+                public void failed(final Throwable exc, final ByteBuffer attachment) {
+                    s.onError(exc);
+                }
+            });
         });
-	}
+    }
 
-	public Single<String> readFileFromClasspath(String resourcePath) {
-		URL resourceUri = getClass().getResource(resourcePath);
-		if (resourceUri == null) {
-		    return Single.error(new NoSuchFileException(resourcePath));
-		} else {
-			return readFile(getClass().getResource(resourcePath).getFile());
-		}
-	}
+    public Single<String> readFileFromClasspath(String resourcePath) {
+        URL resourceUri = getClass().getResource(resourcePath);
+        if (resourceUri == null) {
+            return Single.error(new NoSuchFileException(resourcePath));
+        } else {
+            return readFile(getClass().getResource(resourcePath).getFile());
+        }
+    }
 
-	/**
-	 * Java nio throws an exception for paths like /C:/temp/test.txt. It works if for such a path the leading character is cut off. This is
-	 * what this method does.
-	 */
-	private String getWindowsPathUsableForNio(String path) {
-		if (path == null) {
-			return null;
-		}
-		char[] pathAsChars = path.toCharArray();
-		if (pathAsChars.length > 2 //
-				&& (pathAsChars[0] == File.pathSeparatorChar || pathAsChars[0] == '/') //
-				&& Character.isAlphabetic(pathAsChars[1]) //
-				&& pathAsChars[2] == ':') {
-			return path.substring(1);
-		} else {
-			return path;
-		}
-	}
+    /**
+     * Java nio throws an exception for paths like /C:/temp/test.txt. It works if for such a path the leading character is cut off. This is
+     * what this method does.
+     */
+    private String getWindowsPathUsableForNio(String path) {
+        if (path == null) {
+            return null;
+        }
+        char[] pathAsChars = path.toCharArray();
+        if (pathAsChars.length > 2 //
+                && (pathAsChars[0] == File.pathSeparatorChar || pathAsChars[0] == '/') //
+                && Character.isAlphabetic(pathAsChars[1]) //
+                && pathAsChars[2] == ':') {
+            return path.substring(1);
+        } else {
+            return path;
+        }
+    }
 
-	public Completable writeFile(final String content, String filePath) {
-	    return Completable.create(s -> {
+    public Completable writeFile(final String content, String filePath) {
+        return Completable.create(s -> {
             AsynchronousFileChannel channel = AsynchronousFileChannel.open(Paths.get(filePath), StandardOpenOption.WRITE,
                     StandardOpenOption.CREATE);
             ByteBuffer contentBuffer = ByteBuffer.wrap(content.getBytes());
@@ -102,13 +102,13 @@ public class Filesystem {
                 }
             });
         });
-	}
+    }
 
-	public Completable writeFileSync(String content, String filePath, boolean append) throws IOException {
-		return writeFileSync(content, StandardCharsets.UTF_8, filePath, append);
-	}
+    public Completable writeFileSync(String content, String filePath, boolean append) throws IOException {
+        return writeFileSync(content, StandardCharsets.UTF_8, filePath, append);
+    }
 
-	public Completable writeFileSync(String content, Charset encoding, String filePath, boolean append) throws IOException {
+    public Completable writeFileSync(String content, Charset encoding, String filePath, boolean append) throws IOException {
         return Completable.create(s -> {
             Set<OpenOption> openOptions = new HashSet<>();
             openOptions.add(StandardOpenOption.WRITE);
@@ -131,6 +131,6 @@ public class Filesystem {
                 channel.close();
             }
         });
-	}
+    }
 
 }

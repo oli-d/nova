@@ -25,33 +25,33 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertNull;
 
 public class ProcessTest {
-	private EventLoop eventLoop;
+    private EventLoop eventLoop;
 
-	@BeforeClass
-	public static void initLogging() {
-		BasicConfigurator.configure();
-	}
+    @BeforeClass
+    public static void initLogging() {
+        BasicConfigurator.configure();
+    }
 
-	@Before
-	public void setup() {
-		eventLoop = Nova.builder().build().eventLoop;
-	}
+    @Before
+    public void setup() {
+        eventLoop = Nova.builder().build().eventLoop;
+    }
 
-	@Test(expected = NullPointerException.class)
-	public void testNextTickPassingNullThrows() {
-		eventLoop.nextTick(null);
-	}
+    @Test(expected = NullPointerException.class)
+    public void testNextTickPassingNullThrows() {
+        eventLoop.nextTick(null);
+    }
 
-	@Test
-	public void testNextTickPutsCallbackOnProcessingLoop() throws Exception {
-		CountDownLatch countDownLatch = new CountDownLatch(1);
-		Runnable myCallback = () -> countDownLatch.countDown();
+    @Test
+    public void testNextTickPutsCallbackOnProcessingLoop() throws Exception {
+        CountDownLatch countDownLatch = new CountDownLatch(1);
+        Runnable myCallback = () -> countDownLatch.countDown();
 
-		eventLoop.nextTick(myCallback);
+        eventLoop.nextTick(myCallback);
 
-		countDownLatch.await(500, TimeUnit.MILLISECONDS);
-		Assert.assertThat(countDownLatch.getCount(), Matchers.is(0L));
-	}
+        countDownLatch.await(500, TimeUnit.MILLISECONDS);
+        Assert.assertThat(countDownLatch.getCount(), Matchers.is(0L));
+    }
 
 
 }

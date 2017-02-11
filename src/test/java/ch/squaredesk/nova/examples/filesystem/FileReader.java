@@ -24,78 +24,78 @@ import java.awt.event.ActionListener;
  * 
  */
 public class FileReader extends JFrame {
-	private JTextArea textArea;
-	private Nova nova;
+    private JTextArea textArea;
+    private Nova nova;
 
-	public FileReader() {
-		super("Nova File Reader example");
+    public FileReader() {
+        super("Nova File Reader example");
 
-		initUI();
+        initUI();
 
-		/**
-		 * <pre>
-		 * *********************************************************************** * 
-		 * *********************************************************************** * 
-		 * ***                                                                 *** *
-		 * *** 1st step:                                                       *** *
-		 * *** Initilize Nova by creating a new instance of Nova               *** *
-		 * ***                                                                 *** *
-		 * *********************************************************************** *
-		 * *********************************************************************** *
-		 */
-		nova = Nova.builder().build();
+        /**
+         * <pre>
+         * *********************************************************************** * 
+         * *********************************************************************** * 
+         * ***                                                                 *** *
+         * *** 1st step:                                                       *** *
+         * *** Initilize Nova by creating a new instance of Nova               *** *
+         * ***                                                                 *** *
+         * *********************************************************************** *
+         * *********************************************************************** *
+         */
+        nova = Nova.builder().build();
 
-	}
+    }
 
-	/**
-	 * <pre>
-	 * ************************************************************************* *
-	 * ************************************************************************* *
-	 * ***                                                                   *** *
-	 * *** 2nd step: Read files async and act appropriately when the results *** *
-	 * *** are pushed                                                        *** *
-	 * ***                                                                   *** *
-	 * ************************************************************************* *
-	 * ************************************************************************* *
-	 */
-	private void readFileAsync(String pathToFile) {
-		textArea.setText("Reading file " + pathToFile + "...");
-		nova.filesystem.readFile(pathToFile).subscribe(
-				s ->  textArea.setText(s),
-				t ->  textArea.setText("Unable to read file.\nError: " + t));
-	}
+    /**
+     * <pre>
+     * ************************************************************************* *
+     * ************************************************************************* *
+     * ***                                                                   *** *
+     * *** 2nd step: Read files async and act appropriately when the results *** *
+     * *** are pushed                                                        *** *
+     * ***                                                                   *** *
+     * ************************************************************************* *
+     * ************************************************************************* *
+     */
+    private void readFileAsync(String pathToFile) {
+        textArea.setText("Reading file " + pathToFile + "...");
+        nova.filesystem.readFile(pathToFile).subscribe(
+                s ->  textArea.setText(s),
+                t ->  textArea.setText("Unable to read file.\nError: " + t));
+    }
 
-	private void initUI() {
-		textArea = new JTextArea();
+    private void initUI() {
+        textArea = new JTextArea();
 
-		// the load button
-		JButton buttonOpenFile = new JButton("Open File...");
-		buttonOpenFile.addActionListener(new ActionListener() {
+        // the load button
+        JButton buttonOpenFile = new JButton("Open File...");
+        buttonOpenFile.addActionListener(new ActionListener() {
 
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				JFileChooser fileChooser = new JFileChooser();
-				fileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
-				fileChooser.setDialogType(JFileChooser.OPEN_DIALOG);
-				fileChooser.setMultiSelectionEnabled(false);
-				int returnVal = fileChooser.showOpenDialog(FileReader.this);
-				if (returnVal == JFileChooser.APPROVE_OPTION) {
-					readFileAsync(fileChooser.getSelectedFile().getAbsolutePath());
-				}
-			}
-		});
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                JFileChooser fileChooser = new JFileChooser();
+                fileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
+                fileChooser.setDialogType(JFileChooser.OPEN_DIALOG);
+                fileChooser.setMultiSelectionEnabled(false);
+                int returnVal = fileChooser.showOpenDialog(FileReader.this);
+                if (returnVal == JFileChooser.APPROVE_OPTION) {
+                    readFileAsync(fileChooser.getSelectedFile().getAbsolutePath());
+                }
+            }
+        });
 
-		// assemble UI
-		JPanel panel = new JPanel(new FlowLayout());
-		panel.add(buttonOpenFile);
-		getContentPane().add(panel, BorderLayout.NORTH);
-		getContentPane().add(new JScrollPane(textArea), BorderLayout.CENTER);
-	}
+        // assemble UI
+        JPanel panel = new JPanel(new FlowLayout());
+        panel.add(buttonOpenFile);
+        getContentPane().add(panel, BorderLayout.NORTH);
+        getContentPane().add(new JScrollPane(textArea), BorderLayout.CENTER);
+    }
 
-	public static void main(String[] args) {
-		FileReader reader = new FileReader();
-		reader.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		reader.setSize(300, 600);
-		reader.setVisible(true);
-	}
+    public static void main(String[] args) {
+        FileReader reader = new FileReader();
+        reader.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        reader.setSize(300, 600);
+        reader.setVisible(true);
+    }
 }

@@ -27,10 +27,10 @@ public interface EightParameterConsumer<
         P7,
         P8>  extends Consumer<Object[]> {
 
-	void accept(P1 param1, P2 param2, P3 param3, P4 param4,
+    void accept(P1 param1, P2 param2, P3 param3, P4 param4,
                 P5 param5, P6 param6, P7 param7, P8 param8);
 
-	default void accept(Object... data) {
+    default void accept(Object... data) {
         P1 p1 = null;
         P2 p2 = null;
         P3 p3 = null;
@@ -54,7 +54,7 @@ public interface EightParameterConsumer<
         }
 
         try {
-    		accept(p1, p2, p3, p4, p5, p6, p7, p8);
+            accept(p1, p2, p3, p4, p5, p6, p7, p8);
         } catch (Throwable t) {
             LoggerFactory.getLogger("ch.squaredesk.nova.event.consumers")
                     .error("Error, trying to consume event with parameters " +

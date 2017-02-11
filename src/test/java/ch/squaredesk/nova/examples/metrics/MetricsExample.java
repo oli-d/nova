@@ -30,75 +30,75 @@ import java.util.concurrent.TimeUnit;
  *
  */
 public class MetricsExample {
-	public static void main(String[] args) throws Exception {
-		// init logging
-		BasicConfigurator.configure();
+    public static void main(String[] args) throws Exception {
+        // init logging
+        BasicConfigurator.configure();
 
-		/**
-		 * <pre>
-		 * *********************************************************************** *
-		 * *********************************************************************** *
-		 * ***                                                                 *** *
-		 * *** 1st step:                                                       *** *
-		 * *** Initilize Nova by creating a new instance of Nova *** *
-		 * ***                                                                 *** *
-		 * *********************************************************************** *
-		 * *********************************************************************** *
-		 */
-		final Nova nova = Nova.builder().build();
+        /**
+         * <pre>
+         * *********************************************************************** *
+         * *********************************************************************** *
+         * ***                                                                 *** *
+         * *** 1st step:                                                       *** *
+         * *** Initilize Nova by creating a new instance of Nova *** *
+         * ***                                                                 *** *
+         * *********************************************************************** *
+         * *********************************************************************** *
+         */
+        final Nova nova = Nova.builder().build();
 
-		/**
-		 * <pre>
-		 * ******************************************************************* *
-		 * ******************************************************************* *
-		 * ***                                                             *** *
-		 * *** 2nd step:                                                   *** *
-		 * *** Specify that metrics should regularily be dumped to logfile *** *
-		 * ***                                                             *** *
-		 * ******************************************************************* *
-		 * ******************************************************************* *
-		 */
-		nova.metrics.dumpContinuouslyToLog(10, TimeUnit.SECONDS);
+        /**
+         * <pre>
+         * ******************************************************************* *
+         * ******************************************************************* *
+         * ***                                                             *** *
+         * *** 2nd step:                                                   *** *
+         * *** Specify that metrics should regularily be dumped to logfile *** *
+         * ***                                                             *** *
+         * ******************************************************************* *
+         * ******************************************************************* *
+         */
+        nova.metrics.dumpContinuouslyToLog(10, TimeUnit.SECONDS);
 
-		/**
-		 * <pre>
-		 * *************************************************************************** *
-		 * *************************************************************************** *
-		 * ***                                                                     *** *
-		 * *** 3rd step:                                                           *** *
-		 * *** register dummy listeners and create events until <ENTER> is pressed *** *
-		 * ***                                                                     *** *
-		 * *************************************************************************** *
-		 * *************************************************************************** *
-		 */
-		nova.eventLoop.on("Event").subscribe();
-		nova.eventLoop.on("Event2").subscribe();
-		startEventCreation(nova.eventLoop);
+        /**
+         * <pre>
+         * *************************************************************************** *
+         * *************************************************************************** *
+         * ***                                                                     *** *
+         * *** 3rd step:                                                           *** *
+         * *** register dummy listeners and create events until <ENTER> is pressed *** *
+         * ***                                                                     *** *
+         * *************************************************************************** *
+         * *************************************************************************** *
+         */
+        nova.eventLoop.on("Event").subscribe();
+        nova.eventLoop.on("Event2").subscribe();
+        startEventCreation(nova.eventLoop);
 
-		new BufferedReader(new InputStreamReader(System.in)).readLine();
-	}
+        new BufferedReader(new InputStreamReader(System.in)).readLine();
+    }
 
-	private static void startEventCreation(final EventLoop eventLoop) {
-		Thread t = new Thread() {
-			@Override
-			public void run() {
-				Random rand = new Random();
-				for (;;) {
-					long sleepTimeMillis = (long) (rand.nextDouble() * 1000);
-					try {
-						sleep(sleepTimeMillis);
-					} catch (InterruptedException e) {
-					}
-					eventLoop.emit("Event");
-					eventLoop.emit("Event2");
-					eventLoop.emit("Unhandled");
-					eventLoop.emit("Unhandled2");
-				}
-			}
-		};
-		t.setDaemon(true);
-		t.start();
+    private static void startEventCreation(final EventLoop eventLoop) {
+        Thread t = new Thread() {
+            @Override
+            public void run() {
+                Random rand = new Random();
+                for (;;) {
+                    long sleepTimeMillis = (long) (rand.nextDouble() * 1000);
+                    try {
+                        sleep(sleepTimeMillis);
+                    } catch (InterruptedException e) {
+                    }
+                    eventLoop.emit("Event");
+                    eventLoop.emit("Event2");
+                    eventLoop.emit("Unhandled");
+                    eventLoop.emit("Unhandled2");
+                }
+            }
+        };
+        t.setDaemon(true);
+        t.start();
 
-	}
+    }
 
 }

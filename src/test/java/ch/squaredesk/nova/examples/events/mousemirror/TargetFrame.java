@@ -16,13 +16,13 @@ import javax.swing.JFrame;
 
 public class TargetFrame extends JFrame {
 
-	public TargetFrame() {
-		super("Target Frame");
+    public TargetFrame() {
+        super("Target Frame");
 
-		// some GUI stuff
-		setBackground(Color.CYAN);
-		setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
-		setResizable(false);
-	}
+        // some GUI stuff
+        setBackground(Color.CYAN);
+        setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
+        setResizable(false);
+    }
 
 }

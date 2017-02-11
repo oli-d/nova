@@ -13,20 +13,20 @@ package ch.squaredesk.nova.events;
 import java.util.Arrays;
 
 class DispatchContext {
-	public final Object event;
-	public final Object[] data;
+    public final Object event;
+    public final Object[] data;
 
-	DispatchContext(Object event, Object[] data) {
-		this.event = event;
-		this.data = data;
-	}
+    DispatchContext(Object event, Object[] data) {
+        this.event = event;
+        this.data = data;
+    }
 
 
-	@Override
-	public String toString() {
-		return "DispatchContext [event=" + event
-				+ ", data=" + Arrays.toString(data)
-				+ "]";
-	}
+    @Override
+    public String toString() {
+        return "DispatchContext [event=" + event
+                + ", data=" + Arrays.toString(data)
+                + "]";
+    }
 
 }

@@ -33,78 +33,78 @@ public class TimersTest {
     }
 
     @Test(expected = NullPointerException.class)
-	public void testSetTimeoutThrowsIfNoCallbackProvided() {
-		sut.setTimeout(null, 100);
-	}
+    public void testSetTimeoutThrowsIfNoCallbackProvided() {
+        sut.setTimeout(null, 100);
+    }
 
-	@Test
-	public void testSetTimeout() throws Throwable {
-		BasicConfigurator.configure();
+    @Test
+    public void testSetTimeout() throws Throwable {
+        BasicConfigurator.configure();
 
-		CountDownLatch countDownLatch = new CountDownLatch(1);
-		boolean[] invocationFlag = new boolean[1];
-		Runnable callback = () -> {
-			invocationFlag[0] = true;
-			countDownLatch.countDown();
-		};
+        CountDownLatch countDownLatch = new CountDownLatch(1);
+        boolean[] invocationFlag = new boolean[1];
+        Runnable callback = () -> {
+            invocationFlag[0] = true;
+            countDownLatch.countDown();
+        };
 
-		long startDelay = 300;
-		assertNotNull(sut.setTimeout(callback, startDelay, TimeUnit.MILLISECONDS));
+        long startDelay = 300;
+        assertNotNull(sut.setTimeout(callback, startDelay, TimeUnit.MILLISECONDS));
 
-		countDownLatch.await(500, TimeUnit.MILLISECONDS);
-		assertThat(invocationFlag[0],is(true));
-	}
+        countDownLatch.await(500, TimeUnit.MILLISECONDS);
+        assertThat(invocationFlag[0],is(true));
+    }
 
-	@Test
-	public void testClearTimeout() throws Exception {
+    @Test
+    public void testClearTimeout() throws Exception {
         AtomicInteger counter = new AtomicInteger();
 
         Runnable callback = () -> counter.incrementAndGet();
 
-		long startDelay = 200;
-		Disposable disposable = sut.setTimeout(callback, startDelay);
+        long startDelay = 200;
+        Disposable disposable = sut.setTimeout(callback, startDelay);
 
-		disposable.dispose();
-		Thread.sleep(2 * startDelay);
-		assertNotNull(disposable);
+        disposable.dispose();
+        Thread.sleep(2 * startDelay);
+        assertNotNull(disposable);
 
-		assertThat(counter.intValue(), is(0));
-	}
+        assertThat(counter.intValue(), is(0));
+    }
 
-	@Test(expected = NullPointerException.class)
-	public void testSetIntervalThrowsIfNoCallbackProvided() {
-		sut.setInterval(null, 100);
-	}
+    @Test(expected = NullPointerException.class)
+    public void testSetIntervalThrowsIfNoCallbackProvided() {
+        sut.setInterval(null, 100);
+    }
 
-	@Test(expected = NullPointerException.class)
-	public void testSetIntervalThrowsIfNoTimeUnitProvided() {
-		sut.setInterval(() -> { },0, 100L, null);
-	}
+    @Test(expected = NullPointerException.class)
+    public void testSetIntervalThrowsIfNoTimeUnitProvided() {
+        sut.setInterval(() -> { },0, 100L, null);
+    }
 
-	@Test
-	public void testSetInterval() throws Throwable {
+    @Test
+    public void testSetInterval() throws Throwable {
         AtomicInteger counter = new AtomicInteger();
 
-		long startDelay = 200;
-		Disposable disposable = sut.setInterval(() -> counter.incrementAndGet(), startDelay, startDelay, TimeUnit.MILLISECONDS);
-		assertNotNull(disposable);
-		Thread.sleep((4 * startDelay) + 100);
-		disposable.dispose();
+        long startDelay = 200;
+        Disposable disposable = sut.setInterval(() -> counter.incrementAndGet(), startDelay, startDelay, TimeUnit.MILLISECONDS);
+        assertNotNull(disposable);
+        Thread.sleep((4 * startDelay) + 100);
+        disposable.dispose();
 
-		assertThat(counter.intValue(), is(4));
-	}
+        assertThat(counter.intValue(), is(4));
+    }
 
-	@Test
-	public void testClearInterval() throws Exception {
+    @Test
+    public void testClearInterval() throws Exception {
         AtomicInteger counter = new AtomicInteger();
 
-		long startDelay = 200;
-		Disposable disposable = sut.setInterval(()->counter.incrementAndGet(), startDelay);
-		disposable.dispose();
-		Thread.sleep(2 * startDelay);
-		assertNotNull(disposable);
+        long startDelay = 200;
+        Disposable disposable = sut.setInterval(()->counter.incrementAndGet(), startDelay);
+        disposable.dispose();
+        Thread.sleep(2 * startDelay);
+        assertNotNull(disposable);
 
-		assertThat(counter.intValue(), is(0));
-	}
+        assertThat(counter.intValue(), is(0));
+    }
 
 }

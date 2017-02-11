@@ -22,9 +22,9 @@ public interface ThreeParameterConsumer<
         P2,
         P3>  extends Consumer<Object[]> {
 
-	void accept(P1 param1, P2 param2, P3 param3);
+    void accept(P1 param1, P2 param2, P3 param3);
 
-	default void accept(Object... data) {
+    default void accept(Object... data) {
         P1 p1 = null;
         P2 p2 = null;
         P3 p3 = null;

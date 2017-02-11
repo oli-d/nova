@@ -18,48 +18,48 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 
 public class Clock extends JFrame {
-	private SimpleDateFormat dateFormatter = new SimpleDateFormat("HH:mm:ss");
-	private JLabel label = new JLabel();
+    private SimpleDateFormat dateFormatter = new SimpleDateFormat("HH:mm:ss");
+    private JLabel label = new JLabel();
 
-	public Clock() {
-		super("Nova Timers example");
-		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		setSize(200, 100);
-		getContentPane().add(label, BorderLayout.CENTER);
-		setLocationRelativeTo(null);
-	}
+    public Clock() {
+        super("Nova Timers example");
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setSize(200, 100);
+        getContentPane().add(label, BorderLayout.CENTER);
+        setLocationRelativeTo(null);
+    }
 
-	public static void main(String[] args) {
-		Clock clock = new Clock();
-		clock.setVisible(true);
-		clock.tickCurrentTime();
-	}
+    public static void main(String[] args) {
+        Clock clock = new Clock();
+        clock.setVisible(true);
+        clock.tickCurrentTime();
+    }
 
-	private void tickCurrentTime() {
-		/**
-		 * <pre>
-		 * *********************************************************************** * 
-		 * *********************************************************************** * 
-		 * ***                                                                 *** *
-		 * *** 1st step:                                                       *** *
-		 * *** Initilize Nova by creating a new instance of Nova               *** *
-		 * ***                                                                 *** *
-		 * *********************************************************************** *
-		 * *********************************************************************** *
-		 */
-		Nova nova = Nova.builder().build();
+    private void tickCurrentTime() {
+        /**
+         * <pre>
+         * *********************************************************************** * 
+         * *********************************************************************** * 
+         * ***                                                                 *** *
+         * *** 1st step:                                                       *** *
+         * *** Initilize Nova by creating a new instance of Nova               *** *
+         * ***                                                                 *** *
+         * *********************************************************************** *
+         * *********************************************************************** *
+         */
+        Nova nova = Nova.builder().build();
 
-		/**
-		 * <pre>
-		 * *********************************************************************** * 
-		 * *********************************************************************** * 
-		 * ***                                                                 *** *
-		 * *** 2nd step:                                                       *** *
-		 * *** Register a callback, which will be executed periodically        *** *
-		 * ***                                                                 *** *
-		 * *********************************************************************** *
-		 * *********************************************************************** *
-		 */
-		nova.eventLoop.setInterval(() -> label.setText(dateFormatter.format(new Date())), 1000);
-	}
+        /**
+         * <pre>
+         * *********************************************************************** * 
+         * *********************************************************************** * 
+         * ***                                                                 *** *
+         * *** 2nd step:                                                       *** *
+         * *** Register a callback, which will be executed periodically        *** *
+         * ***                                                                 *** *
+         * *********************************************************************** *
+         * *********************************************************************** *
+         */
+        nova.eventLoop.setInterval(() -> label.setText(dateFormatter.format(new Date())), 1000);
+    }
 }

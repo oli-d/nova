@@ -17,58 +17,58 @@ import ch.squaredesk.nova.metrics.Metrics;
 
 public class Nova {
 
-	public final String identifier;
-	public final EventLoop eventLoop;
-	public final Filesystem filesystem;
-	public final Metrics metrics;
+    public final String identifier;
+    public final EventLoop eventLoop;
+    public final Filesystem filesystem;
+    public final Metrics metrics;
 
-	private Nova(Builder builder) {
-		metrics = builder.metrics;
-		identifier = builder.identifier;
+    private Nova(Builder builder) {
+        metrics = builder.metrics;
+        identifier = builder.identifier;
 
-		eventLoop = new EventLoop(identifier, builder.eventLoopConfig, metrics);
-		filesystem = new Filesystem();
-	}
-
-	public static Builder builder() {
-	    return new Builder();
+        eventLoop = new EventLoop(identifier, builder.eventLoopConfig, metrics);
+        filesystem = new Filesystem();
     }
 
-	public static class Builder {
-		private String identifier;
-		private EventLoopConfig eventLoopConfig;
-		private Metrics metrics;
+    public static Builder builder() {
+        return new Builder();
+    }
 
-		private Builder() {
+    public static class Builder {
+        private String identifier;
+        private EventLoopConfig eventLoopConfig;
+        private Metrics metrics;
+
+        private Builder() {
         }
 
-		public Builder setIdentifier(String identifier) {
-			this.identifier = identifier;
-			return this;
-		}
+        public Builder setIdentifier(String identifier) {
+            this.identifier = identifier;
+            return this;
+        }
 
-		public Builder setEventLoopConfig(EventLoopConfig eventLoopConfig) {
-			this.eventLoopConfig = eventLoopConfig;
-			return this;
-		}
+        public Builder setEventLoopConfig(EventLoopConfig eventLoopConfig) {
+            this.eventLoopConfig = eventLoopConfig;
+            return this;
+        }
 
-		public Builder setMetrics(Metrics metrics) {
-			this.metrics = metrics;
-			return this;
-		}
+        public Builder setMetrics(Metrics metrics) {
+            this.metrics = metrics;
+            return this;
+        }
 
-		public Nova build() {
-			if (eventLoopConfig == null) {
-				eventLoopConfig = EventLoopConfig.builder().build();
-			}
-			if (identifier == null) {
-				identifier = "";
-			}
-			if (metrics == null) {
-				metrics = new Metrics();
-			}
+        public Nova build() {
+            if (eventLoopConfig == null) {
+                eventLoopConfig = EventLoopConfig.builder().build();
+            }
+            if (identifier == null) {
+                identifier = "";
+            }
+            if (metrics == null) {
+                metrics = new Metrics();
+            }
 
-			return new Nova(this);
-		}
-	}
+            return new Nova(this);
+        }
+    }
 }

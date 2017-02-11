@@ -24,10 +24,10 @@ public interface FiveParameterConsumer<
         P4,
         P5>  extends Consumer<Object[]> {
 
-	void accept(P1 param1, P2 param2, P3 param3, P4 param4,
+    void accept(P1 param1, P2 param2, P3 param3, P4 param4,
                 P5 param5);
 
-	default void accept(Object... data) {
+    default void accept(Object... data) {
         P1 p1 = null;
         P2 p2 = null;
         P3 p3 = null;
