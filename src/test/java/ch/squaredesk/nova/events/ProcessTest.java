@@ -53,22 +53,5 @@ public class ProcessTest {
 		Assert.assertThat(countDownLatch.getCount(), Matchers.is(0L));
 	}
 
-	@Test
-	public void nextTickThatThrowsDoesNotLeak() throws Throwable {
-		CountDownLatch countDownLatch = new CountDownLatch(1);
-		Runnable callback = () -> {
-			countDownLatch.countDown();
-			throw new RuntimeException("for test");
-		};
-
-		assertNull(eventLoop.subjectFor(EventLoop.DUMMY_NEXT_TICK_EVENT_PREFIX + 1));
-		eventLoop.nextTick(callback);
-		countDownLatch.await(1, TimeUnit.SECONDS);
-		assertThat(countDownLatch.getCount(), Matchers.is(0L));
-		// unfortunately, the disposal does not run synchronously, so we have to wait a little
-		Thread.sleep(100);
-		assertNull(eventLoop.subjectFor(EventLoop.DUMMY_NEXT_TICK_EVENT_PREFIX + 1));
-	}
-
 
 }

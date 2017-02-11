@@ -13,13 +13,14 @@ package ch.squaredesk.nova.events;
 import ch.squaredesk.nova.events.consumers.NoParameterConsumer;
 import ch.squaredesk.nova.events.consumers.SingleParameterConsumer;
 import ch.squaredesk.nova.metrics.Metrics;
-import io.reactivex.Flowable;
+import io.reactivex.Observable;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.functions.Consumer;
-import io.reactivex.subjects.Subject;
+import io.reactivex.observers.TestObserver;
 import org.apache.log4j.BasicConfigurator;
-import org.hamcrest.Matchers;
-import org.junit.*;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -27,7 +28,6 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.*;
 
@@ -52,29 +52,18 @@ public class EventLoopTest {
         eventLoop.on(null);
     }
 
-
-    @Test
-    public void unsubscribingLastObserverUnregistersListener() {
-        Disposable d = eventLoop.on("x").subscribe(data -> { });
-        assertNotNull(eventLoop.subjectFor("x"));
-        d.dispose();
-        assertNull(eventLoop.subjectFor("x"));
-    }
-
     @Test
     public void uncaughtErrorInSubscriberVoidsObservable() throws Exception {
         CountDownLatch countDownLatch = new CountDownLatch(1);
         AtomicInteger i = new AtomicInteger(0);
 
         Disposable d = eventLoop.on("x")
-                .doFinally(() -> countDownLatch.countDown())
                 .subscribe(
                         data -> {
                             if (i.incrementAndGet()==2)
                             throw new RuntimeException("for test");
                         },
-                        t -> {});
-        assertNotNull(eventLoop.subjectFor("x"));
+                        t -> countDownLatch.countDown());
         assertFalse(d.isDisposed());
 
         eventLoop.emit("x");
@@ -85,7 +74,6 @@ public class EventLoopTest {
 
 
         assertTrue(d.isDisposed());
-        assertNull(eventLoop.subjectFor("x"));
 
         eventLoop.emit("x");
         assertTrue(d.isDisposed());
@@ -98,13 +86,11 @@ public class EventLoopTest {
         CountDownLatch countDownLatch = new CountDownLatch(1);
 
         Disposable d = eventLoop.on("x")
-                .doFinally(() -> countDownLatch.countDown())
                 .subscribe(
                         data -> {
                             throw new RuntimeException("for test");
                         },
-                        t -> {});
-        assertNotNull(eventLoop.subjectFor("x"));
+                        t -> countDownLatch.countDown());
         assertFalse(d.isDisposed());
 
         eventLoop.emit("x"); // throws
@@ -113,27 +99,13 @@ public class EventLoopTest {
         assertThat(countDownLatch.getCount(),is(0L));
 
         assertTrue(d.isDisposed());
-        assertNull(eventLoop.subjectFor("x"));
     }
 
     @Test
-    public void subjectIsEagerlyRegistered() {
-        assertNull(eventLoop.subjectFor("x"));
-        eventLoop.on("x");
-        assertNotNull(eventLoop.subjectFor("x"));
-    }
-
-    @Test
-    public void eachSubscriptionFedBySameSubject() {
-        assertNull(eventLoop.subjectFor("x"));
-        Flowable f = eventLoop.on("x");
-        assertNotNull(eventLoop.subjectFor("x"));
-        f.subscribe(data -> {});
-        Subject<Object[]> consumer = eventLoop.subjectFor("x");
-        assertNotNull(consumer);
-        f.subscribe(data -> {});
-        Subject<Object[]> consumer2 = eventLoop.subjectFor("x");
-        assertTrue(consumer==consumer2);
+    public void eachSubscriptionFedBySameObservable() {
+        Object f1 = eventLoop.on("x");
+        Object f2 = eventLoop.on("x");
+        assertTrue(f1==f2);
     }
 
     @Test(expected = NullPointerException.class)
@@ -193,7 +165,7 @@ public class EventLoopTest {
         NoParameterConsumer consumer = () -> countDownLatch.countDown();
 
         for (int i=0; i<numberOfObservers; i++) {
-            Flowable<Object[]> observable = eventLoop.on("Test");
+            Observable<Object[]> observable = eventLoop.on("Test");
             for (int j=0; j<numberOfSubscriptions; j++) {
                 observable.subscribe(consumer);
             }
@@ -235,39 +207,19 @@ public class EventLoopTest {
     }
 
     @Test
-    @Ignore("Listeners don't get regsitered. WTF????") // FIXME fix test
     public void testListenerCanBeRemovedSeparately() throws Exception {
-        CountDownLatch countDownLatch = new CountDownLatch(3);
+        TestObserver<Object[]> observer1 = eventLoop.on(String.class).take(1).test();
+        TestObserver<Object[]> observer2 = eventLoop.on(String.class).take(2).test();
 
-        List<String> listener1InvocationParams = new ArrayList<>();
-        List<String> listener2InvocationParams = new ArrayList<>();
-        Disposable d1 = eventLoop.on(String.class).subscribe(data -> {
-            System.out.println("1111111" + data);
-            listener1InvocationParams.add((String) data[0]);
-            countDownLatch.countDown();
-        });
-        Disposable d2 = eventLoop.on(String.class).subscribe(data -> {
-                    System.out.println("22222" + data);
-                    listener2InvocationParams.add((String) data[0]);
-                    countDownLatch.countDown();
-                },
-                throwable -> {},
-                () -> System.out.println("d2 completed"));
-
+        // emit -> both observers should get it
         eventLoop.emit(String.class, "MyEvent1");
+        assertTrue(observer1.await(100,TimeUnit.MILLISECONDS));
+        observer1.dispose();
 
-        d1.dispose();
+        // emit again -> observer 2 should also still get this one after unsubscription of observer 1
         eventLoop.emit(String.class, "MyEvent2");
-
-        d2.dispose();
-        eventLoop.emit(String.class, "MyEvent3");
-
-        countDownLatch.await(1000,TimeUnit.MILLISECONDS);
-        assertThat(countDownLatch.getCount(),is(0L));
-        assertThat(listener1InvocationParams.size(), is(1));
-        assertThat(listener1InvocationParams, Matchers.contains("MyEvent1"));
-        assertThat(listener2InvocationParams.size(), is(2));
-        assertThat(listener2InvocationParams, Matchers.contains("MyEvent1", "MyEvent2"));
+        assertTrue(observer2.await(100,TimeUnit.MILLISECONDS));
+        observer2.assertValueCount(2);
     }
 
     @Test
@@ -276,15 +228,12 @@ public class EventLoopTest {
         Disposable d1 = eventLoop.on(String.class).subscribe(data -> invocationFlag[0] = true);
         Disposable d2 = eventLoop.on(String.class).take(1).subscribe(data -> invocationFlag[0] = true);
 
-        assertNotNull(eventLoop.subjectFor(String.class));
-
         d1.dispose();
         d2.dispose();
         eventLoop.emit(String.class, "MyEvent1");
 
         Thread.sleep(500);
         assertFalse(invocationFlag[0]);
-        assertNull(eventLoop.subjectFor(String.class));
     }
 
     @Test
@@ -312,31 +261,31 @@ public class EventLoopTest {
 
     @Test
     public void eventLoopDoesntDieOnUnhandledException() throws InterruptedException {
-        final int[] counter = new int[1];
-        final CountDownLatch latch = new CountDownLatch(1);
+        CountDownLatch latch = new CountDownLatch(1);
+        AtomicInteger counter = new AtomicInteger();
 
         Consumer<Object[]> listener = param -> {
             if ("throw".equals(param[0])) {
                 throw new RuntimeException("for test");
-            } else if ("end".equals(param[0])) {
-                latch.countDown();
             } else {
-                counter[0]++;
+                counter.incrementAndGet();
             }
         };
 
-        eventLoop.on("xxx").subscribe(listener);
+        Disposable d = eventLoop.on("xxx").subscribe(listener, t -> latch.countDown());
         eventLoop.emit("xxx", "count");
         eventLoop.emit("xxx", "count");
         eventLoop.emit("xxx", "throw");
-        eventLoop.on("xxx").subscribe(listener);
+
+        latch.await();
+        assertTrue(d.isDisposed());
+        assertThat(counter.get(),is(2));
+
+        TestObserver<Object[]> observer = eventLoop.on("xxx").take(3).test();
         eventLoop.emit("xxx", "count");
         eventLoop.emit("xxx", "count");
         eventLoop.emit("xxx", "end");
-
-        latch.await(2, TimeUnit.SECONDS);
-
-        Assert.assertEquals(4, counter[0]);
+        assertTrue(observer.await(100, TimeUnit.MILLISECONDS));
     }
 
     @Test
@@ -354,7 +303,7 @@ public class EventLoopTest {
             }
         };
 
-        Flowable observable = eventLoop.on("xxx");
+        Observable observable = eventLoop.on("xxx");
 
         observable.subscribe(listener);
         eventLoop.emit("xxx", "count");
@@ -384,7 +333,7 @@ public class EventLoopTest {
             }
         };
 
-        Flowable observable = eventLoop.on("xxx");
+        Observable observable = eventLoop.on("xxx");
 
         observable.subscribe(listener);
         eventLoop.emit("xxx", "count");

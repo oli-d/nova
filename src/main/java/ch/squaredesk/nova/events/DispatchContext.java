@@ -12,11 +12,11 @@ package ch.squaredesk.nova.events;
 
 import java.util.Arrays;
 
-class InvocationContext {
+class DispatchContext {
 	public final Object event;
 	public final Object[] data;
 
-	InvocationContext(Object event, Object[] data) {
+	DispatchContext(Object event, Object[] data) {
 		this.event = event;
 		this.data = data;
 	}
@@ -24,7 +24,7 @@ class InvocationContext {
 
 	@Override
 	public String toString() {
-		return "InvocationContext [event=" + event
+		return "DispatchContext [event=" + event
 				+ ", data=" + Arrays.toString(data)
 				+ "]";
 	}

@@ -12,20 +12,16 @@ package ch.squaredesk.nova.events;
 
 import ch.squaredesk.nova.events.metrics.EventMetricsCollector;
 import ch.squaredesk.nova.metrics.Metrics;
+import com.codahale.metrics.Gauge;
 import io.reactivex.*;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.exceptions.Exceptions;
 import io.reactivex.schedulers.Schedulers;
-import io.reactivex.subjects.PublishSubject;
-import io.reactivex.subjects.Subject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Arrays;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 
@@ -38,19 +34,22 @@ public class EventLoop {
 
 	private final Logger logger = LoggerFactory.getLogger(EventLoop.class);
 
-	// counter for dummy events
+	// counter for dummy event creation
 	private final AtomicLong counter = new AtomicLong();
 
 	// metrics
 	private final EventMetricsCollector metricsCollector;
 
     // the source of all events
-    private final Subject<InvocationContext> theSource = PublishSubject.create();
-    private final ConcurrentHashMap<Object,Subject<Object[]>> eventSpecificSubjects = new ConcurrentHashMap<>();
-    private final EventLoopConfig eventLoopConfig;
+    private final LinkedBlockingQueue<DispatchContext> sourceQueue;
 
+    // the event specific objects (for performance)
+    private final ConcurrentHashMap<Object,Consumer<Object[]>> eventSpecificListeners;
+    private final ConcurrentHashMap<Object,Observable<Object[]>> eventSpecificObservables;
+
+    // FIXME: decide on backpressure handling. ATM there's none and if we want to leave it this way,
+    // we should kick EventLoopConfig
     public EventLoop(String identifier, EventLoopConfig eventLoopConfig, Metrics metrics) {
-        this.eventLoopConfig = eventLoopConfig;
         this.metricsCollector = new EventMetricsCollector(metrics, identifier);
 
         if (logger.isDebugEnabled()) {
@@ -59,49 +58,49 @@ public class EventLoop {
             logger.debug("\twarn on unhandled events:      " + eventLoopConfig.warnOnUnhandledEvent);
         }
 
+        metrics.register((Gauge<Long>) EventLoop.this::getNumberOfPendingRequests,"EventLoop", identifier,"pendingEvents");
+
         // create the mother of all events
-        Observable<InvocationContext> threadedSource = theSource;
-        if (!eventLoopConfig.dispatchInEmitterThread) {
-            Executor dispatchExecutor = Executors.newSingleThreadExecutor(r -> {
-                Thread t = new Thread(r, "EventLoop[" + identifier + ']');
-                t.setDaemon(true);
-                return t;
-            });
-
-            threadedSource = theSource.observeOn(Schedulers.from(dispatchExecutor));
-            logger.debug("\tDispatching events in specific thread");
-        } else {
-            logger.warn("\tDispatching events in emitting thread. Use at your own risk!!!");
-        }
-
-        Disposable sourceDisposable = threadedSource
-                .subscribe(invocationContext -> {
-                    try {
-                        Subject<Object[]> s = eventSpecificSubjects.get(invocationContext.event);
-                        if (s!=null) {
-                            if (s.hasObservers()) {
-                                metricsCollector.eventDispatched(invocationContext.event);
-                                s.onNext(invocationContext.data);
-                            } else {
-                                logger.debug("No observers for event {}, disposing subject.", invocationContext.event);
-                                if (eventSpecificSubjects.remove(invocationContext.event)!=null) {
-                                    metricsCollector.eventSubjectRemoved(invocationContext.event);
-                                }
-                                metricsCollector.eventEmittedButNoObservers(invocationContext.event);
-                                if (eventLoopConfig.warnOnUnhandledEvent) {
-                                    logger.warn("No listener registered for event " + invocationContext.event
-                                            + ". Discarding dispatch with parameters " + Arrays.toString(invocationContext.data));
-                                }
-                            }
-                        } else {
-                            metricsCollector.eventEmittedButNoObservers(invocationContext.event);
-                            logger.warn("No listener registered for event " + invocationContext.event
-                                    + ". Discarding dispatch with parameters " + Arrays.toString(invocationContext.data));
+        Scheduler eventLoopScheduler = Schedulers.from(
+                Executors.newSingleThreadExecutor(runnable -> {
+                    Thread t = new Thread(runnable, "EventLoop[" + identifier + "]");
+                    t.setDaemon(true);
+                    return t;
+                })
+        );
+        sourceQueue = new LinkedBlockingQueue<>();
+        eventSpecificListeners = new ConcurrentHashMap<>();
+        eventSpecificObservables = new ConcurrentHashMap<>();
+        Observable<DispatchContext> theSource = Observable.create(s -> {
+            while (!s.isDisposed()) {
+                DispatchContext dispatchContext = sourceQueue.poll(100, TimeUnit.MILLISECONDS);
+                if (dispatchContext !=null) {
+                    s.onNext(dispatchContext);
+                }
+            }
+        });
+        theSource
+                .subscribeOn(eventLoopScheduler)
+                .subscribe(eventContext -> {
+                    Consumer<Object[]> listenerToInform = eventSpecificListeners.get(eventContext.event);
+                    if (listenerToInform != null) {
+                        try {
+                            listenerToInform.accept(eventContext.data);
+                            metricsCollector.eventDispatched();
+                        } catch (Exception e) {
+                            logger.error("Error, trying to dispatch event " + eventContext);
                         }
-                    } catch (Exception e) {
-                        logger.error("An error occurred, trying to dispatch event " + invocationContext, e);
+                    } else {
+                        metricsCollector.eventEmittedButNoObservers(eventContext.event);
+                        if (eventLoopConfig.warnOnUnhandledEvent) {
+                            logger.warn("No listener registered for event {}", eventContext);
+                        }
                     }
                 });
+    }
+
+    public long getNumberOfPendingRequests() {
+        return sourceQueue.size();
     }
 
     /**
@@ -111,47 +110,48 @@ public class EventLoop {
      *                                   *
      *************************************
      **/
+    // TODO Flowables come with a recognizable performance penalty, so we use Observables here
+    // TODO unfortunately, this leaves our EventLoop in the current form totally unprotected from bezerk emitters
+    // TODO there are two vulnerabilities:
+    // TODO 1.) the unbounded queue of events to be dispatched
+    // TODO 2.) the fact that we return Observables and not Flowables to the outside world
     public void emit (Object event, Object... data) {
         requireNonNull(event, "event must not be null");
-        theSource.onNext(new InvocationContext(event, data));
+        DispatchContext dispatchContext = new DispatchContext(event, data);
+        try {
+            sourceQueue.put(dispatchContext);
+        } catch (Exception e) {
+            logger.error("Unable to dispatch " + dispatchContext,e);
+        }
     }
 
-	public Flowable<Object[]> on(Object event) {
-        return on(event, eventLoopConfig.defaultBackpressureStrategy);
+	public Observable<Object[]> on(Object event) {
+        return on(event, metricsCollector::eventSubjectAdded, metricsCollector::eventSubjectRemoved);
     }
 
-	public Flowable<Object[]> on(Object event,
-                                 BackpressureStrategy backpressureStrategy) {
-        requireNonNull(event, "event must not be null");
-        requireNonNull(backpressureStrategy, "backpressureStrategy must not be null");
-        return on (event, backpressureStrategy, metricsCollector::eventSubjectAdded, metricsCollector::eventSubjectRemoved);
 
-    }
-
-	private Flowable<Object[]> on(Object event,
-                                  BackpressureStrategy backpressureStrategy,
+	private Observable<Object[]> on(Object event,
                                   Consumer<Object> metricsUpdaterCreation,
                                   Consumer<Object> metricsUpdaterTearDown) {
-        Subject<Object[]> eventSpecificSubject = eventSpecificSubjects.computeIfAbsent(event, key -> {
-            PublishSubject<Object[]> ps = PublishSubject.create();
-            metricsUpdaterCreation.accept(event);
-            return ps;
-        });
-        return eventSpecificSubject.toFlowable(backpressureStrategy).doFinally(() -> {
-            if (!eventSpecificSubject.hasObservers()) {
-                logger.info("No observers left for event {}, nuking subject...",event);
-                eventSpecificSubject.onComplete();
-                if (eventSpecificSubjects.remove(event)!=null && metricsUpdaterTearDown != null) {
-                    metricsUpdaterTearDown.accept(event);
-                }
-            }
-        });
-	}
+        requireNonNull(event, "event must not be null");
+        return eventSpecificObservables.computeIfAbsent(event, key -> {
+            AtomicLong eventSpecificDispatchCounter = metricsCollector.getEventSpecififcDispatchCounter(event);
+            Observable<Object[]>  o = Observable.create(s -> {
+                eventSpecificListeners.put(event, data -> {
+                    s.onNext(data);
+                    eventSpecificDispatchCounter.incrementAndGet();
+                });
+            });
 
-	// package private for testing
-    Subject<Object[]> subjectFor(Object event) {
-		requireNonNull (event,"event must not be null");
-        return eventSpecificSubjects.get(event);
+            metricsUpdaterCreation.accept(event);
+
+            return o
+                    .doFinally(() -> {
+                        eventSpecificObservables.remove(event);
+                        metricsUpdaterTearDown.accept(event);
+                    })
+                    .share();
+        });
 	}
 
     /**
@@ -165,7 +165,7 @@ public class EventLoop {
         requireNonNull(callback, "callback must not be null");
         String newId = String.valueOf(counter.incrementAndGet());
         String nextTickDummyEvent = DUMMY_NEXT_TICK_EVENT_PREFIX + newId;
-        on(nextTickDummyEvent,BackpressureStrategy.BUFFER,metricsCollector::nextTickSet,null)
+        on(nextTickDummyEvent,metricsCollector::nextTickSet,null)
                 .take(1)
                 .subscribe(
                         x -> {
@@ -206,7 +206,7 @@ public class EventLoop {
         String newId = String.valueOf(counter.incrementAndGet());
         String timeoutDummyEvent = DUMMY_TIMEOUT_EVENT_PREFIX + newId;
         Disposable single =
-                on(timeoutDummyEvent,BackpressureStrategy.BUFFER,metricsCollector::timeoutSet,null)
+                on(timeoutDummyEvent,metricsCollector::timeoutSet,null)
                 .take(1)
                 .delay(delay, timeUnit)
                 .subscribe(
@@ -243,7 +243,7 @@ public class EventLoop {
         String newId = String.valueOf(counter.incrementAndGet());
         String intervalDummyEvent = DUMMY_INTERVAL_EVENT_PREFIX + newId;
         Disposable callbackInvoker =
-                on(intervalDummyEvent, BackpressureStrategy.BUFFER, metricsCollector::intervalSet, null)
+                on(intervalDummyEvent, metricsCollector::intervalSet, null)
                 .subscribe(
                         x -> {
                             try {

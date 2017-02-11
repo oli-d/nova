@@ -16,17 +16,22 @@ import ch.squaredesk.nova.metrics.Metrics;
 import io.reactivex.functions.Consumer;
 import org.junit.Test;
 
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.*;
 
 public class ConsumerWrappersTest {
 	@Test
-	public void testInvokingWithoutParams() {
-		final boolean[] listenersInvoked = new boolean[12];
+	public void testInvokingWithoutParams() throws Exception {
+        final CountDownLatch[] latches = new CountDownLatch[12];
+        for (int i = 0; i < latches.length; i++) {
+            latches[i] = new CountDownLatch(1);
+        }
 
 		TenParameterConsumer<String, Integer, Double, Long, Float, Byte, Boolean, Character, String, Double> listener10 = (
 				param1, param2, param3, param4, param5, param6, param7, param8, param9, param10) -> {
-					listenersInvoked[0] = true;
 					assertNull(param1);
 					assertNull(param2);
 					assertNull(param3);
@@ -37,10 +42,10 @@ public class ConsumerWrappersTest {
 					assertNull(param8);
 					assertNull(param9);
 					assertNull(param10);
+					latches[0].countDown();
 				};
         NineParameterConsumer<String, Integer, Double, Long, Float, Byte, Boolean, Character, String> listener9 = 
                 (param1, param2, param3, param4, param5, param6, param7, param8, param9) -> {
-                    listenersInvoked[1] = true;
                     assertNull(param1);
                     assertNull(param2);
                     assertNull(param3);
@@ -50,10 +55,10 @@ public class ConsumerWrappersTest {
                     assertNull(param7);
                     assertNull(param8);
                     assertNull(param9);
+                    latches[1].countDown();
                 };
         EightParameterConsumer<String, Integer, Double, Long, Float, Byte, Boolean, Character> listener8 = 
                 (param1, param2, param3, param4, param5, param6, param7, param8) -> {
-                    listenersInvoked[2] = true;
                     assertNull(param1);
                     assertNull(param2);
                     assertNull(param3);
@@ -62,10 +67,10 @@ public class ConsumerWrappersTest {
                     assertNull(param6);
                     assertNull(param7);
                     assertNull(param8);
+                    latches[2].countDown();
                 };
         SevenParameterConsumer<String, Integer, Double, Long, Float, Byte, Boolean> listener7 = 
                 (param1, param2, param3, param4, param5, param6, param7) -> {
-                    listenersInvoked[3] = true;
                     assertNull(param1);
                     assertNull(param2);
                     assertNull(param3);
@@ -73,54 +78,55 @@ public class ConsumerWrappersTest {
                     assertNull(param5);
                     assertNull(param6);
                     assertNull(param7);
+                    latches[3].countDown();
                 };
         SixParameterConsumer<String, Integer, Double, Long, Float, Byte> listener6 = 
                 (param1, param2, param3, param4, param5, param6) -> {
-                    listenersInvoked[4] = true;
                     assertNull(param1);
                     assertNull(param2);
                     assertNull(param3);
                     assertNull(param4);
                     assertNull(param5);
                     assertNull(param6);
+                    latches[4].countDown();
                 };
         FiveParameterConsumer<String, Integer, Double, Long, Float> listener5 = 
                 (param1, param2, param3, param4, param5) -> {
-                    listenersInvoked[5] = true;
                     assertNull(param1);
                     assertNull(param2);
                     assertNull(param3);
                     assertNull(param4);
                     assertNull(param5);
+                    latches[5].countDown();
                 };
         FourParameterConsumer<String, Integer, Double, Long> listener4 = (param1, param2, param3, param4) -> {
-            listenersInvoked[6] = true;
             assertNull(param1);
             assertNull(param2);
             assertNull(param3);
             assertNull(param4);
+            latches[6].countDown();
         };
         ThreeParameterConsumer<String, Integer, Double> listener3 = (param1, param2, param3) -> {
-            listenersInvoked[7] = true;
             assertNull(param1);
             assertNull(param2);
             assertNull(param3);
+            latches[7].countDown();
         };
         TwoParameterConsumer<String, Integer> listener2 = (param1, param2) -> {
-            listenersInvoked[8] = true;
             assertNull(param1);
             assertNull(param2);
+            latches[8].countDown();
         };
         SingleParameterConsumer<String> listener1 = param1 -> {
-            listenersInvoked[9] = true;
             assertNull(param1);
+            latches[9].countDown();
         };
         Consumer<Object[]> genericListener = data -> {
-            listenersInvoked[10] = true;
             assertNotNull(data);
             assertThat(data.length, is(0));
+            latches[10].countDown();
         };
-        NoParameterConsumer noParamsListener = () -> listenersInvoked[11] = true;
+        NoParameterConsumer noParamsListener = () -> latches[11].countDown();
 
         EventLoopConfig eventLoopConfig =
                 EventLoopConfig.builder()
@@ -143,14 +149,18 @@ public class ConsumerWrappersTest {
 
         eventLoop.emit("e");
 
-        for (boolean aListenersInvoked : listenersInvoked) {
-            assertTrue(aListenersInvoked);
+        for (CountDownLatch latch : latches) {
+            latch.await(100, TimeUnit.MILLISECONDS);
+            assertThat(latch.getCount(),is(0L));
         }
 	}
 
 	@Test
-	public void testParameterCastingAndPassing() {
-		final boolean[] listenersInvoked = new boolean[12];
+	public void testParameterCastingAndPassing() throws Exception {
+		final CountDownLatch[] latches = new CountDownLatch[12];
+		for (int i = 0; i < latches.length; i++) {
+			latches[i] = new CountDownLatch(1);
+		}
 
 		final String p1 = "1";
 		final Integer p2 = 2;
@@ -165,7 +175,6 @@ public class ConsumerWrappersTest {
 
 		TenParameterConsumer<String, Integer, Double, Long, Float, Byte, Boolean, Character, String, Double> listener10 = (
 				param1, param2, param3, param4, param5, param6, param7, param8, param9, param10) -> {
-			listenersInvoked[0] = true;
 			assertSame(param1, p1);
 			assertSame(param2, p2);
 			assertSame(param3, p3);
@@ -176,11 +185,11 @@ public class ConsumerWrappersTest {
 			assertSame(param8, p8);
 			assertSame(param9, p9);
 			assertSame(param10, p10);
+			latches[0].countDown();
 		};
 
 		NineParameterConsumer<String, Integer, Double, Long, Float, Byte, Boolean, Character, String> listener9 = (
 				param1, param2, param3, param4, param5, param6, param7, param8, param9) -> {
-			listenersInvoked[1] = true;
 			assertSame(param1, p1);
 			assertSame(param2, p2);
 			assertSame(param3, p3);
@@ -190,11 +199,11 @@ public class ConsumerWrappersTest {
 			assertSame(param7, p7);
 			assertSame(param8, p8);
 			assertSame(param9, p9);
+			latches[1].countDown();
 		};
 
 		EightParameterConsumer<String, Integer, Double, Long, Float, Byte, Boolean, Character> listener8 = (
 				param1, param2, param3, param4, param5, param6, param7, param8) -> {
-			listenersInvoked[2] = true;
 			assertSame(param1, p1);
 			assertSame(param2, p2);
 			assertSame(param3, p3);
@@ -203,11 +212,11 @@ public class ConsumerWrappersTest {
 			assertSame(param6, p6);
 			assertSame(param7, p7);
 			assertSame(param8, p8);
+			latches[2].countDown();
 		};
 
 		SevenParameterConsumer<String, Integer, Double, Long, Float, Byte, Boolean> listener7 = (param1, param2,
 				param3, param4, param5, param6, param7) -> {
-			listenersInvoked[3] = true;
 			assertSame(param1, p1);
 			assertSame(param2, p2);
 			assertSame(param3, p3);
@@ -215,57 +224,57 @@ public class ConsumerWrappersTest {
 			assertSame(param5, p5);
 			assertSame(param6, p6);
 			assertSame(param7, p7);
+			latches[3].countDown();
 		};
 
 		SixParameterConsumer<String, Integer, Double, Long, Float, Byte> listener6 = (param1, param2, param3,
 				param4, param5, param6) -> {
-			listenersInvoked[4] = true;
 			assertSame(param1, p1);
 			assertSame(param2, p2);
 			assertSame(param3, p3);
 			assertSame(param4, p4);
 			assertSame(param5, p5);
 			assertSame(param6, p6);
+			latches[4].countDown();
 		};
 
 		FiveParameterConsumer<String, Integer, Double, Long, Float> listener5 = (param1, param2, param3, param4,
 				param5) -> {
-			listenersInvoked[5] = true;
 			assertSame(param1, p1);
 			assertSame(param2, p2);
 			assertSame(param3, p3);
 			assertSame(param4, p4);
 			assertSame(param5, p5);
+			latches[5].countDown();
 		};
 
 		FourParameterConsumer<String, Integer, Double, Long> listener4 = (param1, param2, param3, param4) -> {
-			listenersInvoked[6] = true;
 			assertSame(param1, p1);
 			assertSame(param2, p2);
 			assertSame(param3, p3);
 			assertSame(param4, p4);
+			latches[6].countDown();
 		};
 
 		ThreeParameterConsumer<String, Integer, Double> listener3 = (param1, param2, param3) -> {
-			listenersInvoked[7] = true;
 			assertSame(param1, p1);
 			assertSame(param2, p2);
 			assertSame(param3, p3);
+			latches[7].countDown();
 		};
 
 		TwoParameterConsumer<String, Integer> listener2 = (param1, param2) -> {
-			listenersInvoked[8] = true;
 			assertSame(param1, p1);
 			assertSame(param2, p2);
+			latches[8].countDown();
 		};
 
 		SingleParameterConsumer<String> listener1 = param1 -> {
-			listenersInvoked[9] = true;
 			assertSame(param1, p1);
+			latches[9].countDown();
 		};
 
 		Consumer<Object[]> genericListener = data -> {
-            listenersInvoked[10] = true;
             assertSame(data[0], p1);
             assertSame(data[1], p2);
             assertSame(data[2], p3);
@@ -276,8 +285,9 @@ public class ConsumerWrappersTest {
             assertSame(data[7], p8);
             assertSame(data[8], p9);
             assertSame(data[9], p10);
+            latches[10].countDown();
         };
-		NoParameterConsumer noParamsListener = () -> listenersInvoked[11] = true;
+		NoParameterConsumer noParamsListener = () -> latches[11].countDown();
 
         EventLoopConfig eventLoopConfig =
                 EventLoopConfig.builder()
@@ -300,8 +310,9 @@ public class ConsumerWrappersTest {
 
 		eventLoop.emit("e", p1, p2, p3, p4, p5, p6, p7, p8, p9, p10);
 
-		for (boolean aListenersInvoked : listenersInvoked) {
-			assertTrue(aListenersInvoked);
+		for (CountDownLatch latch : latches) {
+		    latch.await(100, TimeUnit.MILLISECONDS);
+			assertThat(latch.getCount(),is(0L));
 		}
 
 	}

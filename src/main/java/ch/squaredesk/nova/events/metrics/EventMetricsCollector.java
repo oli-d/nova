@@ -11,16 +11,29 @@
 package ch.squaredesk.nova.events.metrics;
 
 import ch.squaredesk.nova.metrics.Metrics;
+import com.codahale.metrics.Gauge;
+
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicLong;
 
 public class EventMetricsCollector {
 	private final Metrics metrics;
 	private final String identifierPrefix;
+    private final AtomicLong totalNumberOfDispatchedEvents;
+    private final ConcurrentHashMap<Object,AtomicLong> eventSpecificDispatchCounters;
 
 	public EventMetricsCollector(Metrics metrics, String identifierPrefix) {
 		this.metrics = metrics;
+		this.eventSpecificDispatchCounters = new ConcurrentHashMap<>();
 		this.identifierPrefix = "EventLoop".equalsIgnoreCase(identifierPrefix) ? identifierPrefix : "EventLoop." + identifierPrefix;
+        totalNumberOfDispatchedEvents = new AtomicLong();
+        metrics.register((Gauge<Long>) totalNumberOfDispatchedEvents::get,identifierPrefix,"dispatchedEvents","total");
 	}
 
+
+	public void eventDispatched() {
+        totalNumberOfDispatchedEvents.incrementAndGet();
+    }
 
 	public void eventDispatched(Object event) {
 		String eventString = String.valueOf(event);
@@ -52,5 +65,13 @@ public class EventMetricsCollector {
 
     public void timeoutSet(Object event) {
         metrics.getCounter(identifierPrefix,"timeouts", "total").inc();
+    }
+
+    public AtomicLong getEventSpecififcDispatchCounter(Object event) {
+        return eventSpecificDispatchCounters.computeIfAbsent(event, key -> {
+            AtomicLong dispatchCounter = new AtomicLong();
+            metrics.register((Gauge<Long>) totalNumberOfDispatchedEvents::get,identifierPrefix,"dispatchedEvents",String.valueOf(key));
+            return dispatchCounter;
+        });
     }
 }

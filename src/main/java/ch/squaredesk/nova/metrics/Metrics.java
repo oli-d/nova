@@ -49,54 +49,44 @@ public class Metrics {
 		dumpOnce(logReporter);
 	}
 
-	public <T extends Metric> void register(T metric, String... idPath) {
-		metricRegistry.register(name(idPath), metric);
+	public <T extends Metric> void register(T metric, String idPathFirst, String... idPathRemainder) {
+		metricRegistry.register(name(idPathFirst,idPathRemainder), metric);
 	}
 
-	public boolean remove(String... idPath) {
-		return metricRegistry.remove(name(idPath));
+	public boolean remove(String idPathFirst, String... idPathRemainder) {
+		return metricRegistry.remove(name(idPathFirst,idPathRemainder));
 	}
 
-	public Meter getMeter(String... idPath) {
-		return metricRegistry.meter(name(idPath));
+	public Meter getMeter(String idPathFirst, String... idPathRemainder) {
+		return metricRegistry.meter(name(idPathFirst,idPathRemainder));
 	}
 
-	public Counter getCounter(String... idPath) {
-		return metricRegistry.counter(name(idPath));
+	public Counter getCounter(String idPathFirst, String... idPathRemainder) {
+		return metricRegistry.counter(name(idPathFirst,idPathRemainder));
 	}
 
-	public Timer getTimer(String... idPath) {
-		return metricRegistry.timer(name(idPath));
+	public Timer getTimer(String idPathFirst, String... idPathRemainder) {
+		return metricRegistry.timer(name(idPathFirst,idPathRemainder));
 	}
 
-	public Histogram getHistogram(String... idPath) {
-		return metricRegistry.histogram(name(idPath));
+	public Histogram getHistogram(String idPathFirst, String... idPathRemainder) {
+		return metricRegistry.histogram(name(idPathFirst,idPathRemainder));
 	}
 
-	public SettableGauge getGauge(String... idPath) {
-        SortedMap<String, Gauge> gauges = metricRegistry.getGauges((metricName, metric) -> name(idPath).equals(metricName));
+	public SettableGauge getGauge(String idPathFirst, String... idPathRemainder) {
+        SortedMap<String, Gauge> gauges = metricRegistry.getGauges((metricName, metric) -> name(idPathFirst,idPathRemainder).equals(metricName));
         if (gauges.isEmpty()) {
-            return metricRegistry.register(name(idPath), new SettableGauge());
+            return metricRegistry.register(name(idPathFirst,idPathRemainder), new SettableGauge());
         }
-        return (SettableGauge) gauges.get(name(idPath));
+        return (SettableGauge) gauges.get(name(idPathFirst,idPathRemainder));
 	}
 
 	public Map<String, Metric> getMetrics() {
 		return metricRegistry.getMetrics();
 	}
 
-	private String name(String... idPath) {
-		int count = idPath.length;
-		StringBuilder sb = new StringBuilder();
-		int idx = 0;
-		for (String s : idPath) {
-			sb.append(s);
-			if (idx < count - 1) {
-				sb.append('.');
-			}
-			idx++;
-		}
-		return sb.toString();
+	public static String name(String idPathFirst, String... idPathRemainder) {
+		return MetricRegistry.name(idPathFirst, idPathRemainder);
 	}
 
 	public static class SettableGauge implements Gauge<Long> {
