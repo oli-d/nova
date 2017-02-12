@@ -11,7 +11,7 @@
 package ch.squaredesk.nova.examples.metrics;
 
 import ch.squaredesk.nova.Nova;
-import ch.squaredesk.nova.events.EventLoop;
+import ch.squaredesk.nova.events.EventBus;
 import org.apache.log4j.BasicConfigurator;
 
 import java.io.BufferedReader;
@@ -71,14 +71,14 @@ public class MetricsExample {
          * *************************************************************************** *
          * *************************************************************************** *
          */
-        nova.eventLoop.on("Event").subscribe();
-        nova.eventLoop.on("Event2").subscribe();
-        startEventCreation(nova.eventLoop);
+        nova.eventBus.on("Event").subscribe();
+        nova.eventBus.on("Event2").subscribe();
+        startEventCreation(nova.eventBus);
 
         new BufferedReader(new InputStreamReader(System.in)).readLine();
     }
 
-    private static void startEventCreation(final EventLoop eventLoop) {
+    private static void startEventCreation(final EventBus eventBus) {
         Thread t = new Thread() {
             @Override
             public void run() {
@@ -89,10 +89,10 @@ public class MetricsExample {
                         sleep(sleepTimeMillis);
                     } catch (InterruptedException e) {
                     }
-                    eventLoop.emit("Event");
-                    eventLoop.emit("Event2");
-                    eventLoop.emit("Unhandled");
-                    eventLoop.emit("Unhandled2");
+                    eventBus.emit("Event");
+                    eventBus.emit("Event2");
+                    eventBus.emit("Unhandled");
+                    eventBus.emit("Unhandled2");
                 }
             }
         };

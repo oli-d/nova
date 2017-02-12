@@ -1,54 +1,53 @@
 package ch.squaredesk.nova.events;
 
 import ch.squaredesk.nova.Nova;
-import ch.squaredesk.nova.metrics.Metrics;
-import io.reactivex.Observable;
+import io.reactivex.Scheduler;
 import io.reactivex.schedulers.Schedulers;
 import org.apache.log4j.BasicConfigurator;
 
-import java.io.PrintStream;
-import java.math.BigDecimal;
-import java.rmi.NotBoundException;
 import java.text.DecimalFormat;
-import java.text.NumberFormat;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 
 public class ThroughputTestDriver {
-    private DecimalFormat numberFormatter = new DecimalFormat("#,##0.##");
+    private static DecimalFormat numberFormatter = new DecimalFormat("#,##0.##");
     static int numTestRuns = 3;
-    int numEvents = 10_000_000;
-    int numDispatcherThreads = 100;
-    int numSubscribersPerTopic = 5;
-    int numTopics = 100;
+    static int numEvents = 10_000_000;
+    static int numDispatcherThreads = 100;
+    static int numSubscribersPerTopic = 5;
+    static int numTopics = 100;
+    static int numEventsPerThread = numEvents / numDispatcherThreads;
+    static int numEventsTotal = numEvents * numSubscribersPerTopic;
 
     public static void main (String[] args) throws Exception {
         BasicConfigurator.configure();
         Nova nova = Nova.builder()
                 .setIdentifier("perfTest")
-                .setEventLoopConfig(EventLoopConfig.builder().setDispatchInEmitterThread(false).build())
+                .setEventBusConfig(EventBusConfig.builder().setDispatchInEmitterThread(false).build())
                 .build();
 
         ThroughputTestDriver ttd = new ThroughputTestDriver();
 
+        System.out.println("numEventsPerThread = " + numberFormatter.format(numEventsPerThread));
+        System.out.println("numDispatcherThreads = " + numberFormatter.format(numDispatcherThreads));
+
         for (int i = 0; i < numTestRuns; i++) {
             System.out.println("=====================" + (i+1) + "/" + numTestRuns + "=================================");
-            ttd.go(nova.eventLoop);
+            ttd.go(nova.eventBus);
         }
 
         nova.metrics.dumpOnceToLog();
     }
 
-    public void go (EventLoop eventLoop) throws Exception {
-        int numEventsPerThread = numEvents / numDispatcherThreads;
-        int numEventsTotal = numEvents * numSubscribersPerTopic;
+    public void go (EventBus eventBus) throws Exception {
+        Scheduler scheduler = Schedulers.io();
         CountDownLatch cdl = new CountDownLatch(numEventsTotal);
 
         for (int i = 0; i < numSubscribersPerTopic; i++) {
             for (int topicId = 0; topicId < numTopics; topicId++) {
-                eventLoop.on(topicId).subscribe(data -> {
-//                   System.out.println(Thread.currentThread().getName() + "/" + data[0] );
+                eventBus.on(topicId).subscribe(data -> {
+                   System.out.println(Thread.currentThread().getName() + "/" + data[0] );
                     cdl.countDown();
                 });
             }
@@ -60,7 +59,7 @@ public class ThroughputTestDriver {
             int idx = x;
             threads[x] = new Thread(() -> {
                 for (int i=0; i<numEventsPerThread; i++) {
-                    eventLoop.emit(i%numTopics, i);
+                    eventBus.emit(i%numTopics, i);
                 }
                 // System.err.println("Thread " + idx + " done emitting!");
             });
@@ -93,7 +92,7 @@ public class ThroughputTestDriver {
         for (int x=0; x<numDispatcherThreads; x++) {
             threads[x].join();
         }
-        // System.out.println("Finished...");
+        System.out.println("Finished...");
     }
 
 

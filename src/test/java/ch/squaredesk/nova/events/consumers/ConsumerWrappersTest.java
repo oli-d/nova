@@ -10,8 +10,8 @@
 
 package ch.squaredesk.nova.events.consumers;
 
-import ch.squaredesk.nova.events.EventLoopConfig;
-import ch.squaredesk.nova.events.EventLoop;
+import ch.squaredesk.nova.events.EventBus;
+import ch.squaredesk.nova.events.EventBusConfig;
 import ch.squaredesk.nova.metrics.Metrics;
 import io.reactivex.functions.Consumer;
 import org.junit.Test;
@@ -128,26 +128,26 @@ public class ConsumerWrappersTest {
         };
         NoParameterConsumer noParamsListener = () -> latches[11].countDown();
 
-        EventLoopConfig eventLoopConfig =
-                EventLoopConfig.builder()
+        EventBusConfig eventBusConfig =
+                EventBusConfig.builder()
                         .setDispatchInEmitterThread(true)
                         .build();
-        EventLoop eventLoop = new EventLoop("id", eventLoopConfig, new Metrics());
+        EventBus eventBus = new EventBus("id", eventBusConfig, new Metrics());
 
-        eventLoop.on("e").subscribe(noParamsListener);
-        eventLoop.on("e").subscribe(genericListener);
-        eventLoop.on("e").subscribe(listener1);
-        eventLoop.on("e").subscribe(listener2);
-        eventLoop.on("e").subscribe(listener3);
-        eventLoop.on("e").subscribe(listener4);
-        eventLoop.on("e").subscribe(listener5);
-        eventLoop.on("e").subscribe(listener6);
-        eventLoop.on("e").subscribe(listener7);
-        eventLoop.on("e").subscribe(listener8);
-        eventLoop.on("e").subscribe(listener9);
-        eventLoop.on("e").subscribe(listener10);
+        eventBus.on("e").subscribe(noParamsListener);
+        eventBus.on("e").subscribe(genericListener);
+        eventBus.on("e").subscribe(listener1);
+        eventBus.on("e").subscribe(listener2);
+        eventBus.on("e").subscribe(listener3);
+        eventBus.on("e").subscribe(listener4);
+        eventBus.on("e").subscribe(listener5);
+        eventBus.on("e").subscribe(listener6);
+        eventBus.on("e").subscribe(listener7);
+        eventBus.on("e").subscribe(listener8);
+        eventBus.on("e").subscribe(listener9);
+        eventBus.on("e").subscribe(listener10);
 
-        eventLoop.emit("e");
+        eventBus.emit("e");
 
         for (CountDownLatch latch : latches) {
             latch.await(100, TimeUnit.MILLISECONDS);
@@ -289,26 +289,26 @@ public class ConsumerWrappersTest {
         };
         NoParameterConsumer noParamsListener = () -> latches[11].countDown();
 
-        EventLoopConfig eventLoopConfig =
-                EventLoopConfig.builder()
+        EventBusConfig eventBusConfig =
+                EventBusConfig.builder()
                         .setDispatchInEmitterThread(true)
                         .build();
-        EventLoop eventLoop = new EventLoop("id", eventLoopConfig, new Metrics());
+        EventBus eventBus = new EventBus("id", eventBusConfig, new Metrics());
 
-        eventLoop.on("e").subscribe(noParamsListener);
-        eventLoop.on("e").subscribe(genericListener);
-        eventLoop.on("e").subscribe(listener1);
-        eventLoop.on("e").subscribe(listener2);
-        eventLoop.on("e").subscribe(listener3);
-        eventLoop.on("e").subscribe(listener4);
-        eventLoop.on("e").subscribe(listener5);
-        eventLoop.on("e").subscribe(listener6);
-        eventLoop.on("e").subscribe(listener7);
-        eventLoop.on("e").subscribe(listener8);
-        eventLoop.on("e").subscribe(listener9);
-        eventLoop.on("e").subscribe(listener10);
+        eventBus.on("e").subscribe(noParamsListener);
+        eventBus.on("e").subscribe(genericListener);
+        eventBus.on("e").subscribe(listener1);
+        eventBus.on("e").subscribe(listener2);
+        eventBus.on("e").subscribe(listener3);
+        eventBus.on("e").subscribe(listener4);
+        eventBus.on("e").subscribe(listener5);
+        eventBus.on("e").subscribe(listener6);
+        eventBus.on("e").subscribe(listener7);
+        eventBus.on("e").subscribe(listener8);
+        eventBus.on("e").subscribe(listener9);
+        eventBus.on("e").subscribe(listener10);
 
-        eventLoop.emit("e", p1, p2, p3, p4, p5, p6, p7, p8, p9, p10);
+        eventBus.emit("e", p1, p2, p3, p4, p5, p6, p7, p8, p9, p10);
 
         for (CountDownLatch latch : latches) {
             latch.await(100, TimeUnit.MILLISECONDS);

@@ -12,12 +12,12 @@ package ch.squaredesk.nova.events;
 
 import io.reactivex.BackpressureStrategy;
 
-public class EventLoopConfig {
+public class EventBusConfig {
     public final BackpressureStrategy defaultBackpressureStrategy;
     public final boolean dispatchInEmitterThread;
     public final boolean warnOnUnhandledEvent;
 
-    public EventLoopConfig(Builder builder) {
+    public EventBusConfig(Builder builder) {
         this.defaultBackpressureStrategy = builder.defaultBackpressureStrategy;
         this.dispatchInEmitterThread = builder.dispatchInEmitterThread;
         this.warnOnUnhandledEvent = builder.warnOnUnhandledEvent;
@@ -53,9 +53,9 @@ public class EventLoopConfig {
         private void validate() {
         }
 
-        public EventLoopConfig build() {
+        public EventBusConfig build() {
             validate();
-            return new EventLoopConfig(this);
+            return new EventBusConfig(this);
         }
     }
 }

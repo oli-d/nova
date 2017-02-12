@@ -10,23 +10,22 @@
 
 package ch.squaredesk.nova;
 
-import ch.squaredesk.nova.events.EventLoopConfig;
-import ch.squaredesk.nova.events.EventLoop;
+import ch.squaredesk.nova.events.EventBus;
+import ch.squaredesk.nova.events.EventBusConfig;
 import ch.squaredesk.nova.filesystem.Filesystem;
 import ch.squaredesk.nova.metrics.Metrics;
 
 public class Nova {
 
     public final String identifier;
-    public final EventLoop eventLoop;
+    public final EventBus eventBus;
     public final Filesystem filesystem;
     public final Metrics metrics;
 
     private Nova(Builder builder) {
         metrics = builder.metrics;
         identifier = builder.identifier;
-
-        eventLoop = new EventLoop(identifier, builder.eventLoopConfig, metrics);
+        eventBus = new EventBus(identifier, builder.eventBusConfig, metrics);
         filesystem = new Filesystem();
     }
 
@@ -36,7 +35,7 @@ public class Nova {
 
     public static class Builder {
         private String identifier;
-        private EventLoopConfig eventLoopConfig;
+        private EventBusConfig eventBusConfig;
         private Metrics metrics;
 
         private Builder() {
@@ -47,8 +46,8 @@ public class Nova {
             return this;
         }
 
-        public Builder setEventLoopConfig(EventLoopConfig eventLoopConfig) {
-            this.eventLoopConfig = eventLoopConfig;
+        public Builder setEventBusConfig(EventBusConfig eventBusConfig) {
+            this.eventBusConfig = eventBusConfig;
             return this;
         }
 
@@ -58,11 +57,11 @@ public class Nova {
         }
 
         public Nova build() {
-            if (eventLoopConfig == null) {
-                eventLoopConfig = EventLoopConfig.builder().build();
+            if (eventBusConfig == null) {
+                eventBusConfig = EventBusConfig.builder().build();
             }
             if (identifier == null) {
-                identifier = "";
+                identifier = "Nova";
             }
             if (metrics == null) {
                 metrics = new Metrics();

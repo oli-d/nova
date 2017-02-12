@@ -25,20 +25,22 @@ public class EventMetricsCollector {
     public EventMetricsCollector(Metrics metrics, String identifierPrefix) {
         this.metrics = metrics;
         this.eventSpecificDispatchCounters = new ConcurrentHashMap<>();
-        this.identifierPrefix = "EventLoop".equalsIgnoreCase(identifierPrefix) ? identifierPrefix : "EventLoop." + identifierPrefix;
+        this.identifierPrefix = "EventBus".equalsIgnoreCase(identifierPrefix) ? identifierPrefix : "EventBus." + identifierPrefix;
         totalNumberOfDispatchedEvents = new AtomicLong();
         metrics.register((Gauge<Long>) totalNumberOfDispatchedEvents::get,identifierPrefix,"dispatchedEvents","total");
     }
 
 
-    public void eventDispatched() {
-        totalNumberOfDispatchedEvents.incrementAndGet();
-    }
-
     public void eventDispatched(Object event) {
-        String eventString = String.valueOf(event);
-        metrics.getMeter(identifierPrefix,"dispatchedEvents", eventString).mark();
-        metrics.getMeter(identifierPrefix,"dispatchedEvents", "total").mark();
+        eventSpecificDispatchCounters.computeIfAbsent(event, key -> {
+            AtomicLong dispatchCounter = new AtomicLong();
+            metrics.register((Gauge<Long>) dispatchCounter::get,identifierPrefix,"dispatchedEvents",String.valueOf(key));
+            return dispatchCounter;
+        }).incrementAndGet();
+        totalNumberOfDispatchedEvents.incrementAndGet();
+//        String eventString = String.valueOf(event);
+//        metrics.getMeter(identifierPrefix,"dispatchedEvents", eventString).mark();
+//        metrics.getMeter(identifierPrefix,"dispatchedEvents", "total").mark();
     }
 
     public void eventSubjectAdded (Object event) {
@@ -53,25 +55,5 @@ public class EventMetricsCollector {
         String eventString = String.valueOf(event);
         metrics.getCounter(identifierPrefix,"emitsWithNoListener", eventString).inc();
         metrics.getCounter(identifierPrefix,"emitsWithNoListener", "total").inc();
-    }
-
-    public void nextTickSet(Object event) {
-        metrics.getCounter(identifierPrefix,"nextTicks", "total").inc();
-    }
-
-    public void intervalSet(Object event) {
-        metrics.getCounter(identifierPrefix,"intervals", "total").inc();
-    }
-
-    public void timeoutSet(Object event) {
-        metrics.getCounter(identifierPrefix,"timeouts", "total").inc();
-    }
-
-    public AtomicLong getEventSpecififcDispatchCounter(Object event) {
-        return eventSpecificDispatchCounters.computeIfAbsent(event, key -> {
-            AtomicLong dispatchCounter = new AtomicLong();
-            metrics.register((Gauge<Long>) totalNumberOfDispatchedEvents::get,identifierPrefix,"dispatchedEvents",String.valueOf(key));
-            return dispatchCounter;
-        });
     }
 }

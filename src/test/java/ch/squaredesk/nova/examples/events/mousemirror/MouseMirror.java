@@ -65,7 +65,7 @@ public class MouseMirror {
         MouseEventForwarder eventForwarder = new MouseEventForwarder() {
             @Override
             public void forwardEvent(MouseEvent event) {
-                nova.eventLoop.emit("MouseEvent", event);
+                nova.eventBus.emit("MouseEvent", event);
             }
         };
         sourceFrame.getGlassPane().addMouseListener(eventForwarder);
@@ -83,7 +83,7 @@ public class MouseMirror {
          * ********************************************************************************************** *
          */
         for (JFrame targetFrame : targetFrames) {
-            nova.eventLoop.on("MouseEvent").subscribe(new MouseEventTranslator(targetFrame));
+            nova.eventBus.on("MouseEvent").subscribe(new MouseEventTranslator(targetFrame));
         }
 
     }
