@@ -1,47 +1,88 @@
-Modern software systems are very often designed in a distributed,
-service oriented manner. Systems, designed for high performance
-and throughput, very often share two fundamental architectural
-features:
+# Nova
 
-I.) Parallel event processing
+### 1. Why?
+The goal of this project is to provide a small and easy-to-use 
+library that enables developers to rapidly build systems or 
+services in an "event driven, asynchronous and reactive style". 
 
-For high throughput, simply do multiple things at the same time.
-Often, parallelism is reached by running multiple instances of a
-service, instead of heavily multi - threading a single service 
-instance. One reason for this is the fact that proper concurrent 
-programming is simply very hard to do. Staying in a single
-threaded environment makes the code less error prone and a lot 
-easier to test and debug.
+The origins of the API were heavily influenced by Node.js and 
+its underlying programming model, hence the name (***No***de for
+Ja***va***). This programming model, which (for those who have 
+no experience with Node.js) is based on single-threaded event 
+processing, prove itself to be very helpful in eliminating 
+nasty concurrency bugs and to allow the programmer to fully 
+concentrate on the business logic.
 
-II.) Async, event driven event processing
+However, as everything in life, this also came with a downside.
+Mainly, there were three things we had to fight with 
+1. call back hell for business logic that depends on multiple
+data sources,
+1. the need to split a long running execution into various parts
+and emit artificial "sub events", and 
+1. improper event processing can easily block your one and only
+ thread, rendering the whole service unresponsive
+ 
+Therefore we changed the philosophy (and implementation) of the 
+library and based it on RxJava (2.0) to promote a fully reactive
+way of programming.
+ 
+* Being reactive makes it very easy to express business logic based
+on various information sources and define "if this than that" scenarios.
+* To the client, it is completely transparent whether information is
+delivered synchronously or asynchronously 
+* The client is under full control over the threading model. It can
+ chose to go single threaded (if it has to mutate shared state) or
+ multi threaded (for full system performance) at will. Going 
+ fully functional even eliminates that question  
 
-Being event driven, usually allows the code to be more easily
-organized. The different parts of the system, dealing with the
-various different business features, can  be very loosely
-coupled around a common "event dispatcher" (a.k.a bus).
-
-Processing the events asynchronously removes the need to poll
-resources. This removes a lot of overhead from these resources
-and lets a system scale much better.
+This change also allowed the library to shrink significantly. It currently
+mainly provides the following functionality
+1. Filesystem access to read data reactively
+1. Metrics to easily collect information about your service
+1. An EventBus that you can use to listen to and emit events
 
 
+### 2. Usage
+To use the library, the first thing you have to do is create a new Nova instance:
+ 
+```
+Nova nova = Nova.builder().build();
+```
+
+That's it. From this instance, you then have access to the described functionality 
+by accessing the appropriate instance variables:
+
+```
+Filesystem fs = nova.filesystem;
+Metrics metrics = nova.metrics;
+EventBus eventBus = nova.eventBus;
+```
+
+There's a few things that you can configure when creating the Nova instance:
+
+** describe config
+
+#### Filesystem
+
+** describe Filesystem
+
+#### Metrics
+
+** describe Metrics
+
+#### EventBus
 
 
-The goal of this project is to provide a small, easy-to-use 
-library, that enables developers to build systems or services
-in the above described "single threaded, asynchronous, event 
-driven style". 
+### 3. What else?
+This is just the core library used by the other "micro frameworks" in the Nova
+world. Those other libraries are tools that really make it easy to quickly build
+your services:
 
-The API is heavily influenced by Node.js and uses the same names
-in many places. Due to the significant differences between Java 
-and JavaScript, compromises will have to be made.
+* nova-comm: communication base library, protocol agnostic reactive message sending and retrieval
+* nova-jms - reactive JMS messaging
+* nova-http - reactive HTTP communication
+* nova-event-annotations - allows your spring beans to automatically connect to the EventBus using annotations
+* nova-service -  
+* ...
 
-First and foremost, Java does not support first-class functions,
-let alone closures. However, it should be easy enough to mimic
-them with classes. Yes, the code is more verbose (i.e. harder to
-read and understand) but this does not stop us from using the
-desired programming model.
-
-Developers, not familiar with JavaScript or Node.js can ignore
-the last two paragraphs and should have a look at the provided
-examples, located in src/test/java/com/dotc/examples
+** describe and include links
