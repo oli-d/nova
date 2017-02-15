@@ -10,7 +10,6 @@
 
 package ch.squaredesk.nova.events;
 
-import ch.squaredesk.nova.events.metrics.EventMetricsCollector;
 import ch.squaredesk.nova.metrics.Metrics;
 import io.reactivex.BackpressureStrategy;
 import io.reactivex.Flowable;

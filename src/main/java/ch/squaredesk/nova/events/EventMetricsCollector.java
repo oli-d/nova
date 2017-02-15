@@ -8,7 +8,7 @@
  *   https://squaredesk.ch/license/oss/LICENSE
  */
 
-package ch.squaredesk.nova.events.metrics;
+package ch.squaredesk.nova.events;
 
 import ch.squaredesk.nova.metrics.Metrics;
 import com.codahale.metrics.Gauge;
@@ -25,7 +25,7 @@ public class EventMetricsCollector {
     public EventMetricsCollector(Metrics metrics, String identifierPrefix) {
         this.metrics = metrics;
         this.eventSpecificDispatchCounters = new ConcurrentHashMap<>();
-        this.identifierPrefix = "EventBus".equalsIgnoreCase(identifierPrefix) ? identifierPrefix : "EventBus." + identifierPrefix;
+        this.identifierPrefix = "EventBus".equalsIgnoreCase(identifierPrefix) ? identifierPrefix : Metrics.name("EventBus.", identifierPrefix);
         totalNumberOfDispatchedEvents = new AtomicLong();
         metrics.register((Gauge<Long>) totalNumberOfDispatchedEvents::get,identifierPrefix,"dispatchedEvents","total");
     }
