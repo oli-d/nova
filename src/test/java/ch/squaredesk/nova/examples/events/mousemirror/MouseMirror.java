@@ -15,8 +15,6 @@ import java.util.concurrent.TimeUnit;
 
 import javax.swing.JFrame;
 
-import org.apache.log4j.BasicConfigurator;
-
 import ch.squaredesk.nova.Nova;
 
 /**
@@ -30,9 +28,6 @@ import ch.squaredesk.nova.Nova;
  */
 public class MouseMirror {
     public static void main(String[] args) {
-        // init logging
-        BasicConfigurator.configure();
-
         // create the UI components
         JFrame sourceFrame = createSourceFrame();
         JFrame[] targetFrames = createTargetFrames(2);

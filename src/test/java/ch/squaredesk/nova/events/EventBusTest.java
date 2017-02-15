@@ -14,7 +14,6 @@ import ch.squaredesk.nova.events.consumers.NoParameterConsumer;
 import ch.squaredesk.nova.metrics.Metrics;
 import io.reactivex.Flowable;
 import io.reactivex.disposables.Disposable;
-import org.apache.log4j.BasicConfigurator;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -37,11 +36,6 @@ public class EventBusTest {
                 "test",
                 EventBusConfig.builder().setDispatchInEmitterThread(false).build(),
                 new Metrics());
-    }
-
-    @BeforeClass
-    public static void initLogging() {
-        BasicConfigurator.configure();
     }
 
     @Test(expected = NullPointerException.class)

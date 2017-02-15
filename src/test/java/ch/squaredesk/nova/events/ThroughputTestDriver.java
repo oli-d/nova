@@ -3,7 +3,6 @@ package ch.squaredesk.nova.events;
 import ch.squaredesk.nova.Nova;
 import io.reactivex.Scheduler;
 import io.reactivex.schedulers.Schedulers;
-import org.apache.log4j.BasicConfigurator;
 
 import java.text.DecimalFormat;
 import java.util.concurrent.CountDownLatch;
@@ -21,7 +20,6 @@ public class ThroughputTestDriver {
     static int numEventsTotal = numEvents * numSubscribersPerTopic;
 
     public static void main (String[] args) throws Exception {
-        BasicConfigurator.configure();
         Nova nova = Nova.builder()
                 .setIdentifier("perfTest")
                 .setEventBusConfig(EventBusConfig.builder().setDispatchInEmitterThread(false).build())

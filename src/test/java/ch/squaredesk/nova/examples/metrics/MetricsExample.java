@@ -12,7 +12,6 @@ package ch.squaredesk.nova.examples.metrics;
 
 import ch.squaredesk.nova.Nova;
 import ch.squaredesk.nova.events.EventBus;
-import org.apache.log4j.BasicConfigurator;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
@@ -31,9 +30,6 @@ import java.util.concurrent.TimeUnit;
  */
 public class MetricsExample {
     public static void main(String[] args) throws Exception {
-        // init logging
-        BasicConfigurator.configure();
-
         /**
          * <pre>
          * *********************************************************************** *
