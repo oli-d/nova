@@ -44,7 +44,7 @@ public class ThroughputTestDriver {
         for (int i = 0; i < numSubscribersPerTopic; i++) {
             for (int topicId = 0; topicId < numTopics; topicId++) {
                 eventBus.on(topicId).subscribe(data -> {
-                   System.out.println(Thread.currentThread().getName() + "/" + data[0] );
+                   //System.out.println(Thread.currentThread().getName() + "/" + data[0] );
                     cdl.countDown();
                 });
             }

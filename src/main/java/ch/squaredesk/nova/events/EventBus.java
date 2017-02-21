@@ -47,20 +47,28 @@ public class EventBus {
         eventSpecificSubjects = new ConcurrentHashMap<>();
     }
 
-    private Subject<Object[]> getSubjectFor (Object event) {
+    private Subject<Object[]> getSubjectForEventEmitting(Object event) {
+        Subject<Object[]> retVal = eventSpecificSubjects.get(event);
+        if (!retVal.hasObservers()) {
+            eventSpecificSubjects.remove(event);
+            metricsCollector.eventSubjectRemoved(event);
+            retVal = null;
+        }
+        return retVal;
+    }
+
+    private Subject<Object[]> getSubjectForObserving(Object event) {
         return eventSpecificSubjects.computeIfAbsent(event, key -> {
             metricsCollector.eventSubjectAdded(event);
-            Subject<Object[]> eventSpecificSubject = PublishSubject
-                    .create();
+            Subject<Object[]> eventSpecificSubject = PublishSubject.create();
             return eventSpecificSubject.toSerialized();
-            // FIXME: remove if last subscriber goes
         });
     }
 
     public void emit (Object event, Object... data) {
         requireNonNull(event, "event must not be null");
         try {
-            Subject<Object[]> subject = getSubjectFor(event);
+            Subject<Object[]> subject = getSubjectForEventEmitting(event);
             if (subject==null) {
                 metricsCollector.eventEmittedButNoObservers(event);
                 if (eventBusConfig.warnOnUnhandledEvent) {
@@ -77,14 +85,13 @@ public class EventBus {
     }
 
     public Flowable<Object[]> on(Object event) {
-        return on(event,
-                eventBusConfig.defaultBackpressureStrategy);
+        return on(event, eventBusConfig.defaultBackpressureStrategy);
     }
 
 
     public Flowable<Object[]> on(Object event, BackpressureStrategy backpressureStrategy) {
         requireNonNull(event, "event must not be null");
-        return getSubjectFor(event).toFlowable(backpressureStrategy);
+        return getSubjectForObserving(event).toFlowable(backpressureStrategy);
     }
 
 }
