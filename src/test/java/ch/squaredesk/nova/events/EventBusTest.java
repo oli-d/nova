@@ -15,7 +15,6 @@ import ch.squaredesk.nova.metrics.Metrics;
 import io.reactivex.Flowable;
 import io.reactivex.disposables.Disposable;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -34,7 +33,7 @@ public class EventBusTest {
     public void setup() {
         eventBus = new EventBus(
                 "test",
-                EventBusConfig.builder().setDispatchInEmitterThread(false).build(),
+                EventBusConfig.builder().build(),
                 new Metrics());
     }
 

@@ -62,8 +62,10 @@ public class EventBus {
         try {
             Subject<Object[]> subject = getSubjectFor(event);
             if (subject==null) {
+                metricsCollector.eventEmittedButNoObservers(event);
                 if (eventBusConfig.warnOnUnhandledEvent) {
-                    metricsCollector.eventEmittedButNoObservers(event);
+                    logger.warn("Trying to dispatch event {}, but no observers could be found. Data: {}",
+                            event, Arrays.toString(data));
                 }
             } else {
                 subject.onNext(data);

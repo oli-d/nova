@@ -128,11 +128,7 @@ public class ConsumerWrappersTest {
         };
         NoParameterConsumer noParamsListener = () -> latches[11].countDown();
 
-        EventBusConfig eventBusConfig =
-                EventBusConfig.builder()
-                        .setDispatchInEmitterThread(true)
-                        .build();
-        EventBus eventBus = new EventBus("id", eventBusConfig, new Metrics());
+        EventBus eventBus = new EventBus("id", EventBusConfig.builder().build(), new Metrics());
 
         eventBus.on("e").subscribe(noParamsListener);
         eventBus.on("e").subscribe(genericListener);
@@ -289,11 +285,7 @@ public class ConsumerWrappersTest {
         };
         NoParameterConsumer noParamsListener = () -> latches[11].countDown();
 
-        EventBusConfig eventBusConfig =
-                EventBusConfig.builder()
-                        .setDispatchInEmitterThread(true)
-                        .build();
-        EventBus eventBus = new EventBus("id", eventBusConfig, new Metrics());
+        EventBus eventBus = new EventBus("id", EventBusConfig.builder().build(), new Metrics());
 
         eventBus.on("e").subscribe(noParamsListener);
         eventBus.on("e").subscribe(genericListener);

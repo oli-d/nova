@@ -22,7 +22,6 @@ public class ThroughputTestDriver {
     public static void main (String[] args) throws Exception {
         Nova nova = Nova.builder()
                 .setIdentifier("perfTest")
-                .setEventBusConfig(EventBusConfig.builder().setDispatchInEmitterThread(false).build())
                 .build();
 
         ThroughputTestDriver ttd = new ThroughputTestDriver();
