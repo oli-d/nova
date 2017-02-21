@@ -11,9 +11,12 @@
 package ch.squaredesk.nova.events;
 
 import ch.squaredesk.nova.events.consumers.NoParameterConsumer;
+import ch.squaredesk.nova.events.consumers.SingleParameterConsumer;
 import ch.squaredesk.nova.metrics.Metrics;
 import io.reactivex.Flowable;
 import io.reactivex.disposables.Disposable;
+import io.reactivex.functions.Consumer;
+import io.reactivex.subscribers.TestSubscriber;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -196,21 +199,21 @@ public class EventBusTest {
         assertFalse(invocationFlags[2]);
     }
 
-//    @Test
-//    public void testListenerCanBeRemovedSeparately() throws Exception {
-//        TestObserver<Object[]> observer1 = eventBus.on(String.class).take(1).test();
-//        TestObserver<Object[]> observer2 = eventBus.on(String.class).take(2).test();
-//
-//        // emit -> both observers should get it
-//        eventBus.emit(String.class, "MyEvent1");
-//        assertTrue(observer1.await(100,TimeUnit.MILLISECONDS));
-//        observer1.dispose();
-//
-//        // emit again -> observer 2 should also still get this one after unsubscription of observer 1
-//        eventBus.emit(String.class, "MyEvent2");
-//        assertTrue(observer2.await(100,TimeUnit.MILLISECONDS));
-//        observer2.assertValueCount(2);
-//    }
+    @Test
+    public void testListenerCanBeRemovedSeparately() throws Exception {
+        TestSubscriber<Object[]> observer1 = eventBus.on(String.class).take(1).test();
+        TestSubscriber<Object[]> observer2 = eventBus.on(String.class).take(2).test();
+
+        // emit -> both observers should get it
+        eventBus.emit(String.class, "MyEvent1");
+        assertTrue(observer1.await(100,TimeUnit.MILLISECONDS));
+        observer1.dispose();
+
+        // emit again -> observer 2 should also still get this one after unsubscription of observer 1
+        eventBus.emit(String.class, "MyEvent2");
+        assertTrue(observer2.await(100,TimeUnit.MILLISECONDS));
+        observer2.assertValueCount(2);
+    }
 
     @Test
     public void allListenersCanBeRemoved() throws Exception {
@@ -246,95 +249,111 @@ public class EventBusTest {
         assertThat(countDownLatch.getCount(), is(0L));
     }
 
+    @Test
+    public void subscriptionDiesOnUnhandledObserverException() throws InterruptedException {
+        AtomicInteger counter = new AtomicInteger();
+        final CountDownLatch latch = new CountDownLatch(1);
 
+        Consumer<Object[]> listener = param -> {
+            if ("throw".equals(param[0])) {
+                throw new RuntimeException("for test");
+            } else if ("end".equals(param[0])) {
+                latch.countDown();
+            } else {
+                counter.incrementAndGet();
+            }
+        };
 
+        Flowable observable = eventBus.on("xxx");
 
-//    @Test
-//    public void eventLoopDoesntDieOnUnhandledException() throws InterruptedException {
-//        CountDownLatch latch = new CountDownLatch(1);
-//        AtomicInteger counter = new AtomicInteger();
-//
-//        Consumer<Object[]> listener = param -> {
-//            if ("throw".equals(param[0])) {
-//                throw new RuntimeException("for test");
-//            } else {
-//                counter.incrementAndGet();
-//            }
-//        };
-//
-//        Disposable d = eventBus.on("xxx").subscribe(listener, t -> latch.countDown());
-//        eventBus.emit("xxx", "count");
-//        eventBus.emit("xxx", "count");
-//        eventBus.emit("xxx", "throw");
-//
-//        latch.await();
-//        assertTrue(d.isDisposed());
-//        assertThat(counter.get(),is(2));
-//
-//        TestObserver<Object[]> observer = eventBus.on("xxx").take(3).test();
-//        eventBus.emit("xxx", "count");
-//        eventBus.emit("xxx", "count");
-//        eventBus.emit("xxx", "end");
-//        assertTrue(observer.await(100, TimeUnit.MILLISECONDS));
-//    }
+        observable.subscribe(listener);
+        eventBus.emit("xxx", "count");
+        eventBus.emit("xxx", "count");
+        eventBus.emit("xxx", "throw");
+        eventBus.emit("xxx", "count"); // no count, since observer dead
+        eventBus.emit("xxx", "count"); // no count, since observer dead
+        eventBus.emit("xxx", "end");
 
-//    @Test
-//    public void subscriptionDiesOnUnhandledObserverException() throws InterruptedException {
-//        AtomicInteger counter = new AtomicInteger();
-//        final CountDownLatch latch = new CountDownLatch(1);
-//
-//        Consumer<Object[]> listener = param -> {
-//            if ("throw".equals(param[0])) {
-//                throw new RuntimeException("for test");
-//            } else if ("end".equals(param[0])) {
-//                latch.countDown();
-//            } else {
-//                counter.incrementAndGet();
-//            }
-//        };
-//
-//        Observable observable = eventBus.on("xxx");
-//
-//        observable.subscribe(listener);
-//        eventBus.emit("xxx", "count");
-//        eventBus.emit("xxx", "count");
-//        eventBus.emit("xxx", "throw");
-//        eventBus.emit("xxx", "count"); // no count, since observer dead
-//        eventBus.emit("xxx", "count"); // no count, since observer dead
-//        eventBus.emit("xxx", "end");
-//
-//        latch.await(500, TimeUnit.MILLISECONDS);
-//        assertThat(latch.getCount(),is(1L)); // no count down, since "end" was emitted after throw
-//        assertThat(counter.get(), is(2));
-//    }
+        latch.await(500, TimeUnit.MILLISECONDS);
+        assertThat(latch.getCount(),is(1L)); // no count down, since "end" was emitted after throw
+        assertThat(counter.get(), is(2));
+    }
 
-//    @Test
-//    public void subscriptionSurvivesOnUnhandledObserverExceptionIfNovaConsumerUsed() throws InterruptedException {
-//        AtomicInteger counter = new AtomicInteger();
-//        CountDownLatch latch = new CountDownLatch(1);
-//
-//        SingleParameterConsumer<String> listener = param -> {
-//            if ("throw".equals(param)) {
-//                throw new RuntimeException("for test");
-//            } else if ("end".equals(param)) {
-//                latch.countDown();
-//            } else {
-//                counter.incrementAndGet();
-//            }
-//        };
-//
-//        Observable observable = eventBus.on("xxx");
-//
-//        observable.subscribe(listener);
-//        eventBus.emit("xxx", "count");
-//        eventBus.emit("xxx", "count");
-//        eventBus.emit("xxx", "throw");
-//        eventBus.emit("xxx", "count");
-//        eventBus.emit("xxx", "count");
-//        eventBus.emit("xxx", "end");
-//
-//        latch.await(500, TimeUnit.MILLISECONDS);
-//        assertThat(latch.getCount(),is(0L));
-//        assertThat(counter.get(),is(4));
-//    }
+    @Test
+    public void otherSubscriptionAreNotAffectedIfObserverThrowsUnhandledException() throws InterruptedException {
+        class NastyConsumer implements Consumer<Object[]> {
+            private int counter = 0;
+            CountDownLatch latch = new CountDownLatch(1);
+            @Override
+            public void accept(Object[] param) throws Exception {
+                if ("throw".equals(param[0])) {
+                    throw new RuntimeException("for test");
+                } else if ("end".equals(param[0])) {
+                    latch.countDown();
+                } else {
+                    counter++;
+                }
+            }
+        }
+        class NiceConsumer implements Consumer<Object[]> {
+            private int counter = 0;
+            CountDownLatch latch = new CountDownLatch(1);
+            @Override
+            public void accept(Object[] param) throws Exception {
+                if ("end".equals(param[0])) {
+                    latch.countDown();
+                } else {
+                    counter++;
+                }
+            }
+        }
+        NastyConsumer consumer1 = new NastyConsumer();
+        NiceConsumer consumer2 = new NiceConsumer();
+
+        Disposable d1 = eventBus.on("xxx").subscribe(consumer1);
+        Disposable d2 = eventBus.on("xxx").subscribe(consumer2);
+
+        eventBus.emit("xxx", "count");
+        eventBus.emit("xxx", "count");
+        eventBus.emit("xxx", "throw");
+        eventBus.emit("xxx", "count"); // no count on consumer1, since observer dead
+        eventBus.emit("xxx", "count"); // no count on consumer1, since observer dead
+        eventBus.emit("xxx", "end");
+
+        consumer2.latch.await(500, TimeUnit.MILLISECONDS);
+        assertThat(consumer1.latch.getCount(),is(1L)); // no count down, since "end" was emitted after throw
+        assertThat(consumer2.latch.getCount(),is(0L));
+        assertThat(consumer1.counter, is(2));
+        assertThat(consumer2.counter, is(5)); // 4*count + 1*throw
+    }
+
+    @Test
+    public void subscriptionSurvivesOnUnhandledObserverExceptionIfNovaConsumerUsed() throws InterruptedException {
+        AtomicInteger counter = new AtomicInteger();
+        CountDownLatch latch = new CountDownLatch(1);
+
+        SingleParameterConsumer<String> listener = param -> {
+            if ("throw".equals(param)) {
+                throw new RuntimeException("for test");
+            } else if ("end".equals(param)) {
+                latch.countDown();
+            } else {
+                counter.incrementAndGet();
+            }
+        };
+
+        Flowable observable = eventBus.on("xxx");
+
+        observable.subscribe(listener);
+        eventBus.emit("xxx", "count");
+        eventBus.emit("xxx", "count");
+        eventBus.emit("xxx", "throw");
+        eventBus.emit("xxx", "count");
+        eventBus.emit("xxx", "count");
+        eventBus.emit("xxx", "end");
+
+        latch.await(500, TimeUnit.MILLISECONDS);
+        assertThat(latch.getCount(),is(0L));
+        assertThat(counter.get(),is(4));
+    }
 }
