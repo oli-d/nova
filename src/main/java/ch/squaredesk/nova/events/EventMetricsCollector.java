@@ -25,7 +25,7 @@ public class EventMetricsCollector {
     public EventMetricsCollector(Metrics metrics, String identifierPrefix) {
         this.metrics = metrics;
         this.eventSpecificDispatchCounters = new ConcurrentHashMap<>();
-        this.identifierPrefix = "EventBus".equalsIgnoreCase(identifierPrefix) ? identifierPrefix : Metrics.name("EventBus.", identifierPrefix);
+        this.identifierPrefix = "EventBus".equalsIgnoreCase(identifierPrefix) ? identifierPrefix : Metrics.name("EventBus", identifierPrefix);
         totalNumberOfDispatchedEvents = new AtomicLong();
         metrics.register((Gauge<Long>) totalNumberOfDispatchedEvents::get,identifierPrefix,"dispatchedEvents","total");
     }
