@@ -47,17 +47,7 @@ public class EventBus {
         eventSpecificSubjects = new ConcurrentHashMap<>();
     }
 
-    private Subject<Object[]> getSubjectForEventEmitting(Object event) {
-        Subject<Object[]> retVal = eventSpecificSubjects.get(event);
-        if (!retVal.hasObservers()) {
-            eventSpecificSubjects.remove(event);
-            metricsCollector.eventSubjectRemoved(event);
-            retVal = null;
-        }
-        return retVal;
-    }
-
-    private Subject<Object[]> getSubjectForObserving(Object event) {
+    private Subject<Object[]> getSubjectFor(Object event) {
         return eventSpecificSubjects.computeIfAbsent(event, key -> {
             metricsCollector.eventSubjectAdded(event);
             Subject<Object[]> eventSpecificSubject = PublishSubject.create();
@@ -68,8 +58,8 @@ public class EventBus {
     public void emit (Object event, Object... data) {
         requireNonNull(event, "event must not be null");
         try {
-            Subject<Object[]> subject = getSubjectForEventEmitting(event);
-            if (subject==null) {
+            Subject<Object[]> subject = getSubjectFor(event);
+            if (!subject.hasObservers()) {
                 metricsCollector.eventEmittedButNoObservers(event);
                 if (eventBusConfig.warnOnUnhandledEvent) {
                     logger.warn("Trying to dispatch event {}, but no observers could be found. Data: {}",
@@ -91,7 +81,7 @@ public class EventBus {
 
     public Flowable<Object[]> on(Object event, BackpressureStrategy backpressureStrategy) {
         requireNonNull(event, "event must not be null");
-        return getSubjectForObserving(event).toFlowable(backpressureStrategy);
+        return getSubjectFor(event).toFlowable(backpressureStrategy);
     }
 
 }
