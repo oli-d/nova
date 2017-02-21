@@ -13,41 +13,20 @@ package ch.squaredesk.nova.events;
 import io.reactivex.BackpressureStrategy;
 
 public class EventBusConfig {
-    public final BackpressureStrategy defaultBackpressureStrategy;
-    public final boolean warnOnUnhandledEvent;
+    final BackpressureStrategy defaultBackpressureStrategy;
+    final boolean warnOnUnhandledEvents;
 
-    public EventBusConfig(Builder builder) {
-        this.defaultBackpressureStrategy = builder.defaultBackpressureStrategy;
-        this.warnOnUnhandledEvent = builder.warnOnUnhandledEvent;
+
+    public EventBusConfig(BackpressureStrategy backpressureStrategy, boolean warnOnUnhandledEvents) {
+        this.defaultBackpressureStrategy = backpressureStrategy;
+        this.warnOnUnhandledEvents = warnOnUnhandledEvents;
     }
 
-    public static Builder builder() {
-        return new Builder();
-    }
-
-    public static class Builder {
-        private BackpressureStrategy defaultBackpressureStrategy = BackpressureStrategy.BUFFER;
-        private boolean warnOnUnhandledEvent;
-
-        private Builder() {
-        }
-
-        public Builder setDefaultBackpressureStrategy(BackpressureStrategy defaultBackpressureStrategy) {
-            this.defaultBackpressureStrategy = defaultBackpressureStrategy;
-            return this;
-        }
-
-        public Builder setWarnOnUnhandledEvent(boolean warnOnUnhandledEvent) {
-            this.warnOnUnhandledEvent = warnOnUnhandledEvent;
-            return this;
-        }
-
-        private void validate() {
-        }
-
-        public EventBusConfig build() {
-            validate();
-            return new EventBusConfig(this);
-        }
+    @Override
+    public String toString() {
+        return "EventBusConfig{" +
+                "defaultBackpressureStrategy=" + defaultBackpressureStrategy +
+                ", warnOnUnhandledEvents=" + warnOnUnhandledEvents +
+                '}';
     }
 }

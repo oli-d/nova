@@ -37,13 +37,7 @@ public class EventBus {
     public EventBus(String identifier, EventBusConfig eventBusConfig, Metrics metrics) {
         this.eventBusConfig = eventBusConfig;
         this.metricsCollector = new EventMetricsCollector(metrics, identifier);
-
-        if (logger.isDebugEnabled()) {
-            logger.debug("Instantiating event loop " + identifier);
-            logger.debug("\tdefaultBackpressureStrategy:   " + eventBusConfig.defaultBackpressureStrategy);
-            logger.debug("\twarn on unhandled events:      " + eventBusConfig.warnOnUnhandledEvent);
-        }
-
+        logger.debug("Instantiating event loop {} using the following config {}",identifier, eventBusConfig);
         eventSpecificSubjects = new ConcurrentHashMap<>();
     }
 
@@ -61,7 +55,7 @@ public class EventBus {
             Subject<Object[]> subject = getSubjectFor(event);
             if (!subject.hasObservers()) {
                 metricsCollector.eventEmittedButNoObservers(event);
-                if (eventBusConfig.warnOnUnhandledEvent) {
+                if (eventBusConfig.warnOnUnhandledEvents) {
                     logger.warn("Trying to dispatch event {}, but no observers could be found. Data: {}",
                             event, Arrays.toString(data));
                 }

@@ -14,6 +14,7 @@ import ch.squaredesk.nova.events.EventBus;
 import ch.squaredesk.nova.events.EventBusConfig;
 import ch.squaredesk.nova.filesystem.Filesystem;
 import ch.squaredesk.nova.metrics.Metrics;
+import io.reactivex.BackpressureStrategy;
 
 public class Nova {
 
@@ -35,8 +36,11 @@ public class Nova {
 
     public static class Builder {
         private String identifier;
-        private EventBusConfig eventBusConfig;
         private Metrics metrics;
+
+        private BackpressureStrategy defaultBackpressureStrategy = BackpressureStrategy.BUFFER;
+        private boolean warnOnUnhandledEvent = false;
+        private EventBusConfig eventBusConfig;
 
         private Builder() {
         }
@@ -46,20 +50,18 @@ public class Nova {
             return this;
         }
 
-        public Builder setEventBusConfig(EventBusConfig eventBusConfig) {
-            this.eventBusConfig = eventBusConfig;
+        public Builder setDefaultBackpressureStrategy(BackpressureStrategy defaultBackpressureStrategy) {
+            this.defaultBackpressureStrategy = defaultBackpressureStrategy;
             return this;
         }
 
-        public Builder setMetrics(Metrics metrics) {
-            this.metrics = metrics;
+        public Builder setWarnOnUnhandledEvent(boolean warnOnUnhandledEvent) {
+            this.warnOnUnhandledEvent = warnOnUnhandledEvent;
             return this;
         }
+
 
         public Nova build() {
-            if (eventBusConfig == null) {
-                eventBusConfig = EventBusConfig.builder().build();
-            }
             if (identifier == null) {
                 identifier = "Nova";
             }

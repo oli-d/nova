@@ -13,6 +13,7 @@ package ch.squaredesk.nova.events.consumers;
 import ch.squaredesk.nova.events.EventBus;
 import ch.squaredesk.nova.events.EventBusConfig;
 import ch.squaredesk.nova.metrics.Metrics;
+import io.reactivex.BackpressureStrategy;
 import io.reactivex.functions.Consumer;
 import org.junit.Test;
 
@@ -128,7 +129,8 @@ public class ConsumerWrappersTest {
         };
         NoParameterConsumer noParamsListener = () -> latches[11].countDown();
 
-        EventBus eventBus = new EventBus("id", EventBusConfig.builder().build(), new Metrics());
+        EventBus eventBus = new EventBus("id",
+                new EventBusConfig(BackpressureStrategy.BUFFER, false), new Metrics());
 
         eventBus.on("e").subscribe(noParamsListener);
         eventBus.on("e").subscribe(genericListener);
@@ -285,7 +287,8 @@ public class ConsumerWrappersTest {
         };
         NoParameterConsumer noParamsListener = () -> latches[11].countDown();
 
-        EventBus eventBus = new EventBus("id", EventBusConfig.builder().build(), new Metrics());
+        EventBus eventBus = new EventBus("id",
+                new EventBusConfig(BackpressureStrategy.BUFFER, false), new Metrics());
 
         eventBus.on("e").subscribe(noParamsListener);
         eventBus.on("e").subscribe(genericListener);
