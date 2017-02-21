@@ -14,12 +14,10 @@ import io.reactivex.BackpressureStrategy;
 
 public class EventBusConfig {
     public final BackpressureStrategy defaultBackpressureStrategy;
-    public final boolean dispatchInEmitterThread;
     public final boolean warnOnUnhandledEvent;
 
     public EventBusConfig(Builder builder) {
         this.defaultBackpressureStrategy = builder.defaultBackpressureStrategy;
-        this.dispatchInEmitterThread = builder.dispatchInEmitterThread;
         this.warnOnUnhandledEvent = builder.warnOnUnhandledEvent;
     }
 
@@ -29,7 +27,6 @@ public class EventBusConfig {
 
     public static class Builder {
         private BackpressureStrategy defaultBackpressureStrategy = BackpressureStrategy.BUFFER;
-        private boolean dispatchInEmitterThread = false;
         private boolean warnOnUnhandledEvent;
 
         private Builder() {
@@ -37,11 +34,6 @@ public class EventBusConfig {
 
         public Builder setDefaultBackpressureStrategy(BackpressureStrategy defaultBackpressureStrategy) {
             this.defaultBackpressureStrategy = defaultBackpressureStrategy;
-            return this;
-        }
-
-        public Builder setDispatchInEmitterThread(boolean dispatchInEmitterThread) {
-            this.dispatchInEmitterThread = dispatchInEmitterThread;
             return this;
         }
 
