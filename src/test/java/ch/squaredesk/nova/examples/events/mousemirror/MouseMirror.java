@@ -15,8 +15,6 @@ import java.util.concurrent.TimeUnit;
 
 import javax.swing.JFrame;
 
-import org.apache.log4j.BasicConfigurator;
-
 import ch.squaredesk.nova.Nova;
 
 /**
@@ -29,81 +27,78 @@ import ch.squaredesk.nova.Nova;
  * 
  */
 public class MouseMirror {
-	public static void main(String[] args) {
-		// init logging
-		BasicConfigurator.configure();
+    public static void main(String[] args) {
+        // create the UI components
+        JFrame sourceFrame = createSourceFrame();
+        JFrame[] targetFrames = createTargetFrames(2);
 
-		// create the UI components
-		JFrame sourceFrame = createSourceFrame();
-		JFrame[] targetFrames = createTargetFrames(2);
+        /**
+         * <pre>
+         * *********************************************************************** * 
+         * *********************************************************************** * 
+         * ***                                                                 *** *
+         * *** 1st step:                                                       *** *
+         * *** Initilize Nova by creating a new instance of Nova *** *
+         * ***                                                                 *** *
+         * *********************************************************************** *
+         * *********************************************************************** *
+         */
+        final Nova nova = Nova.builder().build();
+        nova.metrics.dumpContinuouslyToLog(5, TimeUnit.SECONDS);
 
-		/**
-		 * <pre>
-		 * *********************************************************************** * 
-		 * *********************************************************************** * 
-		 * ***                                                                 *** *
-		 * *** 1st step:                                                       *** *
-		 * *** Initilize Nova by creating a new instance of Nova *** *
-		 * ***                                                                 *** *
-		 * *********************************************************************** *
-		 * *********************************************************************** *
-		 */
-		final Nova nova = new Nova.Builder().build();
-		nova.metrics.dumpContinuouslyToLog(5, TimeUnit.SECONDS);
+        /**
+         * <pre>
+         * *************************************************************************************** * 
+         * *************************************************************************************** * 
+         * ***                                                                                 *** *
+         * *** 2nd step:                                                                       *** *
+         * *** Register listener on source frame, which puts all MouseEvents on the Nova queue *** *
+         * ***                                                                                 *** *
+         * *************************************************************************************** *
+         * *************************************************************************************** *
+         */
+        MouseEventForwarder eventForwarder = new MouseEventForwarder() {
+            @Override
+            public void forwardEvent(MouseEvent event) {
+                nova.eventBus.emit("MouseEvent", event);
+            }
+        };
+        sourceFrame.getGlassPane().addMouseListener(eventForwarder);
+        sourceFrame.getGlassPane().addMouseMotionListener(eventForwarder);
 
-		/**
-		 * <pre>
-		 * *************************************************************************************** * 
-		 * *************************************************************************************** * 
-		 * ***                                                                                 *** *
-		 * *** 2nd step:                                                                       *** *
-		 * *** Register listener on source frame, which puts all MouseEvents on the Nova queue *** *
-		 * ***                                                                                 *** *
-		 * *************************************************************************************** *
-		 * *************************************************************************************** *
-		 */
-		MouseEventForwarder eventForwarder = new MouseEventForwarder() {
-			@Override
-			public void forwardEvent(MouseEvent event) {
-				nova.eventEmitter.emit("MouseEvent", event);
-			}
-		};
-		sourceFrame.getGlassPane().addMouseListener(eventForwarder);
-		sourceFrame.getGlassPane().addMouseMotionListener(eventForwarder);
+        /**
+         * <pre>
+         * ********************************************************************************************** * 
+         * ********************************************************************************************** * 
+         * ***                                                                                        *** *
+         * *** 3rd step:                                                                              *** *
+         * *** For each target frame, we register a listener, which applies the forwarded MouseEvents *** *
+         * ***                                                                                        *** *
+         * ********************************************************************************************** *
+         * ********************************************************************************************** *
+         */
+        for (JFrame targetFrame : targetFrames) {
+            nova.eventBus.on("MouseEvent").subscribe(new MouseEventTranslator(targetFrame));
+        }
 
-		/**
-		 * <pre>
-		 * ********************************************************************************************** * 
-		 * ********************************************************************************************** * 
-		 * ***                                                                                        *** *
-		 * *** 3rd step:                                                                              *** *
-		 * *** For each target frame, we register a listener, which applies the forwarded MouseEvents *** *
-		 * ***                                                                                        *** *
-		 * ********************************************************************************************** *
-		 * ********************************************************************************************** *
-		 */
-		for (JFrame targetFrame : targetFrames) {
-			nova.eventEmitter.addListener("MouseEvent", new MouseEventTranslator(targetFrame));
-		}
+    }
 
-	}
+    private static JFrame[] createTargetFrames(int numberOfFrames) {
+        JFrame[] returnValue = new JFrame[numberOfFrames];
+        for (int i = 0; i < returnValue.length; i++) {
+            returnValue[i] = new TargetFrame();
+            returnValue[i].setSize(300, 300);
+            returnValue[i].setLocation(300 + (i * 310), 0);
+            returnValue[i].setVisible(true);
+        }
+        return returnValue;
+    }
 
-	private static JFrame[] createTargetFrames(int numberOfFrames) {
-		JFrame[] returnValue = new JFrame[numberOfFrames];
-		for (int i = 0; i < returnValue.length; i++) {
-			returnValue[i] = new TargetFrame();
-			returnValue[i].setSize(300, 300);
-			returnValue[i].setLocation(300 + (i * 310), 0);
-			returnValue[i].setVisible(true);
-		}
-		return returnValue;
-	}
-
-	private static JFrame createSourceFrame() {
-		SourceFrame sourceFrame = new SourceFrame();
-		sourceFrame.setSize(300, 300);
-		sourceFrame.setLocation(0, 0);
-		sourceFrame.setVisible(true);
-		return sourceFrame;
-	}
+    private static JFrame createSourceFrame() {
+        SourceFrame sourceFrame = new SourceFrame();
+        sourceFrame.setSize(300, 300);
+        sourceFrame.setLocation(0, 0);
+        sourceFrame.setVisible(true);
+        return sourceFrame;
+    }
 }
