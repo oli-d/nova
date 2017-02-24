@@ -133,7 +133,7 @@ Disposable subscription = eventBus.on("myEvent").subscribe(eventData -> processM
 subscription.dispose();
 
 ```
-As you saw,whenever the subscriber gets informed, an Object array with additional data is passed. This additional data 
+As you saw, whenever the subscriber gets informed, an Object array with additional data is passed. This additional data 
 is provided by the object that emitted the event. E.g., let's assume we have a Person repository that would like to emit 
 an event whenever a new Person has been added, providing the new person's first and last names. In this scenario it 
 would use the EventBus' emit() method like this:
@@ -155,7 +155,7 @@ Since working with this object array is not particularly convenient, there are a
 casting and make the code much more readable:
 
 ```
-TwoParameterConsumer<String, Integer> newPersonConsumer = (firstName, lastName) -> newPersonCreated(firstName, lastName);
+TwoParameterConsumer<String, String> newPersonConsumer = (firstName, lastName) -> newPersonCreated(firstName, lastName);
 eventBus.on("NewPersonCreated").subscribe(newPersonConsumer);
 ```
 
