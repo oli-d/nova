@@ -170,9 +170,9 @@ world. Those other libraries are tools that try to solve one (and only one) prob
 easy to combine them. They provide solutions for common, technical tasks, allowing developers to focus on the 
 business features provided by a particular service. Currently existing libraries are
 
-* nova-comm: communication base library, protocol agnostic reactive message sending and retrieval
-* nova-jms - reactive JMS messaging
-* nova-http - reactive HTTP communication
-* nova-event-annotations - allows your spring beans to automatically connect to the EventBus using annotations
-* nova-service - Small service skeleton with a defined lifecycle and easy access to Nova and its EventBus 
+* [nova-comm](https://github.com/oli-d/nova-comm): communication base library, protocol agnostic reactive message sending and retrieval
+* [nova-jms](https://github.com/oli-d/nova-jms): reactive JMS messaging
+* [nova-http](https://github.com/oli-d/nova-http): - reactive HTTP communication
+* [nova-event-annotations](https://github.com/oli-d/nova-event-annotations): allows your spring beans to automatically connect to the EventBus using annotations
+* [nova-service](https://github.com/oli-d/nova-service): Small service skeleton with a defined lifecycle and easy access to Nova and its EventBus 
 * ...
