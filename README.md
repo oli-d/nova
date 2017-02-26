@@ -133,7 +133,7 @@ Disposable subscription = eventBus.on("myEvent").subscribe(eventData -> processM
 subscription.dispose();
 
 ```
-As you saw,whenever the subscriber gets informed, an Object array with additional data is passed. This additional data 
+As you saw, whenever the subscriber gets informed, an Object array with additional data is passed. This additional data 
 is provided by the object that emitted the event. E.g., let's assume we have a Person repository that would like to emit 
 an event whenever a new Person has been added, providing the new person's first and last names. In this scenario it 
 would use the EventBus' emit() method like this:
@@ -155,7 +155,7 @@ Since working with this object array is not particularly convenient, there are a
 casting and make the code much more readable:
 
 ```
-TwoParameterConsumer<String, Integer> newPersonConsumer = (firstName, lastName) -> newPersonCreated(firstName, lastName);
+TwoParameterConsumer<String, String> newPersonConsumer = (firstName, lastName) -> newPersonCreated(firstName, lastName);
 eventBus.on("NewPersonCreated").subscribe(newPersonConsumer);
 ```
 
@@ -170,9 +170,9 @@ world. Those other libraries are tools that try to solve one (and only one) prob
 easy to combine them. They provide solutions for common, technical tasks, allowing developers to focus on the 
 business features provided by a particular service. Currently existing libraries are
 
-* nova-comm: communication base library, protocol agnostic reactive message sending and retrieval
-* nova-jms - reactive JMS messaging
-* nova-http - reactive HTTP communication
-* nova-event-annotations - allows your spring beans to automatically connect to the EventBus using annotations
-* nova-service - Small service skeleton with a defined lifecycle and easy access to Nova and its EventBus 
+* [nova-comm](https://github.com/oli-d/nova-comm): communication base library, protocol agnostic reactive message sending and retrieval
+* [nova-jms](https://github.com/oli-d/nova-jms): reactive JMS messaging
+* [nova-http](https://github.com/oli-d/nova-http): reactive HTTP communication
+* [nova-event-annotations](https://github.com/oli-d/nova-event-annotations): allows your spring beans to automatically connect to the EventBus using annotations
+* [nova-service](https://github.com/oli-d/nova-service): Small service skeleton with a defined lifecycle and easy access to Nova and its EventBus 
 * ...
