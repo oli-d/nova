@@ -69,6 +69,8 @@ public class Nova {
                 metrics = new Metrics();
             }
 
+            eventBusConfig = new EventBusConfig(defaultBackpressureStrategy, warnOnUnhandledEvent);
+
             return new Nova(this);
         }
     }
