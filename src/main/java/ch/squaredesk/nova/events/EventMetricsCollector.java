@@ -12,6 +12,7 @@ package ch.squaredesk.nova.events;
 
 import ch.squaredesk.nova.metrics.Metrics;
 import com.codahale.metrics.Gauge;
+import com.codahale.metrics.Meter;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
@@ -19,28 +20,25 @@ import java.util.concurrent.atomic.AtomicLong;
 public class EventMetricsCollector {
     private final Metrics metrics;
     private final String identifierPrefix;
-    private final AtomicLong totalNumberOfDispatchedEvents;
-    private final ConcurrentHashMap<Object,AtomicLong> eventSpecificDispatchCounters;
+    private final Meter allDispatchedEvents;
+    private final ConcurrentHashMap<Object,Meter> eventSpecificDispatchMeters;
 
     public EventMetricsCollector(Metrics metrics, String identifierPrefix) {
         this.metrics = metrics;
-        this.eventSpecificDispatchCounters = new ConcurrentHashMap<>();
+        this.eventSpecificDispatchMeters = new ConcurrentHashMap<>();
         this.identifierPrefix = "EventBus".equalsIgnoreCase(identifierPrefix) ? identifierPrefix : Metrics.name("EventBus", identifierPrefix);
-        totalNumberOfDispatchedEvents = new AtomicLong();
-        metrics.register((Gauge<Long>) totalNumberOfDispatchedEvents::get,identifierPrefix,"dispatchedEvents","total");
+        allDispatchedEvents = new Meter();
+        metrics.register(allDispatchedEvents,this.identifierPrefix,"dispatchedEvents","total");
     }
 
 
     public void eventDispatched(Object event) {
-        eventSpecificDispatchCounters.computeIfAbsent(event, key -> {
-            AtomicLong dispatchCounter = new AtomicLong();
-            metrics.register((Gauge<Long>) dispatchCounter::get,identifierPrefix,"dispatchedEvents",String.valueOf(key));
-            return dispatchCounter;
-        }).incrementAndGet();
-        totalNumberOfDispatchedEvents.incrementAndGet();
-//        String eventString = String.valueOf(event);
-//        metrics.getMeter(identifierPrefix,"dispatchedEvents", eventString).mark();
-//        metrics.getMeter(identifierPrefix,"dispatchedEvents", "total").mark();
+        eventSpecificDispatchMeters.computeIfAbsent(event, key -> {
+            Meter meter = new Meter();
+            metrics.register(meter,identifierPrefix,"dispatchedEvents",String.valueOf(key));
+            return meter;
+        }).mark();
+        allDispatchedEvents.mark();
     }
 
     public void eventSubjectAdded (Object event) {
