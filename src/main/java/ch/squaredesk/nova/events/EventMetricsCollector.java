@@ -23,10 +23,14 @@ public class EventMetricsCollector {
     private final Meter allDispatchedEvents;
     private final ConcurrentHashMap<Object,Meter> eventSpecificDispatchMeters;
 
-    public EventMetricsCollector(Metrics metrics, String identifierPrefix) {
+    public EventMetricsCollector(Metrics metrics) {
+        this (null, metrics);
+    }
+
+    public EventMetricsCollector(String identifier, Metrics metrics) {
         this.metrics = metrics;
         this.eventSpecificDispatchMeters = new ConcurrentHashMap<>();
-        this.identifierPrefix = "EventBus".equalsIgnoreCase(identifierPrefix) ? identifierPrefix : Metrics.name(identifierPrefix, "EventBus");
+        this.identifierPrefix = Metrics.name("EventBus", identifier);
         allDispatchedEvents = new Meter();
         metrics.register(allDispatchedEvents,this.identifierPrefix,"dispatchedEvents","total");
     }
