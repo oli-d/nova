@@ -62,9 +62,6 @@ public class Nova {
 
 
         public Nova build() {
-            if (identifier == null) {
-                identifier = "Nova";
-            }
             if (metrics == null) {
                 metrics = new Metrics();
             }

@@ -30,7 +30,7 @@ public class EventMetricsCollector {
     public EventMetricsCollector(String identifier, Metrics metrics) {
         this.metrics = metrics;
         this.eventSpecificDispatchMeters = new ConcurrentHashMap<>();
-        this.identifierPrefix = Metrics.name("EventBus", identifier);
+        this.identifierPrefix = Metrics.name("eventBus", identifier);
         allDispatchedEvents = new Meter();
         metrics.register(allDispatchedEvents,this.identifierPrefix,"dispatchedEvents","total");
     }
