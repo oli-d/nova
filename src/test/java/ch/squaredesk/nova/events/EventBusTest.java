@@ -19,8 +19,11 @@ import io.reactivex.disposables.Disposable;
 import io.reactivex.functions.Consumer;
 import io.reactivex.subscribers.TestSubscriber;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 
+import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
@@ -33,6 +36,9 @@ import static org.junit.Assert.*;
 public class EventBusTest {
     private EventBus eventBus;
 
+    @Rule
+    public ExpectedException expectedException = ExpectedException.none();
+
     @Before
     public void setup() {
         eventBus = new EventBus(
@@ -41,8 +47,10 @@ public class EventBusTest {
                 new Metrics());
     }
 
-    @Test(expected = NullPointerException.class)
+    @Test
     public void testRegisteringNullEventThrows() {
+        expectedException.expect(NullPointerException.class);
+        expectedException.expectMessage("event");
         eventBus.on(null);
     }
 
