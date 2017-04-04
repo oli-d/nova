@@ -10,13 +10,12 @@
 
 package ch.squaredesk.nova.metrics;
 
-import java.util.Map;
-import java.util.SortedMap;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicLong;
-
 import com.codahale.metrics.*;
 import org.slf4j.LoggerFactory;
+
+import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 
 public class Metrics {
     public final MetricRegistry metricRegistry = new MetricRegistry();
@@ -73,12 +72,23 @@ public class Metrics {
         return metricRegistry.histogram(name(idPathFirst,idPathRemainder));
     }
 
-    public SettableGauge getGauge(String idPathFirst, String... idPathRemainder) {
-        SortedMap<String, Gauge> gauges = metricRegistry.getGauges((metricName, metric) -> name(idPathFirst,idPathRemainder).equals(metricName));
-        if (gauges.isEmpty()) {
+    public Gauge getGauge(String idPathFirst, String... idPathRemainder) {
+        String theMetricName = name(idPathFirst, idPathRemainder);
+        Optional<Map.Entry<String, Gauge>> gaugeEntry = metricRegistry
+                .getGauges()
+                .entrySet()
+                .stream()
+                .filter(entry -> {
+                    System.out.println(entry.getKey() + "==" + theMetricName + "? " + entry.getKey().equals(theMetricName));
+                    return entry.getKey().equals(theMetricName);
+                })
+                .findFirst();
+
+        if (gaugeEntry.isPresent()) {
+            return gaugeEntry.get().getValue();
+        } else {
             return metricRegistry.register(name(idPathFirst,idPathRemainder), new SettableGauge());
         }
-        return (SettableGauge) gauges.get(name(idPathFirst,idPathRemainder));
     }
 
     public Map<String, Metric> getMetrics() {
@@ -89,15 +99,4 @@ public class Metrics {
         return MetricRegistry.name(idPathFirst, idPathRemainder);
     }
 
-    public static class SettableGauge implements Gauge<Long> {
-        private final AtomicLong value = new AtomicLong();
-        @Override
-        public Long getValue() {
-            return value.get();
-        }
-
-        public void setValue(long value) {
-            this.value.set(value);
-        }
-    }
 }

@@ -12,12 +12,12 @@
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<artifactId>core</artifactId>
-    <version>${nova.version}</version>
+    <version>4.0.0-SNAPSHOT</version>
 
 	<parent>
 		<groupId>ch.squaredesk.nova</groupId>
 		<artifactId>parentpom</artifactId>
-		<version>1.0.0</version>
+		<version>4.0.0-SNAPSHOT</version>
 	</parent>
 
 	<dependencies>
