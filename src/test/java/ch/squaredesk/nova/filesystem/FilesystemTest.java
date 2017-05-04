@@ -11,29 +11,31 @@
 package ch.squaredesk.nova.filesystem;
 
 import ch.squaredesk.nova.Nova;
-import org.junit.AfterClass;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.io.File;
 import java.nio.file.NoSuchFileException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class FilesystemTest {
     private Filesystem filesystem;
 
-    @Before
-    public void setup() {
+    @BeforeEach
+    void setup() {
         filesystem = Nova.builder().build().filesystem;
     }
 
-    @AfterClass
-    public static void removeTestFiles() throws Throwable {
+    @AfterAll
+    static void removeTestFiles() throws Throwable {
         String[] files = { "bla.txt", "isntThere.txt", "src/test/resources/isntThere.txt" };
         for (String s : files) {
             File f = new File(s);
@@ -45,11 +47,11 @@ public class FilesystemTest {
 
 
     @Test
-    public void testReadFile() throws Throwable {
+    void testReadFile() throws Throwable {
         CountDownLatch countDownLatch = new CountDownLatch(1);
         String[] resultContainer = new String[1];
         filesystem.readFile("src/test/resources/someFile.txt")
-                .doFinally(() -> countDownLatch.countDown())
+                .doFinally(countDownLatch::countDown)
                 .subscribe(contents -> resultContainer[0] = contents);
 
         countDownLatch.await(2, TimeUnit.SECONDS);
@@ -58,11 +60,11 @@ public class FilesystemTest {
     }
 
     @Test
-    public void testReadFileAsyncWithUnknownPathCausesErrorCallbackToBeInvoked() throws Throwable {
+    void testReadFileAsyncWithUnknownPathCausesErrorCallbackToBeInvoked() throws Throwable {
         CountDownLatch countDownLatch = new CountDownLatch(1);
         Throwable[] resultContainer = new Throwable[1];
         filesystem.readFile("doesntExist.txt")
-                .doFinally(() -> countDownLatch.countDown())
+                .doFinally(countDownLatch::countDown)
                 .subscribe(
                         s -> {},
                         t -> resultContainer[0] = t);
@@ -73,17 +75,17 @@ public class FilesystemTest {
     }
 
     @Test
-    public void testWriteFileSyncWithUnknownPathCreatesFile() throws Throwable {
+    void testWriteFileSyncWithUnknownPathCreatesFile() throws Throwable {
         filesystem.writeFileSync("content", "src/test/resources/isntThere.txt", true).subscribe();
         assertTrue(new File("src/test/resources/isntThere.txt").exists());
     }
 
     @Test
-    public void testWriteFileAsyncWithUnknownPathCreatesFile() throws Throwable {
+    void testWriteFileAsyncWithUnknownPathCreatesFile() throws Throwable {
         CountDownLatch countDownLatch = new CountDownLatch(1);
         try {
             filesystem.writeFile("content", "isntThere.txt")
-                    .doFinally(()->countDownLatch.countDown())
+                    .doFinally(countDownLatch::countDown)
                     .subscribe();
 
             countDownLatch.await(2,TimeUnit.SECONDS);
@@ -98,7 +100,7 @@ public class FilesystemTest {
     }
 
     @Test
-    public void testOverridingExistingFileDoesntLeaveAnyOldContent() throws Throwable {
+    void testOverridingExistingFileDoesntLeaveAnyOldContent() throws Throwable {
         filesystem.writeFileSync("old loooong content", "bla.txt", false).blockingAwait();
         assertThat(filesystem.readFile("bla.txt").blockingGet(), is("old loooong content"));
 
@@ -107,7 +109,7 @@ public class FilesystemTest {
     }
 
     @Test
-    public void testAppendingToExistingFileDoesntDeleteExistingContent() throws Throwable {
+    void testAppendingToExistingFileDoesntDeleteExistingContent() throws Throwable {
         filesystem.writeFileSync("old loooong content\n", "bla.txt", false).blockingAwait();
         assertThat(filesystem.readFile("bla.txt").blockingGet(), is("old loooong content\n"));
 
@@ -116,19 +118,19 @@ public class FilesystemTest {
     }
 
     @Test
-    public void testReadFileFromClasspathSync() throws Throwable {
+    void testReadFileFromClasspathSync() throws Throwable {
         assertThat(filesystem.readFileFromClasspath("/someFile.txt").blockingGet(),
                 is("This is some content in some file."));
     }
 
     @Test
-    public void testReadFileFromClasspathSyncWithUnknownPathThrowsException() throws Throwable {
+    void testReadFileFromClasspathSyncWithUnknownPathThrowsException() throws Throwable {
         try {
             filesystem.readFileFromClasspath("src/test/resources/" + System.currentTimeMillis() + ".txt")
                     .blockingGet();
-            Assert.fail("Exception expected");
+            Assertions.fail("Exception expected");
         } catch (Exception e) {
-            Assert.assertTrue(e.getCause() instanceof NoSuchFileException);
+            Assertions.assertTrue(e.getCause() instanceof NoSuchFileException);
         }
     }
 }

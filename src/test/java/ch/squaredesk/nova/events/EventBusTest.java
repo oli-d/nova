@@ -18,29 +18,25 @@ import io.reactivex.Flowable;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.functions.Consumer;
 import io.reactivex.subscribers.TestSubscriber;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.ExpectedException;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class EventBusTest {
     private EventBus eventBus;
 
-    @Rule
-    public ExpectedException expectedException = ExpectedException.none();
-
-    @Before
-    public void setup() {
+    @BeforeEach
+    void setup() {
         eventBus = new EventBus(
                 "test",
                 new EventBusConfig(BackpressureStrategy.BUFFER, false),
@@ -48,14 +44,14 @@ public class EventBusTest {
     }
 
     @Test
-    public void testRegisteringNullEventThrows() {
-        expectedException.expect(NullPointerException.class);
-        expectedException.expectMessage("event");
-        eventBus.on(null);
+    void testRegisteringNullEventThrows() {
+        Throwable ex = assertThrows(NullPointerException.class,
+                () -> eventBus.on(null));
+        assertThat(ex.getMessage(), containsString("event"));
     }
 
     @Test
-    public void uncaughtErrorInSubscriberVoidsObservable() throws Exception {
+    void uncaughtErrorInSubscriberVoidsObservable() throws Exception {
         CountDownLatch countDownLatch = new CountDownLatch(1);
         AtomicInteger i = new AtomicInteger(0);
 
@@ -79,12 +75,12 @@ public class EventBusTest {
 
         eventBus.emit("x");
         assertTrue(d.isDisposed());
-        assertThat(i.get(), is(2)); // 3rd one should not have been deliverd
+        assertThat(i.get(), is(2)); // 3rd one should not have been delivered
     }
 
 
     @Test
-    public void observableWithUncaughtErrorInObserverIsDestroyed() throws Exception {
+    void observableWithUncaughtErrorInObserverIsDestroyed() throws Exception {
         CountDownLatch countDownLatch = new CountDownLatch(1);
 
         Disposable d = eventBus.on("x")
@@ -104,19 +100,19 @@ public class EventBusTest {
     }
 
     @Test
-    public void eachSubscriptionFedByDifferentFlowable() {
+    void eachSubscriptionFedByDifferentFlowable() {
         Object f1 = eventBus.on("x");
         Object f2 = eventBus.on("x");
         assertTrue(f1!=f2);
     }
 
-    @Test(expected = NullPointerException.class)
-    public void testEmmittingNullThrows() {
-        eventBus.emit(null);
+    @Test
+    void testEmmittingNullThrows() {
+        assertThrows(NullPointerException.class, () -> eventBus.emit(null));
     }
 
     @Test
-    public void testRegisteredListenerCalledEverytimeAnEventIsEmitted() throws Exception {
+    void testRegisteredListenerCalledEverytimeAnEventIsEmitted() throws Exception {
         List<Object[]> listener1InvocationParams = new ArrayList<>();
         CountDownLatch countDownLatch = new CountDownLatch(3);
 
@@ -142,29 +138,26 @@ public class EventBusTest {
     }
 
     @Test
-    public void allObserversForEventInformedWhenEventIsEmitted() {
+    void allObserversForEventInformedWhenEventIsEmitted() throws Exception {
         int numberOfObservers = 5;
         final CountDownLatch countDownLatch = new CountDownLatch(numberOfObservers);
-        NoParameterConsumer consumer = () -> countDownLatch.countDown();
+        NoParameterConsumer consumer = countDownLatch::countDown;
 
         for (int i=0; i<numberOfObservers; i++) {
             eventBus.on("Test").subscribe(consumer);
         }
         eventBus.emit("Test");
 
-        try {
-            countDownLatch.await(1, TimeUnit.SECONDS);
-        } catch (InterruptedException e) {
-        }
+        countDownLatch.await(1, TimeUnit.SECONDS);
         assertThat(countDownLatch.getCount(), is(0L));
     }
 
     @Test
-    public void allSubscribersOfAllObserversForEventInformedWhenEventIsEmitted() {
+    void allSubscribersOfAllObserversForEventInformedWhenEventIsEmitted() throws Exception {
         int numberOfObservers = 5;
         int numberOfSubscriptions = 5;
         final CountDownLatch countDownLatch = new CountDownLatch(numberOfObservers * numberOfSubscriptions);
-        NoParameterConsumer consumer = () -> countDownLatch.countDown();
+        NoParameterConsumer consumer = countDownLatch::countDown;
 
         for (int i=0; i<numberOfObservers; i++) {
             Flowable<Object[]> observable = eventBus.on("Test");
@@ -174,15 +167,13 @@ public class EventBusTest {
         }
         eventBus.emit("Test");
 
-        try {
-            countDownLatch.await(1, TimeUnit.SECONDS);
-        } catch (InterruptedException e) {
-        }
+        countDownLatch.await(1, TimeUnit.SECONDS);
+
         assertThat(countDownLatch.getCount(), is(0L));
     }
 
     @Test
-    public void testAllRegisteredListenersMatchingEventAreCalledWhenEventIsEmitted() throws Exception {
+    void testAllRegisteredListenersMatchingEventAreCalledWhenEventIsEmitted() throws Exception {
         CountDownLatch countDownLatch = new CountDownLatch(3);
         boolean[] invocationFlags = new boolean[3];
 
@@ -209,7 +200,7 @@ public class EventBusTest {
     }
 
     @Test
-    public void testListenerCanBeRemovedSeparately() throws Exception {
+    void testListenerCanBeRemovedSeparately() throws Exception {
         TestSubscriber<Object[]> observer1 = eventBus.on(String.class).take(1).test();
         TestSubscriber<Object[]> observer2 = eventBus.on(String.class).take(2).test();
 
@@ -225,7 +216,7 @@ public class EventBusTest {
     }
 
     @Test
-    public void allListenersCanBeRemoved() throws Exception {
+    void allListenersCanBeRemoved() throws Exception {
         boolean[] invocationFlag = new boolean[1];
         Disposable d1 = eventBus.on(String.class).subscribe(data -> invocationFlag[0] = true);
         Disposable d2 = eventBus.on(String.class).take(1).subscribe(data -> invocationFlag[0] = true);
@@ -239,10 +230,10 @@ public class EventBusTest {
     }
 
     @Test
-    public void allObserversForEventInformedEvenWhenOneThrowsUncaughtException() {
+    void allObserversForEventInformedEvenWhenOneThrowsUncaughtException() {
         int numberOfGoodObservers = 5;
         final CountDownLatch countDownLatch = new CountDownLatch(numberOfGoodObservers);
-        NoParameterConsumer goodConsumer = () -> countDownLatch.countDown();
+        NoParameterConsumer goodConsumer = countDownLatch::countDown;
         NoParameterConsumer badConsumer = () -> { throw new RuntimeException("for test"); };
 
         for (int i = 0; i < numberOfGoodObservers; i++) {
@@ -259,7 +250,7 @@ public class EventBusTest {
     }
 
     @Test
-    public void subscriptionDiesOnUnhandledObserverException() throws InterruptedException {
+    void subscriptionDiesOnUnhandledObserverException() throws InterruptedException {
         AtomicInteger counter = new AtomicInteger();
         final CountDownLatch latch = new CountDownLatch(1);
 
@@ -289,7 +280,7 @@ public class EventBusTest {
     }
 
     @Test
-    public void otherSubscriptionAreNotAffectedIfObserverThrowsUnhandledException() throws InterruptedException {
+    void otherSubscriptionAreNotAffectedIfObserverThrowsUnhandledException() throws InterruptedException {
         class NastyConsumer implements Consumer<Object[]> {
             private int counter = 0;
             CountDownLatch latch = new CountDownLatch(1);
@@ -337,7 +328,7 @@ public class EventBusTest {
     }
 
     @Test
-    public void subscriptionSurvivesOnUnhandledObserverExceptionIfNovaConsumerUsed() throws InterruptedException {
+    void subscriptionSurvivesOnUnhandledObserverExceptionIfNovaConsumerUsed() throws InterruptedException {
         AtomicInteger counter = new AtomicInteger();
         CountDownLatch latch = new CountDownLatch(1);
 

@@ -15,17 +15,20 @@ import ch.squaredesk.nova.events.EventBusConfig;
 import ch.squaredesk.nova.metrics.Metrics;
 import io.reactivex.BackpressureStrategy;
 import io.reactivex.functions.Consumer;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.*;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 
 public class ConsumerWrappersTest {
     @Test
-    public void testInvokingWithoutParams() throws Exception {
+    void testInvokingWithoutParams() throws Exception {
         final CountDownLatch[] latches = new CountDownLatch[12];
         for (int i = 0; i < latches.length; i++) {
             latches[i] = new CountDownLatch(1);
@@ -154,7 +157,7 @@ public class ConsumerWrappersTest {
     }
 
     @Test
-    public void testParameterCastingAndPassing() throws Exception {
+    void testParameterCastingAndPassing() throws Exception {
         final CountDownLatch[] latches = new CountDownLatch[12];
         for (int i = 0; i < latches.length; i++) {
             latches[i] = new CountDownLatch(1);
