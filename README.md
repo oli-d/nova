@@ -1,4 +1,4 @@
-# Nova
+# Nova [![Build Status](https://travis-ci.org/oli-d/nova.svg?branch=master)](https://travis-ci.org/oli-d/nova)
 
 ### 1. Why?
 The goal of this project is to provide a small and easy-to-use 
