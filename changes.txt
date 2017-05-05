@@ -1,4 +1,0 @@
-- new package names
-- remove getters for Nova fields
-- add copyright notice and LICENSE
-- remove the functionality to enable time measuring for events in core. This can no be configured in the service module

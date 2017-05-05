@@ -15,6 +15,7 @@ ext.hamcrestVersion = '2.0.0.0'
 ext.slf4jVersion = '1.7.5'
 ext.logbackVersion = '1.2.1'
 ext.rxJavaVersion = '2.0.5'
+ext.springVersion = '4.3.5.RELEASE'
 
 
 buildscript {
@@ -31,7 +32,7 @@ buildscript {
 
 subprojects {
     apply plugin: 'java-library'
-
+    group = 'ch.squaredesk.nova'
     version = '4.0.0-SNAPSHOT'
 
     sourceCompatibility = javaVersion

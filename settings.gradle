@@ -9,5 +9,7 @@
  */
 
 include 'core'
+include 'event-annotations'
+include 'service'
 
 rootProject.name = 'nova'
