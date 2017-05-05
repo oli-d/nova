@@ -11,5 +11,8 @@
 include 'core'
 include 'event-annotations'
 include 'service'
+include 'comm'
+include 'jms'
+include 'http'
 
 rootProject.name = 'nova'
