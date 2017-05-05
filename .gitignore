@@ -1,6 +1,6 @@
 !/target
 /target/**
-/build/**
+**/build/**
 /.*
 /target
 *.iml

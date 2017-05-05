@@ -7,25 +7,16 @@
  *
  *   https://squaredesk.ch/license/oss/LICENSE
  */
+ext.javaVersion = '1.8'
+ext.metricsVersion = '3.2.1'
+ext.junitJupiterVersion = '5.0.0-M4'
+ext.junitPlatformVersion = '1.0.0-M4'
+ext.hamcrestVersion = '2.0.0.0'
+ext.slf4jVersion = '1.7.5'
+ext.logbackVersion = '1.2.1'
+ext.rxJavaVersion = '2.0.5'
 
-apply plugin: 'java-library'
-apply plugin: 'java-library-distribution'
-apply plugin: 'org.junit.platform.gradle.plugin'
 
-def javaVersion = '1.8'
-def junitJupiterVersion = '5.0.0-M4'
-def junitPlatformVersion = '1.0.0-M4'
-def hamcrestVersion = '2.0.0.0'
-def slf4jVersion = '1.7.5'
-def logbackVersion = '1.2.1'
-def metricsVersion = '3.2.1'
-def rxjavaVersion = '2.0.5'
-
-version = '4.0.0-SNAPSHOT'
-sourceCompatibility = javaVersion
-targetCompatibility = javaVersion
-
-// required setup to run Junit5 tests
 buildscript {
     repositories {
         mavenCentral()
@@ -36,30 +27,27 @@ buildscript {
         classpath 'org.junit.platform:junit-platform-gradle-plugin:1.0.0-M4'
     }
 }
-junitPlatform {
-    platformVersion junitPlatformVersion
-    logManager 'org.apache.logging.log4j.jul.LogManager'
-    reportsDir file('build/reports/test-results/junit-platform')
-    // enableStandardTestTask true
-    // selectors (optional)
-    // filters (optional)
-}
 
-repositories {
-    jcenter()
 
-}
+subprojects {
+    apply plugin: 'java-library'
 
-dependencies {
-    api 'io.dropwizard.metrics:metrics-core:' + metricsVersion
-    api 'io.reactivex.rxjava2:rxjava:' + rxjavaVersion
+    version = '4.0.0-SNAPSHOT'
 
-    implementation 'org.slf4j:slf4j-api:' + slf4jVersion
-    implementation 'ch.qos.logback:logback-core:' + logbackVersion
+    sourceCompatibility = javaVersion
+    targetCompatibility = javaVersion
 
-    testImplementation 'org.junit.jupiter:junit-jupiter-api:' + junitJupiterVersion
-    testImplementation ('org.hamcrest:hamcrest-junit:' + hamcrestVersion) {
-        exclude module: 'junit'
+    repositories {
+        jcenter()
     }
-    testRuntime 'org.junit.jupiter:junit-jupiter-engine:' + junitJupiterVersion
+
+    dependencies {
+        testImplementation 'org.junit.jupiter:junit-jupiter-api:' + junitJupiterVersion
+        testImplementation('org.hamcrest:hamcrest-junit:' + hamcrestVersion) {
+            exclude module: 'junit'
+        }
+        testRuntime 'org.junit.jupiter:junit-jupiter-engine:' + junitJupiterVersion
+    }
+
+
 }

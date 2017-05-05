@@ -1,0 +1,35 @@
+/*
+ * Copyright (c) Squaredesk GmbH and Oliver Dotzauer.
+ *
+ * This program is distributed under the squaredesk open source license. See the LICENSE file
+ * distributed with this work for additional information regarding copyright ownership. You may also
+ * obtain a copy of the license at
+ *
+ *   https://squaredesk.ch/license/oss/LICENSE
+ */
+apply plugin: 'org.junit.platform.gradle.plugin'
+
+dependencies {
+    api 'io.dropwizard.metrics:metrics-core:' + metricsVersion
+    api 'io.reactivex.rxjava2:rxjava:' + rxJavaVersion
+
+    implementation 'org.slf4j:slf4j-api:' + slf4jVersion
+    implementation 'ch.qos.logback:logback-core:' + logbackVersion
+}
+
+junitPlatform {
+    platformVersion junitPlatformVersion
+    reportsDir file('build/reports/test-results/junit-platform')
+    // selectors (optional)
+    filters {
+        engines {
+            // include 'junit-jupiter', 'junit-vintage'
+            // exclude 'custom-engine'
+        }
+        tags {
+            // include 'fast'
+            exclude 'slow'
+        }
+        // includeClassNamePattern '.*Test'
+    }
+}
