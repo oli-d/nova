@@ -6,8 +6,8 @@ library that enables developers to rapidly build systems or
 services in an "event driven, asynchronous and reactive style". 
 
 The origins of the API were heavily influenced by Node.js and 
-its underlying programming model, hence the name (***No***de for
-Ja***va***). This programming model, which (for those who have 
+its underlying programming model, hence the name (**No**de for
+Ja**va**). This programming model, which (for those who have 
 no experience with Node.js) is based on single-threaded event 
 processing, prove itself to be very helpful in eliminating 
 nasty concurrency bugs and to allow the programmer to fully 
