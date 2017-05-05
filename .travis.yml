@@ -3,6 +3,9 @@ language: java
 #services:
 #- docker
 
+jdk:
+  - oraclejdk8
+  
 cache:
   directories:
   - "$HOME/.cache"
