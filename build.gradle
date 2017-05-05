@@ -1,0 +1,65 @@
+/*
+ * Copyright (c) Squaredesk GmbH and Oliver Dotzauer.
+ *
+ * This program is distributed under the squaredesk open source license. See the LICENSE file
+ * distributed with this work for additional information regarding copyright ownership. You may also
+ * obtain a copy of the license at
+ *
+ *   https://squaredesk.ch/license/oss/LICENSE
+ */
+
+apply plugin: 'java-library'
+apply plugin: 'java-library-distribution'
+apply plugin: 'org.junit.platform.gradle.plugin'
+
+def javaVersion = '1.8'
+def junitJupiterVersion = '5.0.0-M4'
+def junitPlatformVersion = '1.0.0-M4'
+def hamcrestVersion = '2.0.0.0'
+def slf4jVersion = '1.7.5'
+def logbackVersion = '1.2.1'
+def metricsVersion = '3.2.1'
+def rxjavaVersion = '2.0.5'
+
+version = '4.0.0-SNAPSHOT'
+sourceCompatibility = javaVersion
+targetCompatibility = javaVersion
+
+// required setup to run Junit5 tests
+buildscript {
+    repositories {
+        mavenCentral()
+        // The following is only necessary if you want to use SNAPSHOT releases.
+        // maven { url 'https://oss.sonatype.org/content/repositories/snapshots' }
+    }
+    dependencies {
+        classpath 'org.junit.platform:junit-platform-gradle-plugin:1.0.0-M4'
+    }
+}
+junitPlatform {
+    platformVersion junitPlatformVersion
+    logManager 'org.apache.logging.log4j.jul.LogManager'
+    reportsDir file('build/reports/test-results/junit-platform')
+    // enableStandardTestTask true
+    // selectors (optional)
+    // filters (optional)
+}
+
+repositories {
+    jcenter()
+
+}
+
+dependencies {
+    api 'io.dropwizard.metrics:metrics-core:' + metricsVersion
+    api 'io.reactivex.rxjava2:rxjava:' + rxjavaVersion
+
+    implementation 'org.slf4j:slf4j-api:' + slf4jVersion
+    implementation 'ch.qos.logback:logback-core:' + logbackVersion
+
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:' + junitJupiterVersion
+    testImplementation ('org.hamcrest:hamcrest-junit:' + hamcrestVersion) {
+        exclude module: 'junit'
+    }
+    testRuntime 'org.junit.jupiter:junit-jupiter-engine:' + junitJupiterVersion
+}
