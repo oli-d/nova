@@ -21,6 +21,7 @@ import org.junit.jupiter.api.Test;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
@@ -39,7 +40,9 @@ class HttpRpcServerTest {
                 s -> s,
                 t -> "Error: " + t.getMessage(),
                 new Metrics());
+        System.out.println("Starting server on port " + port);
         sut.start();
+        HttpHelper.waitUntilSomebodyListensOnPort(port, 500, TimeUnit.MILLISECONDS);
     }
 
     @AfterEach
@@ -91,7 +94,7 @@ class HttpRpcServerTest {
                 invocation -> invocation.complete(invocation.request));
 
         String request = UUID.randomUUID().toString();
-        String reply = HttpHelper.getResponseBody("http://0.0.0.0:"+port+"/echo", request);
+        String reply = HttpHelper.getResponseBody("http://0.0.0.0:" + port + "/echo", request);
 
         assertThat(reply, is(request));
     }
@@ -102,7 +105,7 @@ class HttpRpcServerTest {
                 invocation -> invocation.completeExceptionally(new RuntimeException(invocation.request)));
 
         String request = UUID.randomUUID().toString();
-        String reply = HttpHelper.getResponseBody("http://0.0.0.0:"+port+"/alwaysError", request);
+        String reply = HttpHelper.getResponseBody("http://0.0.0.0:" + port + "/alwaysError", request);
 
         assertThat(reply, is("Error: " + request)); // according to the ErrorMessageCreator, the sut is setup with
     }

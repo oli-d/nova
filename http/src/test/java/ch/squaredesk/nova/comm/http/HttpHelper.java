@@ -5,13 +5,31 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.ServerSocket;
+import java.net.Socket;
 import java.net.URL;
+import java.util.concurrent.TimeUnit;
 
 public class HttpHelper {
-    public static int nextFreePort() throws Exception {
+    public static synchronized int nextFreePort() throws Exception {
         ServerSocket ss = new ServerSocket(0);
         ss.close();
-        return ss.getLocalPort();
+        int port = ss.getLocalPort();
+        System.out.println("Returning port " + port);
+        return port;
+    }
+
+    public static void waitUntilSomebodyListensOnPort(int port, long timeout, TimeUnit timeUnit) throws Exception {
+        boolean connected = false;
+        long maxTime = System.currentTimeMillis() + timeUnit.toMillis(timeout);
+        while (!connected && System.currentTimeMillis() < maxTime) {
+            try {
+                Socket socket = new Socket("0.0.0.0", port);
+                return;
+            } catch (Exception e) {
+                TimeUnit.MILLISECONDS.sleep(50);
+            }
+        }
+        throw new RuntimeException("Nobody listening on port " + port);
     }
 
     public static String getResponseBody (String url, String request) throws Exception {
