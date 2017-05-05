@@ -5,5 +5,5 @@
 /target
 *.iml
 .project
-!.travis*
+!/.travis*
 !.gitignore

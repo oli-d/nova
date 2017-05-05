@@ -7,9 +7,9 @@ cache:
   directories:
   - "$HOME/.cache"
 
-deploy:
-  provider: script
-  script: "mvn --settings .travis.settings.xml -Dmaven.test.skip=true -P ci-build deploy"
-  skip_cleanup: true
+#deploy:
+#  provider: script
+#  script: "mvn --settings .travis.settings.xml -Dmaven.test.skip=true -P ci-build deploy"
+#  skip_cleanup: true
 #  on:
 #    tags: true
