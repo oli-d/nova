@@ -50,5 +50,9 @@ subprojects {
         testRuntime 'org.junit.jupiter:junit-jupiter-engine:' + junitJupiterVersion
     }
 
-
+    uploadArchives {
+        repositories {
+            mavenLocal()
+        }
+    }
 }
