@@ -40,7 +40,6 @@ class HttpRpcServerTest {
                 s -> s,
                 t -> "Error: " + t.getMessage(),
                 new Metrics());
-        System.out.println("Starting server on port " + port);
         sut.start();
         HttpHelper.waitUntilSomebodyListensOnPort(port, 500, TimeUnit.MILLISECONDS);
     }

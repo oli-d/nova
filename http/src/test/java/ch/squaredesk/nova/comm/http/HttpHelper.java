@@ -14,7 +14,6 @@ public class HttpHelper {
         ServerSocket ss = new ServerSocket(0);
         ss.close();
         int port = ss.getLocalPort();
-        System.out.println("Returning port " + port);
         return port;
     }
 
