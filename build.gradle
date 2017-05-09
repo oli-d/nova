@@ -32,6 +32,8 @@ buildscript {
 
 subprojects {
     apply plugin: 'java-library'
+    apply plugin: 'maven-publish'
+
     group = 'ch.squaredesk.nova'
     version = '4.0.0-SNAPSHOT'
 
@@ -50,9 +52,30 @@ subprojects {
         testRuntime 'org.junit.jupiter:junit-jupiter-engine:' + junitJupiterVersion
     }
 
-    uploadArchives {
-        repositories {
-            mavenLocal()
+    // add LICENSE file to jar
+    jar {
+        from "${project.rootProject.projectDir}/LICENSE"
+    }
+
+    // define sources jar
+    task sourceJar(type: Jar) {
+        from project.projectDir
+            include 'src/main/**/*.java'
+        from project.rootProject.projectDir
+            include 'LICENSE'
+    }
+
+    // maven publishing configuration
+    publishing {
+        publications {
+            mavenJava(MavenPublication) {
+                from components.java
+
+
+                artifact sourceJar {
+                    classifier "sources"
+                }
+            }
         }
     }
 }
