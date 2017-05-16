@@ -21,6 +21,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.stereotype.Component;
 
+import java.net.InetAddress;
 import java.util.concurrent.TimeUnit;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -200,8 +201,6 @@ public class NovaServiceTest {
         assertThat(observer.valueCount(), greaterThan(0));
         ServiceMetricsSet sms = observer.values().get(0);
         assertNotNull(sms.gauges.get("jvm.gc.PS-MarkSweep.count"));
-        assertThat(sms.serviceName, is(sut.serviceName));
-        assertThat(sms.instanceId, is(sut.instanceId));
     }
 
     @Test
@@ -219,8 +218,6 @@ public class NovaServiceTest {
         assertThat(observer.valueCount(), greaterThan(0));
         ServiceMetricsSet sms = observer.values().get(0);
         assertNull(sms.gauges.get("jvm.gc.PS-MarkSweep.count"));
-        assertThat(sms.serviceName, is(sut.serviceName));
-        assertThat(sms.instanceId, is(sut.instanceId));
     }
 
     @Test
@@ -251,6 +248,22 @@ public class NovaServiceTest {
         MyService sut = ctx.getBean(MyService.class);
         NullPointerException ex = assertThrows(NullPointerException.class, () -> sut.serviceMetrics(5, null));
         assertThat(ex.getMessage(),containsString("timeUnit must not be null"));
+    }
+
+    @Test
+    void serviceMetricsIncludeServerDetails() throws Exception {
+        AnnotationConfigApplicationContext ctx = new AnnotationConfigApplicationContext();
+        ctx.register(MyConfig.class);
+        ctx.refresh();
+        MyService sut = ctx.getBean(MyService.class);
+
+        TestObserver<ServiceMetricsSet> observer = sut.serviceMetrics(100, TimeUnit.MILLISECONDS).test();
+        observer.await(1, TimeUnit.SECONDS);
+        assertThat(observer.valueCount(), greaterThan(0));
+        ServiceMetricsSet sms = observer.values().get(0);
+        InetAddress inetAddress = InetAddress.getLocalHost();
+        assertThat(sms.serverName, is(inetAddress.getHostName()));
+        assertThat(sms.serverAddress, is(inetAddress.getHostAddress()));
     }
 
     @Component
