@@ -12,6 +12,7 @@ package ch.squaredesk.nova.service;
 
 import ch.squaredesk.nova.Nova;
 import io.reactivex.observers.TestObserver;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.BeanCreationException;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
@@ -29,6 +30,12 @@ import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class NovaServiceTest {
+    @AfterEach
+    void tearDown() {
+        System.clearProperty("NOVA.SERVICE.CAPTURE_JVM_METRICS");
+        System.clearProperty("NOVA.SERVICE.NAME");
+        System.clearProperty("NOVA.SERVICE.INSTANCE_ID");
+    }
 
     @Test
     void serviceCannotBeStartedWithoutConfig() {
