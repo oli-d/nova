@@ -11,6 +11,7 @@
 package ch.squaredesk.nova.service;
 
 import ch.squaredesk.nova.Nova;
+import io.reactivex.observers.TestObserver;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.BeanCreationException;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
@@ -19,8 +20,11 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.stereotype.Component;
 
+import java.util.concurrent.TimeUnit;
+
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -137,6 +141,55 @@ public class NovaServiceTest {
         assertThat(sut.onStartInvocations,is(1));
         assertThat(sut.onShutdownInvocations,is(1));
         assertThat(sut.onShutdownInvocations,is(1));
+    }
+
+    @Test
+    void jvmMetricsAreCapturedByDefault() throws Exception {
+        AnnotationConfigApplicationContext ctx =
+                new AnnotationConfigApplicationContext();
+        ctx.register(MyConfig.class);
+        ctx.refresh();
+        MyService sut = ctx.getBean(MyService.class);
+
+        assertTrue(sut.captureJvmMetrics);
+
+        TestObserver<ServiceMetricsSet> observer = sut.serviceMetrics(100, TimeUnit.MILLISECONDS).test();
+        observer.await(1, TimeUnit.SECONDS);
+        assertThat(observer.valueCount(), greaterThan(0));
+        ServiceMetricsSet sms = observer.values().get(0);
+        assertNotNull(sms.gauges.get("jvm.gc.PS-MarkSweep.count"));
+        assertThat(sms.serviceName, is(sut.serviceName));
+        assertThat(sms.instanceId, is(sut.instanceId));
+    }
+
+    @Test
+    void serviceMetricsCallNeedsIntervalLargerThanZero() {
+        AnnotationConfigApplicationContext ctx =
+                new AnnotationConfigApplicationContext();
+
+        ctx.register(MyConfig.class);
+        ctx.refresh();
+
+        MyService sut = ctx.getBean(MyService.class);
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -> sut.serviceMetrics(-1, TimeUnit.SECONDS));
+        assertThat(ex.getMessage(),containsString("interval must be greater than 0"));
+        ex = assertThrows(IllegalArgumentException.class,
+                () -> sut.serviceMetrics(0, TimeUnit.SECONDS));
+        assertThat(ex.getMessage(),containsString("interval must be greater than 0"));
+    }
+
+    @Test
+    void serviceMetricsCallNeedsNonNullTimeUnit() {
+        AnnotationConfigApplicationContext ctx =
+                new AnnotationConfigApplicationContext();
+
+        ctx.register(MyConfig.class);
+        ctx.refresh();
+
+        MyService sut = ctx.getBean(MyService.class);
+        NullPointerException ex = assertThrows(NullPointerException.class, () -> sut.serviceMetrics(5, null));
+        assertThat(ex.getMessage(),containsString("timeUnit must not be null"));
     }
 
     @Component

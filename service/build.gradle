@@ -12,6 +12,7 @@ apply plugin: 'org.junit.platform.gradle.plugin'
 dependencies {
     api project(':event-annotations')
     implementation 'io.dropwizard.metrics:metrics-json:' + metricsVersion
+    implementation 'io.dropwizard.metrics:metrics-jvm:' + metricsVersion
 }
 
 junitPlatform {
