@@ -36,16 +36,21 @@ public abstract class NovaServiceConfiguration<ServiceType> extends NovaProvidin
 
     @Bean(name = "instanceId")
     public String getInstanceId() {
-        return UUID.randomUUID().toString();
+        return environment.getProperty("NOVA.SERVICE.INSTANCE_ID", UUID.randomUUID().toString());
     }
 
     @Bean(name = "serviceName")
     public String serviceName() {
-        String configClassName = getClass().getSimpleName();
-        Optional<Integer> indexOfConfigSubstring = Stream.of("config", "conf", "cfg")
-                .map(testString -> configClassName.toLowerCase().indexOf(testString))
-                .max(Integer::compareTo);
-        return configClassName.substring(0,indexOfConfigSubstring.orElse(configClassName.length()));
+        String name = environment.getProperty("NOVA.SERVICE.NAME", (String)null);
+        if (name == null) {
+            String configClassName = getClass().getSimpleName();
+            Optional<Integer> indexOfConfigSubstring = Stream.of("config", "conf", "cfg")
+                    .map(testString -> configClassName.toLowerCase().indexOf(testString))
+                    .max(Integer::compareTo);
+            name = configClassName.substring(0, indexOfConfigSubstring.orElse(configClassName.length()));
+        }
+
+        return name;
     }
 
     public abstract ServiceType createServiceInstance();

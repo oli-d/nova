@@ -144,6 +144,41 @@ public class NovaServiceTest {
     }
 
     @Test
+    void serviceNameCanBeSpecifiedWithEnvironmentProperty() throws Exception {
+        System.setProperty("NOVA.SERVICE.NAME", "ABC");
+        AnnotationConfigApplicationContext ctx = new AnnotationConfigApplicationContext();
+        ctx.register(MyConfig.class);
+        ctx.refresh();
+        MyService sut = ctx.getBean(MyService.class);
+
+        assertThat(sut.serviceName, is("ABC"));
+    }
+
+    @Test
+    void serviceNameDerivedFromConfigClassNameIfNotSpecified() throws Exception {
+        AnnotationConfigApplicationContext ctx = new AnnotationConfigApplicationContext();
+        ctx.register(MyConfig.class);
+        ctx.refresh();
+        MyService sut = ctx.getBean(MyService.class);
+
+        assertThat(sut.serviceName, is(
+                MyConfig.class.getName()
+                        .replace(getClass().getPackage().getName() + ".", "")
+                        .replace("Config","")));
+    }
+
+    @Test
+    void instanceIdCanBeSpecifiedWithEnvironmentProperty() throws Exception {
+        System.setProperty("NOVA.SERVICE.INSTANCE_ID", "XYZ");
+        AnnotationConfigApplicationContext ctx = new AnnotationConfigApplicationContext();
+        ctx.register(MyConfig.class);
+        ctx.refresh();
+        MyService sut = ctx.getBean(MyService.class);
+
+        assertThat(sut.instanceId, is("XYZ"));
+    }
+
+    @Test
     void jvmMetricsAreCapturedByDefault() throws Exception {
         AnnotationConfigApplicationContext ctx =
                 new AnnotationConfigApplicationContext();
@@ -158,6 +193,25 @@ public class NovaServiceTest {
         assertThat(observer.valueCount(), greaterThan(0));
         ServiceMetricsSet sms = observer.values().get(0);
         assertNotNull(sms.gauges.get("jvm.gc.PS-MarkSweep.count"));
+        assertThat(sms.serviceName, is(sut.serviceName));
+        assertThat(sms.instanceId, is(sut.instanceId));
+    }
+
+    @Test
+    void jvmMetricsCapturingCanBeSwitchedOffWithEnvironmentProperty() throws Exception {
+        System.setProperty("NOVA.SERVICE.CAPTURE_JVM_METRICS", "false");
+        AnnotationConfigApplicationContext ctx = new AnnotationConfigApplicationContext();
+        ctx.register(MyConfig.class);
+        ctx.refresh();
+        MyService sut = ctx.getBean(MyService.class);
+
+        assertFalse(sut.captureJvmMetrics);
+
+        TestObserver<ServiceMetricsSet> observer = sut.serviceMetrics(100, TimeUnit.MILLISECONDS).test();
+        observer.await(1, TimeUnit.SECONDS);
+        assertThat(observer.valueCount(), greaterThan(0));
+        ServiceMetricsSet sms = observer.values().get(0);
+        assertNull(sms.gauges.get("jvm.gc.PS-MarkSweep.count"));
         assertThat(sms.serviceName, is(sut.serviceName));
         assertThat(sms.instanceId, is(sut.instanceId));
     }
