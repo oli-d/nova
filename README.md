@@ -44,9 +44,10 @@ allowing service developers to concentrate on the required business logic.
 
 Currently, the following libraries exist:
 * [core](./core/README.md): core functionality, used by all other components
-* [nova-comm](./comm/README.md): communication base library, protocol agnostic reactive message sending and retrieval
-* [nova-jms](./jms/README.md): reactive JMS messaging
-* [nova-http](./http/README.md): reactive HTTP communication
-* [nova-event-annotations](./event-annotations/README.md): allows your spring beans to automatically connect to the EventBus using annotations
-* [nova-service](./service/README.md): Small service skeleton with a defined lifecycle and easy access to Nova and its EventBus 
+* [comm](./comm/README.md): communication base library, protocol agnostic reactive message sending and retrieval
+* [jms](./jms/README.md): reactive JMS messaging
+* [http](./http/README.md): reactive HTTP communication
+* [event-annotations](./event-annotations/README.md): allows your spring beans to automatically connect to the EventBus using annotations
+* [service](./service/README.md): Small service skeleton with a defined lifecycle and easy access to Nova and its EventBus 
+* [metrics-elastic](./metrics-elastic/README.md): Utility to push Metrics to Elasticsearch 
 * ...

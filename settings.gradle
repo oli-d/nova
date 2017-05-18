@@ -7,6 +7,7 @@
  * Detailed information about configuring a multi-project build in Gradle can be found
  * in the user guide at https://docs.gradle.org/3.5/userguide/multi_project_builds.html
  */
+rootProject.name = 'nova'
 
 include 'core'
 include 'event-annotations'
@@ -14,5 +15,6 @@ include 'service'
 include 'comm'
 include 'jms'
 include 'http'
+include 'kafka'
+include 'metrics-elastic'
 
-rootProject.name = 'nova'
