@@ -1,6 +1,6 @@
 package ch.squaredesk.nova.metrics;
 
-import com.codahale.metrics.*;
+import com.codahale.metrics.Metric;
 
 import java.net.InetAddress;
 import java.util.Map;

@@ -10,12 +10,11 @@
 
 package ch.squaredesk.nova.examples.events.mousemirror;
 
+import ch.squaredesk.nova.Nova;
+
+import javax.swing.*;
 import java.awt.event.MouseEvent;
 import java.util.concurrent.TimeUnit;
-
-import javax.swing.JFrame;
-
-import ch.squaredesk.nova.Nova;
 
 /**
  * This simple example shows how to use the Nove event queue.

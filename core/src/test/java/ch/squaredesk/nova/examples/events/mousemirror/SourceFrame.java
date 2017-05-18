@@ -10,9 +10,8 @@
 
 package ch.squaredesk.nova.examples.events.mousemirror;
 
-import java.awt.*;
-
 import javax.swing.*;
+import java.awt.*;
 
 public class SourceFrame extends JFrame {
 

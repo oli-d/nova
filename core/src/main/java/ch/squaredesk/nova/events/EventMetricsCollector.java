@@ -11,11 +11,9 @@
 package ch.squaredesk.nova.events;
 
 import ch.squaredesk.nova.metrics.Metrics;
-import com.codahale.metrics.Gauge;
 import com.codahale.metrics.Meter;
 
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicLong;
 
 public class EventMetricsCollector {
     private final Metrics metrics;

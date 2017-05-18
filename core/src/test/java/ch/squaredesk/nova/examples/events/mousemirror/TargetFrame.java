@@ -10,9 +10,8 @@
 
 package ch.squaredesk.nova.examples.events.mousemirror;
 
-import java.awt.Color;
-
-import javax.swing.JFrame;
+import javax.swing.*;
+import java.awt.*;
 
 public class TargetFrame extends JFrame {
 

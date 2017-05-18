@@ -1,11 +1,7 @@
 package ch.squaredesk.nova.metrics;
 
-import com.codahale.metrics.Gauge;
-import com.codahale.metrics.Metric;
-
 import java.lang.management.GarbageCollectorMXBean;
 import java.lang.management.ManagementFactory;
-import java.lang.management.MemoryMXBean;
 import java.util.*;
 import java.util.regex.Pattern;
 

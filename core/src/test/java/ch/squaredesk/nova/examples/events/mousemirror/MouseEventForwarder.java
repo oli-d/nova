@@ -10,7 +10,9 @@
 
 package ch.squaredesk.nova.examples.events.mousemirror;
 
-import java.awt.event.*;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
+import java.awt.event.MouseMotionListener;
 
 public abstract class MouseEventForwarder implements MouseListener, MouseMotionListener {
 

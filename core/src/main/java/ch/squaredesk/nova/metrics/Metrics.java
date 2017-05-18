@@ -14,7 +14,6 @@ import com.codahale.metrics.*;
 import io.reactivex.Observable;
 import org.slf4j.LoggerFactory;
 
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -24,20 +23,8 @@ public class Metrics {
     public final MetricRegistry metricRegistry = new MetricRegistry();
     private Slf4jReporter logReporter;
 
-    private Map<String, MemoryMeter> memoryMeter;
-    private Map<String, GarbageCollectionMeter> garbageCollectionMeter;
-    private Map<String, CpuMeter> cpuMeter;
-
     public MetricsDump dump() {
-        return new MetricsDump(
-                metricRegistry.getGauges(),
-                metricRegistry.getCounters(),
-                metricRegistry.getHistograms(),
-                metricRegistry.getMeters(),
-                metricRegistry.getTimers(),
-                memoryMeter,
-                garbageCollectionMeter,
-                cpuMeter);
+        return new MetricsDump(metricRegistry.getMetrics());
     }
 
     /**
@@ -72,18 +59,6 @@ public class Metrics {
     }
 
     public <T extends Metric> void register(T metric, String idPathFirst, String... idPathRemainder) {
-        // since we do not want to have a global constant that defines a magic metric name,
-        // we use the ugly instanceof logic to determine, whether it is one of our special metrics
-        if (metric instanceof MemoryMeter) {
-            this.memoryMeter = new HashMap<>(2, 1.0f);
-            memoryMeter.put(name(idPathFirst, idPathRemainder), (MemoryMeter) metric);
-        } else if (metric instanceof GarbageCollectionMeter) {
-            this.garbageCollectionMeter = new HashMap<>(2, 1.0f);
-            garbageCollectionMeter.put(name(idPathFirst, idPathRemainder), (GarbageCollectionMeter) metric);
-        } else if (metric instanceof CpuMeter) {
-            this.cpuMeter = new HashMap<>(2, 1.0f);
-            cpuMeter.put(name(idPathFirst, idPathRemainder), (CpuMeter) metric);
-        }
         metricRegistry.register(name(idPathFirst,idPathRemainder), metric);
     }
 

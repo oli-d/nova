@@ -10,14 +10,11 @@
 
 package ch.squaredesk.nova.examples.events.mousemirror;
 
-import java.awt.BasicStroke;
-import java.awt.Graphics2D;
-import java.awt.event.MouseEvent;
-
-import javax.swing.JFrame;
-import javax.swing.SwingUtilities;
-
 import ch.squaredesk.nova.events.consumers.SingleParameterConsumer;
+
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.MouseEvent;
 
 public class MouseEventTranslator implements SingleParameterConsumer<MouseEvent> {
     private final JFrame targetFrame;
