@@ -41,7 +41,6 @@ subprojects {
     targetCompatibility = javaVersion
 
     repositories {
-        jcenter()
         mavenCentral()
     }
 
