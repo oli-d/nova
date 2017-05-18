@@ -11,8 +11,6 @@
 package ch.squaredesk.nova.service;
 
 import ch.squaredesk.nova.Nova;
-import ch.squaredesk.nova.metrics.MetricsDump;
-import io.reactivex.Observable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,7 +23,6 @@ import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 
 public abstract class NovaService {
     private Lifeline lifeline = new Lifeline();

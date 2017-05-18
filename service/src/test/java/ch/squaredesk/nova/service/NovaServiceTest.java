@@ -213,7 +213,7 @@ public class NovaServiceTest {
     public static class MyCrippledConfig extends NovaServiceConfiguration {
         @Override
         @Bean
-        public Nova getNova() {
+        public Nova nova() {
             return null;
         }
 
