@@ -7,3 +7,4 @@
 .project
 !/.travis*
 !.gitignore
+out/
