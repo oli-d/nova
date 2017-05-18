@@ -11,9 +11,12 @@
 package ch.squaredesk.nova.metrics;
 
 import com.codahale.metrics.*;
+import io.reactivex.Observable;
 import org.slf4j.LoggerFactory;
 
+import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
@@ -21,13 +24,34 @@ public class Metrics {
     public final MetricRegistry metricRegistry = new MetricRegistry();
     private Slf4jReporter logReporter;
 
-    public void dumpContinuously(ScheduledReporter reporter, long dumpInterval, TimeUnit timeUnit) {
-        reporter.start(dumpInterval, timeUnit);
+    private Map<String, MemoryMeter> memoryMeter;
+    private Map<String, GarbageCollectionMeter> garbageCollectionMeter;
+    private Map<String, CpuMeter> cpuMeter;
+
+    public MetricsDump dump() {
+        return new MetricsDump(
+                metricRegistry.getGauges(),
+                metricRegistry.getCounters(),
+                metricRegistry.getHistograms(),
+                metricRegistry.getMeters(),
+                metricRegistry.getTimers(),
+                memoryMeter,
+                garbageCollectionMeter,
+                cpuMeter);
     }
 
-    public void dumpOnce(ScheduledReporter reporter) {
-        reporter.report();
+    /**
+     * Returns an observable that continuously dumps all registered metrics. The passed parameters define the
+     * interval between two dumps.
+     */
+    public Observable<MetricsDump> dumpContinuously(long interval, TimeUnit timeUnit) {
+        if (interval <= 0) throw new IllegalArgumentException("interval must be greater than 0");
+        Objects.requireNonNull(timeUnit, "timeUnit must not be null");
+
+        return Observable.interval(interval, interval, timeUnit)
+                .map(count -> dump());
     }
+
 
     public void dumpContinuouslyToLog(long dumpInterval, TimeUnit timeUnit) {
         if (logReporter == null) {
@@ -36,19 +60,30 @@ public class Metrics {
         } else {
             logReporter.close();
         }
-        dumpContinuously(logReporter, dumpInterval, timeUnit);
-
+        logReporter.start(dumpInterval, timeUnit);
     }
 
-    public void dumpOnceToLog() {
+    public void dumpToLog() {
         if (logReporter == null) {
             logReporter = Slf4jReporter.forRegistry(metricRegistry).outputTo(LoggerFactory.getLogger(Metrics.class))
                     .convertRatesTo(TimeUnit.SECONDS).convertDurationsTo(TimeUnit.MILLISECONDS).build();
         }
-        dumpOnce(logReporter);
+        logReporter.report();
     }
 
     public <T extends Metric> void register(T metric, String idPathFirst, String... idPathRemainder) {
+        // since we do not want to have a global constant that defines a magic metric name,
+        // we use the ugly instanceof logic to determine, whether it is one of our special metrics
+        if (metric instanceof MemoryMeter) {
+            this.memoryMeter = new HashMap<>(2, 1.0f);
+            memoryMeter.put(name(idPathFirst, idPathRemainder), (MemoryMeter) metric);
+        } else if (metric instanceof GarbageCollectionMeter) {
+            this.garbageCollectionMeter = new HashMap<>(2, 1.0f);
+            garbageCollectionMeter.put(name(idPathFirst, idPathRemainder), (GarbageCollectionMeter) metric);
+        } else if (metric instanceof CpuMeter) {
+            this.cpuMeter = new HashMap<>(2, 1.0f);
+            cpuMeter.put(name(idPathFirst, idPathRemainder), (CpuMeter) metric);
+        }
         metricRegistry.register(name(idPathFirst,idPathRemainder), metric);
     }
 

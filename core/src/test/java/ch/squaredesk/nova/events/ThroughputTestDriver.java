@@ -34,7 +34,7 @@ public class ThroughputTestDriver {
             ttd.go(nova.eventBus);
         }
 
-        nova.metrics.dumpOnceToLog();
+        nova.metrics.dumpToLog();
     }
 
     public void go (EventBus eventBus) throws Exception {

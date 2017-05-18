@@ -11,7 +11,6 @@
 package ch.squaredesk.nova.service;
 
 import ch.squaredesk.nova.Nova;
-import io.reactivex.observers.TestObserver;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.BeanCreationException;
@@ -21,12 +20,8 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.stereotype.Component;
 
-import java.net.InetAddress;
-import java.util.concurrent.TimeUnit;
-
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
-import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -175,97 +170,6 @@ public class NovaServiceTest {
                         .replace("Config","")));
     }
 
-    @Test
-    void instanceIdCanBeSpecifiedWithEnvironmentProperty() throws Exception {
-        System.setProperty("NOVA.SERVICE.INSTANCE_ID", "XYZ");
-        AnnotationConfigApplicationContext ctx = new AnnotationConfigApplicationContext();
-        ctx.register(MyConfig.class);
-        ctx.refresh();
-        MyService sut = ctx.getBean(MyService.class);
-
-        assertThat(sut.instanceId, is("XYZ"));
-    }
-
-    @Test
-    void jvmMetricsAreCapturedByDefault() throws Exception {
-        AnnotationConfigApplicationContext ctx =
-                new AnnotationConfigApplicationContext();
-        ctx.register(MyConfig.class);
-        ctx.refresh();
-        MyService sut = ctx.getBean(MyService.class);
-
-        assertTrue(sut.captureJvmMetrics);
-
-        TestObserver<ServiceMetricsSet> observer = sut.serviceMetrics(100, TimeUnit.MILLISECONDS).test();
-        observer.await(1, TimeUnit.SECONDS);
-        assertThat(observer.valueCount(), greaterThan(0));
-        ServiceMetricsSet sms = observer.values().get(0);
-        assertNotNull(sms.gauges.get("jvm.gc.PS-MarkSweep.count"));
-    }
-
-    @Test
-    void jvmMetricsCapturingCanBeSwitchedOffWithEnvironmentProperty() throws Exception {
-        System.setProperty("NOVA.SERVICE.CAPTURE_JVM_METRICS", "false");
-        AnnotationConfigApplicationContext ctx = new AnnotationConfigApplicationContext();
-        ctx.register(MyConfig.class);
-        ctx.refresh();
-        MyService sut = ctx.getBean(MyService.class);
-
-        assertFalse(sut.captureJvmMetrics);
-
-        TestObserver<ServiceMetricsSet> observer = sut.serviceMetrics(100, TimeUnit.MILLISECONDS).test();
-        observer.await(1, TimeUnit.SECONDS);
-        assertThat(observer.valueCount(), greaterThan(0));
-        ServiceMetricsSet sms = observer.values().get(0);
-        assertNull(sms.gauges.get("jvm.gc.PS-MarkSweep.count"));
-    }
-
-    @Test
-    void serviceMetricsCallNeedsIntervalLargerThanZero() {
-        AnnotationConfigApplicationContext ctx =
-                new AnnotationConfigApplicationContext();
-
-        ctx.register(MyConfig.class);
-        ctx.refresh();
-
-        MyService sut = ctx.getBean(MyService.class);
-        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
-                () -> sut.serviceMetrics(-1, TimeUnit.SECONDS));
-        assertThat(ex.getMessage(),containsString("interval must be greater than 0"));
-        ex = assertThrows(IllegalArgumentException.class,
-                () -> sut.serviceMetrics(0, TimeUnit.SECONDS));
-        assertThat(ex.getMessage(),containsString("interval must be greater than 0"));
-    }
-
-    @Test
-    void serviceMetricsCallNeedsNonNullTimeUnit() {
-        AnnotationConfigApplicationContext ctx =
-                new AnnotationConfigApplicationContext();
-
-        ctx.register(MyConfig.class);
-        ctx.refresh();
-
-        MyService sut = ctx.getBean(MyService.class);
-        NullPointerException ex = assertThrows(NullPointerException.class, () -> sut.serviceMetrics(5, null));
-        assertThat(ex.getMessage(),containsString("timeUnit must not be null"));
-    }
-
-    @Test
-    void serviceMetricsIncludeServerDetails() throws Exception {
-        AnnotationConfigApplicationContext ctx = new AnnotationConfigApplicationContext();
-        ctx.register(MyConfig.class);
-        ctx.refresh();
-        MyService sut = ctx.getBean(MyService.class);
-
-        TestObserver<ServiceMetricsSet> observer = sut.serviceMetrics(100, TimeUnit.MILLISECONDS).test();
-        observer.await(1, TimeUnit.SECONDS);
-        assertThat(observer.valueCount(), greaterThan(0));
-        ServiceMetricsSet sms = observer.values().get(0);
-        InetAddress inetAddress = InetAddress.getLocalHost();
-        assertThat(sms.serverName, is(inetAddress.getHostName()));
-        assertThat(sms.serverAddress, is(inetAddress.getHostAddress()));
-    }
-
     @Component
     public static class MyBrokenInitService extends NovaService {
         @Override
@@ -314,7 +218,7 @@ public class NovaServiceTest {
         }
 
         @Bean
-        public Object createServiceInstance() {
+        public Object serviceInstance() {
             return new MyService();
         }
     }
@@ -322,7 +226,7 @@ public class NovaServiceTest {
     @Configuration
     public static class MyConfig extends NovaServiceConfiguration<MyService> {
         @Bean
-        public MyService createServiceInstance() {
+        public MyService serviceInstance() {
             return new MyService();
         }
     }
@@ -330,7 +234,7 @@ public class NovaServiceTest {
     @Configuration
     public static class MyConfigForBrokenStartService extends NovaServiceConfiguration<MyBrokenStartService> {
         @Bean
-        public MyBrokenStartService createServiceInstance() {
+        public MyBrokenStartService serviceInstance() {
             return new MyBrokenStartService();
         }
     }
@@ -338,21 +242,21 @@ public class NovaServiceTest {
     @Configuration
     public static class MyConfigForBrokenInitService extends NovaServiceConfiguration<MyBrokenInitService> {
         @Bean
-        public MyBrokenInitService createServiceInstance() {
+        public MyBrokenInitService serviceInstance() {
             return new MyBrokenInitService();
         }
     }
 
     @Configuration
     public static class MyConfigWithoutBeanAnnotation extends NovaServiceConfiguration<MyService> {
-        public MyService createServiceInstance() {
+        public MyService serviceInstance() {
             return new MyService();
         }
     }
 
     public static class MyConfigWithoutConfigurationAnnotation extends NovaServiceConfiguration<MyService> {
         @Bean
-        public MyService createServiceInstance() {
+        public MyService serviceInstance() {
             return new MyService();
         }
     }

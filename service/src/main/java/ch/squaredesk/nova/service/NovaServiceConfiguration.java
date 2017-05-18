@@ -29,13 +29,8 @@ public abstract class NovaServiceConfiguration<ServiceType> extends NovaProvidin
     @Autowired
     protected Environment environment;
 
-    @Bean
-    public Boolean captureJvmMetrics() {
-        return environment.getProperty("NOVA.SERVICE.CAPTURE_JVM_METRICS", Boolean.class, true);
-    }
-
     @Bean(name = "instanceId")
-    public String getInstanceId() {
+    public String instanceId() {
         return environment.getProperty("NOVA.SERVICE.INSTANCE_ID", UUID.randomUUID().toString());
     }
 
@@ -53,5 +48,5 @@ public abstract class NovaServiceConfiguration<ServiceType> extends NovaProvidin
         return name;
     }
 
-    public abstract ServiceType createServiceInstance();
+    public abstract ServiceType serviceInstance();
 }

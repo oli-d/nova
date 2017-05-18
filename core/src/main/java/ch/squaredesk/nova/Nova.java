@@ -13,6 +13,9 @@ package ch.squaredesk.nova;
 import ch.squaredesk.nova.events.EventBus;
 import ch.squaredesk.nova.events.EventBusConfig;
 import ch.squaredesk.nova.filesystem.Filesystem;
+import ch.squaredesk.nova.metrics.CpuMeter;
+import ch.squaredesk.nova.metrics.GarbageCollectionMeter;
+import ch.squaredesk.nova.metrics.MemoryMeter;
 import ch.squaredesk.nova.metrics.Metrics;
 import io.reactivex.BackpressureStrategy;
 
@@ -37,6 +40,7 @@ public class Nova {
     public static class Builder {
         private String identifier;
         private Metrics metrics;
+        private boolean captureJvmMetrics = true;
 
         private BackpressureStrategy defaultBackpressureStrategy = BackpressureStrategy.BUFFER;
         private boolean warnOnUnhandledEvent = false;
@@ -60,10 +64,24 @@ public class Nova {
             return this;
         }
 
+        public Builder captureJvmMetrics(boolean captureJvmMetrics) {
+            this.captureJvmMetrics = captureJvmMetrics;
+            return this;
+        }
+
 
         public Nova build() {
             if (metrics == null) {
                 metrics = new Metrics();
+            }
+
+            if (captureJvmMetrics) {
+                metrics.register(new MemoryMeter(),"jvm", "mem");
+                metrics.register(new GarbageCollectionMeter(),"jvm", "gc");
+                CpuMeter cpuMeter = new CpuMeter();
+                if (cpuMeter.environmentSupportsCpuMetrics()) {
+                    metrics.register(cpuMeter, "os", "cpu");
+                }
             }
 
             eventBusConfig = new EventBusConfig(defaultBackpressureStrategy, warnOnUnhandledEvent);

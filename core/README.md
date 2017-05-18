@@ -51,6 +51,9 @@ io.reactivex.BackpressureStrategy (default value is ```BUFFER```), which are:
 | ERROR | Signals an error, whenever an event cannot be dispatched. |
 | LATEST | Only keeps the latest value, overwriting all previous values that could not bee dispatched to the consumer yet. |
 
+* ```captureJvmMetrics``` - Specifies, whether Nova should automatically capture JVM metrics (memory usage, CPU usage 
+and garbage collection stats). Default value is ```true```.
+
 
 #### Filesystem
 

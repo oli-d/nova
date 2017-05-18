@@ -11,8 +11,7 @@
 package ch.squaredesk.nova.service;
 
 import ch.squaredesk.nova.Nova;
-import com.codahale.metrics.jvm.GarbageCollectorMetricSet;
-import com.codahale.metrics.jvm.MemoryUsageGaugeSet;
+import ch.squaredesk.nova.metrics.MetricsDump;
 import io.reactivex.Observable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -42,10 +41,6 @@ public abstract class NovaService {
     @Autowired
     protected String serviceName;
 
-    @Autowired
-    boolean captureJvmMetrics;
-
-
     protected NovaService() {
         this.logger = LoggerFactory.getLogger(getClass());
     }
@@ -53,11 +48,6 @@ public abstract class NovaService {
     @PostConstruct
     private void doInit() {
         Objects.requireNonNull(nova);
-
-        if (captureJvmMetrics) {
-            nova.metrics.register(new MemoryUsageGaugeSet(),"jvm", "mem");
-            nova.metrics.register(new GarbageCollectorMetricSet(),"jvm", "gc");
-        }
 
         try {
             onInit();
@@ -97,23 +87,6 @@ public abstract class NovaService {
         started = false;
 
         logger.info("Shutdown procedure completed for service {}, instance {}.", serviceName, instanceId);
-    }
-
-    /**
-     * Returns an observable that continuously pushes the service metrics. The passed parameters define the
-     * interval between two dumps.
-     */
-    public Observable<ServiceMetricsSet> serviceMetrics(long interval, TimeUnit timeUnit) {
-        if (interval <= 0) throw new IllegalArgumentException("interval must be greater than 0");
-        Objects.requireNonNull(timeUnit, "timeUnit must not be null");
-
-        return Observable.interval(interval, interval, timeUnit)
-                .map(count -> new ServiceMetricsSet(serviceName, instanceId,
-                        nova.metrics.metricRegistry.getGauges(),
-                        nova.metrics.metricRegistry.getCounters(),
-                        nova.metrics.metricRegistry.getHistograms(),
-                        nova.metrics.metricRegistry.getMeters(),
-                        nova.metrics.metricRegistry.getTimers()));
     }
 
     /**
@@ -191,7 +164,7 @@ public abstract class NovaService {
         assertIsAnnotated(configurationClass, Configuration.class);
 
         // and, that we also have an appropriate service bean creator
-        assertIsAnnotated(configurationClass, "createServiceInstance", Bean.class);
+        assertIsAnnotated(configurationClass, "serviceInstance", Bean.class);
 
         AnnotationConfigApplicationContext ctx =
                 new AnnotationConfigApplicationContext();
