@@ -24,7 +24,7 @@ public class NovaProvidingConfiguration {
     private Environment environment;
 
     @Bean(name = "nova")
-    public Nova getNova() {
+    public Nova nova() {
         return Nova.builder()
                 .setIdentifier(getIdentifier())
                 .setDefaultBackpressureStrategy(getDefaultBackpressureStrategy())
