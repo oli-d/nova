@@ -16,7 +16,6 @@ import ch.squaredesk.nova.metrics.Metrics;
 import io.reactivex.Single;
 
 import java.net.URL;
-import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 

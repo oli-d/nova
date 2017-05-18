@@ -10,13 +10,10 @@
 
 package ch.squaredesk.nova.comm.http;
 
-import ch.squaredesk.nova.comm.sending.MessageSender;
 import ch.squaredesk.nova.comm.sending.MessageSendingInfo;
 import ch.squaredesk.nova.metrics.Metrics;
-import io.reactivex.Completable;
 import io.reactivex.Single;
 import org.apache.http.HttpResponse;
-import org.apache.http.StatusLine;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.concurrent.FutureCallback;
 import org.apache.http.entity.ContentType;
@@ -32,7 +29,6 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.net.URL;
 import java.nio.CharBuffer;
-import java.util.function.Function;
 
 class UrlInvoker<InternalMessageType>  {
     private final Logger logger = LoggerFactory.getLogger(UrlInvoker.class);

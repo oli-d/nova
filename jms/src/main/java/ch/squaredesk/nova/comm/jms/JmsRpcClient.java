@@ -13,14 +13,13 @@ package ch.squaredesk.nova.comm.jms;
 import ch.squaredesk.nova.comm.rpc.RpcClient;
 import ch.squaredesk.nova.comm.sending.MessageSendingInfo;
 import ch.squaredesk.nova.metrics.Metrics;
-import io.reactivex.*;
+import io.reactivex.BackpressureStrategy;
+import io.reactivex.Single;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.jms.*;
-import java.util.Map;
+import javax.jms.Destination;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Supplier;
 
 import static java.util.Objects.requireNonNull;
 

@@ -11,14 +11,8 @@
 package ch.squaredesk.nova.comm.retrieving;
 
 import ch.squaredesk.nova.metrics.Metrics;
-import ch.squaredesk.nova.metrics.SettableGauge;
 import com.codahale.metrics.Counter;
-import com.codahale.metrics.Gauge;
 import com.codahale.metrics.Meter;
-
-import java.util.Objects;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicLong;
 
 import static java.util.Objects.requireNonNull;
 
