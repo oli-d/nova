@@ -47,6 +47,7 @@ Currently, the following libraries exist:
 * [comm](./comm/README.md): communication base library, protocol agnostic reactive message sending and retrieval
 * [jms](./jms/README.md): reactive JMS messaging
 * [http](./http/README.md): reactive HTTP communication
+* [kafka](./kafka/README.md): reactive Kafka communication
 * [event-annotations](./event-annotations/README.md): allows your spring beans to automatically connect to the EventBus using annotations
 * [service](./service/README.md): Small service skeleton with a defined lifecycle and easy access to Nova and its EventBus 
 * [metrics-elastic](./metrics-elastic/README.md): Utility to push Metrics to Elasticsearch 
