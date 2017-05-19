@@ -1,5 +1,4 @@
-!/target
-/target/**
+*/target/**
 **/build/**
 /.*
 /target
@@ -7,4 +6,3 @@
 .project
 !/.travis*
 !.gitignore
-out/
