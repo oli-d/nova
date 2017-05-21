@@ -58,17 +58,23 @@ public class ElasticMetricsReporter implements Consumer<MetricsDump> {
         } catch (UnknownHostException e) {
             logger.error("Unable to connect to Elastic @ " + elasticServer + ":" + elasticPort, e);
         }
-        logger.info("\tsuccessful :-)");
+        logger.info("\tsuccessfully established connection to Elastic @ " + elasticServer + ":" + elasticPort + " :-)");
     }
 
     public void shutdown() {
-        logger.info("Shutting down connection to Elasticsearch");
-        client.close();
-        logger.info("\tsuccessful :-)");
+        if (client!=null) {
+            logger.info("Shutting down connection to Elasticsearch");
+            client.close();
+            logger.info("\tsuccessfully shutdown connection to Elasticsearch :-)");
+        }
     }
 
     @Override
     public void accept(MetricsDump metricsDump) throws Exception {
+        if (client==null) {
+            throw new IllegalStateException("not started yet");
+        }
+
         LocalDateTime timestampInUtc = Instant.ofEpochMilli(metricsDump.timestamp).atZone(zoneForTimestamps).toLocalDateTime();
 
         Observable.<TypeAndNameAndMetric>create(s -> {
@@ -87,8 +93,7 @@ public class ElasticMetricsReporter implements Consumer<MetricsDump> {
                     map.putAll(additionalMetricAttributes);
                     return new TypeAndMetric(typeAndNameAndMetric.type, map);
                 })
-                .map(typeAndMetricAsMap ->
-                        new IndexRequest()
+                .map(typeAndMetricAsMap -> new IndexRequest()
                                 .index(indexName)
                                 .type(typeAndMetricAsMap.type)
                                 .source(typeAndMetricAsMap.metricAsMap)
