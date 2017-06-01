@@ -27,15 +27,9 @@ __the following beans must exist in the ApplicationContext:__
 
 1. ___Nova's EventHandlingBeanPostprocessor bean___
 
-We do prefer annotation based ApplicationContext configurations, therefore we provide two convenience classes
-that make your (and our) lives a lot easier.
-
-```AnnotationEnablingConfiguration``` is a configuration class that properly instantiates the BeanPostProcessor. 
-Simply import this in your specific Configuration class.
-
-As indicated above, this class requires a Nova instance, so we also provide the ```NovaProvidingConfiguration``` class.
-Import this, and a Nova instance with default configuration is provided. So, the easiest way to complete the
-example is to provide a config like this:
+We do prefer annotation based ApplicationContext configurations, therefore we provide a convenience class
+that makes enabling that feature very easy: ```AnnotationEnablingConfiguration```. Simply import this 
+in your custom onfiguration class and you are ready to go. As an example:
 
 ```
 @Configuration
@@ -49,41 +43,12 @@ public class MyConfig {
 }
 ```
 
-The default configuration provided by the ```NovaProvidingConfig``` class can easily be overridden using environment 
-variables. The following table explains the supported parameters:
-
-| Parameter name | Description | Possible Values | Default value |
-|----------------|-------------|-----------------|---------------|
-| ```NOVA.ID``` | The ID of the Nova instance | | ```null``` |
-| ```NOVA.EVENTS.WARN_ON_UNHANDLED```| Specifies, whether a warning should be logged if an unhandled event is emitted | ```true```or ```false``` | ```false``` |
-| ```NOVA.EVENTS.BACKPRESSURE_STRATEGY``` | Specifies which strategy to use when a producer emits faster than the consumer can process it. | One of the constants defined in ```io.reactivex.BackpressureStrategy```. See README.MD in the nova package for more details | ```BUFFER``` |
-
-If you prefer defining the configuration in code, you can also make your Configuration class inherit from 
-```NovaProvidingConfig``` and override the desired Bean providing methods, e.g.:
-
-```
-@Import(AnnotationEnablingConfiguration.class)
-public static class MyConfig extends NovaProvidingConfiguration {
-    @Bean
-    public MyClass getMyBean() {
-        return new MyClass();
-    }
-    ... // further bean definitions
-
-    @Override
-    @Bean
-    public String getIdentifier() {
-        return "My Service";
-    }
-}
-
-```
-
 __But wait... there's one more thing!__
  
-Since we firmly believe that a modern software system must measure as much as possible, we wanted
-to make it easy for every event handler to capture its own specific metrics. Our solution to this
-is that your are able to add an additional parameter to your handling method. If you do so, and
+Since we firmly believe that a modern software system should capture as much metric data as 
+possible, we wanted to make it easy for every event handler to capture its own specific metrics. 
+Our solution to this is that your are able to add an additional parameter to your handling method. 
+If you do so, and
 
 - the parameter is of type ```EventContext```
 - and it's the last parameter in your event handling method signature,
