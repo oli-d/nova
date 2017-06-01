@@ -26,7 +26,7 @@ import static java.util.Objects.requireNonNull;
 public class EventBus {
     private final Logger logger = LoggerFactory.getLogger(EventBus.class);
 
-    private final EventBusConfig eventBusConfig;
+    public final EventBusConfig eventBusConfig;
 
     // metrics
     private final EventMetricsCollector metricsCollector;

@@ -13,8 +13,8 @@ package ch.squaredesk.nova.events;
 import io.reactivex.BackpressureStrategy;
 
 public class EventBusConfig {
-    final BackpressureStrategy defaultBackpressureStrategy;
-    final boolean warnOnUnhandledEvents;
+    public final BackpressureStrategy defaultBackpressureStrategy;
+    public final boolean warnOnUnhandledEvents;
 
 
     public EventBusConfig(BackpressureStrategy backpressureStrategy, boolean warnOnUnhandledEvents) {
