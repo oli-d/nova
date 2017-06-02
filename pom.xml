@@ -23,8 +23,11 @@
         <module>parentpom</module>
 
         <module>core</module>
+        <module>spring-support</module>
         <module>event-annotations</module>
+
         <module>service</module>
+        <module>service-http-admin</module>
 
         <module>metrics-elastic</module>
 
@@ -33,6 +36,7 @@
         <module>http</module>
         <module>kafka</module>
     </modules>
+
 
     <!--<profiles>-->
         <!--<profile>-->

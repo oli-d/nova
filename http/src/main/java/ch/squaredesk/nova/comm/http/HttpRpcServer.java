@@ -92,6 +92,8 @@ class HttpRpcServer<InternalMessageType> extends RpcServer<String, InternalMessa
                 .setIOReactorConfig(config)
                 // FIXME .setSslContext(sslcontext)
                 .setExceptionLogger(ex -> logger.error("HttpServer caught exception", ex))
+                // FIXME: interface name
+                // FIXME: baseUrl
                 .registerHandler("*", incomingRequestandler)
                 .create();
     }
