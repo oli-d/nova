@@ -38,7 +38,7 @@ public class Nova {
     }
 
     public static class Builder {
-        private String identifier;
+        private String identifier = "";
         private Metrics metrics;
         private boolean captureJvmMetrics = true;
 
