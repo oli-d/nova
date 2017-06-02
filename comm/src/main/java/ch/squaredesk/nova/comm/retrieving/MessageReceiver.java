@@ -26,14 +26,14 @@ public abstract class MessageReceiver<DestinationType, InternalMessageType, Tran
     private static final Logger logger = LoggerFactory.getLogger(MessageReceiver.class);
 
     private final ConcurrentHashMap<DestinationType, Observable<IncomingMessage<InternalMessageType, DestinationType, TransportSpecificInfoType>>> mapDestinationToListeners = new ConcurrentHashMap<>();
-    protected final Function<TransportMessageType, InternalMessageType> messageUnmarshaller;
+    protected final MessageUnmarshaller<TransportMessageType, InternalMessageType> messageUnmarshaller;
     private final MetricsCollector metricsCollector;
 
-    protected MessageReceiver(Function<TransportMessageType, InternalMessageType> messageUnmarshaller, Metrics metrics) {
+    protected MessageReceiver(MessageUnmarshaller<TransportMessageType, InternalMessageType> messageUnmarshaller, Metrics metrics) {
         this(null, messageUnmarshaller, metrics);
     }
 
-    protected MessageReceiver(String identifier, Function<TransportMessageType, InternalMessageType> messageUnmarshaller, Metrics metrics) {
+    protected MessageReceiver(String identifier, MessageUnmarshaller<TransportMessageType, InternalMessageType> messageUnmarshaller, Metrics metrics) {
         requireNonNull(metrics, "metrics must not be null");
         requireNonNull(messageUnmarshaller, "messageUnmarshaller must not be null");
         this.messageUnmarshaller = messageUnmarshaller;

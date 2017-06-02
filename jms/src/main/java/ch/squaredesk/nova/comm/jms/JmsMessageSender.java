@@ -10,6 +10,7 @@
 
 package ch.squaredesk.nova.comm.jms;
 
+import ch.squaredesk.nova.comm.sending.MessageMarshaller;
 import ch.squaredesk.nova.comm.sending.MessageSender;
 import ch.squaredesk.nova.comm.sending.MessageSendingInfo;
 import ch.squaredesk.nova.metrics.Metrics;
@@ -18,7 +19,6 @@ import io.reactivex.Completable;
 import javax.jms.Destination;
 import javax.jms.MessageProducer;
 import javax.jms.TextMessage;
-import java.util.function.Function;
 
 import static java.util.Objects.requireNonNull;
 
@@ -27,7 +27,7 @@ class JmsMessageSender<InternalMessageType> extends MessageSender<Destination, I
 
     JmsMessageSender(String identifier,
                      JmsObjectRepository jmsObjectRepository,
-                     Function<InternalMessageType,String> messageMarshaller,
+                     MessageMarshaller<InternalMessageType,String> messageMarshaller,
                      Metrics metrics) {
         super(identifier, messageMarshaller, metrics);
         this.jmsObjectRepository = jmsObjectRepository;

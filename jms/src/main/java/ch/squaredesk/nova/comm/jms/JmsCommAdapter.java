@@ -10,7 +10,9 @@
 
 package ch.squaredesk.nova.comm.jms;
 
+import ch.squaredesk.nova.comm.retrieving.MessageUnmarshaller;
 import ch.squaredesk.nova.comm.rpc.RpcInvocation;
+import ch.squaredesk.nova.comm.sending.MessageMarshaller;
 import ch.squaredesk.nova.comm.sending.MessageSendingInfo;
 import ch.squaredesk.nova.metrics.Metrics;
 import io.reactivex.*;
@@ -295,8 +297,8 @@ public class JmsCommAdapter<InternalMessageType> {
         private String identifier;
         private Metrics metrics;
         private Supplier<String> correlationIdGenerator;
-        private Function<String,InternalMessageType> messageUnmarshaller;
-        private Function<InternalMessageType,String> messageMarshaller;
+        private MessageUnmarshaller<String,InternalMessageType> messageUnmarshaller;
+        private MessageMarshaller<InternalMessageType,String> messageMarshaller;
         private Function<Throwable, InternalMessageType> errorReplyFactory;
         private Function<Destination, String> destinationIdGenerator;
         private ConnectionFactory connectionFactory;
@@ -380,12 +382,12 @@ public class JmsCommAdapter<InternalMessageType> {
             return this;
         }
 
-        public Builder<InternalMessageType> setMessageMarshaller(Function<InternalMessageType, String> messageMarshaller) {
+        public Builder<InternalMessageType> setMessageMarshaller(MessageMarshaller<InternalMessageType, String> messageMarshaller) {
             this.messageMarshaller = messageMarshaller;
             return this;
         }
 
-        public Builder<InternalMessageType> setMessageUnmarshaller(Function<String,InternalMessageType> messageUnmarshaller) {
+        public Builder<InternalMessageType> setMessageUnmarshaller(MessageUnmarshaller<String,InternalMessageType> messageUnmarshaller) {
             this.messageUnmarshaller = messageUnmarshaller;
             return this;
         }

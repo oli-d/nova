@@ -12,8 +12,10 @@ package ch.squaredesk.nova.comm.http;
 
 import ch.squaredesk.nova.comm.retrieving.IncomingMessage;
 import ch.squaredesk.nova.comm.retrieving.IncomingMessageDetails;
+import ch.squaredesk.nova.comm.retrieving.MessageUnmarshaller;
 import ch.squaredesk.nova.comm.rpc.RpcInvocation;
 import ch.squaredesk.nova.comm.rpc.RpcServer;
+import ch.squaredesk.nova.comm.sending.MessageMarshaller;
 import ch.squaredesk.nova.metrics.Metrics;
 import io.reactivex.BackpressureStrategy;
 import io.reactivex.Flowable;
@@ -41,14 +43,14 @@ class HttpRpcServer<InternalMessageType> extends RpcServer<String, InternalMessa
     private final Logger logger = LoggerFactory.getLogger(HttpRpcServer.class);
     private final HttpServer httpServer;
     private final IncomingRequestHandler incomingRequestandler;
-    private final Function<InternalMessageType, String> messageMarshaller;
-    private final Function<String, InternalMessageType> messageUnmarshaller;
+    private final MessageMarshaller<InternalMessageType, String> messageMarshaller;
+    private final MessageUnmarshaller<String, InternalMessageType> messageUnmarshaller;
     private final Function<Throwable, InternalMessageType> errorReplyFactory;
 
     HttpRpcServer(String identifier,
                   int port,
-                  Function<InternalMessageType, String> messageMarshaller,
-                  Function<String, InternalMessageType> messageUnmarshaller,
+                  MessageMarshaller<InternalMessageType, String> messageMarshaller,
+                  MessageUnmarshaller<String, InternalMessageType> messageUnmarshaller,
                   Function<Throwable, InternalMessageType> errorReplyFactory,
                   Metrics metrics) {
         super(identifier, metrics);
@@ -165,7 +167,11 @@ class HttpRpcServer<InternalMessageType> extends RpcServer<String, InternalMessa
             if (request instanceof HttpEntityEnclosingRequest) {
                 HttpEntity entity = ((HttpEntityEnclosingRequest) request).getEntity();
                 String payload = EntityUtils.toString(entity);
-                return messageUnmarshaller.apply(payload);
+                try {
+                    return messageUnmarshaller.unmarshal(payload);
+                } catch (Exception e) {
+                    throw new IOException("Unable to unmarshal incoming message " + payload, e);
+                }
             }
             return null;
         }
@@ -174,7 +180,7 @@ class HttpRpcServer<InternalMessageType> extends RpcServer<String, InternalMessa
         private void sendResponse (InternalMessageType request, InternalMessageType response, int statusCode, HttpAsyncExchange httpExchange) {
             try {
                 HttpResponse httpResponse = httpExchange.getResponse();
-                String replyAsString = messageMarshaller.apply(response);
+                String replyAsString = messageMarshaller.marshal(response);
                 NStringEntity entity = new NStringEntity(replyAsString, "UTF-8");
                 httpResponse.setEntity(entity);
                 httpResponse.setStatusCode(statusCode);

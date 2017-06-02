@@ -11,6 +11,7 @@
 package ch.squaredesk.nova.comm.jms;
 
 import ch.squaredesk.nova.comm.rpc.RpcInvocation;
+import ch.squaredesk.nova.comm.sending.MessageMarshaller;
 import ch.squaredesk.nova.comm.sending.MessageSendingInfo;
 import ch.squaredesk.nova.metrics.Metrics;
 import io.reactivex.BackpressureStrategy;
@@ -132,7 +133,7 @@ class JmsRpcServerTest {
         private String message;
         private MessageSendingInfo<Destination, JmsSpecificInfo> sendingInfo;
 
-        MySender(String identifier, JmsObjectRepository jmsObjectRepository, Function<String, String> messageMarshaller, Metrics metrics) {
+        MySender(String identifier, JmsObjectRepository jmsObjectRepository, MessageMarshaller<String, String> messageMarshaller, Metrics metrics) {
             super(identifier, jmsObjectRepository, messageMarshaller, metrics);
         }
 

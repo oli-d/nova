@@ -14,20 +14,18 @@ package ch.squaredesk.nova.comm.sending;
 import ch.squaredesk.nova.metrics.Metrics;
 import io.reactivex.Completable;
 
-import java.util.function.Function;
-
 import static java.util.Objects.requireNonNull;
 
 public abstract class MessageSender<DestinationType, InternalMessageType, TransportMessageType, TransportSpecificInfoType> {
 
-    private final Function<InternalMessageType, TransportMessageType> messageMarshaller;
+    private final MessageMarshaller<InternalMessageType, TransportMessageType> messageMarshaller;
     private final MetricsCollector metricsCollector;
 
-    protected MessageSender(Function<InternalMessageType, TransportMessageType> messageMarshaller, Metrics metrics) {
+    protected MessageSender(MessageMarshaller<InternalMessageType, TransportMessageType> messageMarshaller, Metrics metrics) {
         this(null, messageMarshaller, metrics);
     }
 
-    protected MessageSender(String identifier, Function<InternalMessageType, TransportMessageType> messageMarshaller, Metrics metrics) {
+    protected MessageSender(String identifier, MessageMarshaller<InternalMessageType, TransportMessageType> messageMarshaller, Metrics metrics) {
         requireNonNull(metrics, "metrics must not be null");
         requireNonNull(messageMarshaller, "messageMarshaller instance must be provided");
         this.messageMarshaller = messageMarshaller;
@@ -52,7 +50,7 @@ public abstract class MessageSender<DestinationType, InternalMessageType, Transp
         requireNonNull(destination, "destination must not be null");
         TransportMessageType transportMessage;
         try {
-            transportMessage = message == null ? null : messageMarshaller.apply(message);
+            transportMessage = message == null ? null : messageMarshaller.marshal(message);
             MessageSendingInfo<DestinationType, TransportSpecificInfoType> msi =
                     new MessageSendingInfo.Builder<DestinationType, TransportSpecificInfoType>()
                             .withDestination(destination)

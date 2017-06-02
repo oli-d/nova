@@ -10,7 +10,9 @@
 
 package ch.squaredesk.nova.comm.http;
 
+import ch.squaredesk.nova.comm.retrieving.MessageUnmarshaller;
 import ch.squaredesk.nova.comm.rpc.RpcClient;
+import ch.squaredesk.nova.comm.sending.MessageMarshaller;
 import ch.squaredesk.nova.comm.sending.MessageSendingInfo;
 import ch.squaredesk.nova.metrics.Metrics;
 import io.reactivex.Single;
@@ -23,13 +25,13 @@ import static java.util.Objects.requireNonNull;
 
 class HttpRpcClient<InternalMessageType> extends RpcClient<URL, InternalMessageType, HttpSpecificInfo>{
     private final UrlInvoker urlInvoker;
-    private final Function<InternalMessageType, String> messageMarshaller;
-    private final Function<String, InternalMessageType> messageUnmarshaller;
+    private final MessageMarshaller<InternalMessageType, String> messageMarshaller;
+    private final MessageUnmarshaller<String, InternalMessageType> messageUnmarshaller;
 
     HttpRpcClient(String identifier,
                   UrlInvoker urlInvoker,
-                  Function<InternalMessageType, String> messageMarshaller,
-                  Function<String, InternalMessageType> messageUnmarshaller,
+                  MessageMarshaller<InternalMessageType, String> messageMarshaller,
+                  MessageUnmarshaller<String, InternalMessageType> messageUnmarshaller,
                   Metrics metrics) {
         super(identifier, metrics);
         this.urlInvoker = urlInvoker;
@@ -48,10 +50,17 @@ class HttpRpcClient<InternalMessageType> extends RpcClient<URL, InternalMessageT
                 .timeout(timeout, timeUnit);
 
         // TODO: threading?
-        Single<String> x = urlInvoker.fireRequest(request != null ? messageMarshaller.apply(request) : null, messageSendingInfo);
+        String requestAsString;
+        try {
+            requestAsString = request != null ? messageMarshaller.marshal(request) : null;
+        } catch (Exception e) {
+            return Single.error(e);
+        }
+
+        Single<String> x = urlInvoker.fireRequest(requestAsString, messageSendingInfo);
         return x.map(callResult -> {
             metricsCollector.rpcCompleted(messageSendingInfo.destination, callResult);
-            return (ReplyType) messageUnmarshaller.apply(callResult);
+            return (ReplyType) messageUnmarshaller.unmarshal(callResult);
         }).ambWith(timeoutSingle);
     }
 }

@@ -10,7 +10,9 @@
 
 package ch.squaredesk.nova.comm.http;
 
+import ch.squaredesk.nova.comm.retrieving.MessageUnmarshaller;
 import ch.squaredesk.nova.comm.rpc.RpcInvocation;
+import ch.squaredesk.nova.comm.sending.MessageMarshaller;
 import ch.squaredesk.nova.comm.sending.MessageSendingInfo;
 import ch.squaredesk.nova.metrics.Metrics;
 import io.reactivex.BackpressureStrategy;
@@ -147,8 +149,8 @@ public class HttpCommAdapter<MessageType> {
 
         private String identifier;
         private Metrics metrics;
-        private Function<MessageType,String> messageMarshaller;
-        private Function<String,MessageType> messageUnmarshaller;
+        private MessageMarshaller<MessageType,String> messageMarshaller;
+        private MessageUnmarshaller<String,MessageType> messageUnmarshaller;
         private Function<Throwable, MessageType> errorReplyFactory;
         private HttpRpcServer<MessageType> rpcServer;
         private HttpRpcClient<MessageType> rpcClient;
@@ -183,12 +185,12 @@ public class HttpCommAdapter<MessageType> {
             return this;
         }
 
-        public Builder<MessageType> setMessageMarshaller(Function<MessageType,String> marshaller) {
+        public Builder<MessageType> setMessageMarshaller(MessageMarshaller<MessageType,String> marshaller) {
             this.messageMarshaller = marshaller;
             return this;
         }
 
-        public Builder<MessageType> setMessageUnmarshaller(Function<String,MessageType> unmarshaller) {
+        public Builder<MessageType> setMessageUnmarshaller(MessageUnmarshaller<String,MessageType> unmarshaller) {
             this.messageUnmarshaller = unmarshaller;
             return this;
         }

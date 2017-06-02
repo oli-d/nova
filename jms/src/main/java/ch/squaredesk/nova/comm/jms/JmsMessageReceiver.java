@@ -13,6 +13,7 @@ package ch.squaredesk.nova.comm.jms;
 import ch.squaredesk.nova.comm.retrieving.IncomingMessage;
 import ch.squaredesk.nova.comm.retrieving.IncomingMessageDetails;
 import ch.squaredesk.nova.comm.retrieving.MessageReceiver;
+import ch.squaredesk.nova.comm.retrieving.MessageUnmarshaller;
 import ch.squaredesk.nova.metrics.Metrics;
 import io.reactivex.Observable;
 import org.slf4j.Logger;
@@ -22,7 +23,6 @@ import javax.jms.Destination;
 import javax.jms.JMSException;
 import javax.jms.MessageConsumer;
 import javax.jms.TextMessage;
-import java.util.function.Function;
 
 public class JmsMessageReceiver<InternalMessageType>
         extends MessageReceiver<Destination, InternalMessageType, String, JmsSpecificInfo> {
@@ -34,7 +34,7 @@ public class JmsMessageReceiver<InternalMessageType>
 
     JmsMessageReceiver(String identifier,
                        JmsObjectRepository jmsObjectRepository,
-                       Function<String, InternalMessageType> messageUnmarshaller,
+                       MessageUnmarshaller<String, InternalMessageType> messageUnmarshaller,
                        Metrics metrics) {
         super(identifier, messageUnmarshaller, metrics);
         this.jmsObjectRepository = jmsObjectRepository;
@@ -67,7 +67,13 @@ public class JmsMessageReceiver<InternalMessageType>
                             return;
                         }
 
-                        InternalMessageType internalMessage = messageUnmarshaller.apply(transportMessage);
+                        InternalMessageType internalMessage;
+                        try {
+                            internalMessage = messageUnmarshaller.unmarshal(transportMessage);
+                        } catch (Exception e) {
+                            logger.error("Unable to unmarshal incoming message " + transportMessage, e);
+                            return;
+                        }
 
                         IncomingMessageDetails<Destination, JmsSpecificInfo> messageDetails =
                                 messageDetailsCreator.createMessageDetailsFor(jmsMessage);
