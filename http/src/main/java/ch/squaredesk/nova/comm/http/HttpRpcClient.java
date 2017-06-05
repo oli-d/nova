@@ -19,7 +19,6 @@ import io.reactivex.Single;
 
 import java.net.URL;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Function;
 
 import static java.util.Objects.requireNonNull;
 
@@ -46,9 +45,6 @@ class HttpRpcClient<InternalMessageType> extends RpcClient<URL, InternalMessageT
                                       long timeout, TimeUnit timeUnit) {
         requireNonNull(timeUnit, "timeUnit must not be null");
 
-        Single timeoutSingle = Single.create(s -> metricsCollector.rpcTimedOut(messageSendingInfo.destination.toExternalForm()))
-                .timeout(timeout, timeUnit);
-
         // TODO: threading?
         String requestAsString;
         try {
@@ -57,7 +53,11 @@ class HttpRpcClient<InternalMessageType> extends RpcClient<URL, InternalMessageT
             return Single.error(e);
         }
 
+        Single timeoutSingle = Single.create(s -> metricsCollector.rpcTimedOut(messageSendingInfo.destination.toExternalForm()))
+                .timeout(timeout, timeUnit);
+
         Single<String> x = urlInvoker.fireRequest(requestAsString, messageSendingInfo);
+
         return x.map(callResult -> {
             metricsCollector.rpcCompleted(messageSendingInfo.destination, callResult);
             return (ReplyType) messageUnmarshaller.unmarshal(callResult);

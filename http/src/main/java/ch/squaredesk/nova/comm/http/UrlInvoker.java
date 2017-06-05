@@ -38,7 +38,7 @@ class UrlInvoker<InternalMessageType>  {
     }
 
     Single<String> fireRequest(String request, MessageSendingInfo<URL, HttpSpecificInfo> sendingInfo) {
-        // TODO reuse HttpClient
+        // TODO reuse HttpClient!!!
         RequestConfig requestConfig = RequestConfig.custom()
                 .setSocketTimeout(3000)
                 .setConnectTimeout(3000)
@@ -71,6 +71,8 @@ class UrlInvoker<InternalMessageType>  {
                     s.onError(new RuntimeException("Cancelled"));
                 }
             };
+
+            // TODO: allow request parameters to be sent
 
             if (sendingInfo.transportSpecificInfo != null && sendingInfo.transportSpecificInfo.requestMethod == HttpRequestMethod.GET) {
                 httpClient.execute(

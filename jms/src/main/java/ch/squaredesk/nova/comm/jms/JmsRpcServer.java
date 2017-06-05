@@ -23,7 +23,7 @@ import java.util.function.Function;
 
 import static java.util.Objects.requireNonNull;
 
-public class JmsRpcServer<InternalMessageType> extends RpcServer<Destination, InternalMessageType> {
+public class JmsRpcServer<InternalMessageType> extends RpcServer<Destination, InternalMessageType, JmsSpecificInfo> {
 
     private final JmsMessageSender<InternalMessageType> messageSender;
     private final JmsMessageReceiver<InternalMessageType> messageReceiver;
@@ -46,7 +46,7 @@ public class JmsRpcServer<InternalMessageType> extends RpcServer<Destination, In
 
     @Override
     public <RequestType extends InternalMessageType, ReplyType extends InternalMessageType>
-        Flowable<RpcInvocation<RequestType, ReplyType>> requests(Destination destination,
+        Flowable<RpcInvocation<RequestType, ReplyType, JmsSpecificInfo>> requests(Destination destination,
                                                                  BackpressureStrategy backpressureStrategy) {
         return messageReceiver.messages(destination, backpressureStrategy)
                 .filter(this::isRpcRequest)
@@ -57,6 +57,7 @@ public class JmsRpcServer<InternalMessageType> extends RpcServer<Destination, In
                     Consumer<Throwable> errorConsumer = createErrorReplyHandlerFor(incomingMessage);
                     return new RpcInvocation<>(
                             request,
+                            incomingMessage.details.transportSpecificDetails,
                             reply -> {
                                 replyConsumer.accept(reply);
                                 metricsCollector.requestCompleted(incomingMessage.message, reply);

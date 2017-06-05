@@ -128,7 +128,7 @@ public class HttpCommAdapter<MessageType> {
         return rpcClient.sendRequest(request, sendingInfo, timeout, timeUnit);
     }
 
-    public Flowable<RpcInvocation<MessageType, MessageType>> requests (String destination, BackpressureStrategy backpressureStrategy) {
+    public Flowable<RpcInvocation<MessageType, MessageType, HttpSpecificInfo>> requests (String destination, BackpressureStrategy backpressureStrategy) {
         return rpcServer.requests(destination, backpressureStrategy);
     }
 

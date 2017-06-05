@@ -39,7 +39,7 @@ import java.util.function.Function;
 
 import static java.util.Objects.requireNonNull;
 
-class HttpRpcServer<InternalMessageType> extends RpcServer<String, InternalMessageType> {
+class HttpRpcServer<InternalMessageType> extends RpcServer<String, InternalMessageType, HttpSpecificInfo> {
     private final Logger logger = LoggerFactory.getLogger(HttpRpcServer.class);
     private final HttpServer httpServer;
     private final IncomingRequestHandler incomingRequestandler;
@@ -108,17 +108,17 @@ class HttpRpcServer<InternalMessageType> extends RpcServer<String, InternalMessa
 
     @Override
     public <RequestType extends InternalMessageType, ReplyType extends InternalMessageType>
-        Flowable<RpcInvocation<RequestType, ReplyType>> requests(String destination, BackpressureStrategy backpressureStrategy) {
-        Flowable<RpcInvocation<RequestType, ReplyType>> requests = Flowable.create(
+        Flowable<RpcInvocation<RequestType, ReplyType, HttpSpecificInfo>> requests(String destination, BackpressureStrategy backpressureStrategy) {
+        Flowable<RpcInvocation<RequestType, ReplyType, HttpSpecificInfo>> requests = Flowable.create(
                 s -> incomingRequestandler.registerIncomingRequestHandler(
                         destination,
-                        request -> s.onNext((RpcInvocation<RequestType, ReplyType>) request)),
+                        request -> s.onNext((RpcInvocation<RequestType, ReplyType, HttpSpecificInfo>) request)),
                 backpressureStrategy);
         return requests.doFinally(() -> incomingRequestandler.deregisterIncomingRequestHandler(destination));
     }
 
     private class IncomingRequestHandler implements HttpAsyncRequestHandler<HttpRequest> {
-        private final ConcurrentHashMap<String, Consumer<RpcInvocation<InternalMessageType, InternalMessageType>>>
+        private final ConcurrentHashMap<String, Consumer<RpcInvocation<InternalMessageType, InternalMessageType, HttpSpecificInfo>>>
                 destinationToHandler = new ConcurrentHashMap<>();
 
         @Override
@@ -141,8 +141,7 @@ class HttpRpcServer<InternalMessageType> extends RpcServer<String, InternalMessa
                 throw new MethodNotSupportedException(method + " method not supported");
             }
 
-            HttpSpecificInfo httpSpecificInfo = new HttpSpecificInfo(
-                    HttpRequestMethod.valueOf(httpRequest.getRequestLine().getMethod().toUpperCase()));
+            HttpSpecificInfo httpSpecificInfo = HttpSpecificInfoExtractor.extractFrom(httpRequest);
             IncomingMessageDetails<String, HttpSpecificInfo> details = new IncomingMessageDetails.Builder<String, HttpSpecificInfo>()
                     .withDestination(httpRequest.getRequestLine().getUri())
                     .withTransportSpecificDetails(httpSpecificInfo)
@@ -152,8 +151,9 @@ class HttpRpcServer<InternalMessageType> extends RpcServer<String, InternalMessa
             IncomingMessage<InternalMessageType, String, HttpSpecificInfo> incomingRequest =
                     new IncomingMessage<>(request, details);
 
-            RpcInvocation<InternalMessageType, InternalMessageType> invocation = new RpcInvocation<>(
+            RpcInvocation<InternalMessageType, InternalMessageType, HttpSpecificInfo> invocation = new RpcInvocation<>(
                     incomingRequest.message,
+                    incomingRequest.details.transportSpecificDetails,
                     reply -> {
                         sendResponse(request, reply, 200, httpExchange);
                         metricsCollector.requestCompleted(details.destination, reply);
@@ -195,18 +195,18 @@ class HttpRpcServer<InternalMessageType> extends RpcServer<String, InternalMessa
 
         void registerIncomingRequestHandler(
                 String destination,
-                Consumer<RpcInvocation<InternalMessageType, InternalMessageType>> requestHandler) {
+                Consumer<RpcInvocation<InternalMessageType, InternalMessageType, HttpSpecificInfo>> requestHandler) {
             // FIXME: check for presence!
             destinationToHandler.put(destination, requestHandler);
         }
 
         private void informHandler(String destination,
-                                   RpcInvocation<InternalMessageType, InternalMessageType> incomingRequest) {
+                                   RpcInvocation<InternalMessageType, InternalMessageType, HttpSpecificInfo> incomingRequest) {
 
-            Consumer<RpcInvocation<InternalMessageType, InternalMessageType>> handler = destinationToHandler.get(destination);
+            Consumer<RpcInvocation<InternalMessageType, InternalMessageType, HttpSpecificInfo>> handler = destinationToHandler.get(destination);
             if (handler==null) {
-                logger.info("Received request on unsupported destination " + destination + ". Returning error");
-                incomingRequest.completeExceptionally(new RuntimeException("Unsupported destination"));
+                logger.info("Received request on unsupported destination {}. Returning error!", destination);
+                incomingRequest.completeExceptionally(new RuntimeException("Unsupported destination " + destination));
                 return;
             }
 

@@ -10,7 +10,6 @@
 
 package ch.squaredesk.nova.comm.jms;
 
-import ch.squaredesk.nova.comm.retrieving.IncomingMessageDetails;
 import org.apache.activemq.ActiveMQConnectionFactory;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -24,10 +23,8 @@ import javax.jms.Message;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
-class JmsIncomingMessageDetailsCreatorTest {
+class JmsSpecificInfoExtractorTest {
     private TestJmsHelper jmsHelper;
-    private JmsMessageDetailsCreator sut;
-
     private EmbeddedActiveMQBroker broker;
 
     @BeforeEach
@@ -38,7 +35,6 @@ class JmsIncomingMessageDetailsCreatorTest {
         ConnectionFactory connectionFactory = new ActiveMQConnectionFactory("vm://embedded-broker?create=false");
         jmsHelper = new TestJmsHelper(connectionFactory);
         jmsHelper.start();
-        sut = new JmsMessageDetailsCreator();
     }
 
     @AfterEach
@@ -48,11 +44,20 @@ class JmsIncomingMessageDetailsCreatorTest {
 
     @Test
     void testCreateMessageDetails() throws JMSException {
+        Destination replyDestination = jmsHelper.createQueue("reply");
         Destination incomingDestination = jmsHelper.createQueue("incoming");
         Message message = jmsHelper.createMessage("payload");
         message.setJMSDestination(incomingDestination);
+        message.setJMSCorrelationID("c1");
+        message.setJMSReplyTo(replyDestination);
+        message.setObjectProperty("k1", "v1");
+        message.setObjectProperty("k3", "v2");
 
-        IncomingMessageDetails<Destination, JmsSpecificInfo> details = sut.createMessageDetailsFor(message);
-        assertThat(details.destination, is(incomingDestination));
+        JmsSpecificInfo info = JmsSpecificInfoExtractor.extractFrom(message);
+        assertThat(info.correlationId, is("c1"));
+        assertThat(info.customHeaders.size(), is(2));
+        assertThat(info.customHeaders.get("k1"), is("v1"));
+        assertThat(info.customHeaders.get("k3"), is("v2"));
+        assertThat(info.replyDestination, is(replyDestination));
     }
 }

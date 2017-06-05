@@ -131,11 +131,11 @@ public class JmsCommAdapter<InternalMessageType> {
     // RPC server methods //
     //                    //
     ////////////////////////
-    public Flowable<RpcInvocation<InternalMessageType, InternalMessageType>> requests(Destination destination) {
+    public Flowable<RpcInvocation<InternalMessageType, InternalMessageType, JmsSpecificInfo>> requests(Destination destination) {
         return requests(destination, defaultBackpressureStrategy);
     }
 
-    public Flowable<RpcInvocation<InternalMessageType, InternalMessageType>> requests(
+    public Flowable<RpcInvocation<InternalMessageType, InternalMessageType, JmsSpecificInfo>> requests(
             Destination destination, BackpressureStrategy backpressureStrategy) {
         requireNonNull(destination, "destination must not be null");
         if (backpressureStrategy==null) {

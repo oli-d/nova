@@ -51,9 +51,9 @@ class HttpRpcServerTest {
 
     @Test
     void subscriberProperlyInvoked() throws Exception {
-        List<RpcInvocation<String, String>> invocations1 = new ArrayList<>();
-        List<RpcInvocation<String, String>> invocations2 = new ArrayList<>();
-        List<RpcInvocation<String, String>> invocations3 = new ArrayList<>();
+        List<RpcInvocation<String, String, HttpSpecificInfo>> invocations1 = new ArrayList<>();
+        List<RpcInvocation<String, String, HttpSpecificInfo>> invocations2 = new ArrayList<>();
+        List<RpcInvocation<String, String, HttpSpecificInfo>> invocations3 = new ArrayList<>();
         Disposable d1 = sut.requests("/1", BackpressureStrategy.BUFFER).subscribe(
                 invocation -> {
                     invocations1.add(invocation);
