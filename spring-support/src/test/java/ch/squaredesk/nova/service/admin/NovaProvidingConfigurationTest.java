@@ -10,7 +10,8 @@ import org.springframework.context.annotation.Import;
 
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 class NovaProvidingConfigurationTest {
     private Nova createSut() {
