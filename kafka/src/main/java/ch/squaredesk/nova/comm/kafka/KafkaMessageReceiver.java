@@ -41,7 +41,7 @@ public class KafkaMessageReceiver<InternalMessageType>
                          Scheduler schedulerToSubscribeOn,
                          Function<String, InternalMessageType> messageUnmarshaller,
                          Metrics metrics) {
-        super(identifier, messageUnmarshaller, metrics);
+        super(identifier, messageUnmarshaller::apply, metrics);
         this.kafkaObjectFactory = kafkaObjectFactory;
         this.schedulerToSubscribeOn = schedulerToSubscribeOn;
     }
@@ -58,7 +58,7 @@ public class KafkaMessageReceiver<InternalMessageType>
         while (iterator.hasNext()) {
             ConsumerRecord<String,String> record = iterator.next();
             try {
-                InternalMessageType internalMessage = messageUnmarshaller.apply(record.value());
+                InternalMessageType internalMessage = messageUnmarshaller.unmarshal(record.value());
                 // FIXME: which data?
                 KafkaSpecificInfo kafkaSpecificInfo = new KafkaSpecificInfo();
                 IncomingMessageDetails<String, KafkaSpecificInfo> messageDetails = new IncomingMessageDetails.Builder<String, KafkaSpecificInfo>()
