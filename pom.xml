@@ -26,6 +26,7 @@
         <module>event-annotations</module>
         <module>service</module>
 
+        <module>spring-support</module>
         <module>metrics-elastic</module>
 
         <module>comm</module>
