@@ -19,6 +19,7 @@ import io.reactivex.Single;
 
 import java.net.URL;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import static java.util.Objects.requireNonNull;
 
@@ -53,14 +54,19 @@ class HttpRpcClient<InternalMessageType> extends RpcClient<URL, InternalMessageT
             return Single.error(e);
         }
 
-        Single timeoutSingle = Single.create(s -> metricsCollector.rpcTimedOut(messageSendingInfo.destination.toExternalForm()))
-                .timeout(timeout, timeUnit);
+        Single timeoutSingle = Single
+                .timer(timeout, timeUnit)
+                .map(zero -> {
+                    metricsCollector.rpcTimedOut(messageSendingInfo.destination.toExternalForm());
+                    throw new TimeoutException();
+                });
 
-        Single<String> x = urlInvoker.fireRequest(requestAsString, messageSendingInfo);
+        Single<ReplyType> resultSingle = urlInvoker.fireRequest(requestAsString, messageSendingInfo)
+                .map(callResult -> {
+                    metricsCollector.rpcCompleted(messageSendingInfo.destination, callResult);
+                    return (ReplyType) messageUnmarshaller.unmarshal(callResult);
+                });
 
-        return x.map(callResult -> {
-            metricsCollector.rpcCompleted(messageSendingInfo.destination, callResult);
-            return (ReplyType) messageUnmarshaller.unmarshal(callResult);
-        }).ambWith(timeoutSingle);
+        return timeoutSingle.ambWith(resultSingle);
     }
 }

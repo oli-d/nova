@@ -13,6 +13,7 @@ package ch.squaredesk.nova.comm.http;
 import ch.squaredesk.nova.comm.sending.MessageSendingInfo;
 import ch.squaredesk.nova.metrics.Metrics;
 import io.reactivex.Single;
+import okhttp3.*;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.concurrent.FutureCallback;
@@ -30,100 +31,39 @@ import java.io.IOException;
 import java.net.URL;
 import java.nio.CharBuffer;
 
-class UrlInvoker<InternalMessageType>  {
+class UrlInvoker  {
+    private static final MediaType JSON = MediaType.parse("application/json; charset=utf-8");
     private final Logger logger = LoggerFactory.getLogger(UrlInvoker.class);
+
+    private final OkHttpClient client = new OkHttpClient();
 
     UrlInvoker(String identifier,
                Metrics metrics) {
     }
 
     Single<String> fireRequest(String request, MessageSendingInfo<URL, HttpSpecificInfo> sendingInfo) {
-        // TODO reuse HttpClient!!!
-        RequestConfig requestConfig = RequestConfig.custom()
-                .setSocketTimeout(3000)
-                .setConnectTimeout(3000)
-                .build();
+        // TODO capture request metrics
+        Request.Builder requestBuilder = new Request.Builder()
+                .url(sendingInfo.destination)
+                ;
+        Request httpRequest;
+        if (sendingInfo.transportSpecificInfo.requestMethod==HttpRequestMethod.POST) {
+            RequestBody body = RequestBody.create(JSON, request);
+            httpRequest = requestBuilder.post(body).build();
+        } else if (sendingInfo.transportSpecificInfo.requestMethod==HttpRequestMethod.PUT) {
+            RequestBody body = RequestBody.create(JSON, request);
+            httpRequest = requestBuilder.put(body).build();
+        } else {
+            httpRequest = requestBuilder.get().build();
+        }
 
-        CloseableHttpAsyncClient httpClient = HttpAsyncClients
-                .custom()
-                .setDefaultRequestConfig(requestConfig)
-                .build();
-
-        return Single.<String>create(s -> {
-            httpClient.start();
-            FutureCallback<HttpCallResult> myCallback = new FutureCallback<HttpCallResult>() {
-                @Override
-                public void completed(HttpCallResult result) {
-                    if (result.status.getStatusCode()<200 || result.status.getStatusCode()>299) {
-                        s.onError(new RuntimeException("Server answered with error " + result.status + " / " + result.response));
-                    } else {
-                        s.onSuccess(result.response);
-                    }
-                }
-
-                @Override
-                public void failed(Exception ex) {
-                    s.onError(ex);
-                }
-
-                @Override
-                public void cancelled() {
-                    s.onError(new RuntimeException("Cancelled"));
-                }
-            };
-
-            // TODO: allow request parameters to be sent
-
-            if (sendingInfo.transportSpecificInfo != null && sendingInfo.transportSpecificInfo.requestMethod == HttpRequestMethod.GET) {
-                httpClient.execute(
-                        HttpAsyncMethods.createGet(sendingInfo.destination.toURI()),
-                        new MyResponseConsumer(),
-                        myCallback);
-            } else if (sendingInfo.transportSpecificInfo != null && sendingInfo.transportSpecificInfo.requestMethod == HttpRequestMethod.PUT) {
-                httpClient.execute(
-                        HttpAsyncMethods.createPut(sendingInfo.destination.toURI(), request, ContentType.APPLICATION_JSON),
-                        new MyResponseConsumer(),
-                        myCallback);
+        return Single.fromCallable(() -> {
+            Response response = client.newCall(httpRequest).execute();
+            if (response.isSuccessful()) {
+                return response.body().string();
             } else {
-                // default method: POST
-                httpClient.execute(
-                        HttpAsyncMethods.createPost(sendingInfo.destination.toURI(), request, ContentType.APPLICATION_JSON),
-                        new MyResponseConsumer(),
-                        myCallback);
-            }
-        }).doFinally(() -> {
-            try {
-                httpClient.close();
-            } catch (Throwable t) {
-                logger.error("An error occurred, trying to close the HTTP connection to " + sendingInfo.destination, t);
+                throw new RuntimeException(response.message());
             }
         });
-    }
-
-    private class MyResponseConsumer extends AsyncCharConsumer<HttpCallResult> {
-        private final StringBuilder sb = new StringBuilder();
-        private HttpResponse response;
-
-        @Override
-        protected void onResponseReceived(final HttpResponse response) {
-            this.response = response;
-        }
-
-        @Override
-        protected void onCharReceived(final CharBuffer buf, final IOControl ioctrl) throws IOException {
-            while (buf.hasRemaining()) {
-                sb.append(buf.get());
-            }
-        }
-
-        @Override
-        protected void releaseResources() {
-        }
-
-        @Override
-        protected HttpCallResult buildResult(final HttpContext context) {
-            return new HttpCallResult(response.getStatusLine(),sb.toString());
-        }
-
     }
 }
