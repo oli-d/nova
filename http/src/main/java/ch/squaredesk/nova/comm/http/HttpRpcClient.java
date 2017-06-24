@@ -16,6 +16,7 @@ import ch.squaredesk.nova.comm.sending.MessageMarshaller;
 import ch.squaredesk.nova.comm.sending.MessageSendingInfo;
 import ch.squaredesk.nova.metrics.Metrics;
 import io.reactivex.Single;
+import okhttp3.*;
 
 import java.net.URL;
 import java.util.concurrent.TimeUnit;
@@ -23,18 +24,18 @@ import java.util.concurrent.TimeoutException;
 
 import static java.util.Objects.requireNonNull;
 
-class HttpRpcClient<InternalMessageType> extends RpcClient<URL, InternalMessageType, HttpSpecificInfo>{
-    private final UrlInvoker urlInvoker;
+class HttpRpcClient<InternalMessageType> extends RpcClient<URL, InternalMessageType, HttpSpecificInfo> {
+    private static final MediaType JSON = MediaType.parse("application/json; charset=utf-8");
+    private final OkHttpClient client = new OkHttpClient();
+
     private final MessageMarshaller<InternalMessageType, String> messageMarshaller;
     private final MessageUnmarshaller<String, InternalMessageType> messageUnmarshaller;
 
     HttpRpcClient(String identifier,
-                  UrlInvoker urlInvoker,
                   MessageMarshaller<InternalMessageType, String> messageMarshaller,
                   MessageUnmarshaller<String, InternalMessageType> messageUnmarshaller,
                   Metrics metrics) {
         super(identifier, metrics);
-        this.urlInvoker = urlInvoker;
         this.messageUnmarshaller = messageUnmarshaller;
         this.messageMarshaller = messageMarshaller;
     }
@@ -54,18 +55,40 @@ class HttpRpcClient<InternalMessageType> extends RpcClient<URL, InternalMessageT
             return Single.error(e);
         }
 
+        // TODO capture request metrics
+        Request.Builder requestBuilder = new Request.Builder().url(messageSendingInfo.destination);
+        Request httpRequest;
+        if (messageSendingInfo.transportSpecificInfo.requestMethod == HttpRequestMethod.POST) {
+            RequestBody body = RequestBody.create(JSON, requestAsString);
+            httpRequest = requestBuilder.post(body).build();
+        } else if (messageSendingInfo.transportSpecificInfo.requestMethod == HttpRequestMethod.PUT) {
+            RequestBody body = RequestBody.create(JSON, requestAsString);
+            httpRequest = requestBuilder.put(body).build();
+        } else {
+            httpRequest = requestBuilder.get().build();
+        }
+        Call call = client.newCall(httpRequest);
+
         Single timeoutSingle = Single
                 .timer(timeout, timeUnit)
                 .map(zero -> {
+                    call.cancel();
                     metricsCollector.rpcTimedOut(messageSendingInfo.destination.toExternalForm());
                     throw new TimeoutException();
                 });
 
-        Single<ReplyType> resultSingle = urlInvoker.fireRequest(requestAsString, messageSendingInfo)
-                .map(callResult -> {
-                    metricsCollector.rpcCompleted(messageSendingInfo.destination, callResult);
-                    return (ReplyType) messageUnmarshaller.unmarshal(callResult);
-                });
+        Single<ReplyType> resultSingle = Single.fromCallable(() -> {
+            Response response = call.execute();
+            if (response.isSuccessful()) {
+                metricsCollector.rpcCompleted(messageSendingInfo.destination, response);
+                return response.body().string();
+            } else {
+                throw new RuntimeException(response.message());
+            }
+        }).map(callResult -> {
+            metricsCollector.rpcCompleted(messageSendingInfo.destination, callResult);
+            return (ReplyType) messageUnmarshaller.unmarshal(callResult);
+        });
 
         return timeoutSingle.ambWith(resultSingle);
     }

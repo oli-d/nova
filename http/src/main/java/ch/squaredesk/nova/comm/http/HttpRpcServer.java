@@ -104,6 +104,11 @@ class HttpRpcServer<InternalMessageType> extends RpcServer<String, InternalMessa
 
     void shutdown() {
         httpServer.shutdown(2, TimeUnit.SECONDS);
+        try {
+            httpServer.awaitTermination(2, TimeUnit.SECONDS);
+        } catch (InterruptedException e) {
+            logger.info("Unable to properly shut down httpServer", e);
+        }
     }
 
     @Override

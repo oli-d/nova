@@ -218,9 +218,8 @@ public class HttpCommAdapter<MessageType> {
 
         public HttpCommAdapter<MessageType> build() {
             validate();
-            UrlInvoker urlInvoker = new UrlInvoker(identifier, metrics);
             rpcServer = new HttpRpcServer<>(identifier, serverPort, messageMarshaller, messageUnmarshaller, errorReplyFactory, metrics);
-            rpcClient = new HttpRpcClient<>(identifier, urlInvoker, messageMarshaller, messageUnmarshaller, metrics);
+            rpcClient = new HttpRpcClient<>(identifier, messageMarshaller, messageUnmarshaller, metrics);
             return new HttpCommAdapter<>(this);
         }
     }
