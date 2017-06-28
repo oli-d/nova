@@ -1,7 +1,5 @@
 package ch.squaredesk.nova.service.admin;
 
-import java.util.Objects;
-
 import static java.util.Objects.requireNonNull;
 
 public class AdminUrlCalculator {
@@ -25,7 +23,7 @@ public class AdminUrlCalculator {
     String urlFor (AdminCommandConfig acc) {
         requireNonNull(acc, "config must not be null");
 
-        return "http://" + hostName + ":" + port + baseUrl + "/" +
+        return "rest://" + hostName + ":" + port + baseUrl + "/" +
                 acc.methodToInvoke.getName();
     }
 }

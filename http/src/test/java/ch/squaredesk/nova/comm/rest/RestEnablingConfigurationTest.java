@@ -1,4 +1,4 @@
-package ch.squaredesk.nova.service.admin;
+package ch.squaredesk.nova.comm.rest;
 
 import ch.squaredesk.nova.Nova;
 import org.junit.jupiter.api.BeforeEach;
@@ -10,7 +10,7 @@ import org.springframework.context.annotation.Import;
 
 import java.util.concurrent.TimeUnit;
 
-class AdminCommandEnablingConfigurationTest {
+class RestEnablingConfigurationTest {
     private void fireUp() {
         AnnotationConfigApplicationContext ctx = new AnnotationConfigApplicationContext();
         ctx.register(MyConfig.class);
@@ -20,9 +20,8 @@ class AdminCommandEnablingConfigurationTest {
 
     @BeforeEach
     void clearEnvironment() {
-        System.clearProperty("NOVA.ADMIN.INTERFACE_NAME");
-        System.clearProperty("NOVA.ADMIN.PORT");
-        System.clearProperty("NOVA.ADMIN.BASE_URL");
+        System.clearProperty("NOVA.HTTP.REST.INTERFACE_NAME");
+        System.clearProperty("NOVA.HTTP.REST.PORT");
     }
 
     @Test
@@ -33,13 +32,13 @@ class AdminCommandEnablingConfigurationTest {
 
     @Test
     void portCanBeOverridenWithEnvironmentVariable() throws Exception{
-        System.setProperty("NOVA.ADMIN.PORT", "9999");
+        System.setProperty("NOVA.HTTP.REST.PORT", "9999");
         fireUp();
         HttpHelper.waitUntilSomebodyListensOnPort(9999, 2, TimeUnit.SECONDS);
     }
 
     @Configuration
-    @Import(AdminCommandEnablingConfiguration.class)
+    @Import(RestEnablingConfiguration.class)
     public static class MyConfig {
         @Bean
         public Nova nova () {

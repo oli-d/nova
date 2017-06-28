@@ -11,9 +11,6 @@
 package ch.squaredesk.nova.service.admin;
 
 import ch.squaredesk.nova.Nova;
-import ch.squaredesk.nova.comm.http.HttpCommAdapter;
-import ch.squaredesk.nova.service.admin.messages.AdminMessage;
-import ch.squaredesk.nova.service.admin.messages.Error;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
@@ -64,23 +61,9 @@ public abstract class AdminCommandEnablingConfiguration {
     }
 
 
-    @Bean
+    @Bean(name = "adminObjectMapper")
     public ObjectMapper adminObjectMapper() {
         return new ObjectMapper();
-    }
-
-    @Bean(name = "adminCommAdapter")
-    public HttpCommAdapter<AdminMessage> adminCommAdapter() {
-        ObjectMapper om = adminObjectMapper();
-
-        return HttpCommAdapter.<AdminMessage>builder()
-                .setMessageMarshaller(adminMessage -> om.writeValueAsString(adminMessage))
-                .setMessageUnmarshaller(incomingMessage -> om.readValue(incomingMessage, AdminMessage.class))
-                .setErrorReplyFactory(error -> new Error("1", error.getMessage()))
-                .setIdentifier("AdminCommAdapter")
-                .setMetrics(nova.metrics)
-                .setServerPort(adminPort())
-                .build();
     }
 
     @Bean

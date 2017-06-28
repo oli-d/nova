@@ -7,7 +7,7 @@ public class Reply extends AdminMessage {
     public final String details;
 
     @JsonCreator
-    public Reply(@JsonProperty("details") String details) {
+    public Reply(@JsonProperty("message") String details) {
         this.details = details;
     }
 }

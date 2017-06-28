@@ -8,7 +8,7 @@
  *   https://squaredesk.ch/license/oss/LICENSE
  */
 
-package ch.squaredesk.nova.comm.http;
+package ch.squaredesk.nova.comm.rest;
 
 import ch.squaredesk.nova.comm.retrieving.MessageUnmarshaller;
 import ch.squaredesk.nova.comm.rpc.RpcInvocation;
@@ -29,14 +29,12 @@ import java.util.function.Function;
 import static java.util.Objects.requireNonNull;
 
 public class HttpCommAdapter<MessageType> {
-    private final HttpRpcServer<MessageType> rpcServer;
     private final HttpRpcClient<MessageType> rpcClient;
     private final Long defaultRequestTimeout;
     private final TimeUnit defaultRequestTimeUnit;
 
 
     private HttpCommAdapter(Builder builder) {
-        this.rpcServer = builder.rpcServer;
         this.rpcClient = builder.rpcClient;
         this.defaultRequestTimeout = builder.defaultRequestTimeout;
         this.defaultRequestTimeUnit = builder.defaultRequestTimeUnit;
@@ -128,16 +126,12 @@ public class HttpCommAdapter<MessageType> {
         return rpcClient.sendRequest(request, sendingInfo, timeout, timeUnit);
     }
 
-    public Flowable<RpcInvocation<MessageType, MessageType, HttpSpecificInfo>> requests (String destination, BackpressureStrategy backpressureStrategy) {
-        return rpcServer.requests(destination, backpressureStrategy);
-    }
-
     public void start() throws Exception {
-        rpcServer.start();
+        // FIXME: rpcServer.start();
     }
 
-    public void shutdown() {
-        rpcServer.shutdown();
+    public void shutdown() throws Exception {
+        // FIXME: rpcServer.shutdown();
     }
 
     public static <MessageType> Builder<MessageType> builder() {
@@ -152,7 +146,6 @@ public class HttpCommAdapter<MessageType> {
         private MessageMarshaller<MessageType,String> messageMarshaller;
         private MessageUnmarshaller<String,MessageType> messageUnmarshaller;
         private Function<Throwable, MessageType> errorReplyFactory;
-        private HttpRpcServer<MessageType> rpcServer;
         private HttpRpcClient<MessageType> rpcClient;
         private Long defaultRequestTimeout;
         private TimeUnit defaultRequestTimeUnit;
@@ -218,7 +211,6 @@ public class HttpCommAdapter<MessageType> {
 
         public HttpCommAdapter<MessageType> build() {
             validate();
-            rpcServer = new HttpRpcServer<>(identifier, serverPort, messageMarshaller, messageUnmarshaller, errorReplyFactory, metrics);
             rpcClient = new HttpRpcClient<>(identifier, messageMarshaller, messageUnmarshaller, metrics);
             return new HttpCommAdapter<>(this);
         }

@@ -8,7 +8,7 @@
  *   https://squaredesk.ch/license/oss/LICENSE
  */
 
-package ch.squaredesk.nova.comm.http;
+package ch.squaredesk.nova.comm.rest;
 
 import ch.squaredesk.nova.comm.retrieving.MessageUnmarshaller;
 import ch.squaredesk.nova.comm.rpc.RpcClient;
@@ -55,7 +55,6 @@ class HttpRpcClient<InternalMessageType> extends RpcClient<URL, InternalMessageT
             return Single.error(e);
         }
 
-        // TODO capture request metrics
         Request.Builder requestBuilder = new Request.Builder().url(messageSendingInfo.destination);
         Request httpRequest;
         if (messageSendingInfo.transportSpecificInfo.requestMethod == HttpRequestMethod.POST) {
@@ -79,8 +78,8 @@ class HttpRpcClient<InternalMessageType> extends RpcClient<URL, InternalMessageT
 
         Single<ReplyType> resultSingle = Single.fromCallable(() -> {
             Response response = call.execute();
+            metricsCollector.rpcCompleted(messageSendingInfo.destination, response);
             if (response.isSuccessful()) {
-                metricsCollector.rpcCompleted(messageSendingInfo.destination, response);
                 return response.body().string();
             } else {
                 throw new RuntimeException(response.message());

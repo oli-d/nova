@@ -8,7 +8,7 @@
  *   https://squaredesk.ch/license/oss/LICENSE
  */
 
-package ch.squaredesk.nova.comm.http;
+package ch.squaredesk.nova.comm.rest;
 
 import java.util.Collections;
 import java.util.Map;

@@ -8,7 +8,7 @@
  *   https://squaredesk.ch/license/oss/LICENSE
  */
 
-package ch.squaredesk.nova.comm.http;
+package ch.squaredesk.nova.comm.rest;
 
 import ch.squaredesk.nova.metrics.Metrics;
 import io.reactivex.observers.TestObserver;
@@ -55,7 +55,7 @@ class HttpCommAdapterTest {
     @Test
     void notExistingDestinationThrows() throws Exception {
         TestObserver<BigDecimal> observer = sut
-                .sendGetRequest("http://cvf.bn.c")
+                .sendGetRequest("rest://cvf.bn.c")
                 .test();
         observer.await(5, SECONDS);
         observer.assertError(Exception.class);
@@ -64,7 +64,7 @@ class HttpCommAdapterTest {
     @Test
     void noReplyWithinTimeoutThrows() throws Exception {
         TestObserver<BigDecimal> observer = sut
-                .sendGetRequest("http://blick.ch",10L,MICROSECONDS)
+                .sendGetRequest("rest://blick.ch",10L,MICROSECONDS)
                 .test();
         observer.await(1, SECONDS);
         observer.assertError(TimeoutException.class);
@@ -80,7 +80,7 @@ class HttpCommAdapterTest {
                 .setErrorReplyFactory(t -> "Error: " + t.getMessage())
                 .build();
         TestObserver<String> observer = commAdapter
-                .sendPostRequest("http://httpbin.org/get", "{ myTest: \"value\"}")
+                .sendPostRequest("rest://httpbin.org/get", "{ myTest: \"value\"}")
                 .test();
         observer.await(5, SECONDS);
         observer.assertError(throwable -> throwable.getMessage().contains("METHOD NOT ALLOWED"));
@@ -95,7 +95,7 @@ class HttpCommAdapterTest {
                 .setMetrics(new Metrics())
                 .setErrorReplyFactory(t -> "Error: " + t.getMessage())
                 .build();
-        TestObserver<String> observer = commAdapter.sendGetRequest("http://httpbin.org/post").test();
+        TestObserver<String> observer = commAdapter.sendGetRequest("rest://httpbin.org/post").test();
         observer.await(5, SECONDS);
         observer.assertError(throwable -> throwable.getMessage().contains("METHOD NOT ALLOWED"));
     }
@@ -109,7 +109,7 @@ class HttpCommAdapterTest {
                 .setErrorReplyFactory(t -> "Error: " + t.getMessage())
                 .build();
         TestObserver<String> observer = xxx
-                .sendRequest("http://httpbin.org/ip", "1", HttpRequestMethod.GET)
+                .sendRequest("rest://httpbin.org/ip", "1", HttpRequestMethod.GET)
                 .test();
 
         observer.await(5, SECONDS);

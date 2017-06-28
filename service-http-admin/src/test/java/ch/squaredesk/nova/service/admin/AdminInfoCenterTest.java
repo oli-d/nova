@@ -1,6 +1,8 @@
 package ch.squaredesk.nova.service.admin;
 
 import ch.squaredesk.nova.service.admin.messages.Info;
+import ch.squaredesk.nova.service.admin.messages.SupportedCommand;
+import ch.squaredesk.nova.tuples.Pair;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -8,10 +10,9 @@ import java.lang.reflect.Method;
 import java.util.List;
 
 import static org.hamcrest.Matchers.contains;
-import static org.hamcrest.Matchers.endsWith;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 class AdminInfoCenterTest {
     AdminInfoCenter sut;
@@ -44,9 +45,10 @@ class AdminInfoCenterTest {
         sut.register(adminCommandConfig1);
         sut.register(adminCommandConfig2);
 
-        List<AdminCommandConfig> configs = sut.getConfigs();
+        List<Pair<AdminCommandConfig, SupportedCommand>> configs = sut.getConfigs();
         assertThat(configs.size(), is(2));
-        assertThat(configs, contains(adminCommandConfig1, adminCommandConfig2));
+        assertThat(configs.get(0)._1, is(adminCommandConfig1));
+        assertThat(configs.get(1)._1, is(adminCommandConfig2));
     }
 
     @Test

@@ -1,4 +1,4 @@
-package ch.squaredesk.nova.comm.http;
+package ch.squaredesk.nova.comm.rest;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;

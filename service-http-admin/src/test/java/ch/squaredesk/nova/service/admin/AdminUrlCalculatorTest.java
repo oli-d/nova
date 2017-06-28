@@ -1,15 +1,10 @@
 package ch.squaredesk.nova.service.admin;
 
-import org.hamcrest.Matchers;
-import org.hamcrest.junit.MatcherAssert;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import javax.sound.sampled.Port;
-
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
-import static org.junit.jupiter.api.Assertions.*;
 
 class AdminUrlCalculatorTest {
     private static final String HOST = "localhost";
@@ -44,14 +39,14 @@ class AdminUrlCalculatorTest {
     @Test
     void urlCalculatedAsExpected() throws Exception {
         AdminCommandConfig config = createAdminCommandConfig();
-        assertThat(sut.urlFor(config), is("http://localhost:8888/admin/equals"));
+        assertThat(sut.urlFor(config), is("rest://localhost:8888/admin/equals"));
     }
 
     @Test
     void baseUrlEnhancedIfItDoesntStartWithLeadingSlash() throws Exception {
         sut = createSut(HOST, "withoutSlash", 1234);
         AdminCommandConfig config = createAdminCommandConfig();
-        assertThat(sut.urlFor(config), is("http://localhost:1234/withoutSlash/equals"));
+        assertThat(sut.urlFor(config), is("rest://localhost:1234/withoutSlash/equals"));
     }
 
 }

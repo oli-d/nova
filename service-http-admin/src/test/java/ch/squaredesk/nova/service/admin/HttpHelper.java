@@ -17,6 +17,23 @@ public class HttpHelper {
         return port;
     }
 
+    public static void waitUntilNobodyListensOnPort(int port, long timeout, TimeUnit timeUnit) throws Exception {
+        boolean connected = false;
+        long maxTime = System.currentTimeMillis() + timeUnit.toMillis(timeout);
+        do {
+            try {
+                Socket socket = new Socket("0.0.0.0", port);
+                connected = true;
+                socket.close();
+                TimeUnit.MILLISECONDS.sleep(50);
+            } catch (Exception e) {
+                connected = false;
+            }
+
+        } while (connected && System.currentTimeMillis() < maxTime);
+        if (connected) throw new RuntimeException("port " + port + " still in use");
+    }
+
     public static void waitUntilSomebodyListensOnPort(int port, long timeout, TimeUnit timeUnit) throws Exception {
         boolean connected = false;
         long maxTime = System.currentTimeMillis() + timeUnit.toMillis(timeout);
@@ -38,8 +55,10 @@ public class HttpHelper {
         connection.setRequestProperty("Accept-Charset", charset);
         connection.setRequestProperty("Content-Type", "application/x-www-form-urlencoded;charset=" + charset);
 
-        try (OutputStream output = connection.getOutputStream()) {
-            output.write(request.getBytes(charset));
+        if (request!=null) {
+            try (OutputStream output = connection.getOutputStream()) {
+                output.write(request.getBytes(charset));
+            }
         }
         connection.connect();
 

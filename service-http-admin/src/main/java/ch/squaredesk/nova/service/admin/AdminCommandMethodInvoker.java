@@ -10,15 +10,22 @@
 
 package ch.squaredesk.nova.service.admin;
 
+import ch.squaredesk.nova.comm.rest.HttpSpecificInfo;
+import ch.squaredesk.nova.comm.rpc.RpcInvocation;
+import ch.squaredesk.nova.service.admin.messages.AdminMessage;
+import ch.squaredesk.nova.service.admin.messages.Error;
+import ch.squaredesk.nova.service.admin.messages.Reply;
 import io.reactivex.functions.Consumer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.lang.reflect.Method;
-import java.util.*;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
-class AdminCommandMethodInvoker implements Consumer<Map<String, String>> {
-    private final static Logger LOGGER = LoggerFactory.getLogger(AdminCommandMethodInvoker.class);
+class AdminCommandMethodInvoker implements Consumer<RpcInvocation<AdminMessage, AdminMessage, HttpSpecificInfo>> {
+    private final static Logger logger = LoggerFactory.getLogger(AdminCommandMethodInvoker.class);
     private final AdminCommandConfig adminCommandConfig;
 
     AdminCommandMethodInvoker(AdminCommandConfig adminCommandConfig) {
@@ -26,22 +33,29 @@ class AdminCommandMethodInvoker implements Consumer<Map<String, String>> {
     }
 
     @Override
-    public void accept(Map<String, String> parameters) {
+    public void accept(RpcInvocation<AdminMessage, AdminMessage, HttpSpecificInfo> invocation) {
+        AdminMessage reply;
+
         Set<String> paramNameSet = new HashSet<>(Arrays.asList(adminCommandConfig.parameterNames));
-        if (!parameters.keySet().equals(paramNameSet)) {
-            throw new IllegalArgumentException("wrong parameter set");
+        if (!invocation.transportSpecificInfo.parameters.keySet().containsAll(paramNameSet)) {
+            reply = new Error("wrong parameter set");
         }
 
-        Object[] parameterArray = parameterArrayFor(parameters);
         try {
+            Object[] parameterArray = parameterArrayFor(invocation.transportSpecificInfo.parameters);
+            String result;
             if (parameterArray==null) {
-                adminCommandConfig.methodToInvoke.invoke(adminCommandConfig.objectToInvokeMethodOn);
+                result = (String)adminCommandConfig.methodToInvoke.invoke(adminCommandConfig.objectToInvokeMethodOn);
             } else {
-                adminCommandConfig.methodToInvoke.invoke(adminCommandConfig.objectToInvokeMethodOn, parameterArray);
+                result = (String)adminCommandConfig.methodToInvoke.invoke(adminCommandConfig.objectToInvokeMethodOn, parameterArray);
             }
+            reply = new Reply(result);
         } catch (Exception e) {
-            throw new RuntimeException(e);
+            logger.error("An error occurred, trying to invoke adminCommand " + adminCommandConfig.methodToInvoke.getName(),e);
+            reply = new Error("Failed to invoke admin command. " + e.getLocalizedMessage());
         }
+
+        invocation.complete(reply);
     }
 
     private Object[] parameterArrayFor(Map<String, String> params) {

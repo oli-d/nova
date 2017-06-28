@@ -8,16 +8,8 @@
  *   https://squaredesk.ch/license/oss/LICENSE
  */
 
-package ch.squaredesk.nova.comm.http;
+package ch.squaredesk.nova.comm.rest;
 
-import org.apache.http.StatusLine;
-
-class HttpCallResult {
-    final StatusLine status;
-    final String response;
-
-    HttpCallResult(StatusLine status, String response) {
-        this.status = status;
-        this.response = response;
-    }
+public enum HttpRequestMethod {
+    GET, POST, PUT
 }
