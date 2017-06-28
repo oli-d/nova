@@ -1,3 +1,4 @@
+
 /*
  * Copyright (c) Squaredesk GmbH and Oliver Dotzauer.
  *
@@ -7,7 +8,6 @@
  *
  *   https://squaredesk.ch/license/oss/LICENSE
  */
-
 package ch.squaredesk.nova.service.admin;
 
 

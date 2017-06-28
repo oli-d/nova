@@ -8,9 +8,8 @@
  *   https://squaredesk.ch/license/oss/LICENSE
  */
 
-package ch.squaredesk.nova.comm.sending;
+package ch.squaredesk.nova.comm.rest;
 
-@FunctionalInterface
-public interface MessageMarshaller<T,R> {
-    R marshal(T t) throws Exception ;
+public enum HttpRequestMethod {
+    GET, POST, PUT, DELETE
 }

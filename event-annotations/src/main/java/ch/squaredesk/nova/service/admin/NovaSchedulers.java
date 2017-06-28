@@ -7,7 +7,6 @@
  *
  *   https://squaredesk.ch/license/oss/LICENSE
  */
-
 package ch.squaredesk.nova.service.admin;
 
 import io.reactivex.Scheduler;
