@@ -27,13 +27,12 @@
         <module>event-annotations</module>
 
         <module>service</module>
-        <module>service-http-admin</module>
 
         <module>metrics-elastic</module>
 
         <module>comm</module>
         <module>jms</module>
-        <module>http</module>
+        <module>rest</module>
         <module>kafka</module>
     </modules>
 
