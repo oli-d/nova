@@ -8,7 +8,7 @@
  *   https://squaredesk.ch/license/oss/LICENSE
  */
 
-package ch.squaredesk.nova.comm.rest;
+package ch.squaredesk.nova.comm.rest.annotation;
 
 import ch.squaredesk.nova.comm.rest.annotation.OnRestRequest;
 import ch.squaredesk.nova.comm.rest.annotation.RestEndpointDescription;

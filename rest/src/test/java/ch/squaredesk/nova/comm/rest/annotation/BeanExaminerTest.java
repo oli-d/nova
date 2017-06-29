@@ -8,14 +8,11 @@
  *   https://squaredesk.ch/license/oss/LICENSE
  */
 
-package ch.squaredesk.nova.comm.rest;
+package ch.squaredesk.nova.comm.rest.annotation;
 
+import ch.squaredesk.nova.comm.rest.annotation.BeanExaminer;
 import ch.squaredesk.nova.comm.rest.annotation.OnRestRequest;
-import org.hamcrest.MatcherAssert;
-import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Test;
-
-import javax.ws.rs.*;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;

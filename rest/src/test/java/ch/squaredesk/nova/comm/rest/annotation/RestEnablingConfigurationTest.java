@@ -8,9 +8,10 @@
  *   https://squaredesk.ch/license/oss/LICENSE
  */
 
-package ch.squaredesk.nova.comm.rest;
+package ch.squaredesk.nova.comm.rest.annotation;
 
 import ch.squaredesk.nova.Nova;
+import ch.squaredesk.nova.comm.rest.HttpHelper;
 import org.glassfish.grizzly.http.server.HttpServer;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;

@@ -8,8 +8,10 @@
  *   https://squaredesk.ch/license/oss/LICENSE
  */
 
-package ch.squaredesk.nova.comm.rest;
+package ch.squaredesk.nova.comm.rest.annotation;
 
+import ch.squaredesk.nova.comm.rest.HttpRequestMethod;
+import ch.squaredesk.nova.comm.rest.annotation.BeanExaminer;
 import ch.squaredesk.nova.comm.rest.annotation.MediaType;
 import ch.squaredesk.nova.comm.rest.annotation.RestEndpointDescription;
 import org.glassfish.jersey.server.ResourceConfig;

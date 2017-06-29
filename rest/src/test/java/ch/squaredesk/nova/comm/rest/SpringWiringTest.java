@@ -11,7 +11,8 @@
 package ch.squaredesk.nova.comm.rest;
 
 import ch.squaredesk.nova.comm.rest.annotation.OnRestRequest;
-import ch.squaredesk.nova.service.admin.NovaProvidingConfiguration;
+import ch.squaredesk.nova.comm.rest.annotation.RestEnablingConfiguration;
+import ch.squaredesk.nova.spring.NovaProvidingConfiguration;
 import org.glassfish.grizzly.http.server.HttpServer;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
@@ -34,7 +35,8 @@ public class SpringWiringTest {
     private void setupContext(Class configClass) throws Exception {
         ctx.register(configClass);
         ctx.refresh();
-        serverUrl = "http://" + ctx.getBean("restInterfaceName") + ":" + ctx.getBean("restPort");
+        RestServerConfiguration cfg = ctx.getBean(RestServerConfiguration.class);
+        serverUrl = "http://" + cfg.interfaceName + ":" + cfg.port;
         ctx.getBean(HttpServer.class).start();
     }
 

@@ -8,9 +8,11 @@
  *   https://squaredesk.ch/license/oss/LICENSE
  */
 
-package ch.squaredesk.nova.comm.rest;
+package ch.squaredesk.nova.comm.rest.annotation;
 
 import ch.squaredesk.nova.Nova;
+import ch.squaredesk.nova.comm.rest.RestServerConfiguration;
+import ch.squaredesk.nova.comm.rest.annotation.RestBeanPostprocessor;
 import org.glassfish.grizzly.http.server.HttpServer;
 import org.glassfish.jersey.grizzly2.httpserver.GrizzlyHttpServerFactory;
 import org.glassfish.jersey.server.ResourceConfig;
@@ -42,24 +44,23 @@ public abstract class RestEnablingConfiguration {
     }
 
     @Bean
-    public int restPort() {
-        return environment.getProperty("NOVA.HTTP.REST.PORT", Integer.class, 8888);
-    }
-
-    @Bean
-    public String restInterfaceName() {
+    public RestServerConfiguration restServerConfiguration() {
+        int restPort = environment.getProperty("NOVA.HTTP.REST.PORT", Integer.class, 8888);
         String interfaceName = environment.getProperty("NOVA.HTTP.INTERFACE_NAME", "");
         if ("".equals(interfaceName)) {
             interfaceName = "localhost";
         }
-        return interfaceName;
+        return new RestServerConfiguration(
+            restPort,
+            interfaceName
+        );
     }
-
 
     @Bean
     @Lazy // must be created after all other beans have been created (because of annotation processing)
     public HttpServer restHttpServer() {
-        URI serverAddress = UriBuilder.fromPath("http://" + restInterfaceName() + ":" + restPort()).build();
+        RestServerConfiguration configuration = restServerConfiguration();
+        URI serverAddress = UriBuilder.fromPath("http://" + configuration.interfaceName + ":" + configuration.port).build();
         return GrizzlyHttpServerFactory.createHttpServer(serverAddress, resourceConfig());
     }
 }
