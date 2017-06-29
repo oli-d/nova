@@ -8,7 +8,7 @@
  *   https://squaredesk.ch/license/oss/LICENSE
  */
 
-package ch.squaredesk.nova.service.admin;
+package ch.squaredesk.nova.spring;
 
 
 import ch.squaredesk.nova.Nova;
