@@ -63,6 +63,17 @@ class RestEnablingConfigurationTest {
         public Nova nova () {
             return Nova.builder().build();
         }
+
+        @Bean
+        public MyDummyBeanToHaveAtLeastOneRestEndpoint dummyBeanToHaveAtLeastOneRestEndpoint() {
+            return new MyDummyBeanToHaveAtLeastOneRestEndpoint();
+        }
+    }
+
+    public static class MyDummyBeanToHaveAtLeastOneRestEndpoint {
+        @OnRestRequest("somePath")
+        public void foo() {
+        }
     }
 }
 

@@ -11,6 +11,7 @@
 package ch.squaredesk.nova.comm.rest.annotation;
 
 import ch.squaredesk.nova.Nova;
+import ch.squaredesk.nova.comm.rest.HttpServerFactory;
 import ch.squaredesk.nova.comm.rest.RestServerConfiguration;
 import ch.squaredesk.nova.comm.rest.annotation.RestBeanPostprocessor;
 import org.glassfish.grizzly.http.server.HttpServer;
@@ -59,8 +60,6 @@ public abstract class RestEnablingConfiguration {
     @Bean
     @Lazy // must be created after all other beans have been created (because of annotation processing)
     public HttpServer restHttpServer() {
-        RestServerConfiguration configuration = restServerConfiguration();
-        URI serverAddress = UriBuilder.fromPath("http://" + configuration.interfaceName + ":" + configuration.port).build();
-        return GrizzlyHttpServerFactory.createHttpServer(serverAddress, resourceConfig());
+        return HttpServerFactory.serverFor(restServerConfiguration(), resourceConfig());
     }
 }
