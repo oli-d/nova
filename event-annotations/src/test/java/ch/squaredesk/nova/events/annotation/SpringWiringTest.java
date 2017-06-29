@@ -8,10 +8,11 @@
  *   https://squaredesk.ch/license/oss/LICENSE
  */
 
-package ch.squaredesk.nova.service.admin;
+package ch.squaredesk.nova.events.annotation;
 
 import ch.squaredesk.nova.Nova;
 import ch.squaredesk.nova.events.EventBus;
+import ch.squaredesk.nova.events.annotation.*;
 import io.reactivex.BackpressureStrategy;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Test;
@@ -96,7 +97,7 @@ public class SpringWiringTest {
 
 
     @Import(AnnotationEnablingConfiguration.class)
-    public static class MyConfig extends NovaProvidingConfiguration {
+    public static class MyConfig extends ch.squaredesk.nova.events.annotation.NovaProvidingConfiguration {
         @Bean()
         public MyAnnotatedBean getMyBean() {
             return new MyAnnotatedBean();

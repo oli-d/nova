@@ -8,10 +8,12 @@
  *   https://squaredesk.ch/license/oss/LICENSE
  */
 
-package ch.squaredesk.nova.service.admin;
+package ch.squaredesk.nova.events.annotation;
 
 import ch.squaredesk.nova.Nova;
 import ch.squaredesk.nova.events.EventBus;
+import ch.squaredesk.nova.events.annotation.EventHandlingBeanPostprocessor;
+import ch.squaredesk.nova.events.annotation.OnEvent;
 import ch.squaredesk.nova.metrics.Metrics;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

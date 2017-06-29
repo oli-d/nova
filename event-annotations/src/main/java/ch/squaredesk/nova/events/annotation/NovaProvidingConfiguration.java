@@ -8,7 +8,7 @@
  *
  *   https://squaredesk.ch/license/oss/LICENSE
  */
-package ch.squaredesk.nova.service.admin;
+package ch.squaredesk.nova.events.annotation;
 
 
 import ch.squaredesk.nova.Nova;

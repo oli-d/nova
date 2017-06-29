@@ -8,8 +8,10 @@
  *   https://squaredesk.ch/license/oss/LICENSE
  */
 
-package ch.squaredesk.nova.service.admin;
+package ch.squaredesk.nova.events.annotation;
 
+import ch.squaredesk.nova.events.annotation.BeanExaminer;
+import ch.squaredesk.nova.events.annotation.OnEvent;
 import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Method;
