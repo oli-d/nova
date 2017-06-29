@@ -11,9 +11,7 @@
 package ch.squaredesk.nova.comm.rest.annotation;
 
 import ch.squaredesk.nova.comm.rest.HttpRequestMethod;
-import ch.squaredesk.nova.comm.rest.annotation.BeanExaminer;
-import ch.squaredesk.nova.comm.rest.annotation.MediaType;
-import ch.squaredesk.nova.comm.rest.annotation.RestEndpointDescription;
+import ch.squaredesk.nova.comm.rest.MediaType;
 import org.glassfish.jersey.server.ResourceConfig;
 import org.glassfish.jersey.server.model.Resource;
 import org.springframework.beans.BeansException;
@@ -49,14 +47,14 @@ public class RestBeanPostprocessor implements BeanPostProcessor {
 
     @Override
     public Object postProcessAfterInitialization(Object bean, String beanName) throws BeansException {
-        RestEndpointDescription[] restEndpoints = beanExaminer.restEndpointsIn(bean);
-        for (RestEndpointDescription endpointDescription: restEndpoints) {
+        RestEndpoint[] restEndpoints = beanExaminer.restEndpointsIn(bean);
+        for (RestEndpoint endpointDescription: restEndpoints) {
             Resource.Builder resourceBuilder = Resource.builder("/");
             resourceBuilder
-                .path(endpointDescription.path)
-                .addMethod(convert(endpointDescription.requestMethod))
-                .produces(convert(endpointDescription.produces))
-                .consumes(convert(endpointDescription.consumes))
+                .path(endpointDescription.resourceDescriptor.path)
+                .addMethod(convert(endpointDescription.resourceDescriptor.requestMethod))
+                .produces(convert(endpointDescription.resourceDescriptor.produces))
+                .consumes(convert(endpointDescription.resourceDescriptor.consumes))
                 .handledBy(bean, endpointDescription.handlerMethod);
 
             // TODO: handle with wrapper that logs and provides metrics

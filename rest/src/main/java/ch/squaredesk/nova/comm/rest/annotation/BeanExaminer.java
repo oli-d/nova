@@ -10,8 +10,7 @@
 
 package ch.squaredesk.nova.comm.rest.annotation;
 
-import ch.squaredesk.nova.comm.rest.annotation.OnRestRequest;
-import ch.squaredesk.nova.comm.rest.annotation.RestEndpointDescription;
+import ch.squaredesk.nova.comm.rest.RestResourceDescriptor;
 
 import java.lang.annotation.Annotation;
 import java.util.function.Predicate;
@@ -22,7 +21,7 @@ import static java.util.Objects.requireNonNull;
 class BeanExaminer {
     private final Predicate<Annotation> interestingAnnotation = anno -> anno instanceof OnRestRequest;
 
-    RestEndpointDescription[] restEndpointsIn (Object bean) {
+    RestEndpoint[] restEndpointsIn (Object bean) {
         requireNonNull(bean, "bean to examine must not be null");
 
         return stream(bean.getClass().getDeclaredMethods())
@@ -33,12 +32,13 @@ class BeanExaminer {
                             .findFirst()
                             .map(anno -> (OnRestRequest)anno)
                             .get();
-                    return new RestEndpointDescription(annotation.value(),
-                            annotation.produces(),
-                            annotation.consumes(),
-                            annotation.requestMethod(),
+                    return new RestEndpoint(
+                            RestResourceDescriptor.from(annotation.value(),
+                                annotation.requestMethod(),
+                                annotation.produces(),
+                                annotation.consumes()),
                             method);
                 })
-                .toArray(RestEndpointDescription[]::new);
+                .toArray(RestEndpoint[]::new);
     }
 }

@@ -8,7 +8,7 @@
  *   https://squaredesk.ch/license/oss/LICENSE
  */
 
-package ch.squaredesk.nova.comm.rest.annotation;
+package ch.squaredesk.nova.comm.rest;
 
 public enum MediaType {
     APPLICATION_XML("application/xml"),

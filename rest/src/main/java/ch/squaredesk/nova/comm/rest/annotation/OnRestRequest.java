@@ -11,6 +11,7 @@
 package ch.squaredesk.nova.comm.rest.annotation;
 
 import ch.squaredesk.nova.comm.rest.HttpRequestMethod;
+import ch.squaredesk.nova.comm.rest.MediaType;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
