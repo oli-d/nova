@@ -17,6 +17,7 @@ import ch.squaredesk.nova.comm.sending.MessageSendingInfo;
 import ch.squaredesk.nova.metrics.Metrics;
 import io.reactivex.Single;
 import okhttp3.*;
+import okhttp3.MediaType;
 
 import java.net.URL;
 import java.util.concurrent.TimeUnit;
@@ -25,7 +26,7 @@ import java.util.concurrent.TimeoutException;
 import static java.util.Objects.requireNonNull;
 
 class RestClient<InternalMessageType> extends RpcClient<URL, InternalMessageType, HttpSpecificInfo> {
-    private static final MediaType JSON = MediaType.parse("application/json; charset=utf-8");
+    private static final MediaType JSON = okhttp3.MediaType.parse("application/json; charset=utf-8");
     private final OkHttpClient client = new OkHttpClient();
 
     private final MessageMarshaller<InternalMessageType, String> messageMarshaller;

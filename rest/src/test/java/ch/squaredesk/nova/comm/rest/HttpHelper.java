@@ -56,12 +56,16 @@ public class HttpHelper {
         StringBuilder sb = new StringBuilder();
         int responseCode = connection.getResponseCode();
         if (responseCode < 200 || responseCode > 299) {
-            BufferedReader errorReader = new BufferedReader(new InputStreamReader(connection.getErrorStream()));
-            while (errorReader.ready()) {
-                sb.append(errorReader.readLine()).append('\n');
+            if (connection.getErrorStream()!= null) {
+                BufferedReader errorReader = new BufferedReader(new InputStreamReader(connection.getErrorStream()));
+                while (errorReader.ready()) {
+                    sb.append(errorReader.readLine()).append('\n');
+                }
+                errorReader.close();
+                return sb.toString().trim();
+            } else {
+                return "" + responseCode + " " + connection.getResponseMessage();
             }
-            errorReader.close();
-            return sb.toString().trim();
         }
 
         BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
