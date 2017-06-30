@@ -53,18 +53,18 @@ class RestServerTest {
     @Test
     void requestsProperlyDispatched() throws Exception {
         int numRequests = 3;
-        String path = "/tests";
+        String path = "/bla";
         CountDownLatch cdl = new CountDownLatch(numRequests);
         Flowable<RpcInvocation<String, String, HttpSpecificInfo>> requests = sut.requests(path, BackpressureStrategy.BUFFER);
         requests.subscribe(rpcInvocation -> {
-            rpcInvocation.complete("reply ");
+            rpcInvocation.complete(" description ");
             cdl.countDown();
         });
         sut.start();
 
         IntStream.range(0,numRequests).forEach(i -> sendRestRequestInNewThread(path));
 
-        cdl.await(2, TimeUnit.SECONDS);
+        cdl.await(2000, TimeUnit.SECONDS);
         assertThat(cdl.getCount(), is (0L));
     }
 

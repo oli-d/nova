@@ -1,7 +1,10 @@
 package ch.squaredesk.nova.comm.rest;
 
+import org.glassfish.jersey.process.Inflector;
+import org.glassfish.jersey.server.ContainerRequest;
 import org.glassfish.jersey.server.model.Resource;
 
+import javax.ws.rs.container.ContainerRequestContext;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 
@@ -20,6 +23,20 @@ public class RestResourceFactory {
                 .produces(convert(resourceDescriptor.produces))
                 .consumes(convert(resourceDescriptor.consumes))
                 .handledBy(handlerBean, handlerMethod);
+        return resourceBuilder.build();
+    }
+
+    public static Resource resourceFor(RestResourceDescriptor resourceDescriptor, Inflector<ContainerRequestContext, ?> inflector) {
+        requireNonNull(resourceDescriptor, "resourceDescriptor must not be null");
+        requireNonNull(inflector, "inflector must not be null");
+
+        Resource.Builder resourceBuilder = Resource.builder("/");
+        resourceBuilder
+                .path(resourceDescriptor.path)
+                .addMethod(convert(resourceDescriptor.requestMethod))
+                .produces(convert(resourceDescriptor.produces))
+                .consumes(convert(resourceDescriptor.consumes))
+                .handledBy(inflector);
         return resourceBuilder.build();
     }
 

@@ -41,7 +41,7 @@ public class RestServer<InternalMessageType> extends RpcServer<String, InternalM
         }
 
         // FIXME: must be configured by the caller
-        RestResourceDescriptor rrd = RestResourceDescriptor.from(destination, HttpRequestMethod.POST);
+        RestResourceDescriptor rrd = RestResourceDescriptor.from(destination, HttpRequestMethod.GET);
         // FIXME:
         Object bean = new Object();
         Method method = null;
@@ -50,7 +50,7 @@ public class RestServer<InternalMessageType> extends RpcServer<String, InternalM
         } catch (Exception e) {
             // noop
         }
-        resourceConfig.registerResources(RestResourceFactory.resourceFor(rrd, bean, method));
+        resourceConfig.registerResources(RestResourceFactory.resourceFor(rrd, requestContainer -> "Hallo"));
 
         return Flowable.empty();
     }
