@@ -32,8 +32,9 @@
 
         <module>comm</module>
         <module>jms</module>
-        <module>rest</module>
+        <module>http</module>
         <module>kafka</module>
+        <module>rest-annotations</module>
     </modules>
 
 
