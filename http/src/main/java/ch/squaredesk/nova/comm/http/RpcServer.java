@@ -8,7 +8,9 @@ import io.reactivex.BackpressureStrategy;
 import io.reactivex.Flowable;
 import io.reactivex.subjects.PublishSubject;
 import io.reactivex.subjects.Subject;
+import org.glassfish.grizzly.ReadHandler;
 import org.glassfish.grizzly.http.Method;
+import org.glassfish.grizzly.http.io.NIOReader;
 import org.glassfish.grizzly.http.io.NIOWriter;
 import org.glassfish.grizzly.http.server.HttpHandler;
 import org.glassfish.grizzly.http.server.HttpServer;
@@ -17,14 +19,12 @@ import org.glassfish.grizzly.http.server.Response;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
 public class RpcServer<InternalMessageType> extends ch.squaredesk.nova.comm.rpc.RpcServer<String, InternalMessageType, HttpSpecificInfo> {
     private static final Logger logger = LoggerFactory.getLogger(RpcServer.class);
@@ -34,14 +34,14 @@ public class RpcServer<InternalMessageType> extends ch.squaredesk.nova.comm.rpc.
 
     private final HttpServer httpServer;
 
-    protected RpcServer(HttpServer httpServer,
+    RpcServer(HttpServer httpServer,
                         MessageMarshaller<InternalMessageType, String> messageMarshaller,
                         MessageUnmarshaller<String, InternalMessageType> messageUnmarshaller,
                         Metrics metrics) {
         this(null, httpServer, messageMarshaller, messageUnmarshaller, metrics);
     }
 
-    protected RpcServer(String identifier,
+    RpcServer(String identifier,
                         HttpServer httpServer,
                         MessageMarshaller<InternalMessageType, String> messageMarshaller,
                         MessageUnmarshaller<String, InternalMessageType> messageUnmarshaller,
@@ -62,31 +62,7 @@ public class RpcServer<InternalMessageType> extends ch.squaredesk.nova.comm.rpc.
         Subject<RpcInvocation<RequestType, ReplyType, HttpSpecificInfo>> rawSubject = PublishSubject.create();
         Subject<RpcInvocation<RequestType, ReplyType, HttpSpecificInfo>> subject = rawSubject.toSerialized();
 
-        httpServer.getServerConfiguration().addHttpHandler(
-                new HttpHandler() {
-                    public void service(Request request, Response response) throws Exception {
-                        RpcInvocation<RequestType, ReplyType, HttpSpecificInfo> rpci = new RpcInvocation<>(
-                                (RequestType) readRequestObjectFrom(request, messageUnmarshaller),
-                                httpSpecificInfoFrom(request),
-                                reply -> {
-                                    try {
-                                        writeResponse(reply, response, messageMarshaller);
-                                    } catch (Exception e) {
-                                        // FIXME: write error or return Single.error()
-                                        logger.error("An error occurred trying to write HTTP response", e);
-                                    } finally {
-                                        response.resume();
-                                    }
-                                },
-                                error -> {
-                                    logger.error("An error occurred trying to process HTTP request", error);
-                                }
-                        );
-
-                        response.suspend();
-                        subject.onNext(rpci);
-                    }
-                }, destination);
+        httpServer.getServerConfiguration().addHttpHandler(new NonBlockingHttpHandler<>(subject), destination);
 
         return subject.toFlowable(backpressureStrategy);
     }
@@ -119,42 +95,119 @@ public class RpcServer<InternalMessageType> extends ch.squaredesk.nova.comm.rpc.
         }
     }
 
-    /**
-     * synchronously reads request Object from request body
-     */
-    private static <T> T readRequestObjectFrom (Request request, MessageUnmarshaller<String,T> unmarshaller) throws Exception {
-        String requestObjectAsString = "";
-        try (BufferedReader br = new BufferedReader(request.getReader())) {
-            requestObjectAsString = br.lines().collect(Collectors.joining("\n"));
-        }
-        return unmarshaller.unmarshal(requestObjectAsString);
+    private static <T> T convertRequestData (String objectAsString, MessageUnmarshaller<String,T> unmarshaller) throws Exception {
+        return unmarshaller.unmarshal(objectAsString);
+    }
+
+    private static <T> String convertResponseData (T replyObject, MessageMarshaller<T, String> marshaller) throws Exception {
+        return marshaller.marshal(replyObject);
     }
 
     /**
-     * asynchronously writes reply Object to response body. Assumes that the marshaller creates a String that is a JSON
+     * writes reply Object to response body. Assumes that the marshaller creates a String that is a JSON
      * representation of the reply object
      */
-    private static <ReplyType> void writeResponse (ReplyType reply, Response response, MessageMarshaller<ReplyType, String> marshaller) throws Exception {
-        String responseAsString = marshaller.marshal(reply);
-        NIOWriter out = response.getNIOWriter();
+    private static void writeResponse (String reply, NIOWriter out) throws Exception {
         BufferedWriter bw = new BufferedWriter(out);
-        response.setContentType("application/json");
-        response.setContentLength(responseAsString.length());
-        bw.write(responseAsString);
+        bw.write(reply);
         bw.flush();
-        out.close();
         bw.close();
     }
 
-    public void start() throws IOException {
+    /**
+     * Non-blockingly reads a maximum of <chunkSize> characters from the available data of passed InputReader and
+     * concats those characters to the passed <currentBuffer>, returning a new character array
+     */
+    private static char[] appendAvailableDataToBuffer(NIOReader in, int chunkSize, char currentBuffer[]) throws IOException {
+        // we are not synchronizing here, since we assume that onDataAvailable() is called sequentially
+        char[] readBuffer = new char[chunkSize];
+        int numRead = in.read(readBuffer);
+        char[] retVal = new char[currentBuffer.length + numRead];
+        System.arraycopy(currentBuffer,0, retVal, 0, currentBuffer.length);
+        System.arraycopy(readBuffer,0, retVal, currentBuffer.length, numRead);
+        return retVal;
+    }
+
+    void start() throws IOException {
         httpServer.start();
     }
 
-    public void shutdown() {
+    void shutdown() {
         try {
             httpServer.shutdown(2, TimeUnit.SECONDS).get();
         } catch (Exception e) {
             logger.info("An error occurred, trying to shutdown REST HTTP server", e);
+        }
+    }
+
+    private class NonBlockingHttpHandler<RequestType extends InternalMessageType, ReplyType extends InternalMessageType> extends HttpHandler {
+        private static final int READ_CHUNK_SIZE = 256;
+        private final Subject<RpcInvocation<RequestType, ReplyType, HttpSpecificInfo>> subject;
+
+        private NonBlockingHttpHandler(Subject<RpcInvocation<RequestType, ReplyType, HttpSpecificInfo>> subject) {
+            this.subject = subject;
+        }
+
+
+        public void service(Request request, Response response) throws Exception {
+            response.suspend();
+
+            NIOWriter out = response.getNIOWriter();
+            NIOReader in = request.getNIOReader();
+            in.notifyAvailable(new ReadHandler() {
+                private char[] inputBuffer = new char[0];
+
+                @Override
+                public void onDataAvailable() throws Exception {
+                    inputBuffer = appendAvailableDataToBuffer(in, READ_CHUNK_SIZE, inputBuffer);
+                    in.notifyAvailable(this);
+                }
+
+                @Override
+                public void onError(Throwable t) {
+                    // FIXME
+                    System.out.println("[onError]" + t);
+                    response.resume();
+                }
+
+                @Override
+                public void onAllDataRead() throws Exception {
+                    inputBuffer = appendAvailableDataToBuffer(in, READ_CHUNK_SIZE, inputBuffer);
+                    RpcInvocation<RequestType, ReplyType, HttpSpecificInfo> rpci = new RpcInvocation<>(
+                            (RequestType) convertRequestData(new String(inputBuffer), messageUnmarshaller),
+                            httpSpecificInfoFrom(request),
+                            reply -> {
+                                try {
+                                    String responseAsString = convertResponseData(reply, messageMarshaller);
+                                    response.setContentType("application/json");
+                                    response.setContentLength(responseAsString.length());
+                                    writeResponse(responseAsString, out);
+                                } catch (Exception e) {
+                                    // FIXME: write error or return Single.error()
+                                    logger.error("An error occurred trying to write HTTP response", e);
+                                } finally {
+                                    try {
+                                        in.close();
+                                    } catch (Exception ignored) {
+                                        // TODO - this is from the example. Do we want to do something here?
+                                    }
+                                    try {
+                                        out.close();
+                                    } catch (Exception ignored) {
+                                        // TODO - this is from the example. Do we want to do something here?
+                                    }
+                                    response.resume();
+                                }
+                            },
+                            error -> {
+                                // FIXME: write error or return Single.error()
+                                logger.error("An error occurred trying to process HTTP request", error);
+                            }
+                    );
+
+                    subject.onNext(rpci);
+                }
+            });
         }
     }
 }
