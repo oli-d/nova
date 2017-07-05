@@ -10,9 +10,8 @@
 
 package ch.squaredesk.nova.comm.http.annotation;
 
-import ch.squaredesk.nova.Nova;
-import org.glassfish.grizzly.http.server.HttpServer;
-import org.junit.jupiter.api.AfterEach;
+import ch.squaredesk.nova.comm.http.HttpServerConfiguration;
+import org.glassfish.jersey.server.ResourceConfig;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
@@ -20,15 +19,20 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 
-import java.util.concurrent.TimeUnit;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class RestEnablingConfigurationTest {
-    AnnotationConfigApplicationContext ctx = new AnnotationConfigApplicationContext();
+    HttpServerConfiguration serverConfiguration;
+    ResourceConfig resourceConfig;
 
-    private void fireUp() throws Exception {
-        ctx.register(MyConfig.class);
+    private void setupContext(Class configClass) throws Exception {
+        AnnotationConfigApplicationContext ctx = new AnnotationConfigApplicationContext();
+        ctx.register(configClass);
         ctx.refresh();
-        ctx.getBean(HttpServer.class).start();
+        serverConfiguration = ctx.getBean(HttpServerConfiguration.class);
+        resourceConfig = ctx.getBean(ResourceConfig.class);
     }
 
     @BeforeEach
@@ -37,32 +41,44 @@ class RestEnablingConfigurationTest {
         System.clearProperty("NOVA.HTTP.REST.PORT");
     }
 
-    @AfterEach
-    void tearDown() throws Exception {
-        ctx.getBean(HttpServer.class).shutdown();
-    }
-
     @Test
-    void instanceIsCreatedWithDefaultValuesWhenJustImportingConfig() throws Exception {
-        fireUp();
-        HttpHelper.waitUntilSomebodyListensOnPort(8888, 2, TimeUnit.SECONDS);
+    void ifNothingSpecifiedRestServerListensOn8888OnAllInterfaces() throws Exception{
+        setupContext(MyConfig.class);
+        assertThat(serverConfiguration.port, is(8888));
+        assertThat(serverConfiguration.interfaceName, is("0.0.0.0"));
+        assertTrue(resourceConfig.getResources().isEmpty());
     }
 
     @Test
     void portCanBeOverridenWithEnvironmentVariable() throws Exception{
         System.setProperty("NOVA.HTTP.REST.PORT", "9999");
-        fireUp();
-        HttpHelper.waitUntilSomebodyListensOnPort(9999, 2, TimeUnit.SECONDS);
+        setupContext(MyConfig.class);
+        assertThat(serverConfiguration.port, is(9999));
+        assertTrue(resourceConfig.getResources().isEmpty());
+    }
+
+    @Test
+    void interfaceCanBeOverridenWithEnvironmentVariable() throws Exception{
+        System.setProperty("NOVA.HTTP.REST.INTERFACE_NAME", "myInterface");
+        setupContext(MyConfig.class);
+        assertThat(serverConfiguration.interfaceName, is("myInterface"));
+        assertTrue(resourceConfig.getResources().isEmpty());
+    }
+
+    @Test
+    void annotatedBeansAreAddedToResourceConfig() throws Exception{
+        setupContext(MyConfigWithAnnotatedBean.class);
+        assertThat(resourceConfig.getResources().size(), is(2));
     }
 
     @Configuration
     @Import(RestEnablingConfiguration.class)
     public static class MyConfig {
-        @Bean
-        public Nova nova () {
-            return Nova.builder().build();
-        }
+    }
 
+    @Configuration
+    @Import(RestEnablingConfiguration.class)
+    public static class MyConfigWithAnnotatedBean {
         @Bean
         public MyDummyBeanToHaveAtLeastOneRestEndpoint dummyBeanToHaveAtLeastOneRestEndpoint() {
             return new MyDummyBeanToHaveAtLeastOneRestEndpoint();
@@ -72,6 +88,10 @@ class RestEnablingConfigurationTest {
     public static class MyDummyBeanToHaveAtLeastOneRestEndpoint {
         @OnRestRequest("somePath")
         public void foo() {
+        }
+
+        @OnRestRequest("someAdditionalPath")
+        public void bar() {
         }
     }
 }

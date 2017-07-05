@@ -34,14 +34,14 @@ public class RpcServer<InternalMessageType> extends ch.squaredesk.nova.comm.rpc.
 
     private final HttpServer httpServer;
 
-    RpcServer(HttpServer httpServer,
+    public RpcServer(HttpServer httpServer,
                         MessageMarshaller<InternalMessageType, String> messageMarshaller,
                         MessageUnmarshaller<String, InternalMessageType> messageUnmarshaller,
                         Metrics metrics) {
         this(null, httpServer, messageMarshaller, messageUnmarshaller, metrics);
     }
 
-    RpcServer(String identifier,
+    public RpcServer(String identifier,
                         HttpServer httpServer,
                         MessageMarshaller<InternalMessageType, String> messageMarshaller,
                         MessageUnmarshaller<String, InternalMessageType> messageUnmarshaller,
@@ -122,10 +122,14 @@ public class RpcServer<InternalMessageType> extends ch.squaredesk.nova.comm.rpc.
         // we are not synchronizing here, since we assume that onDataAvailable() is called sequentially
         char[] readBuffer = new char[chunkSize];
         int numRead = in.read(readBuffer);
-        char[] retVal = new char[currentBuffer.length + numRead];
-        System.arraycopy(currentBuffer,0, retVal, 0, currentBuffer.length);
-        System.arraycopy(readBuffer,0, retVal, currentBuffer.length, numRead);
-        return retVal;
+        if (numRead<=0) {
+            return currentBuffer;
+        } else {
+            char[] retVal = new char[currentBuffer.length + numRead];
+            System.arraycopy(currentBuffer, 0, retVal, 0, currentBuffer.length);
+            System.arraycopy(readBuffer, 0, retVal, currentBuffer.length, numRead);
+            return retVal;
+        }
     }
 
     void start() throws IOException {
@@ -166,7 +170,7 @@ public class RpcServer<InternalMessageType> extends ch.squaredesk.nova.comm.rpc.
                 @Override
                 public void onError(Throwable t) {
                     // FIXME
-                    System.out.println("[onError]" + t);
+                    logger.error("Error parsing request data", t);
                     response.resume();
                 }
 

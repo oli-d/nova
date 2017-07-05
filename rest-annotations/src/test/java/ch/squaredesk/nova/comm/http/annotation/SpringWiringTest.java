@@ -10,15 +10,17 @@
 
 package ch.squaredesk.nova.comm.http.annotation;
 
+import ch.squaredesk.nova.Nova;
 import ch.squaredesk.nova.comm.http.HttpServerConfiguration;
+import ch.squaredesk.nova.comm.http.RpcServer;
 import ch.squaredesk.nova.spring.NovaProvidingConfiguration;
+import io.reactivex.BackpressureStrategy;
 import org.glassfish.grizzly.http.server.HttpServer;
+import org.glassfish.jersey.server.ResourceConfig;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.context.annotation.AnnotationConfigApplicationContext;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Import;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.*;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -36,7 +38,6 @@ public class SpringWiringTest {
         ctx.refresh();
         HttpServerConfiguration cfg = ctx.getBean(HttpServerConfiguration.class);
         serverUrl = "http://" + cfg.interfaceName + ":" + cfg.port;
-        ctx.getBean(HttpServer.class).start();
     }
 
     @AfterEach
@@ -47,12 +48,57 @@ public class SpringWiringTest {
     @Test
     public void restEndpointCanProperlyBeInvoked() throws Exception {
         setupContext(MyConfig.class);
-        String replyAsString = HttpHelper.getResponseBody(serverUrl + "/endpoint", null);
+        String replyAsString = HttpHelper.getResponseBody(serverUrl + "/foo", null);
         assertThat(replyAsString, is("MyBean"));
+    }
+
+    @Test
+    public void restAnnotationsCanBeMixedWithHttpRpcServer() throws Exception {
+        setupContext(MyMixedConfig.class);
+        RpcServer<String> rpcServer = ctx.getBean(RpcServer.class);
+        rpcServer.requests("/bar", BackpressureStrategy.BUFFER).subscribe(
+                rpcInvocation -> {
+                    rpcInvocation.complete("bar");
+                }
+        );
+
+        String replyAsString = HttpHelper.getResponseBody(serverUrl + "/foo", null);
+        assertThat(replyAsString, is("MyBean"));
+        replyAsString = HttpHelper.getResponseBody(serverUrl + "/bar", null);
+        assertThat(replyAsString, is("bar"));
     }
 
     @Configuration
     @Import({RestEnablingConfiguration.class, NovaProvidingConfiguration.class})
+    public static class MyMixedConfig  {
+        @Autowired
+        ResourceConfig resourceConfig;
+
+        @Autowired
+        HttpServerConfiguration serverConfig;
+
+        @Bean
+        public HttpServer httpServer() {
+            return RestServerFactory.serverFor(serverConfig, resourceConfig);
+        }
+
+        @Autowired
+        public Nova nova;
+
+        @Bean
+        public MyBean myBean() {
+            return new MyBean();
+        }
+
+        @Bean
+        @Lazy
+        public RpcServer<String> rpcServer() {
+            return new RpcServer<>(httpServer(), s->s, s->s, nova.metrics );
+        }
+    }
+
+    @Configuration
+    @Import(RestServerProvidingConfiguration.class)
     public static class MyConfig  {
         @Bean
         public MyBean myBean() {
@@ -63,7 +109,7 @@ public class SpringWiringTest {
     public static class MyBean {
         private List<String> listInvocationParams = new ArrayList<>();
 
-        @OnRestRequest("/endpoint")
+        @OnRestRequest("/foo")
         public String singleParamMethod() throws Exception {
             return "MyBean";
         }

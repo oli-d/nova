@@ -11,36 +11,32 @@
 package ch.squaredesk.nova.comm.http.annotation;
 
 import ch.squaredesk.nova.comm.http.HttpServerConfiguration;
+import org.glassfish.grizzly.http.server.HttpServer;
 import org.glassfish.jersey.server.ResourceConfig;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.core.env.Environment;
-
-import java.net.InetAddress;
+import org.springframework.context.annotation.Import;
+import org.springframework.context.annotation.Lazy;
 
 @Configuration
-public class RestEnablingConfiguration {
+@Import(RestEnablingConfiguration.class)
+public class RestServerProvidingConfiguration {
     @Autowired
-    Environment environment;
+    ResourceConfig resourceConfig;
+
+    @Autowired
+    HttpServerConfiguration serverConfig;
 
     @Bean
-    public RestBeanPostprocessor getBeanPostProcessor() {
-        return new RestBeanPostprocessor(resourceConfig());
+    RestServerStarter restServerStarter() {
+        return new RestServerStarter();
     }
 
+    @Lazy // must be created after all other beans have been created (because of annotation processing)
     @Bean
-    public ResourceConfig resourceConfig() {
-        return new ResourceConfig();
+    public HttpServer restHttpServer() {
+        return RestServerFactory.serverFor(serverConfig, resourceConfig);
     }
 
-    @Bean
-    public HttpServerConfiguration restServerConfiguration() {
-        int restPort = environment.getProperty("NOVA.HTTP.REST.PORT", Integer.class, 8888);
-        String interfaceName = environment.getProperty("NOVA.HTTP.REST.INTERFACE_NAME", "0.0.0.0");
-        return new HttpServerConfiguration(
-            interfaceName,
-            restPort
-        );
-    }
 }

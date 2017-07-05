@@ -22,11 +22,6 @@
 	<dependencies>
 		<dependency>
 			<groupId>ch.squaredesk.nova</groupId>
-			<artifactId>spring-support</artifactId>
-			<version>${project.version}</version>
-		</dependency>
-		<dependency>
-			<groupId>ch.squaredesk.nova</groupId>
 			<artifactId>comm</artifactId>
 			<version>${project.version}</version>
 		</dependency>

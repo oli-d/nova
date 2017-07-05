@@ -9,7 +9,8 @@ import java.lang.reflect.Method;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class RestResourceFactoryTest {
     private RestResourceDescriptor resourceDescriptor = RestResourceDescriptor.from("fooPath");
