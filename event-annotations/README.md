@@ -27,9 +27,26 @@ __the following beans must exist in the ApplicationContext:__
 
 1. ___Nova's EventHandlingBeanPostprocessor bean___
 
-We do prefer annotation based ApplicationContext configurations, therefore we provide a convenience class
-that makes enabling that feature very easy: ```AnnotationEnablingConfiguration```. Simply import this 
-in your custom onfiguration class and you are ready to go. As an example:
+We do prefer annotation based ApplicationContext configurations, therefore we provide the convenience 
+class ```AnnotationEnablingConfiguration``` which makes providing the required 
+```EventHandlingBeanPostprocessor``` bean very easy. Simply import it in your custom configuration 
+class and you are ready to go. As an example:
+
+```
+@Configuration
+@Import(AnnotationEnablingConfiguration)
+public class MyConfig {
+    @Bean
+    public MyClass getMyBean() {
+        return new MyClass();
+    }
+    ... // further bean definitions
+}
+```
+
+They same approach is taken to provide the required ```Nova``` bean. If you do not want
+to manually create it and hare happy with the defaults, simply import ```NovaProvidingConfiguration```
+in addition:
 
 ```
 @Configuration
@@ -42,6 +59,17 @@ public class MyConfig {
     ... // further bean definitions
 }
 ```
+
+The following defaults will be configured for the Nova bean:
+ 
+| Parameter / @Bean name | Environment variable name | Description | default value |
+|------------------------|---------------------------|-------------|---------------|
+| identifier | NOVA.ID | ID of the Nova instance. Useful if you use multiple in your VM | "" |
+| warnOnUnhandledEvents | NOVA.EVENTS.WARN_ON_UNHANDLED | Log a warning if an event was emitted, for which no listener was registered. | false |
+| defaultBackpressureStrategy | NOVA.EVENTS.BACKPRESSURE_STRATEGY | Default backpressure strategy to apply when dispatching events. One of the values defined in ```io.reactivex.BackpressureStrategy``` | BUFFER |
+
+You can override them by either providing / overriding the specific beans in your configuration
+or by setting the appropriate environment variable.
 
 __But wait... there's one more thing!__
  

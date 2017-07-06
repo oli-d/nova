@@ -26,24 +26,24 @@ public class NovaProvidingConfiguration {
     @Bean(name = "nova")
     public Nova nova() {
         return Nova.builder()
-                .setIdentifier(getIdentifier())
-                .setDefaultBackpressureStrategy(getDefaultBackpressureStrategy())
-                .setWarnOnUnhandledEvent(getWarnOnUnhandledEvent())
+                .setIdentifier(identifier())
+                .setDefaultBackpressureStrategy(defaultBackpressureStrategy())
+                .setWarnOnUnhandledEvent(warnOnUnhandledEvent())
                 .build();
     }
 
     @Bean
-    public String getIdentifier() {
+    public String identifier() {
         return environment.getProperty("NOVA.ID", "");
     }
 
     @Bean
-    public Boolean getWarnOnUnhandledEvent() {
+    public Boolean warnOnUnhandledEvent() {
         return environment.getProperty("NOVA.EVENTS.WARN_ON_UNHANDLED", Boolean.class, false);
     }
 
     @Bean
-    public BackpressureStrategy getDefaultBackpressureStrategy() {
+    public BackpressureStrategy defaultBackpressureStrategy() {
         String strategyAsString = environment.getProperty(
                 "NOVA.EVENTS.BACKPRESSURE_STRATEGY",
                 String.class,

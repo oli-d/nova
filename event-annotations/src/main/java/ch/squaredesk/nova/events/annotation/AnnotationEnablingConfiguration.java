@@ -16,12 +16,12 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
-public abstract class AnnotationEnablingConfiguration {
+public class AnnotationEnablingConfiguration {
     @Autowired
     protected Nova nova;
 
     @Bean
-    public EventHandlingBeanPostprocessor getBeanPostProcessor() {
+    public EventHandlingBeanPostprocessor eventHandlingBeanPostProcessor() {
         return new EventHandlingBeanPostprocessor(nova.identifier, nova.eventBus, nova.metrics);
     }
 }
