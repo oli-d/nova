@@ -21,6 +21,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.*;
+import org.springframework.core.annotation.Order;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -42,7 +43,7 @@ public class SpringWiringTest {
 
     @AfterEach
     public void tearDown() throws Exception {
-        ctx.getBean(HttpServer.class).shutdown();
+        ctx.getBean(HttpServer.class).shutdown().get();
     }
 
     @Test
@@ -55,6 +56,7 @@ public class SpringWiringTest {
     @Test
     public void restAnnotationsCanBeMixedWithHttpRpcServer() throws Exception {
         setupContext(MyMixedConfig.class);
+        ctx.getBean(HttpServer.class).start();
         RpcServer<String> rpcServer = ctx.getBean(RpcServer.class);
         rpcServer.requests("/bar", BackpressureStrategy.BUFFER).subscribe(
                 rpcInvocation -> {
@@ -69,7 +71,8 @@ public class SpringWiringTest {
     }
 
     @Configuration
-    @Import({RestEnablingConfiguration.class, NovaProvidingConfiguration.class})
+    @Order
+    @Import({RestEnablingConfiguration.class, NovaProvidingConfiguration.class, MyBeanConfig.class})
     public static class MyMixedConfig  {
         @Autowired
         ResourceConfig resourceConfig;
@@ -86,20 +89,18 @@ public class SpringWiringTest {
         public Nova nova;
 
         @Bean
-        public MyBean myBean() {
-            return new MyBean();
-        }
-
-        @Bean
-        @Lazy
         public RpcServer<String> rpcServer() {
             return new RpcServer<>(httpServer(), s->s, s->s, nova.metrics );
         }
     }
 
     @Configuration
-    @Import(RestServerProvidingConfiguration.class)
+    @Import({RestServerProvidingConfiguration.class, MyBeanConfig.class})
     public static class MyConfig  {
+    }
+
+    @Configuration
+    public static class MyBeanConfig  {
         @Bean
         public MyBean myBean() {
             return new MyBean();
@@ -107,10 +108,8 @@ public class SpringWiringTest {
     }
 
     public static class MyBean {
-        private List<String> listInvocationParams = new ArrayList<>();
-
         @OnRestRequest("/foo")
-        public String singleParamMethod() throws Exception {
+        public String restHandler()  {
             return "MyBean";
         }
     }

@@ -21,7 +21,7 @@ import java.net.URI;
 public class RestServerFactory {
     public static HttpServer serverFor(HttpServerConfiguration serverConfig, ResourceConfig resourceConfig) {
         URI serverAddress = UriBuilder.fromPath("http://" + serverConfig.interfaceName + ":" + serverConfig.port).build();
-        return GrizzlyHttpServerFactory.createHttpServer(serverAddress, resourceConfig, true);
+        return GrizzlyHttpServerFactory.createHttpServer(serverAddress, resourceConfig, false);
     }
 
 }

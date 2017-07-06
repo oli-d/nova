@@ -1,5 +1,6 @@
 package ch.squaredesk.nova.comm.http.annotation;
 
+import ch.squaredesk.nova.comm.http.HttpServerConfiguration;
 import org.glassfish.grizzly.http.server.HttpServer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,7 +24,7 @@ public class RestServerStarter implements ApplicationListener {
                 try {
                     httpServer.start();
                 } catch (IOException e) {
-                    logger.error("Unable to start HttpServer" , e);
+                    logger.error("Unable to start HttpServer with configuration " + ctx.getBean(HttpServerConfiguration.class) , e);
                 }
             }
         }

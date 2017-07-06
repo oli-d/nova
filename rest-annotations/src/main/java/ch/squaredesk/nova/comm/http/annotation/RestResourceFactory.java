@@ -27,20 +27,6 @@ public class RestResourceFactory {
         return resourceBuilder.build();
     }
 
-    public static Resource resourceFor(RestResourceDescriptor resourceDescriptor, Inflector<ContainerRequestContext, ?> inflector) {
-        requireNonNull(resourceDescriptor, "resourceDescriptor must not be null");
-        requireNonNull(inflector, "inflector must not be null");
-
-        Resource.Builder resourceBuilder = Resource.builder("/");
-        resourceBuilder
-                .path(resourceDescriptor.path)
-                .addMethod(convert(resourceDescriptor.requestMethod))
-                .produces(convert(resourceDescriptor.produces))
-                .consumes(convert(resourceDescriptor.consumes))
-                .handledBy(inflector);
-        return resourceBuilder.build();
-    }
-
     private static String convert (HttpRequestMethod requestMethod) {
         return String.valueOf(requestMethod);
     }

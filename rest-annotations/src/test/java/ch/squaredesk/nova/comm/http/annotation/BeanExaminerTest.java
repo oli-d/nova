@@ -10,7 +10,6 @@
 
 package ch.squaredesk.nova.comm.http.annotation;
 
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
