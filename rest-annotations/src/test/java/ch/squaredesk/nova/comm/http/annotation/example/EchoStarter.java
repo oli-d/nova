@@ -3,9 +3,6 @@ package ch.squaredesk.nova.comm.http.annotation.example;
 import org.glassfish.grizzly.http.server.HttpServer;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-
 public class EchoStarter {
     public static void main(String[] args) throws Exception {
         AnnotationConfigApplicationContext ctx = new AnnotationConfigApplicationContext();

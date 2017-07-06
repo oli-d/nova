@@ -2,10 +2,8 @@ package ch.squaredesk.nova.comm.http.annotation;
 
 import ch.squaredesk.nova.comm.http.HttpRequestMethod;
 import ch.squaredesk.nova.comm.http.MediaType;
-import org.glassfish.jersey.process.Inflector;
 import org.glassfish.jersey.server.model.Resource;
 
-import javax.ws.rs.container.ContainerRequestContext;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 

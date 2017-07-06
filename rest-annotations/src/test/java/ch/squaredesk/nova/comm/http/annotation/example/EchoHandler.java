@@ -1,7 +1,6 @@
 package ch.squaredesk.nova.comm.http.annotation.example;
 
 import ch.squaredesk.nova.comm.http.HttpRequestMethod;
-import ch.squaredesk.nova.comm.http.MediaType;
 import ch.squaredesk.nova.comm.http.annotation.OnRestRequest;
 
 import javax.ws.rs.PathParam;

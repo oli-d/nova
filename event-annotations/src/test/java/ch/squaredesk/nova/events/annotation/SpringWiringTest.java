@@ -12,7 +12,6 @@ package ch.squaredesk.nova.events.annotation;
 
 import ch.squaredesk.nova.Nova;
 import ch.squaredesk.nova.events.EventBus;
-import ch.squaredesk.nova.events.annotation.*;
 import io.reactivex.BackpressureStrategy;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Test;
