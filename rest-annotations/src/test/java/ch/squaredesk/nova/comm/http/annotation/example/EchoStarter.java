@@ -14,12 +14,8 @@ public class EchoStarter {
 
         // at this point, the REST server is started and properly initialized
         
-        System.out.println("Echo server started");
-        System.out.println("Press <ENTER> to shutdown");
-        try (BufferedReader reader = new BufferedReader(new InputStreamReader(System.in))) {
-            String line = reader.readLine();
-        }
-        System.out.println("Shutting down");
+        System.out.println("Echo server started. Press <ENTER> to stop the server...");
+        System.in.read();
         ctx.getBean(HttpServer.class).shutdown();
     }
 }
