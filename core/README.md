@@ -8,7 +8,7 @@ The core functionality contains
 * metrics
 * a (reactive) event bus
 
-### 2. Usage
+### Usage
 To make use of the features provided, the first thing you have to do is create a new 
 ```Nova``` instance:
  
@@ -133,3 +133,4 @@ Another big advantage of using those wrapper classes is the fact, that they catc
 occur during event consumption. Throwing an exception during event consumptions immediately voids your subscription. So, 
 by using the wrapper classes you are sure, that even if your consumer had a problem for one particular events, it will 
 still continue to receive all following events.
+

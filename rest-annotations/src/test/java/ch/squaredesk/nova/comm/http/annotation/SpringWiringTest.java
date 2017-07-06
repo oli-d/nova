@@ -80,15 +80,16 @@ public class SpringWiringTest {
         @Autowired
         HttpServerConfiguration serverConfig;
 
+        @Autowired
+        public Nova nova;
+
         @Bean
         public HttpServer httpServer() {
             return RestServerFactory.serverFor(serverConfig, resourceConfig);
         }
 
-        @Autowired
-        public Nova nova;
-
         @Bean
+        @Lazy
         public RpcServer<String> rpcServer() {
             return new RpcServer<>(httpServer(), s->s, s->s, nova.metrics );
         }
