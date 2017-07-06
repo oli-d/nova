@@ -10,6 +10,7 @@
 
 package ch.squaredesk.nova.comm.http.annotation;
 
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -33,6 +34,17 @@ class BeanExaminerTest {
 
         assertThat(sut.restEndpointsIn(new MyRestClass1()).length, is(1));
         assertThat(sut.restEndpointsIn(new MyNonRestClass1()).length, is(0));
+    }
+
+    @Test
+    void throwsIfNonPublicMethodIsAnnotated() {
+        class MyRestClass2 {
+            @OnRestRequest("m1")
+            void m1(String p1) { }
+        }
+
+        assertThrows(IllegalArgumentException.class,
+                () -> sut.restEndpointsIn(new MyRestClass2()));
     }
 
     @Test

@@ -11,7 +11,11 @@
 package ch.squaredesk.nova.comm.http.annotation;
 
 import java.lang.annotation.Annotation;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
+import java.util.Arrays;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 import static java.util.Arrays.stream;
 import static java.util.Objects.requireNonNull;
@@ -24,6 +28,12 @@ class BeanExaminer {
 
         return stream(bean.getClass().getDeclaredMethods())
                 .filter(method -> stream(method.getDeclaredAnnotations()).anyMatch(interestingAnnotation))
+                .peek(method -> {
+                    if (!Modifier.isPublic(method.getModifiers()))
+                        throw new IllegalArgumentException(
+                                "Method " + prettyPrint(bean, method) + ", annotated with @" +
+                                OnRestRequest.class.getSimpleName() + " must be public");
+                })
                 .map(method -> {
                     OnRestRequest annotation = stream(method.getDeclaredAnnotations())
                             .filter(interestingAnnotation)
@@ -38,5 +48,17 @@ class BeanExaminer {
                             method);
                 })
                 .toArray(RestEndpoint[]::new);
+    }
+
+    private static String prettyPrint (Object bean, Method method) {
+        StringBuilder sb = new StringBuilder(bean.getClass().getName())
+            .append('.')
+            .append(method.getName())
+            .append('(')
+            .append(Arrays.stream(method.getParameterTypes())
+                    .map(paramterClass -> paramterClass.getSimpleName())
+                    .collect(Collectors.joining(", ")))
+            .append(')');
+        return sb.toString();
     }
 }
