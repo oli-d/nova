@@ -16,9 +16,9 @@ public class MyClass {
 }
 ```
 
-If you declare your method this way, it is called whenever the event "myEvent" is emitted. 
+If you declare your method this way, it is called whenever the event ```"myEvent"``` is emitted. 
 
-This feature is implemented using a specific Spring BeanPostProcessor. Therefore, to be able to use 
+This feature is implemented using a specific Spring ```BeanPostProcessor```. Therefore, to be able to use 
 the functionality described above,
 __the following beans must exist in the ApplicationContext:__ 
 1. ___All of your beans that have been annotated___
@@ -37,39 +37,36 @@ class and you are ready to go. As an example:
 @Import(AnnotationEnablingConfiguration)
 public class MyConfig {
     @Bean
-    public MyClass getMyBean() {
+    public MyClass myBean() {
         return new MyClass();
     }
+
+    @Bean 
+    public Nova nova() {
+        ... // create Nova instance
+    }
+    
     ... // further bean definitions
 }
 ```
 
-They same approach is taken to provide the required ```Nova``` bean. If you do not want
-to manually create it and hare happy with the defaults, simply import ```NovaProvidingConfiguration```
-in addition:
+The same approach can be taken to create the required ```Nova``` bean. Since our artifact depends on
+[spring-support](../spring-support/README.md), you can also make use of the provided 
+```NovaProvidingConfiguration``` class. Simply import this configuration to make your custom ```Configuration```
+class even simpler:
 
 ```
 @Configuration
 @Import({NovaProvidingConfig.class, AnnotationEnablingConfiguration})
 public class MyConfig {
     @Bean
-    public MyClass getMyBean() {
+    public MyClass myBean() {
         return new MyClass();
     }
+    
     ... // further bean definitions
 }
 ```
-
-The following defaults will be configured for the Nova bean:
- 
-| Parameter / @Bean name | Environment variable name | Description | default value |
-|------------------------|---------------------------|-------------|---------------|
-| identifier | NOVA.ID | ID of the Nova instance. Useful if you use multiple in your VM | "" |
-| warnOnUnhandledEvents | NOVA.EVENTS.WARN_ON_UNHANDLED | Log a warning if an event was emitted, for which no listener was registered. | false |
-| defaultBackpressureStrategy | NOVA.EVENTS.BACKPRESSURE_STRATEGY | Default backpressure strategy to apply when dispatching events. One of the values defined in ```io.reactivex.BackpressureStrategy``` | BUFFER |
-
-You can override them by either providing / overriding the specific beans in your configuration
-or by setting the appropriate environment variable.
 
 __But wait... there's one more thing!__
  
