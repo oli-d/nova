@@ -9,7 +9,7 @@ handler method, simply by adding the annotation to your handling method.
 
 Let's start with an example:
 
-```
+```Java
 public class MyBean {
     @OnRestRequest("/foo")
     public String handle()  {
@@ -51,7 +51,7 @@ So, to show all of this in action, here's how you would create a simple echo ser
 
 1. Create a bean class that provides the echo handler
     
-    ```
+    ```Java
     public class EchoHandler {
         @OnRestRequest("/echo")
         public String echoParameterValue(@QueryParam("p1") String textFromCallerToEcho) {
@@ -77,7 +77,7 @@ So, to show all of this in action, here's how you would create a simple echo ser
     
 1. Create a configuration class that provides the handler bean and enables REST handling
     
-    ```
+    ```Java
     @Configuration
     @Import(RestServerProvidingConfiguration.class)
     public class EchoConfiguration {
@@ -90,7 +90,7 @@ So, to show all of this in action, here's how you would create a simple echo ser
     
 1. Create a starter class
     
-    ```
+    ```Java
     public class EchoStarter {
         public static void main(String[] args) throws Exception {
             AnnotationConfigApplicationContext ctx = new AnnotationConfigApplicationContext();
@@ -148,7 +148,7 @@ A common pattern is to split the configuration of your REST handler beans and Rp
 separate ```Configuration``` classes and use the ```@Order``` annotation on the latter one to signal Spring that it
 should process this as late as possible:
 
-```
+```Java
     @Configuration
     @Order
     @Import({RestEnablingConfiguration.class, NovaProvidingConfiguration.class, MyBeanConfig.class})
