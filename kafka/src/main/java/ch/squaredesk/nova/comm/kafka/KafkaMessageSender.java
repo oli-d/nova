@@ -27,7 +27,7 @@ class KafkaMessageSender<InternalMessageType> extends MessageSender<String, Inte
                        KafkaObjectFactory kafkaObjectFactory,
                        MessageMarshaller<InternalMessageType,String> messageMarshaller,
                        Metrics metrics) {
-        super(identifier, messageMarshaller, metrics);
+        super(identifier, messageMarshaller::apply, metrics);
         this.producer = kafkaObjectFactory.producer();
     }
 

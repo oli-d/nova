@@ -28,6 +28,7 @@
 
         <module>service</module>
 
+        <module>spring-support</module>
         <module>metrics-elastic</module>
 
         <module>comm</module>

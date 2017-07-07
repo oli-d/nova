@@ -41,7 +41,7 @@ public class KafkaMessageReceiver<InternalMessageType>
                          Scheduler schedulerToSubscribeOn,
                          MessageUnmarshaller<String, InternalMessageType> messageUnmarshaller,
                          Metrics metrics) {
-        super(identifier, messageUnmarshaller, metrics);
+        super(identifier, messageUnmarshaller::apply, metrics);
         this.kafkaObjectFactory = kafkaObjectFactory;
         this.schedulerToSubscribeOn = schedulerToSubscribeOn;
     }
