@@ -88,7 +88,7 @@ class HttpAdapterTest {
         TestObserver<String> observer = commAdapter
                 .sendPostRequest("http://httpbin.org/get", "{ myTest: \"value\"}")
                 .test();
-        observer.await(30, SECONDS);
+        observer.await(40, SECONDS);
         observer.assertError(throwable -> throwable.getMessage().contains("METHOD NOT ALLOWED"));
     }
 
@@ -103,7 +103,7 @@ class HttpAdapterTest {
                 .setErrorReplyFactory(t -> "Error: " + t.getMessage())
                 .build();
         TestObserver<String> observer = commAdapter.sendGetRequest("http://httpbin.org/post").test();
-        observer.await(30, SECONDS);
+        observer.await(40, SECONDS);
         observer.assertError(throwable -> throwable.getMessage().contains("METHOD NOT ALLOWED"));
     }
 
@@ -120,7 +120,7 @@ class HttpAdapterTest {
                 .sendRequest("http://httpbin.org/ip", "1", HttpRequestMethod.GET)
                 .test();
 
-        observer.await(5, SECONDS);
+        observer.await(40, SECONDS);
         observer.assertComplete();
         observer.assertValue(value -> value.contains("\"origin\":"));
     }
