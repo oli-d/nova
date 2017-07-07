@@ -10,6 +10,8 @@
 
 package ch.squaredesk.nova.comm.kafka;
 
+import ch.squaredesk.nova.comm.retrieving.MessageUnmarshaller;
+import ch.squaredesk.nova.comm.sending.MessageMarshaller;
 import ch.squaredesk.nova.metrics.Metrics;
 import io.reactivex.BackpressureStrategy;
 import io.reactivex.Completable;
@@ -20,7 +22,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.Executors;
-import java.util.function.Function;
 
 import static java.util.Objects.requireNonNull;
 
@@ -95,8 +96,8 @@ public class KafkaCommAdapter<InternalMessageType> {
     public static class Builder<InternalMessageType> {
         private String identifier;
         private Metrics metrics;
-        private Function<String,InternalMessageType> messageUnmarshaller;
-        private Function<InternalMessageType,String> messageMarshaller;
+        private MessageUnmarshaller<String,InternalMessageType> messageUnmarshaller;
+        private MessageMarshaller<InternalMessageType,String> messageMarshaller;
         private BackpressureStrategy defaultBackpressureStrategy = BackpressureStrategy.BUFFER;
         private KafkaMessageSender<InternalMessageType> messageSender;
         private KafkaMessageReceiver<InternalMessageType> messageReceiver;
@@ -131,12 +132,12 @@ public class KafkaCommAdapter<InternalMessageType> {
             return this;
         }
 
-        public Builder<InternalMessageType> setMessageMarshaller(Function<InternalMessageType, String> messageMarshaller) {
+        public Builder<InternalMessageType> setMessageMarshaller(MessageMarshaller<InternalMessageType, String> messageMarshaller) {
             this.messageMarshaller = messageMarshaller;
             return this;
         }
 
-        public Builder<InternalMessageType> setMessageUnmarshaller(Function<String,InternalMessageType> messageUnmarshaller) {
+        public Builder<InternalMessageType> setMessageUnmarshaller(MessageUnmarshaller<String,InternalMessageType> messageUnmarshaller) {
             this.messageUnmarshaller = messageUnmarshaller;
             return this;
         }

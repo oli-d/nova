@@ -10,14 +10,13 @@
 
 package ch.squaredesk.nova.comm.kafka;
 
+import ch.squaredesk.nova.comm.sending.MessageMarshaller;
 import ch.squaredesk.nova.comm.sending.MessageSender;
 import ch.squaredesk.nova.comm.sending.MessageSendingInfo;
 import ch.squaredesk.nova.metrics.Metrics;
 import io.reactivex.Completable;
 import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerRecord;
-
-import java.util.function.Function;
 
 import static java.util.Objects.requireNonNull;
 
@@ -26,7 +25,7 @@ class KafkaMessageSender<InternalMessageType> extends MessageSender<String, Inte
 
     KafkaMessageSender(String identifier,
                        KafkaObjectFactory kafkaObjectFactory,
-                       Function<InternalMessageType,String> messageMarshaller,
+                       MessageMarshaller<InternalMessageType,String> messageMarshaller,
                        Metrics metrics) {
         super(identifier, messageMarshaller, metrics);
         this.producer = kafkaObjectFactory.producer();

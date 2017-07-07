@@ -13,6 +13,7 @@ package ch.squaredesk.nova.comm.kafka;
 import ch.squaredesk.nova.comm.retrieving.IncomingMessage;
 import ch.squaredesk.nova.comm.retrieving.IncomingMessageDetails;
 import ch.squaredesk.nova.comm.retrieving.MessageReceiver;
+import ch.squaredesk.nova.comm.retrieving.MessageUnmarshaller;
 import ch.squaredesk.nova.metrics.Metrics;
 import io.reactivex.Observable;
 import io.reactivex.Scheduler;
@@ -26,7 +27,6 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Function;
 
 public class KafkaMessageReceiver<InternalMessageType>
         extends MessageReceiver<String, InternalMessageType, String, KafkaSpecificInfo> {
@@ -39,7 +39,7 @@ public class KafkaMessageReceiver<InternalMessageType>
     KafkaMessageReceiver(String identifier,
                          KafkaObjectFactory kafkaObjectFactory,
                          Scheduler schedulerToSubscribeOn,
-                         Function<String, InternalMessageType> messageUnmarshaller,
+                         MessageUnmarshaller<String, InternalMessageType> messageUnmarshaller,
                          Metrics metrics) {
         super(identifier, messageUnmarshaller, metrics);
         this.kafkaObjectFactory = kafkaObjectFactory;
@@ -58,7 +58,7 @@ public class KafkaMessageReceiver<InternalMessageType>
         while (iterator.hasNext()) {
             ConsumerRecord<String,String> record = iterator.next();
             try {
-                InternalMessageType internalMessage = messageUnmarshaller.apply(record.value());
+                InternalMessageType internalMessage = messageUnmarshaller.unmarshal(record.value());
                 // FIXME: which data?
                 KafkaSpecificInfo kafkaSpecificInfo = new KafkaSpecificInfo();
                 IncomingMessageDetails<String, KafkaSpecificInfo> messageDetails = new IncomingMessageDetails.Builder<String, KafkaSpecificInfo>()
