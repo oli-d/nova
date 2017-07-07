@@ -11,8 +11,8 @@
 package ch.squaredesk.nova.service;
 
 
-import ch.squaredesk.nova.eventannotations.AnnotationEnablingConfiguration;
-import ch.squaredesk.nova.eventannotations.NovaProvidingConfiguration;
+import ch.squaredesk.nova.events.annotation.AnnotationEnablingConfiguration;
+import ch.squaredesk.nova.events.annotation.NovaProvidingConfiguration;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -24,8 +24,8 @@ import java.util.UUID;
 import java.util.stream.Stream;
 
 @Configuration
-@Import(AnnotationEnablingConfiguration.class)
-public abstract class NovaServiceConfiguration<ServiceType> extends NovaProvidingConfiguration {
+@Import({AnnotationEnablingConfiguration.class, NovaProvidingConfiguration.class})
+public abstract class NovaServiceConfiguration<ServiceType>  {
     @Autowired
     protected Environment environment;
 
