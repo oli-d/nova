@@ -16,9 +16,9 @@ public class MyClass {
 }
 ```
 
-If you declare your method this way, it is called whenever the event "myEvent" is emitted. 
+If you declare your method this way, it is called whenever the event ```"myEvent"``` is emitted. 
 
-This feature is implemented using a specific Spring BeanPostProcessor. Therefore, to be able to use 
+This feature is implemented using a specific Spring ```BeanPostProcessor```. Therefore, to be able to use 
 the functionality described above,
 __the following beans must exist in the ApplicationContext:__ 
 1. ___All of your beans that have been annotated___
@@ -27,18 +27,43 @@ __the following beans must exist in the ApplicationContext:__
 
 1. ___Nova's EventHandlingBeanPostprocessor bean___
 
-We do prefer annotation based ApplicationContext configurations, therefore we provide a convenience class
-that makes enabling that feature very easy: ```AnnotationEnablingConfiguration```. Simply import this 
-in your custom onfiguration class and you are ready to go. As an example:
+We do prefer annotation based ApplicationContext configurations, therefore we provide the convenience 
+class ```AnnotationEnablingConfiguration``` which makes providing the required 
+```EventHandlingBeanPostprocessor``` bean very easy. Simply import it in your custom configuration 
+class and you are ready to go. As an example:
+
+```
+@Configuration
+@Import(AnnotationEnablingConfiguration)
+public class MyConfig {
+    @Bean
+    public MyClass myBean() {
+        return new MyClass();
+    }
+
+    @Bean 
+    public Nova nova() {
+        ... // create Nova instance
+    }
+    
+    ... // further bean definitions
+}
+```
+
+The same approach can be taken to create the required ```Nova``` bean. Since our artifact depends on
+[spring-support](../spring-support/README.md), you can also make use of the provided 
+```NovaProvidingConfiguration``` class. Simply import this configuration to make your custom ```Configuration```
+class even simpler:
 
 ```
 @Configuration
 @Import({NovaProvidingConfig.class, AnnotationEnablingConfiguration})
 public class MyConfig {
     @Bean
-    public MyClass getMyBean() {
+    public MyClass myBean() {
         return new MyClass();
     }
+    
     ... // further bean definitions
 }
 ```

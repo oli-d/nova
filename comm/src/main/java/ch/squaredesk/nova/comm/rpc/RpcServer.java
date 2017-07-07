@@ -16,7 +16,7 @@ import io.reactivex.Flowable;
 
 import static java.util.Objects.requireNonNull;
 
-public abstract class RpcServer<DestinationType, InternalMessageType> {
+public abstract class RpcServer<DestinationType, InternalMessageType, TransportSpecificInfoType> {
 
     protected final RpcServerMetricsCollector metricsCollector;
 
@@ -30,6 +30,6 @@ public abstract class RpcServer<DestinationType, InternalMessageType> {
 
 
     public abstract <RequestType extends InternalMessageType, ReplyType extends InternalMessageType>
-        Flowable<RpcInvocation<RequestType, ReplyType>> requests(
+        Flowable<RpcInvocation<RequestType, ReplyType, TransportSpecificInfoType>> requests(
             DestinationType destination, BackpressureStrategy backpressureStrategy);
 }

@@ -1,9 +1,18 @@
+/*
+ * Copyright (c) Squaredesk GmbH and Oliver Dotzauer.
+ *
+ * This program is distributed under the squaredesk open source license. See the LICENSE file
+ * distributed with this work for additional information regarding copyright ownership. You may also
+ * obtain a copy of the license at
+ *
+ *   https://squaredesk.ch/license/oss/LICENSE
+ */
+
 package ch.squaredesk.nova.metrics.elastic;
 
 import ch.squaredesk.nova.metrics.CompoundMetric;
 import ch.squaredesk.nova.metrics.Metrics;
 import ch.squaredesk.nova.metrics.MetricsDump;
-import com.codahale.metrics.Metric;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.elasticsearch.action.ActionRequest;
 import org.elasticsearch.action.bulk.BulkAction;
@@ -11,7 +20,6 @@ import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.client.transport.TransportClient;
 import org.elasticsearch.common.bytes.BytesReference;
-import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -25,7 +33,8 @@ import java.util.Map;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ElasticMetricsReporterTest {
     private ElasticMetricsReporter sut;

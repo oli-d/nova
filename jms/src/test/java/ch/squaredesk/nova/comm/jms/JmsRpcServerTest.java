@@ -24,7 +24,6 @@ import org.junit.jupiter.api.Test;
 
 import javax.jms.*;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Function;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
@@ -77,7 +76,7 @@ class JmsRpcServerTest {
     @Test
     void subribeToIncomingRequests() throws Exception {
         Destination queue = jmsHelper.createQueue("subscribeToRequests");
-        TestSubscriber<RpcInvocation<String, String>> testSubscriber = sut.requests(queue, BackpressureStrategy.BUFFER).test();
+        TestSubscriber<RpcInvocation<String, String, JmsSpecificInfo>> testSubscriber = sut.requests(queue, BackpressureStrategy.BUFFER).test();
 
         jmsHelper.sendMessage(queue,"One");
         jmsHelper.sendRequest(queue,"Two");
@@ -91,7 +90,8 @@ class JmsRpcServerTest {
     @Test
     void completingRpcInvocationProperlyTriggersReplySending() throws Exception {
         Destination queue = jmsHelper.createQueue("completeRpc");
-        TestSubscriber<RpcInvocation<String, String>> testSubscriber = sut.requests(queue, BackpressureStrategy.BUFFER).test();
+        TestSubscriber<RpcInvocation<String, String, JmsSpecificInfo>> testSubscriber =
+                sut.requests(queue, BackpressureStrategy.BUFFER).test();
         Message requestMessage = jmsHelper.sendRequest(queue, "Two");
 
         int maxLoops = 10;
@@ -111,7 +111,8 @@ class JmsRpcServerTest {
     @Test
     void completingRpcInvocationExceptionallyTriggersReplySending() throws Exception {
         Destination queue = jmsHelper.createQueue("completeRpcExceptionally");
-        TestSubscriber<RpcInvocation<String, String>> testSubscriber = sut.requests(queue, BackpressureStrategy.BUFFER).test();
+        TestSubscriber<RpcInvocation<String, String, JmsSpecificInfo>> testSubscriber =
+                sut.requests(queue, BackpressureStrategy.BUFFER).test();
         Message requestMessage = jmsHelper.sendRequest(queue, "Boom");
 
         int maxLoops = 10;

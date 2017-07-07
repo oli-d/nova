@@ -23,7 +23,9 @@
         <module>parentpom</module>
 
         <module>core</module>
+        <module>spring-support</module>
         <module>event-annotations</module>
+
         <module>service</module>
 
         <module>metrics-elastic</module>
@@ -32,7 +34,9 @@
         <module>jms</module>
         <module>http</module>
         <module>kafka</module>
+        <module>rest-annotations</module>
     </modules>
+
 
     <!--<profiles>-->
         <!--<profile>-->

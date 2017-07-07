@@ -48,21 +48,11 @@ class JmsIncomingMessageDetailsCreatorTest {
 
     @Test
     void testCreateMessageDetails() throws JMSException {
-        Destination replyDestination = jmsHelper.createQueue("reply");
         Destination incomingDestination = jmsHelper.createQueue("incoming");
         Message message = jmsHelper.createMessage("payload");
         message.setJMSDestination(incomingDestination);
-        message.setJMSCorrelationID("c1");
-        message.setJMSReplyTo(replyDestination);
-        message.setObjectProperty("k1", "v1");
-        message.setObjectProperty("k3", "v2");
 
         IncomingMessageDetails<Destination, JmsSpecificInfo> details = sut.createMessageDetailsFor(message);
-        assertThat(details.transportSpecificDetails.correlationId, is("c1"));
-        assertThat(details.transportSpecificDetails.customHeaders.size(), is(2));
-        assertThat(details.transportSpecificDetails.customHeaders.get("k1"), is("v1"));
-        assertThat(details.transportSpecificDetails.customHeaders.get("k3"), is("v2"));
         assertThat(details.destination, is(incomingDestination));
-        assertThat(details.transportSpecificDetails.replyDestination, is(replyDestination));
     }
 }
