@@ -288,7 +288,7 @@ class JmsCommAdapterTest {
                         .take(1)
                         .test();
 
-        String reply = sut.sendRequest(queue,replyQueue,"request",null,5, SECONDS)
+        String reply = sut.sendRequest(queue,replyQueue,"request",null,35, SECONDS)
                 .blockingGet();
         assertThat(reply,is("request"));
         subscriber.assertEmpty();
