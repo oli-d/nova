@@ -36,7 +36,7 @@ class RestServerProvidingConfigurationTest {
     @Test
     void serverIsAutomaticallyStartedAndEndpointsAreRegistered() throws Exception {
         setupContext();
-        MatcherAssert.assertThat(HttpHelper.getResponseBody("http://localhost:8080/foo",null), Matchers.is("foo"));
+        MatcherAssert.assertThat(HttpHelper.getResponseBody("http://localhost:10000/foo",null), Matchers.is("foo"));
     }
 
     @Configuration

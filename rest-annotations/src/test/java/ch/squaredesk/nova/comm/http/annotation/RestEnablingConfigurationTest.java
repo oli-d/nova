@@ -42,9 +42,9 @@ class RestEnablingConfigurationTest {
     }
 
     @Test
-    void ifNothingSpecifiedRestServerListensOn8888OnAllInterfaces() throws Exception{
+    void ifNothingSpecifiedRestServerListensOn10000OnAllInterfaces() throws Exception{
         setupContext(MyConfig.class);
-        assertThat(serverConfiguration.port, is(8080));
+        assertThat(serverConfiguration.port, is(10000));
         assertThat(serverConfiguration.interfaceName, is("0.0.0.0"));
         assertTrue(resourceConfig.getResources().isEmpty());
     }

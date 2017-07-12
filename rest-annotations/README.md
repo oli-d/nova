@@ -42,7 +42,7 @@ The server is created with the following default settings:
 
 | Parameter / @Bean name | Environnment variable name    | Description                               | Default value |
 |------------------------|-------------------------------|-------------------------------------------|---------------|
-| restPort               | NOVA.HTTP.REST.PORT           | the port, the HTTP server listens on      | 8080          |
+| restPort               | NOVA.HTTP.REST.PORT           | the port, the HTTP server listens on      | 10000         |
 | interfaceName          | NOVA.HTTP.REST.INTERFACE_NAME | the interface, the HTTP server listens on | "0.0.0.0"     |
 
 
@@ -110,11 +110,11 @@ So, to show all of this in action, here's how you would create a simple echo ser
 
    Using ```curl``` you can verify that our little server indeed does what we expect from it:
    
-   * Running ```curl http://localhost:8080/echo?p1=data1``` will invoke ```echoParameterValue()``` 
+   * Running ```curl http://localhost:10000/echo?p1=data1``` will invoke ```echoParameterValue()``` 
    and return ```data1```
-   * Running ```curl http://localhost:8080/echo/data2``` will invoke ```echoPathValue()``` 
+   * Running ```curl http://localhost:10000/echo/data2``` will invoke ```echoPathValue()``` 
    and return ```data2```
-   * Running ```curl -X POST http://localhost:8080/echo -d "data3" -H "Content-Type:text/plain"```
+   * Running ```curl -X POST http://localhost:10000/echo -d "data3" -H "Content-Type:text/plain"```
     will invoke ```echoRequestObject()``` and return ```data3```
      
 ### Mixing rest-annotations and http
