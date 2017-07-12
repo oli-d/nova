@@ -218,7 +218,7 @@ public class HttpAdapter<MessageType> {
                 defaultRequestTimeUnit = TimeUnit.SECONDS;
             }
             if (serverPort==null) {
-                serverPort = 8080;
+                serverPort = 10000;
                 logger.warn("No HTTP server port specified, falling back to default " + serverPort);
             }
             return this;
