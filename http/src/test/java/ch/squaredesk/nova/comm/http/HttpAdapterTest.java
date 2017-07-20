@@ -98,8 +98,8 @@ class HttpAdapterTest {
         HttpAdapter<String> commAdapter = HttpAdapter.<String>builder()
                 .setMessageMarshaller(outgoingMessage -> outgoingMessage)
                 .setMessageUnmarshaller(incomingMessage -> incomingMessage)
-                .setMetrics(new Metrics())
                 .setHttpServer(httpServer)
+                .setMetrics(new Metrics())
                 .setErrorReplyFactory(t -> "Error: " + t.getMessage())
                 .build();
         TestObserver<String> observer = commAdapter.sendGetRequest("http://httpbin.org/post").test();
@@ -114,7 +114,6 @@ class HttpAdapterTest {
                 .setMessageUnmarshaller(incomingMessage -> incomingMessage)
                 .setMetrics(new Metrics())
                 .setErrorReplyFactory(t -> "Error: " + t.getMessage())
-                .setHttpServer(httpServer)
                 .build();
         TestObserver<String> observer = xxx
                 .sendRequest("http://httpbin.org/ip", "1", HttpRequestMethod.GET)
