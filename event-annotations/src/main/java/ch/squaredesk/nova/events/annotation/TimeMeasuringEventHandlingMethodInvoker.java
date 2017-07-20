@@ -11,24 +11,24 @@
 package ch.squaredesk.nova.events.annotation;
 
 import ch.squaredesk.nova.metrics.SettableGauge;
+import com.codahale.metrics.Timer;
 import io.reactivex.functions.Consumer;
 
 public class TimeMeasuringEventHandlingMethodInvoker implements Consumer<Object[]> {
-    private final SettableGauge gauge;
+    private final Timer timer;
     private final EventHandlingMethodInvoker delegate;
 
-    public TimeMeasuringEventHandlingMethodInvoker(SettableGauge gauge, EventHandlingMethodInvoker delegate) {
-        this.gauge = gauge;
+    public TimeMeasuringEventHandlingMethodInvoker(Timer timer, EventHandlingMethodInvoker delegate) {
+        this.timer = timer;
         this.delegate = delegate;
     }
 
     @Override
     public void accept (Object... data) {
-        long start = System.nanoTime();
+        Timer.Context ctx = timer.time();
 
         delegate.accept(data);
 
-        long differenceInNanos = System.nanoTime() - start;
-        gauge.setValue(differenceInNanos);
+        ctx.stop();
     }
 }

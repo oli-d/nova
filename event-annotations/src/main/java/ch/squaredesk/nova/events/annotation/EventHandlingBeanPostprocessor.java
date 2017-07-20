@@ -12,7 +12,7 @@ package ch.squaredesk.nova.events.annotation;
 
 import ch.squaredesk.nova.events.EventBus;
 import ch.squaredesk.nova.metrics.Metrics;
-import ch.squaredesk.nova.metrics.SettableGauge;
+import com.codahale.metrics.Timer;
 import io.reactivex.BackpressureStrategy;
 import io.reactivex.Flowable;
 import io.reactivex.functions.Consumer;
@@ -53,13 +53,9 @@ public class EventHandlingBeanPostprocessor implements BeanPostProcessor {
         EventHandlingMethodInvoker invoker = new EventHandlingMethodInvoker(objectToInvokeMethodOn, methodToInvoke, eventContext);
         Consumer<Object[]> eventConsumer = invoker;
         if (measureInvocationTime) {
-            String gaugeName = Metrics.name("invocationTime", identifier, objectToInvokeMethodOn.getClass().getSimpleName(), event);
-            SettableGauge gauge = (SettableGauge)metrics.getMetrics().get(gaugeName);
-            if (gauge==null) {
-                gauge = new SettableGauge();
-                metrics.register(gauge, gaugeName);
-            }
-            eventConsumer = new TimeMeasuringEventHandlingMethodInvoker(gauge, invoker);
+            String timerName = Metrics.name(identifier, "invocationTime", objectToInvokeMethodOn.getClass().getSimpleName(), event);
+            Timer timer = metrics.getTimer(timerName);
+            eventConsumer = new TimeMeasuringEventHandlingMethodInvoker(timer, invoker);
         }
         Flowable<Object[]> flowable = eventBus.on(event, backpressureStrategy);
         if (invokeOnBizLogicThread) {
