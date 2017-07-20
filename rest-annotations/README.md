@@ -9,11 +9,7 @@ handler method, simply by adding the annotation to your handling method.
 
 Let's start with an example:
 
-<<<<<<< HEAD
 ```Java
-=======
-```
->>>>>>> admin-work
 public class MyBean {
     @OnRestRequest("/foo")
     public String handle()  {
@@ -46,11 +42,7 @@ The server is created with the following default settings:
 
 | Parameter / @Bean name | Environnment variable name    | Description                               | Default value |
 |------------------------|-------------------------------|-------------------------------------------|---------------|
-<<<<<<< HEAD
 | restPort               | NOVA.HTTP.REST.PORT           | the port, the HTTP server listens on      | 10000         |
-=======
-| restPort               | NOVA.HTTP.REST.PORT           | the port, the HTTP server listens on      | 8080          |
->>>>>>> admin-work
 | interfaceName          | NOVA.HTTP.REST.INTERFACE_NAME | the interface, the HTTP server listens on | "0.0.0.0"     |
 
 
@@ -59,11 +51,7 @@ So, to show all of this in action, here's how you would create a simple echo ser
 
 1. Create a bean class that provides the echo handler
     
-<<<<<<< HEAD
     ```Java
-=======
-    ```
->>>>>>> admin-work
     public class EchoHandler {
         @OnRestRequest("/echo")
         public String echoParameterValue(@QueryParam("p1") String textFromCallerToEcho) {
@@ -89,11 +77,7 @@ So, to show all of this in action, here's how you would create a simple echo ser
     
 1. Create a configuration class that provides the handler bean and enables REST handling
     
-<<<<<<< HEAD
     ```Java
-=======
-    ```
->>>>>>> admin-work
     @Configuration
     @Import(RestServerProvidingConfiguration.class)
     public class EchoConfiguration {
@@ -106,11 +90,7 @@ So, to show all of this in action, here's how you would create a simple echo ser
     
 1. Create a starter class
     
-<<<<<<< HEAD
     ```Java
-=======
-    ```
->>>>>>> admin-work
     public class EchoStarter {
         public static void main(String[] args) throws Exception {
             AnnotationConfigApplicationContext ctx = new AnnotationConfigApplicationContext();
@@ -130,19 +110,11 @@ So, to show all of this in action, here's how you would create a simple echo ser
 
    Using ```curl``` you can verify that our little server indeed does what we expect from it:
    
-<<<<<<< HEAD
    * Running ```curl http://localhost:10000/echo?p1=data1``` will invoke ```echoParameterValue()``` 
    and return ```data1```
    * Running ```curl http://localhost:10000/echo/data2``` will invoke ```echoPathValue()``` 
    and return ```data2```
    * Running ```curl -X POST http://localhost:10000/echo -d "data3" -H "Content-Type:text/plain"```
-=======
-   * Running ```curl http://localhost:8080/echo?p1=data1``` will invoke ```echoParameterValue()``` 
-   and return ```data1```
-   * Running ```curl http://localhost:8080/echo/data2``` will invoke ```echoPathValue()``` 
-   and return ```data2```
-   * Running ```curl -X POST http://localhost:8080/echo -d "data3" -H "Content-Type:text/plain"```
->>>>>>> admin-work
     will invoke ```echoRequestObject()``` and return ```data3```
      
 ### Mixing rest-annotations and http
@@ -176,11 +148,7 @@ A common pattern is to split the configuration of your REST handler beans and Rp
 separate ```Configuration``` classes and use the ```@Order``` annotation on the latter one to signal Spring that it
 should process this as late as possible:
 
-<<<<<<< HEAD
 ```Java
-=======
-```
->>>>>>> admin-work
     @Configuration
     @Order
     @Import({RestEnablingConfiguration.class, NovaProvidingConfiguration.class, MyBeanConfig.class})
@@ -215,8 +183,4 @@ should process this as late as possible:
 * The ```HttpServerConfiguration``` bean is provided by the ```RestEnablingConfiguration``` and is 
 required to be able to instantiate the ```HttpServer```, which in turn is also required by ```the RpcServer```. 
 * ```MyServiceConfiguration``` is using the ```@Order``` annotation to signal the Spring framework that the creation 
-<<<<<<< HEAD
 of its beans should take lowest precedence.
-=======
-of its beans should take lowest precedence.
->>>>>>> admin-work

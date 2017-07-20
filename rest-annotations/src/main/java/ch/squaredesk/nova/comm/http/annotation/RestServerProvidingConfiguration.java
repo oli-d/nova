@@ -10,7 +10,6 @@
 
 package ch.squaredesk.nova.comm.http.annotation;
 
-<<<<<<< HEAD
 import ch.squaredesk.nova.Nova;
 import ch.squaredesk.nova.comm.http.HttpServerConfiguration;
 import com.codahale.metrics.Timer;
@@ -22,18 +21,12 @@ import org.glassfish.jersey.server.monitoring.RequestEvent;
 import org.glassfish.jersey.server.monitoring.RequestEventListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-=======
-import ch.squaredesk.nova.comm.http.HttpServerConfiguration;
-import org.glassfish.grizzly.http.server.HttpServer;
-import org.glassfish.jersey.server.ResourceConfig;
->>>>>>> admin-work
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.Lazy;
 
-<<<<<<< HEAD
 import javax.inject.Named;
 
 @Configuration
@@ -41,18 +34,12 @@ import javax.inject.Named;
 public class RestServerProvidingConfiguration {
     private Logger logger = LoggerFactory.getLogger(RestEnablingConfiguration.class);
 
-=======
-@Configuration
-@Import(RestEnablingConfiguration.class)
-public class RestServerProvidingConfiguration {
->>>>>>> admin-work
     @Autowired
     ResourceConfig resourceConfig;
 
     @Autowired
     HttpServerConfiguration serverConfig;
 
-<<<<<<< HEAD
     @Autowired
     @Named("captureRestMetrics")
     boolean captureMetrics;
@@ -60,8 +47,6 @@ public class RestServerProvidingConfiguration {
     @Autowired(required = false)
     Nova nova;
 
-=======
->>>>>>> admin-work
     @Bean
     RestServerStarter restServerStarter() {
         return new RestServerStarter();
@@ -70,7 +55,6 @@ public class RestServerProvidingConfiguration {
     @Lazy // must be created after all other beans have been created (because of annotation processing)
     @Bean
     public HttpServer restHttpServer() {
-<<<<<<< HEAD
         if (captureMetrics) {
             if (nova == null) {
                 logger.warn("Metrics capturing switched on but no Nova instance found in application context. " +
@@ -103,9 +87,6 @@ public class RestServerProvidingConfiguration {
             }
         }
 
-
-=======
->>>>>>> admin-work
         return RestServerFactory.serverFor(serverConfig, resourceConfig);
     }
 
