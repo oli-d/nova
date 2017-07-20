@@ -14,6 +14,7 @@ import ch.squaredesk.nova.comm.http.HttpServerConfiguration;
 import org.glassfish.jersey.server.ResourceConfig;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -27,18 +28,33 @@ class RestEnablingConfigurationTest {
     HttpServerConfiguration serverConfiguration;
     ResourceConfig resourceConfig;
 
-    private void setupContext(Class configClass) throws Exception {
+    private ApplicationContext setupContext(Class configClass) throws Exception {
         AnnotationConfigApplicationContext ctx = new AnnotationConfigApplicationContext();
         ctx.register(configClass);
         ctx.refresh();
         serverConfiguration = ctx.getBean(HttpServerConfiguration.class);
         resourceConfig = ctx.getBean(ResourceConfig.class);
+        return ctx;
     }
 
     @BeforeEach
     void clearEnvironment() {
         System.clearProperty("NOVA.HTTP.REST.INTERFACE_NAME");
         System.clearProperty("NOVA.HTTP.REST.PORT");
+        System.clearProperty("NOVA.HTTP.REST.CAPTURE_METRICS");
+    }
+
+    @Test
+    void ifNothingSpecifiedMetricsAreCaptured() throws Exception{
+        ApplicationContext ctx = setupContext(MyConfig.class);
+        assertThat(ctx.getBean("captureRestMetrics"), is(true));
+    }
+
+    @Test
+    void metricsCanBeSwitchedOffWithEnvVariable() throws Exception{
+        System.setProperty("NOVA.HTTP.REST.CAPTURE_METRICS", "false");
+        ApplicationContext ctx = setupContext(MyConfig.class);
+        assertThat(ctx.getBean("captureRestMetrics"), is(false));
     }
 
     @Test

@@ -10,15 +10,23 @@
 
 package ch.squaredesk.nova.comm.http.annotation;
 
+import ch.squaredesk.nova.Nova;
+import ch.squaredesk.nova.metrics.Metrics;
+import ch.squaredesk.nova.spring.NovaProvidingConfiguration;
 import org.glassfish.grizzly.http.server.HttpServer;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
+import sun.jvm.hotspot.utilities.Assert;
+
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
 
 class RestServerProvidingConfigurationTest {
     AnnotationConfigApplicationContext ctx = new AnnotationConfigApplicationContext();
@@ -36,11 +44,15 @@ class RestServerProvidingConfigurationTest {
     @Test
     void serverIsAutomaticallyStartedAndEndpointsAreRegistered() throws Exception {
         setupContext();
-        MatcherAssert.assertThat(HttpHelper.getResponseBody("http://localhost:10000/foo",null), Matchers.is("foo"));
+        Metrics metrics = ctx.getBean(Nova.class).metrics;
+        assertThat(metrics.getTimer("rest","foo").getCount(), is(0L));
+
+        assertThat(HttpHelper.getResponseBody("http://localhost:8080/foo",null), is("foo"));
+        assertThat(metrics.getTimer("rest","foo").getCount(), is(1L));
     }
 
     @Configuration
-    @Import(RestServerProvidingConfiguration.class)
+    @Import({RestServerProvidingConfiguration.class, NovaProvidingConfiguration.class})
     public static class MyConfig {
         @Bean
         public MyDummyBeanToHaveAtLeastOneRestEndpoint dummyBeanToHaveAtLeastOneRestEndpoint() {

@@ -32,10 +32,23 @@ public class RestEnablingConfiguration {
         return new ResourceConfig();
     }
 
+    @Bean(name = "captureRestMetrics")
+    public boolean captureRestMetrics() {
+        boolean captureMetrics = true;
+        try {
+            captureMetrics = Boolean.valueOf(environment.getProperty("NOVA.HTTP.REST.CAPTURE_METRICS", "true"));
+        } catch (Exception e) {
+            // noop, stick to default value
+        }
+
+        return captureMetrics;
+    }
+
     @Bean
     public HttpServerConfiguration restServerConfiguration() {
         int restPort = environment.getProperty("NOVA.HTTP.REST.PORT", Integer.class, 10000);
         String interfaceName = environment.getProperty("NOVA.HTTP.REST.INTERFACE_NAME", "0.0.0.0");
+
         return new HttpServerConfiguration(
             interfaceName,
             restPort

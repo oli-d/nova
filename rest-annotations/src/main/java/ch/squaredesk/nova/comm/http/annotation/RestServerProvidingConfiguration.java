@@ -10,23 +10,42 @@
 
 package ch.squaredesk.nova.comm.http.annotation;
 
+import ch.squaredesk.nova.Nova;
 import ch.squaredesk.nova.comm.http.HttpServerConfiguration;
+import com.codahale.metrics.Timer;
 import org.glassfish.grizzly.http.server.HttpServer;
 import org.glassfish.jersey.server.ResourceConfig;
+import org.glassfish.jersey.server.monitoring.ApplicationEvent;
+import org.glassfish.jersey.server.monitoring.ApplicationEventListener;
+import org.glassfish.jersey.server.monitoring.RequestEvent;
+import org.glassfish.jersey.server.monitoring.RequestEventListener;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.Lazy;
 
+import javax.inject.Named;
+
 @Configuration
 @Import(RestEnablingConfiguration.class)
 public class RestServerProvidingConfiguration {
+    private Logger logger = LoggerFactory.getLogger(RestEnablingConfiguration.class);
+
     @Autowired
     ResourceConfig resourceConfig;
 
     @Autowired
     HttpServerConfiguration serverConfig;
+
+    @Autowired
+    @Named("captureRestMetrics")
+    boolean captureMetrics;
+
+    @Autowired(required = false)
+    Nova nova;
 
     @Bean
     RestServerStarter restServerStarter() {
@@ -36,6 +55,39 @@ public class RestServerProvidingConfiguration {
     @Lazy // must be created after all other beans have been created (because of annotation processing)
     @Bean
     public HttpServer restHttpServer() {
+        if (captureMetrics) {
+            if (nova == null) {
+                logger.warn("Metrics capturing switched on but no Nova instance found in application context. " +
+                        "Metrics capturing therefore will NOT be performed!!!");
+            } else {
+                RequestEventListener requestEventListener = event -> {
+                    String eventId = event.getContainerRequest().getPath(true);
+                    Timer timer = nova.metrics.getTimer("rest", eventId);
+                    if (event.getType() == RequestEvent.Type.RESOURCE_METHOD_START) {
+                        event.getContainerRequest().setProperty("metricsContext", timer.time());
+                    } else if (event.getType() == RequestEvent.Type.RESOURCE_METHOD_FINISHED) {
+                        ((Timer.Context)event.getContainerRequest().getProperty("metricsContext")).stop();
+                        nova.metrics.getCounter("rest", eventId, "total").inc();
+                        if (event.getException()!=null) {
+                            nova.metrics.getCounter("rest", eventId, "errors").inc();
+                        }
+                    }
+                };
+
+                resourceConfig.register(new ApplicationEventListener() {
+                    @Override
+                    public void onEvent(ApplicationEvent event) {
+                    }
+
+                    @Override
+                    public RequestEventListener onRequest(RequestEvent requestEvent) {
+                        return requestEventListener;
+                    }
+                });
+            }
+        }
+
+
         return RestServerFactory.serverFor(serverConfig, resourceConfig);
     }
 
