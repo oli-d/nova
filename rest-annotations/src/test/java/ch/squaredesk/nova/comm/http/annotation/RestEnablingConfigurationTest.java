@@ -14,7 +14,10 @@ import ch.squaredesk.nova.comm.http.HttpServerConfiguration;
 import org.glassfish.jersey.server.ResourceConfig;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+<<<<<<< HEAD
 import org.springframework.context.ApplicationContext;
+=======
+>>>>>>> admin-work
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -28,19 +31,27 @@ class RestEnablingConfigurationTest {
     HttpServerConfiguration serverConfiguration;
     ResourceConfig resourceConfig;
 
+<<<<<<< HEAD
     private ApplicationContext setupContext(Class configClass) throws Exception {
+=======
+    private void setupContext(Class configClass) throws Exception {
+>>>>>>> admin-work
         AnnotationConfigApplicationContext ctx = new AnnotationConfigApplicationContext();
         ctx.register(configClass);
         ctx.refresh();
         serverConfiguration = ctx.getBean(HttpServerConfiguration.class);
         resourceConfig = ctx.getBean(ResourceConfig.class);
+<<<<<<< HEAD
         return ctx;
+=======
+>>>>>>> admin-work
     }
 
     @BeforeEach
     void clearEnvironment() {
         System.clearProperty("NOVA.HTTP.REST.INTERFACE_NAME");
         System.clearProperty("NOVA.HTTP.REST.PORT");
+<<<<<<< HEAD
         System.clearProperty("NOVA.HTTP.REST.CAPTURE_METRICS");
     }
 
@@ -61,6 +72,14 @@ class RestEnablingConfigurationTest {
     void ifNothingSpecifiedRestServerListensOn10000OnAllInterfaces() throws Exception{
         setupContext(MyConfig.class);
         assertThat(serverConfiguration.port, is(10000));
+=======
+    }
+
+    @Test
+    void ifNothingSpecifiedRestServerListensOn8888OnAllInterfaces() throws Exception{
+        setupContext(MyConfig.class);
+        assertThat(serverConfiguration.port, is(8080));
+>>>>>>> admin-work
         assertThat(serverConfiguration.interfaceName, is("0.0.0.0"));
         assertTrue(resourceConfig.getResources().isEmpty());
     }

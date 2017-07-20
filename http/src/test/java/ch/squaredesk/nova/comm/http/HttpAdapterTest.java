@@ -98,6 +98,7 @@ class HttpAdapterTest {
         HttpAdapter<String> commAdapter = HttpAdapter.<String>builder()
                 .setMessageMarshaller(outgoingMessage -> outgoingMessage)
                 .setMessageUnmarshaller(incomingMessage -> incomingMessage)
+                .setHttpServer(httpServer)
                 .setMetrics(new Metrics())
                 .setHttpServer(httpServer)
                 .setErrorReplyFactory(t -> "Error: " + t.getMessage())
