@@ -15,9 +15,11 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.BeanCreationException;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Component;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -31,6 +33,8 @@ public class NovaServiceTest {
         System.clearProperty("NOVA.SERVICE.CAPTURE_JVM_METRICS");
         System.clearProperty("NOVA.SERVICE.NAME");
         System.clearProperty("NOVA.SERVICE.INSTANCE_ID");
+        System.clearProperty("NOVA.SERVICE.CONFIG");
+        System.clearProperty("foo");
     }
 
     @Test
@@ -170,6 +174,44 @@ public class NovaServiceTest {
                         .replace("Config","")));
     }
 
+    @Test
+    void defaultConfigsLoadedAutomaticallyIfPresent() {
+        AnnotationConfigApplicationContext ctx = new AnnotationConfigApplicationContext();
+        ctx.register(MyConfig.class);
+        ctx.refresh();
+        assertThat(ctx.getBean("foo"), is ("bar"));
+    }
+
+    @Test
+    void noProblemIfSpecificConfigFileDoesNotExist() {
+        System.setProperty("NOVA.SERVICE.CONFIG", "doesn'tExist");
+        AnnotationConfigApplicationContext ctx = new AnnotationConfigApplicationContext();
+        ctx.register(MyConfig.class);
+        ctx.refresh();
+        assertThat(ctx.getBean("foo"), is ("bar"));
+    }
+
+    @Test
+    void specificConfigFileIsLoadedIfPresentAndOverridesDefaultConfig() {
+        System.setProperty("NOVA.SERVICE.CONFIG", "override.properties");
+        AnnotationConfigApplicationContext ctx = new AnnotationConfigApplicationContext();
+        ctx.register(MyConfig.class);
+        ctx.refresh();
+        assertThat(ctx.getBean("foo"), is ("baz"));
+    }
+
+    @Test
+    void specificConfigItemsCanAlsoBeSetViaEnvironmentVariable() {
+        System.setProperty("foo", "baz");
+        AnnotationConfigApplicationContext ctx = new AnnotationConfigApplicationContext();
+        ctx.register(MyConfig.class);
+        ctx.refresh();
+        assertThat(ctx.getBean("foo"), is ("baz"));
+    }
+
+
+
+
     @Component
     public static class MyBrokenInitService extends NovaService {
         @Override
@@ -224,9 +266,17 @@ public class NovaServiceTest {
 
     @Configuration
     public static class MyConfig extends NovaServiceConfiguration<MyService> {
+        @Autowired
+        Environment env;
+
         @Bean
         public MyService serviceInstance() {
             return new MyService();
+        }
+
+        @Bean
+        public String foo() {
+            return env.getProperty("foo");
         }
     }
 

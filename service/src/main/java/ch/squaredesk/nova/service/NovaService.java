@@ -19,6 +19,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import javax.annotation.PostConstruct;
+import javax.annotation.PreDestroy;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.Objects;
@@ -71,6 +72,7 @@ public abstract class NovaService {
         logger.info("Service {}, instance {} up and running.", serviceName, instanceId);
     }
 
+    @PreDestroy
     public void shutdown() {
         logger.info("Service {}, instance {} is shutting down...", serviceName, instanceId);
         try {

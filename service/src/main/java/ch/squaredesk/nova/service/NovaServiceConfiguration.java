@@ -17,6 +17,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
+import org.springframework.context.annotation.PropertySource;
 import org.springframework.core.env.Environment;
 
 import java.util.Optional;
@@ -24,6 +25,9 @@ import java.util.UUID;
 import java.util.stream.Stream;
 
 @Configuration
+@PropertySource(value="classpath:defaults.properties", ignoreResourceNotFound = true)
+@PropertySource(value="file:${NOVA.SERVICE.CONFIG}", ignoreResourceNotFound = true)
+@PropertySource(value="classpath:${NOVA.SERVICE.CONFIG}", ignoreResourceNotFound = true)
 @Import({AnnotationEnablingConfiguration.class, NovaProvidingConfiguration.class})
 public abstract class NovaServiceConfiguration<ServiceType>  {
     @Autowired
