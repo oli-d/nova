@@ -13,9 +13,7 @@ package ch.squaredesk.nova.events.annotation;
 import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Method;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
@@ -32,7 +30,7 @@ public class BeanExaminerTest {
     }
 
     @Test
-    void consumerCalledForAllAnnotatedMethods() {
+    void allAnnotatedMethodsFound() {
         class MyClass {
             @OnEvent("e1")
             public void m1() {}
@@ -43,6 +41,7 @@ public class BeanExaminerTest {
         }
 
         EventHandlerDescription[] detectedHandlers = sut.examine(new MyClass());
+        Arrays.sort(detectedHandlers, Comparator.comparing(handler -> handler.methodToInvoke.getName()));
         assertThat(detectedHandlers.length, is(3));
         assertThat(detectedHandlers[0].methodToInvoke.getName(), is("m1"));
         assertThat(detectedHandlers[1].methodToInvoke.getName(), is("m2"));
@@ -59,9 +58,7 @@ public class BeanExaminerTest {
         }
 
         EventHandlerDescription[] detectedHandlers = sut.examine(new MyClass());
-        assertThat(detectedHandlers.length, is(3));
-        assertThat(detectedHandlers[0].methodToInvoke.getName(), is("m1"));
-        assertThat(detectedHandlers[1].methodToInvoke.getName(), is("m1"));
-        assertThat(detectedHandlers[2].methodToInvoke.getName(), is("m1"));
+        assertThat(detectedHandlers.length, is(1));
+        assertThat(Arrays.asList(detectedHandlers[0].events), containsInAnyOrder("e1","e2","e3"));
     }
 }
