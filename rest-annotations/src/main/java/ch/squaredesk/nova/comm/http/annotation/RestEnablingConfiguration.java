@@ -10,26 +10,43 @@
 
 package ch.squaredesk.nova.comm.http.annotation;
 
+import ch.squaredesk.nova.Nova;
 import ch.squaredesk.nova.comm.http.HttpServerConfiguration;
+import com.codahale.metrics.Timer;
+import org.glassfish.grizzly.http.server.HttpServer;
+import org.glassfish.jersey.grizzly2.httpserver.GrizzlyHttpServerFactory;
 import org.glassfish.jersey.server.ResourceConfig;
+import org.glassfish.jersey.server.monitoring.ApplicationEvent;
+import org.glassfish.jersey.server.monitoring.ApplicationEventListener;
+import org.glassfish.jersey.server.monitoring.RequestEvent;
+import org.glassfish.jersey.server.monitoring.RequestEventListener;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Lazy;
+import org.springframework.core.Ordered;
+import org.springframework.core.annotation.Order;
 import org.springframework.core.env.Environment;
 
+import javax.ws.rs.core.UriBuilder;
+import java.net.URI;
+
 @Configuration
+@Order(value = Ordered.LOWEST_PRECEDENCE-10)
 public class RestEnablingConfiguration {
     @Autowired
     Environment environment;
+    @Autowired
+    ApplicationContext applicationContext;
+    @Autowired
+    Nova nova;
 
     @Bean
-    public RestBeanPostprocessor getBeanPostProcessor() {
-        return new RestBeanPostprocessor(resourceConfig());
-    }
-
-    @Bean
-    public ResourceConfig resourceConfig() {
-        return new ResourceConfig();
+    public static RestBeanPostprocessor restBeanPostProcessor() {
+        return new RestBeanPostprocessor();
     }
 
     @Bean(name = "captureRestMetrics")
@@ -53,5 +70,48 @@ public class RestEnablingConfiguration {
             interfaceName,
             restPort
         );
+    }
+
+    @Bean
+    RestServerStarter restServerStarter() {
+        return new RestServerStarter();
+    }
+
+    @Lazy // must be created after all other beans have been created (because of annotation processing)
+    @Bean
+    public HttpServer restHttpServer() {
+        RestBeanPostprocessor restBeanPostprocessor = applicationContext.getBean(RestBeanPostprocessor.class);
+        ResourceConfig resourceConfig = restBeanPostprocessor.resourceConfig;
+
+        if (captureRestMetrics() && nova != null) {
+            RequestEventListener requestEventListener = event -> {
+                String eventId = event.getContainerRequest().getPath(true);
+                Timer timer = nova.metrics.getTimer("rest", eventId);
+                if (event.getType() == RequestEvent.Type.RESOURCE_METHOD_START) {
+                    event.getContainerRequest().setProperty("metricsContext", timer.time());
+                } else if (event.getType() == RequestEvent.Type.RESOURCE_METHOD_FINISHED) {
+                    ((Timer.Context) event.getContainerRequest().getProperty("metricsContext")).stop();
+                    nova.metrics.getCounter("rest", eventId, "total").inc();
+                    if (event.getException() != null) {
+                        nova.metrics.getCounter("rest", eventId, "errors").inc();
+                    }
+                }
+            };
+
+            resourceConfig.register(new ApplicationEventListener() {
+                @Override
+                public void onEvent(ApplicationEvent event) {
+                }
+
+                @Override
+                public RequestEventListener onRequest(RequestEvent requestEvent) {
+                    return requestEventListener;
+                }
+            });
+        }
+
+        URI serverAddress = UriBuilder.fromPath("http://" + restServerConfiguration().interfaceName + ":" +
+                restServerConfiguration().port).build();
+        return GrizzlyHttpServerFactory.createHttpServer(serverAddress, resourceConfig, false);
     }
 }

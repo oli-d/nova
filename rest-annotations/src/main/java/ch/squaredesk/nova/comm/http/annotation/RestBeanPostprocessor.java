@@ -10,9 +10,20 @@
 
 package ch.squaredesk.nova.comm.http.annotation;
 
+import ch.squaredesk.nova.comm.http.HttpServerConfiguration;
+import org.glassfish.grizzly.http.server.HttpServer;
 import org.glassfish.jersey.server.ResourceConfig;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.config.BeanPostProcessor;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationEvent;
+import org.springframework.context.ApplicationListener;
+import org.springframework.context.event.ContextRefreshedEvent;
+
+import javax.annotation.PreDestroy;
+import java.io.IOException;
 
 
 /**
@@ -27,12 +38,9 @@ import org.springframework.beans.factory.config.BeanPostProcessor;
  * the Spring dependency
  */
 public class RestBeanPostprocessor implements BeanPostProcessor {
-    private final ResourceConfig resourceConfig;
     private final BeanExaminer beanExaminer = new BeanExaminer();
 
-    RestBeanPostprocessor(ResourceConfig resourceConfig) {
-        this.resourceConfig = resourceConfig;
-    }
+    final ResourceConfig resourceConfig = new ResourceConfig();
 
 
     @Override
@@ -44,7 +52,6 @@ public class RestBeanPostprocessor implements BeanPostProcessor {
     public Object postProcessAfterInitialization(Object bean, String beanName) throws BeansException {
         RestEndpoint[] restEndpoints = beanExaminer.restEndpointsIn(bean);
         for (RestEndpoint endpointDescription: restEndpoints) {
-            // TODO: handle with wrapper that logs and provides metrics
             resourceConfig.registerResources(RestResourceFactory.resourceFor(endpointDescription.resourceDescriptor, bean, endpointDescription.handlerMethod));
         }
         return bean;

@@ -135,52 +135,39 @@ library we use does not allow the addition of new REST handlers after the server
 contrast to "normal" HTTP handlers (used in the [http](../http/README-md) communication package), 
 that are allowed to be added at any time.
 
-To be able to control the creation of the ```HttpServer``` bean as well as its lifecycle it is therefore 
-not feasible to import ```RestServerProvidingConfiguration``` as in the examples above. For that reason we provide 
-yet another ```Configuration``` class called ```RestEnablingConfiguration``` . This class provides the default server 
-settings (via an appropriate ```HttpServerConfiguration``` bean) as described above and the required 
-```BeanPostProcessor```, but does __NOT__ automatically create nor start the ```HttpServer``` bean. 
+The result of this is that you have to take care of how you instantiate the HTTP ```RPCServer```. For the reasons described
+above, it is unfortunately __not__ safe to simply import ```RestServerProvidingConfiguration``` into your custom config, have
+the HttpServer ```@Autowired``` and inject it into the ```RPCServer```'s constructor.
 
-This in fact has to be done in your custom config after all REST handler beans were instantiated. It can easily
-be done by passing the aforementioned ```HttpServerConfiguration``` bean to the ```RestServerFactory```. 
+Instead, we suggest that you
+* declare your Configuration class to be loaded last via Spring's ```@Order``` annotation
+* declare your ```RpcServer``` to be instantiated ```@Lazy```ly
+* and retrieve the ```HttpServer``` instance via the ```ApplicationContext```
 
-A common pattern is to split the configuration of your REST handler beans and RpcServer + HttpServer beans into two 
-separate ```Configuration``` classes and use the ```@Order``` annotation on the latter one to signal Spring that it
-should process this as late as possible:
+like this:
 
 ```Java
-    @Configuration
-    @Order
-    @Import({RestEnablingConfiguration.class, NovaProvidingConfiguration.class, MyBeanConfig.class})
-    public class MyServiceConfig  {
-        @Autowired
-        ResourceConfig resourceConfig;
+@Configuration
+@Order
+@Import({NovaProvidingConfiguration.class, RestEnablingConfiguration.class})
+public static class MyMixedConfig  {
+    @Autowired
+    ApplicationContext applicationContext;
 
-        @Autowired
-        HttpServerConfiguration serverConfig;
+    @Autowired
+    public Nova nova;
 
-        @Autowired
-        public Nova nova;
-
-        @Bean
-        public HttpServer httpServer() {
-            return RestServerFactory.serverFor(serverConfig, resourceConfig);
-        }
-
-        @Bean
-        @Lazy
-        public RpcServer<String> rpcServer() {
-            return new RpcServer<>(httpServer(), s->s, s->s, nova.metrics );
-        }
+    @Bean
+    public MyBeanWithRestAnnotations myBeanWithRestAnnotations() {
+        return new MyBeanWithRestAnnotations();
     }
+
+    @Bean
+    @Lazy
+    public RpcServer<String> rpcServer() {
+        HttpServer httpServer = applicationContext.getBean(HttpServer.class);
+        return new RpcServer<>(httpServer, s->s, s->s, nova.metrics );
+    }
+}
 ```
 
-* We only define the HTTP related beans in ```MyServiceConfiguration``` and import all other beans from additional
-```Configuration``` classes. 
-* ```MyBeanConfig``` is providing all REST handler and other beans. 
-* ```NovaProvidingConfiguration``` is imported to have the ```Nova``` bean available, which is required to create the 
-```RpcServer```. 
-* The ```HttpServerConfiguration``` bean is provided by the ```RestEnablingConfiguration``` and is 
-required to be able to instantiate the ```HttpServer```, which in turn is also required by ```the RpcServer```. 
-* ```MyServiceConfiguration``` is using the ```@Order``` annotation to signal the Spring framework that the creation 
-of its beans should take lowest precedence.

@@ -19,6 +19,4 @@ public class RestEndpoint {
         this.resourceDescriptor = resourceDescriptor;
         this.handlerMethod = handlerMethod;
     }
-
-
 }

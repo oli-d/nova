@@ -10,8 +10,13 @@
 
 package ch.squaredesk.nova.comm.http.annotation;
 
+import ch.squaredesk.nova.Nova;
 import ch.squaredesk.nova.comm.http.HttpServerConfiguration;
+import ch.squaredesk.nova.metrics.Metrics;
+import ch.squaredesk.nova.spring.NovaProvidingConfiguration;
+import org.glassfish.grizzly.http.server.HttpServer;
 import org.glassfish.jersey.server.ResourceConfig;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.context.ApplicationContext;
@@ -27,13 +32,14 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class RestEnablingConfigurationTest {
     HttpServerConfiguration serverConfiguration;
     ResourceConfig resourceConfig;
+    AnnotationConfigApplicationContext ctx;
 
     private ApplicationContext setupContext(Class configClass) throws Exception {
-        AnnotationConfigApplicationContext ctx = new AnnotationConfigApplicationContext();
+        ctx = new AnnotationConfigApplicationContext();
         ctx.register(configClass);
         ctx.refresh();
         serverConfiguration = ctx.getBean(HttpServerConfiguration.class);
-        resourceConfig = ctx.getBean(ResourceConfig.class);
+        resourceConfig = ctx.getBean(RestBeanPostprocessor.class).resourceConfig;
         return ctx;
     }
 
@@ -42,6 +48,11 @@ class RestEnablingConfigurationTest {
         System.clearProperty("NOVA.HTTP.REST.INTERFACE_NAME");
         System.clearProperty("NOVA.HTTP.REST.PORT");
         System.clearProperty("NOVA.HTTP.REST.CAPTURE_METRICS");
+    }
+
+    @AfterEach
+    void shutdown() throws Exception {
+        ctx.getBean(HttpServer.class).shutdown().get();
     }
 
     @Test
@@ -88,12 +99,12 @@ class RestEnablingConfigurationTest {
     }
 
     @Configuration
-    @Import(RestEnablingConfiguration.class)
+    @Import({RestEnablingConfiguration.class, NovaProvidingConfiguration.class })
     public static class MyConfig {
     }
 
     @Configuration
-    @Import(RestEnablingConfiguration.class)
+    @Import({RestEnablingConfiguration.class, NovaProvidingConfiguration.class})
     public static class MyConfigWithAnnotatedBean {
         @Bean
         public MyDummyBeanToHaveAtLeastOneRestEndpoint dummyBeanToHaveAtLeastOneRestEndpoint() {
