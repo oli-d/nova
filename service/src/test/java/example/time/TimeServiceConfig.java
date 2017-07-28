@@ -9,30 +9,24 @@
  */
 package example.time;
 
-import ch.squaredesk.nova.comm.http.annotation.RestServerProvidingConfiguration;
+import ch.squaredesk.nova.comm.http.annotation.RestEnablingConfiguration;
 import ch.squaredesk.nova.service.NovaServiceConfiguration;
-import org.glassfish.grizzly.http.server.HttpServer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.core.env.Environment;
 
 @Configuration
-@Import(RestServerProvidingConfiguration.class)
+@Import(RestEnablingConfiguration.class)
 public class TimeServiceConfig extends NovaServiceConfiguration<TimeService> {
     @Autowired
     Environment env;
 
-    @Autowired
-    @Lazy
-    HttpServer restHttpServer;
-
     @Override
     @Bean
     public TimeService serviceInstance() {
-        return new TimeService(restHttpServer);
+        return new TimeService();
     }
 
     @Bean

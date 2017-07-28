@@ -11,6 +11,7 @@
 package ch.squaredesk.nova.service;
 
 import ch.squaredesk.nova.Nova;
+import ch.squaredesk.nova.service.annotation.LifecycleBeanProcessor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,6 +34,12 @@ public abstract class NovaService {
     protected final Logger logger;
 
     @Autowired
+    AnnotationConfigApplicationContext applicationContext;
+    @Autowired
+    boolean registerShutdownHook;
+    @Autowired
+    LifecycleBeanProcessor lifecycleBeanProcessor;
+    @Autowired
     protected Nova nova;
     @Autowired
     protected String instanceId;
@@ -43,15 +50,16 @@ public abstract class NovaService {
         this.logger = LoggerFactory.getLogger(getClass());
     }
 
-    @PostConstruct
     private void doInit() {
         Objects.requireNonNull(nova);
 
+        if (registerShutdownHook) {
+            Runtime.getRuntime().addShutdownHook(new Thread(()->shutdown()));
+        }
         try {
-            onInit();
+            lifecycleBeanProcessor.invokeInitHandlers();
         } catch (Throwable t) {
-            logger.error("Unable to initialize service " + serviceName,t);
-            throw new RuntimeException(t);
+            throw t;
         }
     }
 
@@ -61,10 +69,9 @@ public abstract class NovaService {
         }
 
         try {
-            onStart();
+            lifecycleBeanProcessor.invokeStartupHandlers();
         } catch (Throwable t) {
-            logger.error("Unable to initialize service " + serviceName, t);
-            throw new RuntimeException("unable to start service due to uncaught exception", t);
+            throw t;
         }
 
         lifeline.start();
@@ -72,38 +79,23 @@ public abstract class NovaService {
         logger.info("Service {}, instance {} up and running.", serviceName, instanceId);
     }
 
-    @PreDestroy
     public void shutdown() {
-        logger.info("Service {}, instance {} is shutting down...", serviceName, instanceId);
-        try {
-            onShutdown();
-        } catch (Exception e) {
-            logger.warn("Error in shutdown procedure of instance " + instanceId,e);
+        if (started) {
+            logger.info("Service {}, instance {} is shutting down...", serviceName, instanceId);
+            try {
+                lifecycleBeanProcessor.invokeShutdownHandlers();
+            } catch (Exception e) {
+                logger.warn("Error in shutdown procedure of instance " + instanceId,e);
+            }
+
+            lifeline.cut();
+            lifeline = new Lifeline();
+            started = false;
+
+            applicationContext.close();
+
+            logger.info("Shutdown procedure completed for service {}, instance {}.", serviceName, instanceId);
         }
-
-        lifeline.cut();
-        lifeline = new Lifeline();
-        started = false;
-
-        logger.info("Shutdown procedure completed for service {}, instance {}.", serviceName, instanceId);
-    }
-
-    /**
-     * Extension point for sub classes
-     */
-    protected void onInit() throws Exception {
-    }
-
-    /**
-     * Extension point for sub classes
-     */
-    protected void onStart() throws Exception {
-    }
-
-    /**
-     * Extension point for sub classes
-     */
-    protected void onShutdown() {
     }
 
     public boolean isStarted() {
@@ -126,7 +118,7 @@ public abstract class NovaService {
             }
         }
 
-        public void cut() {
+        void cut() {
             shutdownLatch.countDown();
         }
     }
@@ -171,7 +163,8 @@ public abstract class NovaService {
         ctx.register(configurationClass);
         ctx.refresh();
 
-        return ctx.getBean(serviceClass);
+        T service = ctx.getBean(serviceClass);
+        ((NovaService)service).doInit();
+        return service;
     }
-
 }

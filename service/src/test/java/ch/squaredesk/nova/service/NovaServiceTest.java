@@ -11,9 +11,13 @@
 package ch.squaredesk.nova.service;
 
 import ch.squaredesk.nova.Nova;
+import ch.squaredesk.nova.service.annotation.OnServiceInit;
+import ch.squaredesk.nova.service.annotation.OnServiceShutdown;
+import ch.squaredesk.nova.service.annotation.OnServiceStartup;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.BeanCreationException;
+import org.springframework.beans.factory.BeanInitializationException;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
@@ -21,6 +25,8 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Component;
+
+import javax.annotation.PostConstruct;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
@@ -34,6 +40,7 @@ public class NovaServiceTest {
         System.clearProperty("NOVA.SERVICE.NAME");
         System.clearProperty("NOVA.SERVICE.INSTANCE_ID");
         System.clearProperty("NOVA.SERVICE.CONFIG");
+        System.clearProperty("NOVA.SERVICE.REGISTER_SHUTDOWNOOK");
         System.clearProperty("foo");
     }
 
@@ -50,7 +57,7 @@ public class NovaServiceTest {
     @Test
     void serviceCannotBeCreatedWithConfigThatDoesntReturnNovaInstance() {
         assertThrows(
-                BeanCreationException.class,
+                NullPointerException.class,
                 () -> MyService.createInstance(MyService.class, MyCrippledConfig.class));
     }
 
@@ -71,14 +78,14 @@ public class NovaServiceTest {
     }
 
     @Test
-    void notStartedServiceCanBeShutdown() {
+    void notStartedServiceCanBeShutdownButNothingIsDoneInThatCase() {
         MyService sut = MyService.createInstance(MyService.class, MyConfig.class);
 
         assertFalse(sut.isStarted());
         sut.shutdown();
         assertFalse(sut.isStarted());
         assertThat(sut.onStartInvocations,is(0));
-        assertThat(sut.onShutdownInvocations,is(1));
+        assertThat(sut.onShutdownInvocations,is(0));
     }
 
     @Test
@@ -86,12 +93,12 @@ public class NovaServiceTest {
         MyBrokenStartService sut = MyBrokenStartService
                 .createInstance(MyBrokenStartService.class, MyConfigForBrokenStartService.class);
         Throwable t = assertThrows(RuntimeException.class, sut::start);
-        assertThat(t.getMessage(), containsString("unable to start"));
+        assertThat(t.getMessage(), containsString("Error invoking startup handler"));
     }
 
     @Test
     void exceptionInOnInitPreventsServiceCreation() {
-        assertThrows(BeanCreationException.class,
+        assertThrows(BeanInitializationException.class,
                 () -> MyBrokenInitService.createInstance(MyBrokenInitService.class, MyConfigForBrokenInitService.class));
     }
 
@@ -124,13 +131,7 @@ public class NovaServiceTest {
 
     @Test
     void lifecycleCallbacksAreBeingInvoked() {
-        AnnotationConfigApplicationContext ctx =
-                new AnnotationConfigApplicationContext();
-
-        ctx.register(MyConfig.class);
-        ctx.refresh();
-
-        MyService sut = ctx.getBean(MyService.class);
+        MyService sut = NovaService.createInstance(MyService.class, MyConfig.class);
 
         assertFalse(sut.isStarted());
         assertThat(sut.onInitInvocations,is(1));
@@ -177,7 +178,7 @@ public class NovaServiceTest {
     @Test
     void defaultConfigsLoadedAutomaticallyIfPresent() {
         AnnotationConfigApplicationContext ctx = new AnnotationConfigApplicationContext();
-        ctx.register(MyConfig.class);
+        ctx.register(MyConfigWithProperty.class);
         ctx.refresh();
         assertThat(ctx.getBean("foo"), is ("bar"));
     }
@@ -186,7 +187,7 @@ public class NovaServiceTest {
     void noProblemIfSpecificConfigFileDoesNotExist() {
         System.setProperty("NOVA.SERVICE.CONFIG", "doesn'tExist");
         AnnotationConfigApplicationContext ctx = new AnnotationConfigApplicationContext();
-        ctx.register(MyConfig.class);
+        ctx.register(MyConfigWithProperty.class);
         ctx.refresh();
         assertThat(ctx.getBean("foo"), is ("bar"));
     }
@@ -195,7 +196,7 @@ public class NovaServiceTest {
     void specificConfigFileIsLoadedIfPresentAndOverridesDefaultConfig() {
         System.setProperty("NOVA.SERVICE.CONFIG", "override.properties");
         AnnotationConfigApplicationContext ctx = new AnnotationConfigApplicationContext();
-        ctx.register(MyConfig.class);
+        ctx.register(MyConfigWithProperty.class);
         ctx.refresh();
         assertThat(ctx.getBean("foo"), is ("baz"));
     }
@@ -204,7 +205,7 @@ public class NovaServiceTest {
     void specificConfigItemsCanAlsoBeSetViaEnvironmentVariable() {
         System.setProperty("foo", "baz");
         AnnotationConfigApplicationContext ctx = new AnnotationConfigApplicationContext();
-        ctx.register(MyConfig.class);
+        ctx.register(MyConfigWithProperty.class);
         ctx.refresh();
         assertThat(ctx.getBean("foo"), is ("baz"));
     }
@@ -214,16 +215,16 @@ public class NovaServiceTest {
 
     @Component
     public static class MyBrokenInitService extends NovaService {
-        @Override
-        protected void onInit() {
+        @OnServiceInit
+        public void onInit() {
             throw new RuntimeException("for test");
         }
     }
 
     @Component
     public static class MyBrokenStartService extends NovaService {
-        @Override
-        protected void onStart() {
+        @OnServiceStartup
+        public void onStart() {
             throw new RuntimeException("for test");
         }
     }
@@ -234,18 +235,18 @@ public class NovaServiceTest {
         private int onStartInvocations = 0;
         private int onShutdownInvocations = 0;
 
-        @Override
-        protected void onInit() {
+        @OnServiceInit
+        public void onInit() {
             onInitInvocations++;
         }
 
-        @Override
-        protected void onStart() {
+        @OnServiceStartup
+        public void onStart() {
             onStartInvocations++;
         }
 
-        @Override
-        protected void onShutdown() {
+        @OnServiceShutdown
+        public void onShutdown() {
             onShutdownInvocations++;
         }
     }
@@ -273,6 +274,17 @@ public class NovaServiceTest {
         public MyService serviceInstance() {
             return new MyService();
         }
+    }
+
+    @Configuration
+    public static class MyConfigWithProperty extends NovaServiceConfiguration<MyService> {
+        @Autowired
+        Environment env;
+
+        @Bean
+        public MyService serviceInstance() {
+            return new MyService();
+        }
 
         @Bean
         public String foo() {
@@ -292,6 +304,7 @@ public class NovaServiceTest {
     public static class MyConfigForBrokenInitService extends NovaServiceConfiguration<MyBrokenInitService> {
         @Bean
         public MyBrokenInitService serviceInstance() {
+            System.out.println("--- " + Thread.currentThread() + " - service instance creation");
             return new MyBrokenInitService();
         }
     }

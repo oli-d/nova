@@ -13,13 +13,12 @@ package ch.squaredesk.nova.service;
 
 import ch.squaredesk.nova.events.annotation.AnnotationEnablingConfiguration;
 import ch.squaredesk.nova.events.annotation.NovaProvidingConfiguration;
+import ch.squaredesk.nova.service.annotation.LifecycleBeanProcessor;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Import;
-import org.springframework.context.annotation.PropertySource;
+import org.springframework.context.annotation.*;
 import org.springframework.core.env.Environment;
 
+import javax.annotation.PostConstruct;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Stream;
@@ -50,6 +49,23 @@ public abstract class NovaServiceConfiguration<ServiceType>  {
         }
 
         return name;
+    }
+
+    @Bean
+    public static LifecycleBeanProcessor lifecycleBeanProcessor() {
+        return new LifecycleBeanProcessor();
+    }
+
+    @Bean
+    public boolean registerShutdownHook() {
+        boolean registerShutdownHook = true;
+        try {
+            registerShutdownHook = Boolean.parseBoolean(
+                    environment.getProperty("NOVA.SERVICE.REGISTER_SHUTDOWN_HOOK", "TRUE"));
+        } catch (Exception e) {
+            // noop, stick with default
+        }
+        return registerShutdownHook;
     }
 
     public abstract ServiceType serviceInstance();

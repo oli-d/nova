@@ -10,21 +10,16 @@
 package example.time;
 
 import ch.squaredesk.nova.service.NovaService;
-import org.glassfish.grizzly.http.server.HttpServer;
+import ch.squaredesk.nova.service.annotation.OnServiceInit;
+import ch.squaredesk.nova.service.annotation.OnServiceStartup;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 
 public class TimeService extends NovaService {
-    private final HttpServer httpServer;
-
-    public TimeService(HttpServer httpServer) {
-        this.httpServer = httpServer;
-    }
-
-    @Override
-    protected void onShutdown() {
-        httpServer.shutdown();
+    @OnServiceInit
+    public void sayHello() {
+        System.out.println("Initializing the TimeServer...");
     }
 
     public static void main(String[] args) {

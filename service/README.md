@@ -32,21 +32,20 @@ headaches trying to properly monitor system metrics.
 
 ### The Service lifecycle
 
-The service can be in one of the following three states: new, initialized or started.
+The service lifecycle is rather simple. A service can either be
+* initialized (after ```createInstance()``` was invoked)
+* started (after ```start()``` was invoked)
+* or shut down (after ```shutdown()``` was invoked)
 
-You can switch between those states by calling one of the following methods
-* ```createInstance()``` - creates a new instance and initializes it
-* ```start()``` - changes the state from initialized to started. ```start()``` blocks the
-calling thread, i.e. as long as you invoke this method from a non-daemon thread, your VM
-will not exit
-* ```shutdown()``` - changes the state from started to initialized. Calling this method
-unblocks the thread that invoked ```start()```
+You can react on each of those state transition by implementing a callback method (which must
+be declared public, return void and accept no parameters) and annotate it with one of the following
+annotations:
+* ```@OnServiceInit```
+* ```@OnServiceStartup```
+* ```@OnServiceShutdown```
 
-For each of those state transition a callback method is invoked that can be implemented
-by the concrete sub classes:
-* ```onInit()```
-* ```onStart()```
-* ```onShutdown()```
+Uncaught exceptions thrown in the ```@OnServiceInit``` or ```@OnServiceStartup``` will prevent
+the service to be properly started and shut down the JVM.
 
 ### The ```Nova``` instance
 
@@ -55,7 +54,7 @@ can do with it, check the documentation of the [nova core](../core/README.md) ar
 
 ### Annotation-based event handling
 
-This is enbaled by default. For details check [event-annotations](../event-annotations/README.md) artifact.
+This is enabled by default. For details check [event-annotations](../event-annotations/README.md) artifact.
 
 ### Configuration management
 
@@ -113,15 +112,9 @@ First thing we need is an appropriate "main" or "starter" class, let's call it `
 
 ```Java
 public class TimeService extends NovaService {
-    private final HttpServer httpServer;
-
-    public TimeService(HttpServer httpServer) {
-        this.httpServer = httpServer;
-    }
-
-    @Override
-    protected void onShutdown() {
-        httpServer.shutdown();
+    @OnServiceInit
+    public void sayHello() {
+        System.out.println("Initializing the TimeServer...");
     }
 
     public static void main(String[] args) {
@@ -138,7 +131,7 @@ public class TimeService extends NovaService {
 }
 ```
 Again - as you can see - there's not much to do. In the ```main()``` method we create a new
-instance by passing the appropriate config class and resulting service class
+instance by passing the appropriate config class and concrete service class
 
 ```Java
     TimeService time = NovaService.createInstance(TimeService.class, TimeServiceConfig.class);
@@ -147,34 +140,22 @@ instance by passing the appropriate config class and resulting service class
 The rest of the ```main()``` method just waits for the user to press < ENTER > and - when
 done - shuts down the service.
 
-As mentioned previously, when the service shuts down, the ```onShutdown()``` callback
-is invoked. Our implementation shuts down the HTTP server which is used to process
-the REST requests, so that we cleanly exit the VM:
-
-```Java
-@Override
-protected void onShutdown() {
-    httpServer.shutdown();
-}
-```
+Note that we also declared a custom initialization method, which is called when - you
+guessed it - the service is initialized.
 
 Now the only thing left to implement is the service configuration class that provides all
 required beans:
 ```Java
 @Configuration
-@Import(RestServerProvidingConfiguration.class)
+@Import(RestEnablingConfiguration.class)
 public class TimeServiceConfig extends NovaServiceConfiguration<TimeService> {
     @Autowired
     Environment env;
 
-    @Autowired
-    @Lazy
-    HttpServer restHttpServer;
-
     @Override
     @Bean
     public TimeService serviceInstance() {
-        return new TimeService(restHttpServer);
+        return new TimeService();
     }
 
     @Bean
@@ -194,13 +175,14 @@ our example).
 @Override
 @Bean
 public TimeService serviceInstance() {
-    return new TimeService(restHttpServer);
+    return new TimeService();
 }
 ```
 
-We pass the ```httpServer``` instance to the constructor, so that we can properly
-implement ```onShutdown()``` as described above. The instance is available and can
-be ```@Autowired``` since we import ```RestServerProvidingConfiguration.class```.
+We do not need to explicitly declare an ```HttpServer``` bean. This is done automatically since we
+```Java
+@Import(RestEnablingConfiguration.class)
+```
 
 Finally, we also create the bean that handles the REST requests:
 ```Java
@@ -210,9 +192,9 @@ public TimeRequestHandler timeRequestHandler() {
 }
 ```
 
-The ```messagePrefix``` parameter is passed to appropriately prefix the time
-message. But where does that prefix come from? Well, we have a few different
-choices to provide the appropriate value.
+The ```messagePrefix``` parameter is read from the ```Environment``` and injected
+into the handler bean to appropriately prefix the time message. But where does that prefix come from?
+Well, we have a few different choices to provide the appropriate value.
 
 The first one is that we can add ```defaults.properties``` to the classpath:
 ```Java
@@ -239,7 +221,7 @@ was properly applied. :-)
 Now imagine, somebody sent us an executable jar file ```timeservice.jar```, which contains our
 service plus default configuration. Unfortunately, when we try to run it, we realize that
 port 9999 is already in use by another service, so that the ```TimeService``` is not starting up
-properly. Luckily, we have to ways to override the default port 9999. The first one is that we
+properly. Luckily, we have two ways to override the default port 9999. The first one is that we
 can set the appropriate OS environment variable or pass a VM parameter when invoking java:
 
 ```
@@ -255,8 +237,9 @@ java -DNOVA.HTTP.REST.PORT=8888 -DmessagePrefix=myPrefix -jar timeservice.jar
 ```
 
 As the command can become very long if we have a lot of parameters to specify,
-we can also define all of them in a separate config file (let's
-say ```/tmp/myconfig.properties```) and define this on the command line:
+we can make use of our second option: define all of them in a separate config
+file (let's say ```/tmp/myconfig.properties```) and specify the full path on the
+command line:
 
 ```
 java -DNOVA.SERVICE.CONFIG=/tmp/myconfig.properties -jar timeservice.jar
