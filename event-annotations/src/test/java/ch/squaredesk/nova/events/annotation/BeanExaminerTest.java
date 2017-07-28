@@ -14,6 +14,7 @@ import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Method;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -26,17 +27,8 @@ public class BeanExaminerTest {
     @Test
     void examineNeedsNonNullBean() throws Exception {
         Throwable t = assertThrows(NullPointerException.class,
-                () -> sut.examine(null, (event, object, method, backpressureStrategy, bizThread, measure) -> {})
-        );
+                () -> sut.examine(null));
         assertThat(t.getMessage(), containsString("bean"));
-    }
-
-    @Test
-    void examineNeedsNonNullConfigConsumer() throws Exception {
-        Throwable t = assertThrows(NullPointerException.class,
-                () -> sut.examine(new Object(), null)
-        );
-        assertThat(t.getMessage(), containsString("configConsumer"));
     }
 
     @Test
@@ -50,13 +42,11 @@ public class BeanExaminerTest {
             public void m3() {}
         }
 
-        Map<String,Method> detectedHandlers = new HashMap<>();
-        sut.examine(new MyClass(),(event,object,method,backpressureStrategy,bizThread,measure) -> detectedHandlers.put(event,method));
-
-        assertThat(detectedHandlers.keySet(), containsInAnyOrder("e1","e2","e3"));
-        assertThat(detectedHandlers.get("e1").getName(), is("m1"));
-        assertThat(detectedHandlers.get("e2").getName(), is("m2"));
-        assertThat(detectedHandlers.get("e3").getName(), is("m3"));
+        EventHandlerDescription[] detectedHandlers = sut.examine(new MyClass());
+        assertThat(detectedHandlers.length, is(3));
+        assertThat(detectedHandlers[0].methodToInvoke.getName(), is("m1"));
+        assertThat(detectedHandlers[1].methodToInvoke.getName(), is("m2"));
+        assertThat(detectedHandlers[2].methodToInvoke.getName(), is("m3"));
     }
 
     @Test
@@ -68,12 +58,10 @@ public class BeanExaminerTest {
             public void m3() {}
         }
 
-        Map<String,Method> detectedHandlers = new HashMap<>();
-        sut.examine(new MyClass(),(event,object,method,backpressureStrategy,bizThread,measure) -> detectedHandlers.put(event,method));
-
-        assertThat(detectedHandlers.keySet(), containsInAnyOrder("e1","e2","e3"));
-        assertThat(detectedHandlers.get("e1").getName(), is("m1"));
-        assertThat(detectedHandlers.get("e2").getName(), is("m1"));
-        assertThat(detectedHandlers.get("e3").getName(), is("m1"));
+        EventHandlerDescription[] detectedHandlers = sut.examine(new MyClass());
+        assertThat(detectedHandlers.length, is(3));
+        assertThat(detectedHandlers[0].methodToInvoke.getName(), is("m1"));
+        assertThat(detectedHandlers[1].methodToInvoke.getName(), is("m1"));
+        assertThat(detectedHandlers[2].methodToInvoke.getName(), is("m1"));
     }
 }

@@ -10,29 +10,33 @@
 
 package ch.squaredesk.nova.events.annotation;
 
+import ch.squaredesk.nova.Nova;
 import ch.squaredesk.nova.events.EventBus;
 import ch.squaredesk.nova.metrics.Metrics;
 import com.codahale.metrics.Timer;
-import io.reactivex.BackpressureStrategy;
 import io.reactivex.Flowable;
 import io.reactivex.functions.Consumer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.config.BeanPostProcessor;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
+import org.springframework.context.ApplicationEvent;
+import org.springframework.context.ApplicationListener;
+import org.springframework.context.event.ContextRefreshedEvent;
 
 import java.lang.reflect.Method;
+import java.util.Arrays;
+import java.util.Objects;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.stream.Collectors;
 
-public class EventHandlingBeanPostprocessor implements BeanPostProcessor {
-    private final EventBus eventBus;
-    private final String identifier;
-    private final Metrics metrics;
+public class EventHandlingBeanPostprocessor implements BeanPostProcessor, ApplicationListener<ContextRefreshedEvent> {
+    private final Logger logger = LoggerFactory.getLogger(EventHandlingBeanPostprocessor.class);
     private final BeanExaminer beanExaminer = new BeanExaminer();
 
-
-    public EventHandlingBeanPostprocessor(String identifier, EventBus eventEmitter, Metrics metrics) {
-        this.eventBus = eventEmitter;
-        this.identifier = identifier;
-        this.metrics = metrics;
-    }
+    final CopyOnWriteArrayList<EventHandlerDescription> handlerDescriptions = new CopyOnWriteArrayList<>();
 
     @Override
     public Object postProcessBeforeInitialization(Object bean, String beanName) throws BeansException {
@@ -41,26 +45,50 @@ public class EventHandlingBeanPostprocessor implements BeanPostProcessor {
 
     @Override
     public Object postProcessAfterInitialization(Object bean, String beanName) throws BeansException {
-        beanExaminer.examine(bean, this::registerEventHandler);
+        handlerDescriptions.addAll(Arrays.asList(beanExaminer.examine(bean)));
         return bean;
     }
 
-    private void registerEventHandler(String event,
-                                      Object objectToInvokeMethodOn, Method methodToInvoke,
-                                      BackpressureStrategy backpressureStrategy,
-                                      boolean invokeOnBizLogicThread, boolean measureInvocationTime) {
-        EventContext eventContext = new EventContext(metrics,eventBus);
-        EventHandlingMethodInvoker invoker = new EventHandlingMethodInvoker(objectToInvokeMethodOn, methodToInvoke, eventContext);
-        Consumer<Object[]> eventConsumer = invoker;
-        if (measureInvocationTime) {
-            String timerName = Metrics.name(identifier, "invocationTime", objectToInvokeMethodOn.getClass().getSimpleName(), event);
-            Timer timer = metrics.getTimer(timerName);
-            eventConsumer = new TimeMeasuringEventHandlingMethodInvoker(timer, invoker);
-        }
-        Flowable<Object[]> flowable = eventBus.on(event, backpressureStrategy);
-        if (invokeOnBizLogicThread) {
-            flowable = flowable.observeOn(NovaSchedulers.businessLogicThreadScheduler);
-        }
-        flowable.subscribe(eventConsumer);
+    @Override
+    public void onApplicationEvent(ContextRefreshedEvent event) {
+        Nova nova = event.getApplicationContext().getBean(Nova.class);
+        Objects.requireNonNull(nova,
+                "Unable to initialize event handling, since no Nova instance was found in ApplicationContext");
+        EventContext eventContext = new EventContext(nova.metrics, nova.eventBus);
+        handlerDescriptions.forEach(hd -> registerEventHandler(hd, eventContext, nova.identifier));
     }
+
+    private void registerEventHandler(EventHandlerDescription eventHandlerDescription, EventContext eventContext, String novaIdentifier) {
+        EventHandlingMethodInvoker invoker = new EventHandlingMethodInvoker(
+                eventHandlerDescription.bean, eventHandlerDescription.methodToInvoke, eventContext);
+        Consumer<Object[]> eventConsumer = invoker;
+        for (String event: eventHandlerDescription.events) {
+            logger.debug("Registering annotated event handler: {} -> {}",
+                    event, prettyPrint(eventHandlerDescription.bean, eventHandlerDescription.methodToInvoke));
+            if (eventHandlerDescription.captureInvocationTimeMetrics) {
+                String timerName = Metrics.name(novaIdentifier, "invocationTime",
+                        eventHandlerDescription.bean.getClass().getSimpleName(), event);
+                Timer timer = eventContext.metrics.getTimer(timerName);
+                eventConsumer = new TimeMeasuringEventHandlingMethodInvoker(timer, invoker);
+            }
+            Flowable<Object[]> flowable = eventContext.eventBus.on(event, eventHandlerDescription.backpressureStrategy);
+            if (eventHandlerDescription.dispatchOnBusinessLogicThread) {
+                flowable = flowable.observeOn(NovaSchedulers.businessLogicThreadScheduler);
+            }
+            flowable.subscribe(eventConsumer);
+        }
+    }
+
+    private static String prettyPrint(Object bean, Method method) {
+        StringBuilder sb = new StringBuilder(bean.getClass().getName())
+                .append('.')
+                .append(method.getName())
+                .append('(')
+                .append(Arrays.stream(method.getParameterTypes())
+                        .map(paramterClass -> paramterClass.getSimpleName())
+                        .collect(Collectors.joining(", ")))
+                .append(')');
+        return sb.toString();
+    }
+
 }

@@ -15,28 +15,27 @@ import java.util.Arrays;
 import java.util.Objects;
 
 class BeanExaminer {
-    void examine (Object bean, EventHandlingConfigConsumer configConsumer) {
+    EventHandlerDescription[] examine(Object bean) {
         Objects.requireNonNull(bean, "bean to examine must not be null");
-        Objects.requireNonNull(configConsumer, "configConsumer must not be null");
 
         Method[] methods = bean.getClass().getMethods();
-        Arrays.stream(methods)
+        return Arrays.stream(methods)
                 .filter(m -> m.isAnnotationPresent(OnEvent.class))
-                .forEach(m -> {
-                    OnEvent annotation = m.getAnnotation(OnEvent.class);
-
-                    if (annotation.value().length==0) {
-                        throw new IllegalArgumentException("Invalid annotation definition. No " +
-                                "event key provided");
-                    } else {
-                        Arrays.stream(annotation.value()).forEach(
-                                event -> configConsumer.accept(event,
-                                        bean, m,
-                                        annotation.backpressureStrategy(),
-                                        annotation.dispatchOnBusinessLogicThread(),
-                                        annotation.enableInvocationTimeMetrics())
-                        );
+                .peek(m -> {
+                    if (m.getAnnotation(OnEvent.class).value().length == 0) {
+                        throw new IllegalArgumentException("Invalid annotation definition: no event key provided");
                     }
-                });
+                })
+                .map(m -> {
+                    OnEvent annotation = m.getAnnotation(OnEvent.class);
+                    return new EventHandlerDescription(
+                            bean,
+                            m,
+                            annotation.value(),
+                            annotation.backpressureStrategy(),
+                            annotation.dispatchOnBusinessLogicThread(),
+                            annotation.enableInvocationTimeMetrics());
+                })
+                .toArray(EventHandlerDescription[]::new);
     }
 }
