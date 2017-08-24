@@ -33,32 +33,45 @@ class BeanExaminer {
 
     private Method[] handlersIn (Object bean, Class expectedAnnotationClass) {
         requireNonNull(bean, "bean to examine must not be null");
+        return handlersInInheritanceChain(bean.getClass(), expectedAnnotationClass);
+    }
 
-        return stream(bean.getClass().getDeclaredMethods())
+    private Method[] handlersInInheritanceChain (Class beanClass, Class expectedAnnotationClass) {
+        Method[] methods = handlersInClass (beanClass, expectedAnnotationClass);
+        Class superClass = beanClass.getSuperclass();
+        if (methods.length == 0 && superClass != null && superClass != Object.class) {
+            return handlersInInheritanceChain(superClass, expectedAnnotationClass);
+        } else {
+            return methods;
+        }
+    }
+
+    private Method[] handlersInClass (Class beanClass, Class expectedAnnotationClass) {
+        return stream(beanClass.getDeclaredMethods())
                 .filter(method -> stream(method.getDeclaredAnnotations()).anyMatch(
                         anno -> expectedAnnotationClass.isAssignableFrom(anno.getClass())))
                 .peek(method -> {
                     if (!Modifier.isPublic(method.getModifiers()))
                         throw new IllegalArgumentException(
-                                "Method " + prettyPrint(bean, method) + ", annotated with @" +
+                                "Method " + prettyPrint(beanClass, method) + ", annotated with @" +
                                 expectedAnnotationClass.getSimpleName() + " must be public");
                 })
                 .peek(method -> {
                     if (method.getParameterCount()>0)
                         throw new IllegalArgumentException(
-                                "Method " + prettyPrint(bean, method) + ", annotated with @" +
+                                "Method " + prettyPrint(beanClass, method) + ", annotated with @" +
                                 expectedAnnotationClass.getSimpleName() + " must not declare any parameters");
                 })
                 .toArray(Method[]::new);
     }
 
-    private static String prettyPrint (Object bean, Method method) {
-        StringBuilder sb = new StringBuilder(bean.getClass().getName())
+    private static String prettyPrint (Class clazz, Method method) {
+        StringBuilder sb = new StringBuilder(clazz.getName())
             .append('.')
             .append(method.getName())
             .append('(')
             .append(Arrays.stream(method.getParameterTypes())
-                    .map(paramterClass -> paramterClass.getSimpleName())
+                    .map(parameterClass -> parameterClass.getSimpleName())
                     .collect(Collectors.joining(", ")))
             .append(')');
         return sb.toString();
