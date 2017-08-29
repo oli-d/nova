@@ -84,6 +84,10 @@ class JmsRpcServerTest {
         jmsHelper.sendRequest(queue,"Four");
         jmsHelper.sendMessage(queue,"Five");
 
+        int maxLoops = 10;
+        for (int i = 0; i < maxLoops && testSubscriber.valueCount() == 0; i++) {
+            TimeUnit.MILLISECONDS.sleep(100);
+        }
         testSubscriber.assertValueCount(2);
     }
 
