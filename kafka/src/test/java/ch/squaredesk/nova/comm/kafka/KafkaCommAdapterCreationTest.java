@@ -10,11 +10,15 @@
 
 package ch.squaredesk.nova.comm.kafka;
 
+import ch.squaredesk.nova.metrics.Metrics;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.util.Properties;
+
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.startsWith;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class KafkaCommAdapterCreationTest {
@@ -23,9 +27,13 @@ class KafkaCommAdapterCreationTest {
     @BeforeEach
     void setUp() throws IllegalAccessException, NoSuchFieldException {
         this.sutBuilder = KafkaCommAdapter.<String>builder()
+                .setServerAddress("127.0.0.1:11000")
                 .setMessageMarshaller(message -> message)
                 .setMessageUnmarshaller(message -> message)
-                .setKafkaObjectFactory(new TestKafkaObjectFactory());
+                .setConsumerProperties(new Properties())
+                .setProducerProperties(new Properties())
+                .setMetrics(new Metrics())
+        ;
     }
 
     @Test
@@ -36,6 +44,13 @@ class KafkaCommAdapterCreationTest {
     }
 
     @Test
+    void instanceCannotBeCreatedWithNullServer(){
+        Throwable throwable = assertThrows(NullPointerException.class,
+                () -> sutBuilder.setServerAddress(null).build());
+        assertThat(throwable.getMessage(), startsWith("serverAddress"));
+    }
+
+    @Test
     void testInstanceCannotBeCreatedWithNullUnMarshaller() {
         Throwable throwable = assertThrows(NullPointerException.class,
                 () -> sutBuilder.setMessageUnmarshaller(null).build());
@@ -43,10 +58,13 @@ class KafkaCommAdapterCreationTest {
     }
 
     @Test
-    void testInstanceCannotBeCreatedWithNullObjectFactory()  {
-        Throwable throwable = assertThrows(NullPointerException.class,
-                () -> sutBuilder.setKafkaObjectFactory(null).build());
-        assertThat(throwable.getMessage(), startsWith("kafkaObjectFactory"));
+    void testInstanceCanBeCreatedWithNullConsumerProps()  {
+        assertNotNull(sutBuilder.setConsumerProperties(null).build());
+    }
+
+    @Test
+    void testInstanceCanBeCreatedWithNullProducerProps()  {
+        assertNotNull(sutBuilder.setProducerProperties(null).build());
     }
 
 }

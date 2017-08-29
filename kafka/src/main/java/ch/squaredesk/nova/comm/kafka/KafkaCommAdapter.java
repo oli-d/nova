@@ -18,9 +18,15 @@ import io.reactivex.Completable;
 import io.reactivex.Flowable;
 import io.reactivex.Scheduler;
 import io.reactivex.schedulers.Schedulers;
+import org.apache.kafka.clients.consumer.ConsumerConfig;
+import org.apache.kafka.clients.producer.ProducerConfig;
+import org.apache.kafka.common.serialization.StringDeserializer;
+import org.apache.kafka.common.serialization.StringSerializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Properties;
+import java.util.UUID;
 import java.util.concurrent.Executors;
 
 import static java.util.Objects.requireNonNull;
@@ -34,11 +40,14 @@ public class KafkaCommAdapter<InternalMessageType> {
     private final KafkaObjectFactory kafkaObjectFactory;
 
 
-    protected KafkaCommAdapter(Builder<InternalMessageType> builder) {
-        this.messageReceiver = builder.messageReceiver;
-        this.messageSender = builder.messageSender;
-        this.defaultBackpressureStrategy = builder.defaultBackpressureStrategy;
-        this.kafkaObjectFactory = builder.kafkaObjectFactory;
+    KafkaCommAdapter(KafkaMessageSender<InternalMessageType> messageSender,
+                     KafkaMessageReceiver<InternalMessageType> messageReceiver,
+                     BackpressureStrategy defaultBackpressureStrategy,
+                     KafkaObjectFactory kafkaObjectFactory) {
+        this.messageReceiver = messageReceiver;
+        this.messageSender = messageSender;
+        this.defaultBackpressureStrategy = defaultBackpressureStrategy;
+        this.kafkaObjectFactory = kafkaObjectFactory;
     }
 
     /////////////////////////////////
@@ -94,6 +103,7 @@ public class KafkaCommAdapter<InternalMessageType> {
     }
 
     public static class Builder<InternalMessageType> {
+        private String serverAddress;
         private String identifier;
         private Metrics metrics;
         private MessageUnmarshaller<String,InternalMessageType> messageUnmarshaller;
@@ -103,17 +113,35 @@ public class KafkaCommAdapter<InternalMessageType> {
         private KafkaMessageReceiver<InternalMessageType> messageReceiver;
         private KafkaObjectFactory kafkaObjectFactory;
         private Scheduler subscriptionScheduler;
+        private Properties consumerProperties;
+        private Properties producerProperties;
 
         private Builder() {
         }
 
-        public Builder<InternalMessageType> setSubscriptionScheduler(Scheduler scheduler) {
-            this.subscriptionScheduler = scheduler;
+        public Builder<InternalMessageType> setConsumerProperties(Properties consumerProperties) {
+            this.consumerProperties = new Properties();
+            if (consumerProperties!=null) {
+                this.consumerProperties.putAll(consumerProperties);
+            }
             return this;
         }
 
-        public Builder<InternalMessageType> setKafkaObjectFactory(KafkaObjectFactory kafkaObjectFactory) {
-            this.kafkaObjectFactory = kafkaObjectFactory;
+        public Builder<InternalMessageType> setServerAddress(String serverAddress) {
+            this.serverAddress = serverAddress;
+            return this;
+        }
+
+        public Builder<InternalMessageType> setProducerProperties(Properties producerProperties) {
+            this.producerProperties = new Properties();
+            if (producerProperties != null) {
+                this.producerProperties.putAll(producerProperties);
+            }
+            return this;
+        }
+
+        public Builder<InternalMessageType> setSubscriptionScheduler(Scheduler scheduler) {
+            this.subscriptionScheduler = scheduler;
             return this;
         }
 
@@ -143,7 +171,7 @@ public class KafkaCommAdapter<InternalMessageType> {
         }
 
         public Builder<InternalMessageType> validate() {
-            requireNonNull(kafkaObjectFactory,"kafkaObjectFactory must be provided");
+            requireNonNull(serverAddress,"serverAddress must be provided");
             requireNonNull(messageUnmarshaller,"messageUnmarshaller must be provided");
             requireNonNull(messageMarshaller,"messageMarshaller must be provided");
             requireNonNull(metrics,"metrics must be provided");
@@ -154,14 +182,41 @@ public class KafkaCommAdapter<InternalMessageType> {
                     return t;
                 }));
             }
+            if (consumerProperties==null) consumerProperties = new Properties();
+            if (producerProperties==null) producerProperties = new Properties();
             return this;
         }
 
         public KafkaCommAdapter<InternalMessageType> build() {
             validate();
+
+            // set a few default consumer and producer properties
+            String clientId = identifier == null ? "KafkaCommAdapter-"+UUID.randomUUID() : identifier;
+            String groupId = identifier == null ? "KafkaCommAdapter-ReadGroup" : identifier + "ReadGroup";
+            setPropertyIfNotPresent(consumerProperties, ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, serverAddress);
+            setPropertyIfNotPresent(consumerProperties, ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
+            setPropertyIfNotPresent(consumerProperties, ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
+            setPropertyIfNotPresent(consumerProperties, ConsumerConfig.CLIENT_ID_CONFIG, clientId);
+            setPropertyIfNotPresent(consumerProperties, ConsumerConfig.GROUP_ID_CONFIG, groupId);
+
+            setPropertyIfNotPresent(producerProperties, ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, serverAddress);
+            setPropertyIfNotPresent(producerProperties, ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
+            setPropertyIfNotPresent(producerProperties, ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
+            setPropertyIfNotPresent(producerProperties, ProducerConfig.CLIENT_ID_CONFIG, clientId);
+
+            kafkaObjectFactory = new KafkaObjectFactory(this.consumerProperties, this.producerProperties);
             messageReceiver = new KafkaMessageReceiver<>(identifier, kafkaObjectFactory, subscriptionScheduler, messageUnmarshaller, metrics);
             messageSender = new KafkaMessageSender<>(identifier, kafkaObjectFactory, messageMarshaller, metrics);
-            return new KafkaCommAdapter<>(this);
+            return new KafkaCommAdapter<>(this.messageSender,
+                    this.messageReceiver,
+                    this.defaultBackpressureStrategy,
+                    this.kafkaObjectFactory);
+        }
+
+        private static void setPropertyIfNotPresent (Properties props, String key, String value) {
+            if (!props.containsKey(key)) {
+                props.setProperty(key, value);
+            }
         }
     }
 }

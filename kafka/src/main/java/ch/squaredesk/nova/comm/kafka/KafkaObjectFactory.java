@@ -20,7 +20,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.TimeUnit;
 
-public class KafkaObjectFactory {
+class KafkaObjectFactory {
     private final Properties consumerProperties;
     private final Properties producerProperties;
     final Map<String, KafkaPoller> topicToPoller;
@@ -40,6 +40,10 @@ public class KafkaObjectFactory {
     }
 
     public KafkaPoller pollerForTopic(String topic, long pollFrequency, TimeUnit pollFrequencyTimeUnit) {
+        Objects.requireNonNull(pollFrequencyTimeUnit, "timeUnit must not be null");
+        if (pollFrequency <=0 ) {
+            throw new IllegalArgumentException("pollFrequency must be greater than zero");
+        }
         return topicToPoller.computeIfAbsent(topic, key -> new KafkaPoller(consumerForTopic(key), pollFrequency, pollFrequencyTimeUnit));
     }
 

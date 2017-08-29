@@ -24,7 +24,6 @@ import static java.util.Objects.requireNonNull;
  */
 public class KafkaPoller {
     private final AtomicBoolean shutdown = new AtomicBoolean(false);
-    private final AtomicBoolean started = new AtomicBoolean(false);
     private final Consumer<String,String> kafkaConsumer;
     private final long pollTimeout;
     private final TimeUnit pollTimeUnit;

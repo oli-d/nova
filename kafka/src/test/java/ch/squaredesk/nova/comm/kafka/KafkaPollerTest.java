@@ -10,9 +10,18 @@
 
 package ch.squaredesk.nova.comm.kafka;
 
+import ch.qos.logback.classic.Level;
+import org.apache.kafka.clients.consumer.ConsumerConfig;
+import org.apache.kafka.clients.producer.ProducerConfig;
+import org.apache.kafka.common.serialization.StringDeserializer;
+import org.apache.kafka.common.serialization.StringSerializer;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -21,12 +30,29 @@ import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class KafkaPollerTest {
+    private KafkaObjectFactory objectFactory = new KafkaObjectFactory(new Properties(), new Properties());
     private KafkaPoller sut;
+
+    @BeforeAll
+    static void initLogging() {
+        Logger logger = LoggerFactory.getLogger("org.apache.kafka");
+        ch.qos.logback.classic.Logger l2 = (ch.qos.logback.classic.Logger)logger;
+        l2.setLevel(Level.INFO);
+    }
 
     @BeforeEach
     void setup() {
-        sut = new KafkaPoller(new StubbedConsumer(), 150, TimeUnit.MILLISECONDS);
+        Properties props = new Properties();
+        props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, "127.0.0.1:9999");
+        props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
+        props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
+        props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
+        props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
+
+        objectFactory = new KafkaObjectFactory(props, props);
+        sut = objectFactory.pollerForTopic("test", 150, TimeUnit.MILLISECONDS);
     }
+
 
     @Test
     void cannotBeInstantiatedWithoutKafkaConsumer() {
@@ -38,22 +64,22 @@ class KafkaPollerTest {
     @Test
     void cannotBeInstantiatedWithNegativePollTimeout() {
         Throwable throwable = assertThrows(IllegalArgumentException.class,
-                () -> sut = new KafkaPoller(new StubbedConsumer(), -1, TimeUnit.SECONDS));
-        assertThat(throwable.getMessage(), is("pollTimeout must be greater than 0"));
+                () -> sut = objectFactory.pollerForTopic("test", -1, TimeUnit.SECONDS));
+        assertThat(throwable.getMessage(), is("pollFrequency must be greater than zero"));
     }
 
     @Test
     void cannotBeInstantiatedWithZeroPollTimeout() {
         Throwable throwable = assertThrows(IllegalArgumentException.class,
-                () -> sut = new KafkaPoller(new StubbedConsumer(), 0, TimeUnit.SECONDS));
-        assertThat(throwable.getMessage(), is("pollTimeout must be greater than 0"));
+                () -> sut = objectFactory.pollerForTopic("test", 0, TimeUnit.SECONDS));
+        assertThat(throwable.getMessage(), is("pollFrequency must be greater than zero"));
     }
 
     @Test
     void cannotBeInstantiatedWithoutTimeUnit() {
         Throwable throwable = assertThrows(NullPointerException.class,
-                () -> sut = new KafkaPoller(new StubbedConsumer(), 1, null));
-        assertThat(throwable.getMessage(), is("pollTimeUnit must not be null"));
+                () -> sut = objectFactory.pollerForTopic("test", 1, null));
+        assertThat(throwable.getMessage(), is("timeUnit must not be null"));
     }
 
     @Test

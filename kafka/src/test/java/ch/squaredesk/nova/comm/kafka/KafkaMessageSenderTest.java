@@ -10,9 +10,10 @@
 
 package ch.squaredesk.nova.comm.kafka;
 
-import ch.squaredesk.nova.comm.sending.MessageSendingInfo;
 import ch.squaredesk.nova.metrics.Metrics;
+import io.reactivex.Completable;
 import io.reactivex.observers.TestObserver;
+import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.clients.producer.Callback;
 import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerRecord;
@@ -20,6 +21,8 @@ import org.apache.kafka.clients.producer.RecordMetadata;
 import org.apache.kafka.common.Metric;
 import org.apache.kafka.common.MetricName;
 import org.apache.kafka.common.PartitionInfo;
+import org.apache.kafka.common.TopicPartition;
+import org.apache.kafka.common.errors.ProducerFencedException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -38,17 +41,15 @@ class KafkaMessageSenderTest {
         sut = new KafkaMessageSender<>(
                 "myId",
                 new MyObjectFactory(),
-                message -> message,
+                message -> { throw new RuntimeException("for test"); },
                 new Metrics());
     }
 
     @Test
-    void messageMarshallingErrorOnSendForwardedToSubscriber() {
-        TestObserver observer = sut.doSend("myMessage",
-                new MessageSendingInfo.Builder<String, KafkaSpecificInfo>()
-                        .withDestination("dest")
-                        .withTransportSpecificInfo(new KafkaSpecificInfo())
-                        .build()).test();
+    void messageMarshallingErrorOnSendForwardedToSubscriber() throws Exception {
+        Completable completable = sut.sendMessage("dest","myMessage", new KafkaSpecificInfo());
+        TestObserver<Void> observer = completable.test();
+        observer.await();
         observer.assertError(RuntimeException.class);
         observer.assertErrorMessage("for test");
     }
@@ -62,6 +63,31 @@ class KafkaMessageSenderTest {
         @Override
         public Producer<String, String> producer() {
             return new Producer<String, String>() {
+                @Override
+                public void initTransactions() {
+
+                }
+
+                @Override
+                public void beginTransaction() throws ProducerFencedException {
+
+                }
+
+                @Override
+                public void sendOffsetsToTransaction(Map<TopicPartition, OffsetAndMetadata> offsets, String consumerGroupId) throws ProducerFencedException {
+
+                }
+
+                @Override
+                public void commitTransaction() throws ProducerFencedException {
+
+                }
+
+                @Override
+                public void abortTransaction() throws ProducerFencedException {
+
+                }
+
                 @Override
                 public Future<RecordMetadata> send(ProducerRecord<String, String> record) {
                     throw new RuntimeException("for test");
