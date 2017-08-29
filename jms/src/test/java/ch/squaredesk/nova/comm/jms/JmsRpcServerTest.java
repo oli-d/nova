@@ -86,7 +86,7 @@ class JmsRpcServerTest {
 
         int maxLoops = 10;
         for (int i = 0; i < maxLoops && testSubscriber.valueCount() == 0; i++) {
-            TimeUnit.MILLISECONDS.sleep(100);
+            TimeUnit.MILLISECONDS.sleep(1000);
         }
         testSubscriber.assertValueCount(2);
     }
@@ -100,7 +100,7 @@ class JmsRpcServerTest {
 
         int maxLoops = 10;
         for (int i = 0; i < maxLoops && testSubscriber.valueCount()==0; i++) {
-            TimeUnit.MILLISECONDS.sleep(100);
+            TimeUnit.MILLISECONDS.sleep(1000);
         }
         testSubscriber.values().iterator().next().complete("reply");
 
@@ -121,7 +121,7 @@ class JmsRpcServerTest {
 
         int maxLoops = 10;
         for (int i = 0; i < maxLoops && testSubscriber.valueCount()==0; i++) {
-            TimeUnit.MILLISECONDS.sleep(100);
+            TimeUnit.MILLISECONDS.sleep(1000);
         }
         testSubscriber.values().iterator().next().completeExceptionally(new RuntimeException("4test"));
 
