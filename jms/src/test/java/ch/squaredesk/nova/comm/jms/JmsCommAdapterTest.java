@@ -45,6 +45,7 @@ class JmsCommAdapterTest {
     void setUp() throws Exception {
         broker = new EmbeddedActiveMQBroker();
         broker.start();
+        if (!broker.brokerService.waitUntilStarted()) throw new RuntimeException("Unable to start embedded broker...");
 
         initializSut();
     }
@@ -68,11 +69,24 @@ class JmsCommAdapterTest {
         jmsHelper = new TestJmsHelper(connectionFactory);
         jmsHelper.start();
     }
+
     @AfterEach
     void tearDown() throws Exception {
-        sut.shutdown();
-        jmsHelper.shutdown();
-        broker.stop();
+        try {
+            sut.shutdown();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        try {
+            jmsHelper.shutdown();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        try {
+            broker.stop();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
 
@@ -288,7 +302,7 @@ class JmsCommAdapterTest {
                         .take(1)
                         .test();
 
-        String reply = sut.sendRequest(queue,replyQueue,"request",null,35, SECONDS)
+        String reply = sut.sendRequest(queue,replyQueue,"request",null,50, SECONDS)
                 .blockingGet();
         assertThat(reply,is("request"));
         subscriber.assertEmpty();
