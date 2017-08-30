@@ -99,7 +99,7 @@ class KafkaCommAdapterTest {
         sut.sendMessage(topic, "One").blockingAwait();
         sut.sendMessage(topic, "Two").blockingAwait();
 
-        cdl.await(10, SECONDS);
+        cdl.await(30, SECONDS);
         assertThat(cdl.getCount(),is(0L));
         assertThat(counter.get(), is(2));
         assertThat(messages, containsInAnyOrder("One", "Two"));
@@ -107,7 +107,7 @@ class KafkaCommAdapterTest {
         // dispose the subscription, resubscribe and send another message
         subscription1.dispose();
 
-        CountDownLatch cdl2 = new CountDownLatch(1);
+        CountDownLatch cdl2 = new CountDownLatch(3);
         List<String> messages2 = new ArrayList<>();
         Disposable subscription2 = sut.messages(topic).subscribe(x -> {
             messages2.add(x);
@@ -117,7 +117,7 @@ class KafkaCommAdapterTest {
         // ensure that only the second subscription was invoked
         sut.sendMessage(topic, "Three").blockingAwait();
 
-        cdl2.await(20, SECONDS);
+        cdl2.await(30, SECONDS);
         assertThat(counter.get(), is(2));
         assertThat(cdl2.getCount(), is(0L));
         assertThat(messages, contains("One", "Two"));
