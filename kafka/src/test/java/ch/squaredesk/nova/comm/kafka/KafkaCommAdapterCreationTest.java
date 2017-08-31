@@ -30,8 +30,6 @@ class KafkaCommAdapterCreationTest {
                 .setServerAddress("127.0.0.1:11000")
                 .setMessageMarshaller(message -> message)
                 .setMessageUnmarshaller(message -> message)
-                .setConsumerProperties(new Properties())
-                .setProducerProperties(new Properties())
                 .setMetrics(new Metrics())
         ;
     }

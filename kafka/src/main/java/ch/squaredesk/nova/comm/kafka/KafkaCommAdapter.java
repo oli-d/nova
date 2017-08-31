@@ -25,6 +25,7 @@ import org.apache.kafka.common.serialization.StringSerializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Objects;
 import java.util.Properties;
 import java.util.UUID;
 import java.util.concurrent.Executors;
@@ -113,30 +114,43 @@ public class KafkaCommAdapter<InternalMessageType> {
         private KafkaMessageReceiver<InternalMessageType> messageReceiver;
         private KafkaObjectFactory kafkaObjectFactory;
         private Scheduler subscriptionScheduler;
-        private Properties consumerProperties;
-        private Properties producerProperties;
+        private Properties consumerProperties = new Properties();
+        private Properties producerProperties = new Properties();
 
         private Builder() {
         }
 
         public Builder<InternalMessageType> setConsumerProperties(Properties consumerProperties) {
-            this.consumerProperties = new Properties();
             if (consumerProperties!=null) {
                 this.consumerProperties.putAll(consumerProperties);
             }
             return this;
         }
 
-        public Builder<InternalMessageType> setServerAddress(String serverAddress) {
-            this.serverAddress = serverAddress;
+        private Builder<InternalMessageType> addProperty(Properties target, String key, String value) {
+            Objects.requireNonNull(key, "property key must not be null");
+            Objects.requireNonNull(value, "value for property " + key + " must not be null");
+            target.setProperty(key, value);
             return this;
         }
 
+        public Builder<InternalMessageType> addConsumerProperty(String key, String value) {
+            return addProperty(consumerProperties, key, value);
+        }
+
+        public Builder<InternalMessageType> addProducerProperty(String key, String value) {
+            return addProperty(producerProperties, key, value);
+        }
+
         public Builder<InternalMessageType> setProducerProperties(Properties producerProperties) {
-            this.producerProperties = new Properties();
             if (producerProperties != null) {
                 this.producerProperties.putAll(producerProperties);
             }
+            return this;
+        }
+
+        public Builder<InternalMessageType> setServerAddress(String serverAddress) {
+            this.serverAddress = serverAddress;
             return this;
         }
 

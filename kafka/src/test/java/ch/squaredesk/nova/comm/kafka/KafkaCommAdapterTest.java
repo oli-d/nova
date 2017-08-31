@@ -57,21 +57,15 @@ class KafkaCommAdapterTest {
         kafkaBroker = EphemeralKafkaBroker.create(KAFKA_PORT);
         kafkaBroker.start().get();
 
-        Properties producerProps = new Properties();
-        producerProps.setProperty(ProducerConfig.BATCH_SIZE_CONFIG,"1");
-
-        Properties consumerProps = new Properties();
-        consumerProps.setProperty(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG,"earliest");
-        consumerProps.setProperty(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG,"true");
-
         sut = KafkaCommAdapter.<String>builder()
                 .setServerAddress("127.0.0.1:" + KAFKA_PORT)
                 .setMessageMarshaller(message -> message)
                 .setMessageUnmarshaller(message -> message)
                 .setMetrics(new Metrics())
                 .setIdentifier("Test")
-                .setProducerProperties(producerProps)
-                .setConsumerProperties(consumerProps)
+                .addProducerProperty(ProducerConfig.BATCH_SIZE_CONFIG, "1")
+                .addConsumerProperty(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest")
+                .addConsumerProperty(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "true")
                 .build();
     }
 
