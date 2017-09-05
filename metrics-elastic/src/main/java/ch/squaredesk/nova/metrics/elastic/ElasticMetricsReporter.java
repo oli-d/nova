@@ -12,10 +12,14 @@ package ch.squaredesk.nova.metrics.elastic;
 
 import ch.squaredesk.nova.metrics.CompoundMetric;
 import ch.squaredesk.nova.metrics.MetricsDump;
+import ch.squaredesk.nova.tuples.Pair;
+import ch.squaredesk.nova.tuples.Tuple3;
 import com.codahale.metrics.Metric;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.reactivex.Observable;
+import io.reactivex.Single;
 import io.reactivex.functions.Consumer;
+import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.client.transport.TransportClient;
 import org.elasticsearch.common.settings.Settings;
@@ -31,10 +35,12 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Collections;
 import java.util.Map;
+import java.util.Objects;
 
 public class ElasticMetricsReporter implements Consumer<MetricsDump> {
     private static final Logger logger = LoggerFactory.getLogger(ElasticMetricsReporter.class);
 
+    private final Consumer<Throwable> defaultExceptionHandler;
     private final String elasticServer;
     private final int elasticPort;
     private final String clusterName;
@@ -54,6 +60,41 @@ public class ElasticMetricsReporter implements Consumer<MetricsDump> {
         this.clusterName = clusterName;
         this.indexName = indexName;
         this.additionalMetricAttributes = additionalMetricAttributes;
+        defaultExceptionHandler = exception -> logger.error("Unable to upload metrics to index " + indexName, exception);
+    }
+
+
+    @Override
+    public void accept(MetricsDump metricsDump) throws Exception {
+        accept(metricsDump, defaultExceptionHandler);
+    }
+
+    public void accept(MetricsDump metricsDump, Consumer<Throwable> exceptionHandler) throws Exception {
+        if (client == null) {
+            throw new IllegalStateException("not started yet");
+        }
+        fireRequest(requestBuilderFor(metricsDump), exceptionHandler);
+    }
+
+    public void accept(Map<String, Map<String, Object>> metricsDump) throws Exception {
+        accept(metricsDump, defaultExceptionHandler);
+    }
+
+    /**
+     * Sends a metrics dump, represented as a Map to Elastic.
+     *
+     * Basically, this method dumps generic Maps to Elasticsearch with the following restriction
+     * - each Metric is represented as a Map added to the root Map with metric name = key
+     * - each (sub) map, representing a metric must contain a "_type" key and value
+     * @param metricsDump
+     * @param exceptionHandler
+     * @throws Exception
+     */
+    public void accept(Map<String, Map<String, Object>> metricsDump, Consumer<Throwable> exceptionHandler) throws Exception {
+        if (client == null) {
+            throw new IllegalStateException("not started yet");
+        }
+        fireRequest(requestBuilderFor(metricsDump), exceptionHandler);
     }
 
     public void startup() {
@@ -79,40 +120,11 @@ public class ElasticMetricsReporter implements Consumer<MetricsDump> {
         }
     }
 
-    @Override
-    public void accept(MetricsDump metricsDump) throws Exception {
-        if (client==null) {
-            throw new IllegalStateException("not started yet");
-        }
+    public void fireRequest (Single<BulkRequestBuilder> bulkRequestBuilderSingle,
+                             Consumer<Throwable> exceptionHandler) {
+        Objects.requireNonNull(exceptionHandler, "exceptionHandler must not be null");
 
-        LocalDateTime timestampInUtc = Instant.ofEpochMilli(metricsDump.timestamp).atZone(zoneForTimestamps).toLocalDateTime();
-
-        Observable.<TypeAndNameAndMetric>create(s -> {
-            metricsDump.metrics.entrySet().forEach(entry -> {
-                String type = entry.getValue().getClass().getSimpleName();
-                s.onNext(new TypeAndNameAndMetric(type, entry.getKey(), entry.getValue()));
-            });
-            s.onComplete();
-        })
-                .map(typeAndNameAndMetric -> {
-                    Map map = toMap(typeAndNameAndMetric.metric);
-                    map.put("name", typeAndNameAndMetric.name);
-                    map.put("@timestamp", timestampInUtc);
-                    map.put("host", metricsDump.hostName);
-                    map.put("hostAddress", metricsDump.hostAddress);
-                    map.putAll(additionalMetricAttributes);
-                    return new TypeAndMetric(typeAndNameAndMetric.type, map);
-                })
-                .map(typeAndMetricAsMap -> new IndexRequest()
-                                .index(indexName)
-                                .type(typeAndMetricAsMap.type)
-                                .source(typeAndMetricAsMap.metricAsMap)
-                )
-                .reduce(client.prepareBulk(),
-                        (bulkRequestBuilder, indexRequest) -> {
-                            bulkRequestBuilder.add(indexRequest);
-                            return bulkRequestBuilder;
-                        })
+        bulkRequestBuilderSingle
                 .map(bulkRequestBuilder -> bulkRequestBuilder.get())
                 .subscribe(
                         response -> {
@@ -122,8 +134,57 @@ public class ElasticMetricsReporter implements Consumer<MetricsDump> {
                                 logger.trace("Successfully uploaded {} metric(s)", response.getItems().length);
                             }
                         },
-                        exception -> logger.error("Unable to upload metrics to index " + indexName)
+                        exceptionHandler
                 );
+    }
+
+    private Single<BulkRequestBuilder> requestBuilderFor (Map<String, Map<String, Object>> metricsDump) throws Exception {
+        return Observable.fromIterable(metricsDump.entrySet())
+                .map(entry -> {
+                    Map<String, Object> retVal = entry.getValue();
+                    retVal.put("name", entry.getKey());
+                    return retVal;
+                })
+                .map(metricAsMap -> {
+                    String type = (String) metricAsMap.remove("_type");
+                    Objects.requireNonNull(type, "metricMap must contain type entry");
+                    return new IndexRequest()
+                            .index(indexName)
+                            .type(type)
+                            .source(metricAsMap);
+                })
+                .reduce(client.prepareBulk(),
+                        (bulkRequestBuilder, indexRequest) -> {
+                            bulkRequestBuilder.add(indexRequest);
+                            return bulkRequestBuilder;
+                });
+    }
+
+    private Single<BulkRequestBuilder> requestBuilderFor (MetricsDump metricsDump) throws Exception {
+        LocalDateTime timestampInUtc = Instant.ofEpochMilli(metricsDump.timestamp).atZone(zoneForTimestamps).toLocalDateTime();
+
+        return Observable.fromIterable(metricsDump.metrics.entrySet())
+                .map(entry -> new Tuple3<>(entry.getValue().getClass().getSimpleName(), entry.getKey(), entry.getValue()))
+                .map(tupleTypeAndNameAndMetric -> {
+                    Map<String, Object> map = toMap(tupleTypeAndNameAndMetric._3);
+                    map.put("name", tupleTypeAndNameAndMetric._2);
+                    map.put("@timestamp", timestampInUtc);
+                    map.put("host", metricsDump.hostName);
+                    map.put("hostAddress", metricsDump.hostAddress);
+                    map.putAll(additionalMetricAttributes);
+                    return new Pair<>(tupleTypeAndNameAndMetric._1, map);
+                })
+                .map(typeAndMetricAsMap -> new IndexRequest()
+                                .index(indexName)
+                                .type(typeAndMetricAsMap._1)
+                                .source(typeAndMetricAsMap._2)
+                )
+                .reduce(client.prepareBulk(),
+                        (bulkRequestBuilder, indexRequest) -> {
+                            bulkRequestBuilder.add(indexRequest);
+                            return bulkRequestBuilder;
+                })
+                ;
     }
 
     private Map<String, Object> toMap(Metric metric) {
@@ -131,25 +192,4 @@ public class ElasticMetricsReporter implements Consumer<MetricsDump> {
         else return objectMapper.convertValue(metric, Map.class);
     }
 
-    public static class TypeAndMetric {
-        public final String type;
-        public final Map metricAsMap;
-
-        public TypeAndMetric(String type, Map metricAsMap) {
-            this.type = type;
-            this.metricAsMap = metricAsMap;
-        }
-    }
-
-    public static class TypeAndNameAndMetric {
-        public final String type;
-        public final String name;
-        public final Metric metric;
-
-        public TypeAndNameAndMetric(String type, String name, Metric metric) {
-            this.type = type;
-            this.name = name;
-            this.metric = metric;
-        }
-    }
 }
