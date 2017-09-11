@@ -23,7 +23,7 @@
 	<dependencies>
 		<dependency>
 			<groupId>ch.squaredesk.nova</groupId>
-			<artifactId>core</artifactId>
+			<artifactId>metrics-serialization</artifactId>
 			<version>${project.version}</version>
 		</dependency>
 

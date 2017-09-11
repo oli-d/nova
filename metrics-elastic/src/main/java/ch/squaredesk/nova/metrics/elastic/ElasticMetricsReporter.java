@@ -76,21 +76,17 @@ public class ElasticMetricsReporter implements Consumer<MetricsDump> {
         fireRequest(requestBuilderFor(metricsDump), exceptionHandler);
     }
 
-    public void accept(Map<String, Map<String, Object>> metricsDump) throws Exception {
+    /**
+     * Sends a metrics dump, created with MetricsDumpToMapConverter, to Elastic.
+     */
+    public void accept(Map<String, Object> metricsDump) throws Exception {
         accept(metricsDump, defaultExceptionHandler);
     }
 
     /**
-     * Sends a metrics dump, represented as a Map to Elastic.
-     *
-     * Basically, this method dumps generic Maps to Elasticsearch with the following restriction
-     * - each Metric is represented as a Map added to the root Map with metric name = key
-     * - each (sub) map, representing a metric must contain a "_type" key and value
-     * @param metricsDump
-     * @param exceptionHandler
-     * @throws Exception
+     * Sends a metrics dump, created with MetricsDumpToMapConverter, to Elastic.
      */
-    public void accept(Map<String, Map<String, Object>> metricsDump, Consumer<Throwable> exceptionHandler) throws Exception {
+    public void accept(Map<String, Object> metricsDump, Consumer<Throwable> exceptionHandler) throws Exception {
         if (client == null) {
             throw new IllegalStateException("not started yet");
         }
@@ -138,16 +134,26 @@ public class ElasticMetricsReporter implements Consumer<MetricsDump> {
                 );
     }
 
-    private Single<BulkRequestBuilder> requestBuilderFor (Map<String, Map<String, Object>> metricsDump) throws Exception {
+    private Single<BulkRequestBuilder> requestBuilderFor (Map<String, Object> metricsDump) throws Exception {
+        Long timestamp = (Long)metricsDump.remove("timestamp");
+        LocalDateTime timestampInUtc = timestamp == null ? null : timestampInUtc(timestamp);
+        String hostName = (String) metricsDump.remove("hostName");
+        String hostAddress = (String) metricsDump.remove("hostAddress");
         return Observable.fromIterable(metricsDump.entrySet())
+                .filter(entry -> entry.getValue() instanceof Map) // just to protect us, since at this point anyway
+                                                                  // only the Metrics should remain in the map
+                                                                  // and they are all represented as Map<String, Object>
                 .map(entry -> {
-                    Map<String, Object> retVal = entry.getValue();
+                    Map<String, Object> retVal = (Map)entry.getValue();
                     retVal.put("name", entry.getKey());
                     return retVal;
                 })
                 .map(metricAsMap -> {
-                    String type = (String) metricAsMap.remove("_type");
+                    String type = (String) metricAsMap.remove("type");
                     Objects.requireNonNull(type, "metricMap must contain type entry");
+                    metricAsMap.put("@timestamp", timestampInUtc);
+                    metricAsMap.put("host", hostName);
+                    metricAsMap.put("hostAddress", hostAddress);
                     return new IndexRequest()
                             .index(indexName)
                             .type(type)
@@ -160,8 +166,12 @@ public class ElasticMetricsReporter implements Consumer<MetricsDump> {
                 });
     }
 
+    private LocalDateTime timestampInUtc(long timestampInMillis) {
+        return Instant.ofEpochMilli(timestampInMillis).atZone(zoneForTimestamps).toLocalDateTime();
+    }
+
     private Single<BulkRequestBuilder> requestBuilderFor (MetricsDump metricsDump) throws Exception {
-        LocalDateTime timestampInUtc = Instant.ofEpochMilli(metricsDump.timestamp).atZone(zoneForTimestamps).toLocalDateTime();
+        LocalDateTime timestampInUtc = timestampInUtc(metricsDump.timestamp);
 
         return Observable.fromIterable(metricsDump.metrics.entrySet())
                 .map(entry -> new Tuple3<>(entry.getValue().getClass().getSimpleName(), entry.getKey(), entry.getValue()))

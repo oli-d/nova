@@ -113,7 +113,7 @@ class ElasticMetricsReporterTest {
         BulkRequestBuilder brb = new BulkRequestBuilder(client, BulkAction.INSTANCE);
         Mockito.when(client.prepareBulk()).thenReturn(brb);
 
-        Map<String, Map<String, Object>> dumpAsMap = new HashMap<>();
+        Map<String, Object> dumpAsMap = new HashMap<>();
         Arrays.asList("counter1", "meter1", "myMetric1")
                 .forEach(name -> {
                     Map<String, Object> metricMap = new HashMap<>();
@@ -149,18 +149,18 @@ class ElasticMetricsReporterTest {
         BulkRequestBuilder brb = new BulkRequestBuilder(client, BulkAction.INSTANCE);
         Mockito.when(client.prepareBulk()).thenReturn(brb);
 
-        Map<String, Map<String, Object>> dumpAsMap = new HashMap<>();
+        Map<String, Object> dumpAsMap = new HashMap<>();
         Arrays.asList(new Pair<>("counter", "counter1"),
                 new Pair<>("meter", "meter1"),
                 new Pair<>("MyMetric", "myMetric1"))
                 .forEach(pair -> {
                     Map<String, Object> metricMap = new HashMap<>();
-                    metricMap.put("_type", pair._1);
-                    metricMap.put("host", "someVal");
+                    metricMap.put("type", pair._1);
                     metricMap.put("someAttribute", "someVal");
                     dumpAsMap.put("test." + pair._2, metricMap);
                 });
 
+        dumpAsMap.put("hostName", "someVal");
         sut.accept(dumpAsMap);
 
         Mockito.verify(client).prepareBulk();
@@ -181,7 +181,7 @@ class ElasticMetricsReporterTest {
     }
 
     private Map<String,Object> getMapFrom (BytesReference source) throws Exception {
-        return new ObjectMapper().readValue(source.utf8ToString(),Map.class);
+        return new ObjectMapper().readValue(source.utf8ToString(), Map.class);
     }
 
     private TransportClient injectTransportClientMockIntoSut() throws Exception {
