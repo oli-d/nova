@@ -28,13 +28,15 @@
 
         <module>service</module>
 
-        <module>metrics-elastic</module>
-
         <module>comm</module>
         <module>jms</module>
         <module>http</module>
         <module>kafka</module>
-        <module>rest-annotations</module>
+	<module>rest-annotations</module>
+
+        <module>metrics-serialization</module>
+        <module>metrics-elastic</module>
+        <module>metrics-kafka</module>
     </modules>
 
 
