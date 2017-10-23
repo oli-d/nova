@@ -10,24 +10,21 @@ import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.AsyncHttpClientConfig;
 import io.reactivex.BackpressureStrategy;
 import io.reactivex.Flowable;
-import io.reactivex.disposables.Disposable;
-import io.reactivex.subjects.PublishSubject;
 import io.reactivex.subscribers.TestSubscriber;
 import org.glassfish.grizzly.http.server.HttpServer;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 
+import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.startsWith;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -45,7 +42,7 @@ class WebsocketAdapterTest {
     WebSocketAdapter<Integer> sut;
 
     @BeforeEach
-    void setup() {
+    void setup() throws Exception {
         metrics = new Metrics();
 
         sut = WebSocketAdapter.<Integer>builder()
@@ -55,6 +52,13 @@ class WebsocketAdapterTest {
                 .setHttpServer(httpServer)
                 .setHttpClient(httpClient)
                 .build();
+
+        httpServer.start();
+    }
+
+    @AfterEach
+    void tearDown() {
+        httpServer.shutdownNow();
     }
 
     @Test
@@ -122,7 +126,6 @@ class WebsocketAdapterTest {
 
         CountDownLatch connectionLatch = new CountDownLatch(1);
         CountDownLatch closeLatch = new CountDownLatch(1);
-        httpServer.start();
 
         Counter totalSubscriptions = metrics.getCounter("websocket", "subscriptions", "total");
         Counter specificSubscriptions = metrics.getCounter("websocket", "subscriptions", serverDestination);
@@ -154,7 +157,6 @@ class WebsocketAdapterTest {
             }
 
             if (endpointAccepting != null) endpointAccepting.close();
-            httpServer.shutdownNow();
         }
 
     }
@@ -176,7 +178,6 @@ class WebsocketAdapterTest {
 
         String serverDestination = "echoBroken";
         String clientDestination = "ws://127.0.0.1:7777/" + serverDestination;
-        httpServer.start();
 
 
         ServerEndpoint<Integer> serverEndpoint = null;
@@ -203,7 +204,6 @@ class WebsocketAdapterTest {
                 clientEndpoint.close();
             }
             if (serverEndpoint != null) serverEndpoint.close();
-            httpServer.shutdownNow();
         }
 
     }
@@ -225,7 +225,6 @@ class WebsocketAdapterTest {
 
         String serverDestination = "echoBroken";
         String clientDestination = "ws://127.0.0.1:7777/" + serverDestination;
-        httpServer.start();
 
 
         ServerEndpoint<String> serverEndpoint = null;
@@ -269,7 +268,7 @@ class WebsocketAdapterTest {
         endpoint.send(1);
         endpoint.send(2);
         endpoint.send(33);
-        assertThat(totalSent.getCount(), is(3l));
+        assertThat(totalSent.getCount(), greaterThanOrEqualTo(3l));
         assertThat(specificSent.getCount(), is(3l));
 
         long maxWaitTime = System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(20);
@@ -325,7 +324,6 @@ class WebsocketAdapterTest {
         CountDownLatch messageLatch1 = new CountDownLatch(1);
         CountDownLatch messageLatch2 = new CountDownLatch(2);
         CountDownLatch messageLatch3 = new CountDownLatch(3);
-        httpServer.start();
 
         ServerEndpoint<Integer> serverEndpoint = null;
         try {
@@ -372,5 +370,86 @@ class WebsocketAdapterTest {
         }
 
     }
+
+    @Test
+    void specificCloseReasonMustNotBeUsedByServerEndpoint() throws Exception {
+        String serverDestination = "forbiddenServerCloseReason";
+
+        ServerEndpoint<Integer> serverEndpoint = sut.acceptConnections(serverDestination);
+        assertThrows(IllegalArgumentException.class,
+                () -> serverEndpoint.close(CloseReason.CLOSED_ABNORMALLY));
+        assertThrows(IllegalArgumentException.class,
+                () -> serverEndpoint.close(CloseReason.NO_STATUS_CODE));
+    }
+
+    @Test
+    void specificCloseReasonMustNotBeUsedByClientEndpoint() throws Exception {
+        String serverDestination = "forbiddenClientCloseReason";
+        String clientDestination = "ws://127.0.0.1:7777/" + serverDestination;
+
+        sut.acceptConnections(serverDestination);
+        ClientEndpoint<Integer> clientEndpoint = sut.connectTo(clientDestination);
+        assertThrows(IllegalArgumentException.class,
+                () -> clientEndpoint.close(CloseReason.CLOSED_ABNORMALLY));
+        assertThrows(IllegalArgumentException.class,
+                () -> clientEndpoint.close(CloseReason.NO_STATUS_CODE));
+    }
+
+    @Test
+    // TODO: how can we make the client lib transport a close reason?
+    void serverSideCloseReasonNotTransportedToClients() throws Exception {
+        CountDownLatch closeLatch = new CountDownLatch(2);
+        List<CloseReason> closeReasons = new ArrayList<>();
+
+        String serverDestination = "clientCloseReason";
+        String clientDestination = "ws://127.0.0.1:7777/" + serverDestination;
+
+        ServerEndpoint<Integer> serverEndpoint = sut.acceptConnections(serverDestination);
+
+        ClientEndpoint<Integer> clientEndpoint1 = sut.connectTo(clientDestination);
+        clientEndpoint1.closedWebSockets(BackpressureStrategy.BUFFER).subscribe(pair -> {
+            closeReasons.add(pair._2);
+            closeLatch.countDown();
+        });
+        ClientEndpoint<Integer> clientEndpoint2 = sut.connectTo(clientDestination);
+        clientEndpoint2.closedWebSockets(BackpressureStrategy.BUFFER).subscribe(pair -> {
+            closeReasons.add(pair._2);
+            closeLatch.countDown();
+        });
+        serverEndpoint.close(CloseReason.SERVICE_RESTART);
+
+        closeLatch.await(2, TimeUnit.SECONDS);
+        assertThat(closeLatch.getCount(), is(0L));
+
+        assertThat(closeReasons, contains(CloseReason.NO_STATUS_CODE, CloseReason.NO_STATUS_CODE));
+    }
+
+
+    @Test
+    // TODO: how can we make the client lib transport a close reason?
+    void clientSideCloseReasonNotTransportedToServer() throws Exception {
+        CountDownLatch closeLatch = new CountDownLatch(2);
+        List<CloseReason> closeReasons = new ArrayList<>();
+
+        String serverDestination = "clientCloseReason";
+        String clientDestination = "ws://127.0.0.1:7777/" + serverDestination;
+
+        ServerEndpoint<Integer> serverEndpoint = sut.acceptConnections(serverDestination);
+        serverEndpoint.closedWebSockets(BackpressureStrategy.BUFFER).subscribe(pair -> {
+            closeReasons.add(pair._2);
+            closeLatch.countDown();
+        });
+
+        ClientEndpoint<Integer> clientEndpoint1 = sut.connectTo(clientDestination);
+        clientEndpoint1.close(CloseReason.TLS_HANDSHAKE_FAILURE);
+        ClientEndpoint<Integer> clientEndpoint2 = sut.connectTo(clientDestination);
+        clientEndpoint2.close(CloseReason.SERVICE_RESTART);
+
+        closeLatch.await(2, TimeUnit.SECONDS);
+        assertThat(closeLatch.getCount(), is (0L));
+
+        assertThat(closeReasons, contains(CloseReason.GOING_AWAY, CloseReason.GOING_AWAY));
+    }
+
 
 }

@@ -1,5 +1,6 @@
 package ch.squaredesk.nova.comm.websockets.server;
 
+import ch.squaredesk.nova.comm.websockets.CloseReason;
 import ch.squaredesk.nova.comm.websockets.Endpoint;
 import ch.squaredesk.nova.comm.websockets.EndpointStreamSource;
 
@@ -10,7 +11,7 @@ public class ServerEndpoint<MessageType> extends Endpoint<MessageType> {
 
     public ServerEndpoint(EndpointStreamSource<MessageType> endpointStreamSource,
                           Consumer<MessageType> broadcastAction,
-                          Runnable closeAction) {
+                          Consumer<CloseReason> closeAction) {
         super(endpointStreamSource, closeAction);
         this.broadcastAction = broadcastAction;
     }

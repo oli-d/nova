@@ -6,6 +6,6 @@ import io.reactivex.Observable;
 public interface StreamCreatingEndpointWrapper<WebsocketType, MessageType>  {
     Observable<Pair<WebsocketType, MessageType>> messages();
     Observable<WebsocketType> connectingSockets();
-    Observable<WebsocketType> closingSockets();
+    Observable<Pair<WebsocketType, CloseReason>> closingSockets();
     Observable<Pair<WebsocketType, Throwable>> errors();
 }

@@ -17,16 +17,11 @@ import org.glassfish.grizzly.http.server.HttpServer;
 import org.glassfish.grizzly.http.server.NetworkListener;
 import org.glassfish.grizzly.websockets.WebSocketAddOn;
 import org.glassfish.grizzly.websockets.WebSocketEngine;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-import java.util.Arrays;
-import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.function.Consumer;
 import java.util.function.Function;
-import java.util.stream.Stream;
 
 import static java.util.Objects.requireNonNull;
 
@@ -39,7 +34,7 @@ public class WebSocketAdapter<MessageType> {
     private final MessageUnmarshaller<String, MessageType> messageUnmarshaller;
     private final MetricsCollector metricsCollector;
 
-    public WebSocketAdapter(Builder<MessageType> builder) {
+    private WebSocketAdapter(Builder<MessageType> builder) {
         this.messageMarshaller = builder.messageMarshaller;
         this.messageUnmarshaller = builder.messageUnmarshaller;
         this.metricsCollector = new MetricsCollector(builder.metrics);
@@ -69,11 +64,11 @@ public class WebSocketAdapter<MessageType> {
     }
 
     private Consumer<String> rawSendActionFor(com.ning.http.client.ws.WebSocket webSocket) {
-        return string -> webSocket.sendMessage(string);
+        return webSocket::sendMessage;
     }
 
     private Runnable rawCloseActionFor(com.ning.http.client.ws.WebSocket webSocket) {
-        return () -> webSocket.close();
+        return webSocket::close;
     }
 
 
@@ -90,11 +85,11 @@ public class WebSocketAdapter<MessageType> {
     //
     ////////////////
     private Consumer<String> rawSendActionFor(org.glassfish.grizzly.websockets.WebSocket webSocket) {
-        return string -> webSocket.send(string);
+        return webSocket::send;
     }
 
     private Runnable rawCloseActionFor(org.glassfish.grizzly.websockets.WebSocket webSocket) {
-        return () -> webSocket.close();
+        return webSocket::close;
     }
 
     private WebSocket<MessageType> createWebSocket(String destination, org.glassfish.grizzly.websockets.WebSocket webSocket) {
@@ -125,10 +120,10 @@ public class WebSocketAdapter<MessageType> {
                 .map(pair -> new Tuple3<>(pair._2, destination, webSocketFactory.apply(pair._1)))
                 .doOnNext(tuple -> metricsCollector.messageReceived(destinationForMetrics));
         Observable<WebSocket<SomeMessageType>> connectingSockets = streamCreatingEndpointWrapper.connectingSockets()
-                .map(rawSocket -> webSocketFactory.apply(rawSocket))
+                .map(webSocketFactory::apply)
                 .doOnNext(socket -> metricsCollector.subscriptionCreated(destinationForMetrics));
-        Observable<Pair<WebSocket<SomeMessageType>, Object>> closingSockets = streamCreatingEndpointWrapper.closingSockets()
-                .map(rawSocket -> new Pair<>(webSocketFactory.apply(rawSocket), null))
+        Observable<Pair<WebSocket<SomeMessageType>, CloseReason>> closingSockets = streamCreatingEndpointWrapper.closingSockets()
+                .map(pair -> new Pair<>(webSocketFactory.apply(pair._1), pair._2))
                 .doOnNext(socket -> metricsCollector.subscriptionDestroyed(destinationForMetrics));
         Observable<Pair<WebSocket<SomeMessageType>, Throwable>> errors = streamCreatingEndpointWrapper.errors()
                 .map(pair -> new Pair<>(webSocketFactory.apply(pair._1), pair._2)); // TODO metric?
@@ -184,13 +179,13 @@ public class WebSocketAdapter<MessageType> {
                 .build();
         com.ning.http.client.ws.WebSocket underlyingWebSocket = openConnection(destination, webSocketUpgradeHandler);
 
-        // FIXME: when closed, clean up
+        // FIXME: everything released when closed???
         WebSocket<MessageType> webSocket = createWebSocket(destination, underlyingWebSocket);
         Function<com.ning.http.client.ws.WebSocket, WebSocket<MessageType>> webSocketFactory = rawSocket -> webSocket;
 
         EndpointStreamSource<MessageType> endpointStreamSource = createStreamSourceFor(destination, webSocketFactory, listener, metricsCollector);
 
-        Runnable closeAction = () -> {
+        Consumer<CloseReason> closeAction = closeReason -> {
             underlyingWebSocket.close();
             listener.close();
         };
@@ -208,7 +203,7 @@ public class WebSocketAdapter<MessageType> {
                 new StreamCreatingWebSocketApplication<>(text -> unmarshal(destinationToUse, text));
         WebSocketEngine.getEngine().register("", destinationToUse, app);
 
-        // FIXME: when closed, clean up
+        // FIXME: everything released when closed???
         Function<org.glassfish.grizzly.websockets.WebSocket, WebSocket<MessageType>> webSocketFactory
                 = socket -> createWebSocket(destinationToUse, socket);
         EndpointStreamSource<MessageType> endpointStreamSource =
@@ -216,7 +211,7 @@ public class WebSocketAdapter<MessageType> {
 
         Set<org.glassfish.grizzly.websockets.WebSocket> allSockets = new CopyOnWriteArraySet<>(); // FIXME: proper data structure
         Disposable subscriptionConnections = app.connectingSockets().subscribe(allSockets::add);
-        Disposable subscriptionDisconnections = app.closingSockets().subscribe(allSockets::remove);
+        Disposable subscriptionDisconnections = app.closingSockets().subscribe(pair -> allSockets.remove(pair._1));
         Consumer<MessageType> broadcastAction = message -> {
             String messageAsString;
             try {
@@ -243,10 +238,10 @@ public class WebSocketAdapter<MessageType> {
             // System.out.println("Successfully broadcast? " + broadcastSocket.isPresent());
         };
 
-        Runnable closeAction = () -> {
+        Consumer<CloseReason> closeAction = closeReason -> {
             subscriptionConnections.dispose();
             subscriptionDisconnections.dispose();
-            allSockets.forEach(s -> s.close());
+            allSockets.forEach(s -> s.close(closeReason.code, closeReason.text));
             allSockets.clear();
             app.close();
         };

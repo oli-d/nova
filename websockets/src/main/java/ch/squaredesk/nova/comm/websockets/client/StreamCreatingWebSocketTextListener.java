@@ -1,5 +1,6 @@
 package ch.squaredesk.nova.comm.websockets.client;
 
+import ch.squaredesk.nova.comm.websockets.CloseReason;
 import ch.squaredesk.nova.comm.websockets.StreamCreatingEndpointWrapper;
 import ch.squaredesk.nova.tuples.Pair;
 import com.ning.http.client.ws.WebSocket;
@@ -21,7 +22,7 @@ public class StreamCreatingWebSocketTextListener<MessageType>
     // TODO: do we need toSerialized versions? grizzly is nio, though...
     private final Subject<Pair<WebSocket, MessageType>> messageSubject = PublishSubject.create();
     private final Subject<WebSocket> connectionSubject = BehaviorSubject.create();
-    private final Subject<WebSocket> closeSubject = PublishSubject.create();
+    private final Subject<Pair<WebSocket, CloseReason>> closeSubject = PublishSubject.create();
     private final Subject<Pair<WebSocket, Throwable>> errorSubject = PublishSubject.create();
 
     private final Function<String, MessageType> messageUnmarshaller;
@@ -48,7 +49,7 @@ public class StreamCreatingWebSocketTextListener<MessageType>
     @Override
     public void onClose(WebSocket websocket) {
         // FIXME: close reason
-        closeSubject.onNext(websocket);
+        closeSubject.onNext(new Pair<>(websocket, CloseReason.NO_STATUS_CODE));
     }
 
     @Override
@@ -67,7 +68,7 @@ public class StreamCreatingWebSocketTextListener<MessageType>
     }
 
     @Override
-    public Observable<WebSocket> closingSockets() {
+    public Observable<Pair<WebSocket, CloseReason>> closingSockets() {
         return closeSubject;
     }
 

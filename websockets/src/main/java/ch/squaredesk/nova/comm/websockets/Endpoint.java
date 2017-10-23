@@ -8,16 +8,17 @@ import io.reactivex.Flowable;
 
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Consumer;
 
 public class Endpoint<MessageType>  {
     private final EndpointStreamSource<MessageType> streamSource;
-    private final Optional<Runnable> closeAction;
+    private final Optional<Consumer<CloseReason>> closeAction;
 
     protected Endpoint(EndpointStreamSource<MessageType> streamSource) {
         this(streamSource, null);
     }
 
-    protected Endpoint(EndpointStreamSource<MessageType> streamSource, Runnable closeAction) {
+    protected Endpoint(EndpointStreamSource<MessageType> streamSource, Consumer<CloseReason> closeAction) {
         Objects.requireNonNull(streamSource, "streamSource must not be null");
         this.streamSource = streamSource;
         this.closeAction = Optional.ofNullable(closeAction);
@@ -51,14 +52,20 @@ public class Endpoint<MessageType>  {
             .toFlowable(backpressureStrategy);
     }
 
-    public Flowable<Pair<WebSocket<MessageType>, Object>> closedWebSockets(BackpressureStrategy backpressureStrategy) {
+    public Flowable<Pair<WebSocket<MessageType>, CloseReason>> closedWebSockets(BackpressureStrategy backpressureStrategy) {
         return streamSource
                 .closingSockets
                 .toFlowable(backpressureStrategy);
     }
 
-    // FIXME: close reason
     public void close () {
-        closeAction.ifPresent(runnable -> runnable.run());
+        close(CloseReason.NORMAL_CLOSURE);
+    }
+
+    public void close (CloseReason closeReason) {
+        if (!closeReason.mightBeUsedByEndpoint) {
+            throw new IllegalArgumentException("CloseReason " + closeReason + " cannot be used by endpoints");
+        }
+        closeAction.ifPresent(closeAction -> closeAction.accept(closeReason));
     }
 }

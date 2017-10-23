@@ -1,5 +1,6 @@
 package ch.squaredesk.nova.comm.websockets.server;
 
+import ch.squaredesk.nova.comm.websockets.CloseReason;
 import ch.squaredesk.nova.comm.websockets.StreamCreatingEndpointWrapper;
 import ch.squaredesk.nova.tuples.Pair;
 import io.reactivex.Observable;
@@ -23,7 +24,7 @@ public class StreamCreatingWebSocketApplication<MessageType>
     // TODO: do we need toSerialized versions? grizzly is nio, though...
     private final Subject<Pair<WebSocket, MessageType>> messageSubject = PublishSubject.create();
     private final Subject<WebSocket> connectionSubject = PublishSubject.create();
-    private final Subject<WebSocket> closeSubject = PublishSubject.create();
+    private final Subject<Pair<WebSocket, CloseReason>> closeSubject = PublishSubject.create();
     private final Subject<Pair<WebSocket, Throwable>> errorSubject = PublishSubject.create();
 
     private final Function<String, MessageType> messageUnmarshaller;
@@ -36,7 +37,14 @@ public class StreamCreatingWebSocketApplication<MessageType>
     public void onClose(WebSocket socket, DataFrame frame) {
         // FIXME: convert dataFrame to something useful
         ClosingFrame closingFrame = (ClosingFrame)frame;
-        closeSubject.onNext(socket);
+        CloseReason closeReason;
+        try {
+            closeReason = CloseReason.forCloseCode(closingFrame.getCode());
+        } catch (Exception e) {
+            logger.error("Unexpected close code " + closingFrame.getCode() + " in closing dataFrame " + frame);
+            closeReason = CloseReason.UNEXPECTED_CONDITION;
+        }
+        closeSubject.onNext(new Pair<>(socket, closeReason));
     }
 
     @Override
@@ -57,7 +65,7 @@ public class StreamCreatingWebSocketApplication<MessageType>
             messageSubject.onNext(new Pair<>(socket, messageUnmarshaller.apply(text)));
         } catch (Exception e) {
             // must be caught to keep the Observable functional
-            logger.info("Unable to unmarshal incoming message " + text, e);
+            logger.info("", e);
         }
     }
 
@@ -72,7 +80,7 @@ public class StreamCreatingWebSocketApplication<MessageType>
     }
 
     @Override
-    public Observable<WebSocket> closingSockets() {
+    public Observable<Pair<WebSocket, CloseReason>> closingSockets() {
         return closeSubject;
     }
 
