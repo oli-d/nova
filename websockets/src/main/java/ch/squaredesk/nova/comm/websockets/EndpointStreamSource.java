@@ -5,19 +5,20 @@ import ch.squaredesk.nova.tuples.Tuple3;
 import io.reactivex.Observable;
 
 public class EndpointStreamSource<MessageType>  {
-    public final Observable<Tuple3<MessageType, String, WebSocket>> messages;
-    public final Observable<WebSocket> connectingSockets;
-    public final Observable<Pair<WebSocket, Object>> closingSockets;
-    public final Observable<Pair<WebSocket, Throwable>> errors;
+    final Observable<Tuple3<MessageType, String, WebSocket<MessageType>>> messages;
+    final Observable<WebSocket<MessageType>> connectingSockets;
+    final Observable<Pair<WebSocket<MessageType>, Object>> closingSockets;
+    final Observable<Pair<WebSocket<MessageType>, Throwable>> errors;
 
 
-    public EndpointStreamSource(Observable<Tuple3<MessageType, String, WebSocket>> messages,
-                                Observable<WebSocket> connectingSockets,
-                                Observable<Pair<WebSocket, Object>> closingSockets,
-                                Observable<Pair<WebSocket, Throwable>> errors) {
+    EndpointStreamSource(Observable<Tuple3<MessageType, String, WebSocket<MessageType>>> messages,
+                                Observable<WebSocket<MessageType>> connectingSockets,
+                                Observable<Pair<WebSocket<MessageType>, Object>> closingSockets,
+                                Observable<Pair<WebSocket<MessageType>, Throwable>> errors) {
         this.messages = messages;
         this.connectingSockets = connectingSockets;
         this.closingSockets = closingSockets;
         this.errors = errors;
     }
+
 }

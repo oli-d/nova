@@ -2,18 +2,17 @@ package ch.squaredesk.nova.comm.websockets;
 
 import ch.squaredesk.nova.comm.retrieving.MessageUnmarshaller;
 import ch.squaredesk.nova.comm.sending.MessageMarshaller;
-import ch.squaredesk.nova.comm.websockets.WebsocketAdapter.client.ClientEndpoint;
-import ch.squaredesk.nova.comm.websockets.client.StreamCreatingWebSocketTextListener;
-import ch.squaredesk.nova.comm.websockets.WebsocketAdapter.server.ServerEndpoint;
-import ch.squaredesk.nova.comm.websockets.server.StreamCreatingWebSocketApplication;
 import ch.squaredesk.nova.comm.websockets.client.ClientEndpoint;
+import ch.squaredesk.nova.comm.websockets.client.StreamCreatingWebSocketTextListener;
 import ch.squaredesk.nova.comm.websockets.server.ServerEndpoint;
+import ch.squaredesk.nova.comm.websockets.server.StreamCreatingWebSocketApplication;
 import ch.squaredesk.nova.metrics.Metrics;
 import ch.squaredesk.nova.tuples.Pair;
 import ch.squaredesk.nova.tuples.Tuple3;
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.ws.WebSocketUpgradeHandler;
-import io.reactivex.BackpressureStrategy;
+import io.reactivex.Observable;
+import io.reactivex.disposables.Disposable;
 import org.glassfish.grizzly.http.server.HttpServer;
 import org.glassfish.grizzly.http.server.NetworkListener;
 import org.glassfish.grizzly.websockets.WebSocketAddOn;
@@ -21,14 +20,17 @@ import org.glassfish.grizzly.websockets.WebSocketEngine;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Arrays;
+import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.stream.Stream;
 
 import static java.util.Objects.requireNonNull;
 
 public class WebSocketAdapter<MessageType> {
-    private static final Logger logger = LoggerFactory.getLogger(WebSocketAdapter.class);
-
     private final HttpServer httpServer;
     private final AsyncHttpClient httpClient;
 
@@ -107,6 +109,36 @@ public class WebSocketAdapter<MessageType> {
     // Generic
     //
     ////////////////
+    private static String destinationForMetrics (String destination) {
+        return destination.startsWith("/") ? destination.substring(1) : destination;
+    }
+
+    private static <SomeMessageType, SomeWebSocketType> EndpointStreamSource<SomeMessageType> createStreamSourceFor(
+            String destination,
+            Function<SomeWebSocketType, WebSocket<SomeMessageType>> webSocketFactory,
+            StreamCreatingEndpointWrapper<SomeWebSocketType, SomeMessageType> streamCreatingEndpointWrapper,
+            MetricsCollector metricsCollector) {
+
+        String destinationForMetrics = destinationForMetrics(destination);
+
+        Observable<Tuple3<SomeMessageType, String, WebSocket<SomeMessageType>>> messages = streamCreatingEndpointWrapper.messages()
+                .map(pair -> new Tuple3<>(pair._2, destination, webSocketFactory.apply(pair._1)))
+                .doOnNext(tuple -> metricsCollector.messageReceived(destinationForMetrics));
+        Observable<WebSocket<SomeMessageType>> connectingSockets = streamCreatingEndpointWrapper.connectingSockets()
+                .map(rawSocket -> webSocketFactory.apply(rawSocket))
+                .doOnNext(socket -> metricsCollector.subscriptionCreated(destinationForMetrics));
+        Observable<Pair<WebSocket<SomeMessageType>, Object>> closingSockets = streamCreatingEndpointWrapper.closingSockets()
+                .map(rawSocket -> new Pair<>(webSocketFactory.apply(rawSocket), null))
+                .doOnNext(socket -> metricsCollector.subscriptionDestroyed(destinationForMetrics));
+        Observable<Pair<WebSocket<SomeMessageType>, Throwable>> errors = streamCreatingEndpointWrapper.errors()
+                .map(pair -> new Pair<>(webSocketFactory.apply(pair._1), pair._2)); // TODO metric?
+        return new EndpointStreamSource<>(
+                messages,
+                connectingSockets,
+                closingSockets,
+                errors);
+    }
+
     private Consumer<MessageType> sendActionFor(String destination, Consumer<String> rawSendAction) {
         return message -> {
             String messageAsString = marshal(message);
@@ -135,7 +167,7 @@ public class WebSocketAdapter<MessageType> {
         try {
             return messageUnmarshaller.unmarshal(message);
         } catch (Exception e) {
-            metricsCollector.unparsableMessageReceived(destination);
+            metricsCollector.unparsableMessageReceived(destinationForMetrics(destination));
             throw new RuntimeException("Unable to unmarshal incoming message " + message + " on destination " + destination, e);
         }
     }
@@ -145,7 +177,7 @@ public class WebSocketAdapter<MessageType> {
             throw new IllegalStateException("Adapter not initialized properly for client mode");
         }
 
-        StreamCreatingWebSocketTextListener listener =
+        StreamCreatingWebSocketTextListener<MessageType> listener =
                 new StreamCreatingWebSocketTextListener<>(text -> unmarshal(destination, text));
         WebSocketUpgradeHandler webSocketUpgradeHandler =new WebSocketUpgradeHandler.Builder()
                 .addWebSocketListener(listener)
@@ -154,14 +186,15 @@ public class WebSocketAdapter<MessageType> {
 
         // FIXME: when closed, clean up
         WebSocket<MessageType> webSocket = createWebSocket(destination, underlyingWebSocket);
+        Function<com.ning.http.client.ws.WebSocket, WebSocket<MessageType>> webSocketFactory = rawSocket -> webSocket;
 
-        BackpressureStrategy backpressureStrategy = BackpressureStrategy.BUFFER; // FIXME
-        return new ClientEndpoint<>(
-                messageSubject.toFlowable(backpressureStrategy).map(message -> new Tuple3<>(message, destination, underlyingWebSocket)),
-                connectionSubject.toFlowable(backpressureStrategy).map(dummy -> underlyingWebSocket),
-                closeSubject.toFlowable(backpressureStrategy).map(dummy -> new Pair<>(underlyingWebSocket, null)),
-                errorSubject.toFlowable(backpressureStrategy).map(t -> new Pair<>(underlyingWebSocket, t)),
-                webSocket);
+        EndpointStreamSource<MessageType> endpointStreamSource = createStreamSourceFor(destination, webSocketFactory, listener, metricsCollector);
+
+        Runnable closeAction = () -> {
+            underlyingWebSocket.close();
+            listener.close();
+        };
+        return new ClientEndpoint<>(endpointStreamSource, webSocket, closeAction);
     }
 
     public ServerEndpoint<MessageType> acceptConnections(String destination)  {
@@ -171,68 +204,53 @@ public class WebSocketAdapter<MessageType> {
 
         String destinationToUse = destination.startsWith("/") ? destination : "/" + destination;
 
-        // TODO: do we need toSerialized versions? grizzly is nio, though...
-        StreamCreatingWebSocketApplication app =
+        StreamCreatingWebSocketApplication<MessageType> app =
                 new StreamCreatingWebSocketApplication<>(text -> unmarshal(destinationToUse, text));
-        /*
-        {
-            @Override
-            public void onClose(org.glassfish.grizzly.websockets.WebSocket socket, DataFrame frame) {
-                // FIXME: convert dataFrame to something useful
-                closeSubject.onNext(new Pair<>(socket, frame));
-                allSockets.remove(socket);
-                metricsCollector.subscriptionDestroyed(destinationToUse);
-            }
-
-            @Override
-            public void onConnect(org.glassfish.grizzly.websockets.WebSocket socket) {
-                connectionSubject.onNext(socket);
-                allSockets.add(socket);
-                metricsCollector.subscriptionCreated(destinationToUse);
-            }
-
-            @Override
-            protected boolean onError(org.glassfish.grizzly.websockets.WebSocket socket, Throwable t) {
-                errorSubject.onNext(new Pair<>(socket, t));
-                // TODO metrics?
-                // TODO verify: is onClose() invoked?
-                return true; // close webSocket
-            }
-
-            @Override
-            public void onMessage(org.glassfish.grizzly.websockets.WebSocket socket, String text) {
-                try {
-                    MessageType message = messageUnmarshaller.unmarshal(text);
-                    messageSubject.onNext(new Tuple3<>(message, destinationToUse, socket));
-                    metricsCollector.messageReceived(destinationToUse);
-                } catch (Exception e) {
-                    logger.error("Unable to unmarshal incoming message " + text + " on destination " + destinationToUse, e);
-                    metricsCollector.unparsableMessageReceived(destinationToUse);
-                }
-            }
-        };
-        */
         WebSocketEngine.getEngine().register("", destinationToUse, app);
 
-        BackpressureStrategy backpressureStrategy = BackpressureStrategy.BUFFER; // FIXME
         // FIXME: when closed, clean up
+        Function<org.glassfish.grizzly.websockets.WebSocket, WebSocket<MessageType>> webSocketFactory
+                = socket -> createWebSocket(destinationToUse, socket);
+        EndpointStreamSource<MessageType> endpointStreamSource =
+                createStreamSourceFor(destination, webSocketFactory, app, metricsCollector);
+
+        Set<org.glassfish.grizzly.websockets.WebSocket> allSockets = new CopyOnWriteArraySet<>(); // FIXME: proper data structure
+        Disposable subscriptionConnections = app.connectingSockets().subscribe(allSockets::add);
+        Disposable subscriptionDisconnections = app.closingSockets().subscribe(allSockets::remove);
         Consumer<MessageType> broadcastAction = message -> {
             String messageAsString;
             try {
                 messageAsString = messageMarshaller.marshal(message);
             } catch (Exception e) {
                 // TODO: metric?
-                throw new RuntimeException("Unable to marshal message " + message, e);
+                throw new RuntimeException("Unable to marshal broadcast message " + message, e);
             }
-            socket.broadcast(allSockets, messageAsString);
+
+            // Optional<org.glassfish.grizzly.websockets.WebSocket> broadcastSocket =
+            allSockets
+            .stream()
+            .filter(socket -> {
+                // verify that the socket was not just closed in the meantime...
+                try {
+                    socket.broadcast(allSockets, messageAsString);
+                    return true;
+                } catch (Exception ex) {
+                    // arrg, looks like the socket was just closed. So we fail silently and hope for the next one
+                }
+                return false;
+            })
+            .findAny();
+            // System.out.println("Successfully broadcast? " + broadcastSocket.isPresent());
         };
-        return new ServerEndpoint<>(
-                messageSubject.toFlowable(backpressureStrategy),
-                connectionSubject.toFlowable(backpressureStrategy),
-                closeSubject.toFlowable(backpressureStrategy),
-                errorSubject.toFlowable(backpressureStrategy),
-                socket -> createWebSocket(destinationToUse, socket),
-                broadcastAction);
+
+        Runnable closeAction = () -> {
+            subscriptionConnections.dispose();
+            subscriptionDisconnections.dispose();
+            allSockets.forEach(s -> s.close());
+            allSockets.clear();
+            app.close();
+        };
+        return new ServerEndpoint<>(endpointStreamSource, broadcastAction, closeAction);
     }
 
 
@@ -251,7 +269,7 @@ public class WebSocketAdapter<MessageType> {
         }
 
         public Builder<MessageType> setHttpClient (AsyncHttpClient httpClient) {
-            this.httpServer = httpServer;
+            this.httpClient = httpClient;
             return this;
         }
 

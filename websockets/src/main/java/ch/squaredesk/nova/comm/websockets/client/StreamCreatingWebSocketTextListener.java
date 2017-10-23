@@ -5,16 +5,22 @@ import ch.squaredesk.nova.tuples.Pair;
 import com.ning.http.client.ws.WebSocket;
 import com.ning.http.client.ws.WebSocketTextListener;
 import io.reactivex.Observable;
+import io.reactivex.subjects.BehaviorSubject;
 import io.reactivex.subjects.PublishSubject;
 import io.reactivex.subjects.Subject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.function.Function;
 
 public class StreamCreatingWebSocketTextListener<MessageType>
         implements WebSocketTextListener, StreamCreatingEndpointWrapper<WebSocket, MessageType> {
+
+    private static final Logger logger = LoggerFactory.getLogger(StreamCreatingEndpointWrapper.class);
+
     // TODO: do we need toSerialized versions? grizzly is nio, though...
     private final Subject<Pair<WebSocket, MessageType>> messageSubject = PublishSubject.create();
-    private final Subject<WebSocket> connectionSubject = PublishSubject.create();
+    private final Subject<WebSocket> connectionSubject = BehaviorSubject.create();
     private final Subject<WebSocket> closeSubject = PublishSubject.create();
     private final Subject<Pair<WebSocket, Throwable>> errorSubject = PublishSubject.create();
 
@@ -26,7 +32,12 @@ public class StreamCreatingWebSocketTextListener<MessageType>
 
     @Override
     public void onMessage(String messageText) {
-        messageSubject.onNext(new Pair<>(null, messageUnmarshaller.apply(messageText)));
+        try {
+            messageSubject.onNext(new Pair<>(null, messageUnmarshaller.apply(messageText)));
+        } catch (Exception e) {
+            // must be caught to keep the Observable functional
+            logger.info("Unable to unmarshal incoming message " + messageText, e);
+        }
     }
 
     @Override
@@ -63,5 +74,12 @@ public class StreamCreatingWebSocketTextListener<MessageType>
     @Override
     public Observable<Pair<WebSocket, Throwable>> errors() {
         return errorSubject;
+    }
+
+    public void close() {
+        messageSubject.onComplete();
+        connectionSubject.onComplete();
+        errorSubject.onComplete();
+        // FIXME closeSubject.onComplete();
     }
 }

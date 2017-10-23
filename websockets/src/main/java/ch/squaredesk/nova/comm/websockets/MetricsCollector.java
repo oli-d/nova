@@ -35,28 +35,28 @@ class MetricsCollector {
     }
 
 
-    public void messageReceived(String destination) {
-        metrics.getMeter(identifierPrefix, "received", String.valueOf(destination)).mark();
+    void messageReceived(String destination) {
+        metrics.getMeter(identifierPrefix, "received", destination).mark();
         totalNumberOfReceivedMessages.mark();
     }
 
-    public void unparsableMessageReceived(String destination) {
-        metrics.getMeter(identifierPrefix, "received", "unparsable", String.valueOf(destination)).mark();
+    void unparsableMessageReceived(String destination) {
+        metrics.getMeter(identifierPrefix, "received", "unparsable", destination).mark();
         totalNumberOfUnparsabledMessagesReceived.mark();
     }
 
-    public void messageSent(String destination) {
-        metrics.getMeter(identifierPrefix, "sent", String.valueOf(destination)).mark();
+    void messageSent(String destination) {
+        metrics.getMeter(identifierPrefix, "sent", destination).mark();
         totalNumberOfSentMessages.mark();
     }
 
-    public void subscriptionCreated (String destination) {
-        metrics.getCounter(identifierPrefix, "subscriptions", String.valueOf(destination)).inc();
+    void subscriptionCreated (String destination) {
+        metrics.getCounter(identifierPrefix, "subscriptions", destination).inc();
         totalNumberOfSubscriptions.inc();
     }
 
-    public void subscriptionDestroyed (String destination) {
-        metrics.getCounter(identifierPrefix, "subscriptions", String.valueOf(destination)).dec();
+    void subscriptionDestroyed (String destination) {
+        metrics.getCounter(identifierPrefix, "subscriptions", destination).dec();
         totalNumberOfSubscriptions.dec();
     }
 }

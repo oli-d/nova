@@ -8,8 +8,9 @@ public class ClientEndpoint<MessageType> extends Endpoint<MessageType> {
     private final ch.squaredesk.nova.comm.websockets.WebSocket<MessageType> webSocket;
 
     public ClientEndpoint(EndpointStreamSource<MessageType> endpointStreamSource,
-                          WebSocket<MessageType> webSocket) {
-        super(endpointStreamSource);
+                          WebSocket<MessageType> webSocket,
+                          Runnable closeAction) {
+        super(endpointStreamSource, closeAction);
         this.webSocket = webSocket;
     }
 

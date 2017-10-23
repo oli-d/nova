@@ -5,15 +5,20 @@ import ch.squaredesk.nova.tuples.Pair;
 import io.reactivex.Observable;
 import io.reactivex.subjects.PublishSubject;
 import io.reactivex.subjects.Subject;
+import org.glassfish.grizzly.websockets.ClosingFrame;
 import org.glassfish.grizzly.websockets.DataFrame;
 import org.glassfish.grizzly.websockets.WebSocket;
 import org.glassfish.grizzly.websockets.WebSocketApplication;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.function.Function;
 
 public class StreamCreatingWebSocketApplication<MessageType>
         extends WebSocketApplication
-        implements StreamCreatingEndpointWrapper<WebSocket,MessageType> {
+        implements StreamCreatingEndpointWrapper<WebSocket, MessageType> {
+
+    private static final Logger logger = LoggerFactory.getLogger(StreamCreatingWebSocketApplication.class);
 
     // TODO: do we need toSerialized versions? grizzly is nio, though...
     private final Subject<Pair<WebSocket, MessageType>> messageSubject = PublishSubject.create();
@@ -30,6 +35,7 @@ public class StreamCreatingWebSocketApplication<MessageType>
     @Override
     public void onClose(WebSocket socket, DataFrame frame) {
         // FIXME: convert dataFrame to something useful
+        ClosingFrame closingFrame = (ClosingFrame)frame;
         closeSubject.onNext(socket);
     }
 
@@ -41,13 +47,18 @@ public class StreamCreatingWebSocketApplication<MessageType>
     @Override
     protected boolean onError(WebSocket socket, Throwable t) {
         errorSubject.onNext(new Pair<>(socket, t));
-        // TODO verify: is onClose() invoked?
         return true; // close webSocket
+        // TODO verify: is onClose() invoked?
     }
 
     @Override
     public void onMessage(WebSocket socket, String text) {
-        messageSubject.onNext(new Pair<>(null, messageUnmarshaller.apply(text)));
+        try {
+            messageSubject.onNext(new Pair<>(socket, messageUnmarshaller.apply(text)));
+        } catch (Exception e) {
+            // must be caught to keep the Observable functional
+            logger.info("Unable to unmarshal incoming message " + text, e);
+        }
     }
 
     @Override
@@ -69,4 +80,12 @@ public class StreamCreatingWebSocketApplication<MessageType>
     public Observable<Pair<WebSocket, Throwable>> errors() {
         return errorSubject;
     }
+
+    public void close() {
+        messageSubject.onComplete();
+        connectionSubject.onComplete();
+        closeSubject.onComplete();
+        errorSubject.onComplete();
+    }
+
 }

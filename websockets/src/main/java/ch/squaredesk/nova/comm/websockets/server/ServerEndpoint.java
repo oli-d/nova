@@ -9,8 +9,9 @@ public class ServerEndpoint<MessageType> extends Endpoint<MessageType> {
     private final Consumer<MessageType> broadcastAction;
 
     public ServerEndpoint(EndpointStreamSource<MessageType> endpointStreamSource,
-                          Consumer<MessageType> broadcastAction) {
-        super(endpointStreamSource);
+                          Consumer<MessageType> broadcastAction,
+                          Runnable closeAction) {
+        super(endpointStreamSource, closeAction);
         this.broadcastAction = broadcastAction;
     }
 

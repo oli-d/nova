@@ -1,21 +1,38 @@
 package ch.squaredesk.nova.comm.websockets;
 
 import ch.squaredesk.nova.comm.retrieving.IncomingMessage;
+import ch.squaredesk.nova.comm.websockets.client.ClientEndpoint;
+import ch.squaredesk.nova.comm.websockets.server.ServerEndpoint;
 import ch.squaredesk.nova.metrics.Metrics;
+import com.codahale.metrics.Counter;
+import com.codahale.metrics.Meter;
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.AsyncHttpClientConfig;
 import io.reactivex.BackpressureStrategy;
 import io.reactivex.Flowable;
+import io.reactivex.disposables.Disposable;
 import io.reactivex.subjects.PublishSubject;
 import io.reactivex.subscribers.TestSubscriber;
 import org.glassfish.grizzly.http.server.HttpServer;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
+import static org.hamcrest.Matchers.greaterThanOrEqualTo;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.startsWith;
+import static org.hamcrest.junit.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
+@Tag("integrationTest")
 class WebsocketAdapterTest {
     HttpServer httpServer = HttpServer.createSimpleServer("/", 7777);
     AsyncHttpClientConfig cf = new AsyncHttpClientConfig.Builder()
@@ -23,96 +40,237 @@ class WebsocketAdapterTest {
             .build();
     AsyncHttpClient httpClient = new AsyncHttpClient(cf);
 
+    Metrics metrics;
+
     WebSocketAdapter<Integer> sut;
 
     @BeforeEach
     void setup() {
+        metrics = new Metrics();
+
         sut = WebSocketAdapter.<Integer>builder()
                 .setMessageMarshaller(Object::toString)
                 .setMessageUnmarshaller(Integer::parseInt)
-                .setMetrics(new Metrics())
+                .setMetrics(metrics)
                 .setHttpServer(httpServer)
                 .setHttpClient(httpClient)
                 .build();
     }
 
-    void bla() throws Exception {
-        CountDownLatch cdl = new CountDownLatch(1);
+    @Test
+    void serverFunctionsCannotBeInvokedIfNotProperlySetup() {
+        sut = WebSocketAdapter.<Integer>builder()
+                .setMessageMarshaller(Object::toString)
+                .setMessageUnmarshaller(Integer::parseInt)
+                .setMetrics(new Metrics())
+                .build();
 
-        PublishSubject<Long> publishSubject = PublishSubject.create();
-        new Thread(() -> {
-            while (true) {
-                try {
-                    TimeUnit.SECONDS.sleep(2);
-                    publishSubject.onNext(System.currentTimeMillis());
-                    System.out.println("Published @ " + new Date());
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-            }
-        }).start();
+        IllegalStateException ex = assertThrows(
+                IllegalStateException.class,
+                () -> sut.acceptConnections("someDest"));
+        assertThat(ex.getMessage(), is("Adapter not initialized properly for server mode"));
+    }
 
-        System.out.println("Starting @ " + new Date());
+    @Test
+    void clientFunctionsCannotBeInvokedIfNotProperlySetup() {
+        sut = WebSocketAdapter.<Integer>builder()
+                .setMessageMarshaller(Object::toString)
+                .setMessageUnmarshaller(Integer::parseInt)
+                .setMetrics(new Metrics())
+                .build();
 
-        Thread t2 = new Thread(() -> {
-            System.out.println("2.) Going to sleep");
-            try {
-                TimeUnit.SECONDS.sleep(10);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-            System.out.println("2.) Woke up, subscribing");
-            publishSubject.toFlowable(BackpressureStrategy.BUFFER).subscribe(l -> {
-                System.out.println("2.) Received + " + new Date(l) + " @ " + new Date());
-            });
-        });
-
-        new Thread(() -> {
-            System.out.println("1.) Going to sleep");
-            try {
-                TimeUnit.SECONDS.sleep(10);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-            t2.start();
-            System.out.println("1.) Woke up, subscribing");
-            publishSubject.toFlowable(BackpressureStrategy.BUFFER).subscribe(l -> {
-                System.out.println("1.) Received + " + new Date(l) + " @ " + new Date());
-            });
-
-        }).start();
-
-        cdl.await();
+        IllegalStateException ex = assertThrows(
+                IllegalStateException.class,
+                () -> sut.connectTo("someDest"));
+        assertThat(ex.getMessage(), is("Adapter not initialized properly for client mode"));
     }
 
     @Test
     void sendAndReceiveAfterInitiatingConnection() throws Exception {
-        CountDownLatch cdl = new CountDownLatch(3);
-
         String destinationUri = "ws://echo.websocket.org/";
+        CountDownLatch connectionLatch = new CountDownLatch(1);
+        CountDownLatch closeLatch = new CountDownLatch(1);
 
-        Endpoint<Integer> endpoint = sut.connectTo(destinationUri);
-        testEcho(destinationUri, endpoint);
+        Counter totalSubscriptions = metrics.getCounter("websocket", "subscriptions", "total");
+        Counter specificSubscriptions = metrics.getCounter("websocket", "subscriptions", destinationUri);
+        assertThat(totalSubscriptions.getCount(), is(0l));
+        assertThat(specificSubscriptions.getCount(), is(0l));
+
+
+        ClientEndpoint<Integer> endpoint = sut.connectTo(destinationUri);
+        endpoint.connectedWebSockets(BackpressureStrategy.BUFFER).subscribe( socket -> connectionLatch.countDown());
+        endpoint.closedWebSockets(BackpressureStrategy.BUFFER).subscribe( socket -> closeLatch.countDown());
+        connectionLatch.await(2, TimeUnit.SECONDS);
+        assertThat(connectionLatch.getCount(), is(0L));
+        assertThat(totalSubscriptions.getCount(), is(1l));
+        assertThat(specificSubscriptions.getCount(), is(1l));
+
+        testEchoFromClientPerspective(destinationUri, endpoint);
+
+        endpoint.close();
+
+        closeLatch.await(10, TimeUnit.SECONDS);
+        assertThat(closeLatch.getCount(), is(0L));
+        assertThat(totalSubscriptions.getCount(), is(0l));
+        assertThat(specificSubscriptions.getCount(), is(0l));
     }
 
-    /*
     @Test
     void sendAndReceiveAfterAcceptingConnection() throws Exception {
-        String destinationUri = "echo";
-        ClientEndpoint<Integer> clientEndpointAccepting = sut.acceptConnection(destinationUri);
-        ClientEndpoint<Integer> clientEndpointInitiating = sut.connectToEndpoint("ws://127.0.0.1:7777/" + destinationUri);
+        String serverDestination = "echo";
+        String clientDestination = "ws://127.0.0.1:7777/" + serverDestination;
 
-        testSendAndReceiveOn("ws://127.0.0.1:7777/" +destinationUri, clientEndpointInitiating);
+        CountDownLatch connectionLatch = new CountDownLatch(1);
+        CountDownLatch closeLatch = new CountDownLatch(1);
+        httpServer.start();
+
+        Counter totalSubscriptions = metrics.getCounter("websocket", "subscriptions", "total");
+        Counter specificSubscriptions = metrics.getCounter("websocket", "subscriptions", serverDestination);
+        assertThat(totalSubscriptions.getCount(), is(0l));
+        assertThat(specificSubscriptions.getCount(), is(0l));
+
+        ServerEndpoint<Integer> endpointAccepting = null;
+        ClientEndpoint<Integer> endpointInitiating = null;
+        try {
+            endpointAccepting = sut.acceptConnections(serverDestination);
+            endpointAccepting.connectedWebSockets(BackpressureStrategy.BUFFER).subscribe(socket -> connectionLatch.countDown());
+            endpointAccepting.closedWebSockets(BackpressureStrategy.BUFFER).subscribe(socket -> closeLatch.countDown());
+            endpointAccepting.messages(BackpressureStrategy.BUFFER).subscribe(
+                    incomingMessage -> incomingMessage.details.transportSpecificDetails.webSocket.send(incomingMessage.message));
+            endpointInitiating = sut.connectTo(clientDestination);
+
+            connectionLatch.await(2, TimeUnit.SECONDS);
+            assertThat(connectionLatch.getCount(), is(0L));
+            assertThat(totalSubscriptions.getCount(), is(1l));
+            assertThat(specificSubscriptions.getCount(), is(1l));
+            testEchoFromClientPerspective(clientDestination, endpointInitiating);
+        } finally {
+            if (endpointInitiating != null) {
+                endpointInitiating.close();
+                closeLatch.await(10, TimeUnit.SECONDS);
+                assertThat(closeLatch.getCount(), is(0L));
+                assertThat(totalSubscriptions.getCount(), is(0l));
+                assertThat(specificSubscriptions.getCount(), is(0l));
+            }
+
+            if (endpointAccepting != null) endpointAccepting.close();
+            httpServer.shutdownNow();
+        }
+
     }
-*/
 
-    void testEcho(String destination, Endpoint<Integer> endpoint) throws Exception {
-        Flowable<IncomingMessage<Integer, String, WebSocketSpecificDetails>> messages = endpoint.messages();
+    @Test
+    void receiveUnparsableMessagesServerSide() throws Exception {
+        WebSocketAdapter<Integer> sutInteger = WebSocketAdapter.<Integer>builder()
+                .setMessageMarshaller(Object::toString)
+                .setMessageUnmarshaller(Integer::parseInt)
+                .setMetrics(metrics)
+                .setHttpServer(httpServer)
+                .build();
+        WebSocketAdapter<String> sutString = WebSocketAdapter.<String>builder()
+                .setMessageMarshaller(Object::toString)
+                .setMessageUnmarshaller(String::valueOf)
+                .setMetrics(metrics)
+                .setHttpClient(httpClient)
+                .build();
+
+        String serverDestination = "echoBroken";
+        String clientDestination = "ws://127.0.0.1:7777/" + serverDestination;
+        httpServer.start();
+
+
+        ServerEndpoint<Integer> serverEndpoint = null;
+        ClientEndpoint<String> clientEndpoint = null;
+        try {
+            serverEndpoint = sutInteger.acceptConnections(serverDestination);
+            serverEndpoint.messages(BackpressureStrategy.BUFFER).subscribe(
+                    incomingMessage -> {
+                        incomingMessage.details.transportSpecificDetails.webSocket.send(incomingMessage.message);
+                    });
+
+            WebSocket<String>[] sendSocketHolder = new WebSocket[1];
+            CountDownLatch sendSocketLatch = new CountDownLatch(1);
+            clientEndpoint = sutString.connectTo(clientDestination);
+            clientEndpoint.connectedWebSockets(BackpressureStrategy.BUFFER).subscribe(socket -> {
+                sendSocketHolder[0] = socket;
+                sendSocketLatch.countDown();
+            });
+            sendSocketLatch.await(2, TimeUnit.SECONDS);
+            assertNotNull(sendSocketHolder[0]);
+            testEchoWithUnparsableMessages(serverDestination, serverEndpoint, sendSocketHolder[0]);
+        } finally {
+            if (clientEndpoint != null) {
+                clientEndpoint.close();
+            }
+            if (serverEndpoint != null) serverEndpoint.close();
+            httpServer.shutdownNow();
+        }
+
+    }
+
+    @Test
+    void receiveUnparsableMessagesClientSide() throws Exception {
+        WebSocketAdapter<Integer> sutInteger = WebSocketAdapter.<Integer>builder()
+                .setMessageMarshaller(Object::toString)
+                .setMessageUnmarshaller(Integer::parseInt)
+                .setHttpClient(httpClient)
+                .setMetrics(metrics)
+                .build();
+        WebSocketAdapter<String> sutString = WebSocketAdapter.<String>builder()
+                .setMessageMarshaller(Object::toString)
+                .setMessageUnmarshaller(String::valueOf)
+                .setMetrics(metrics)
+                .setHttpServer(httpServer)
+                .build();
+
+        String serverDestination = "echoBroken";
+        String clientDestination = "ws://127.0.0.1:7777/" + serverDestination;
+        httpServer.start();
+
+
+        ServerEndpoint<String> serverEndpoint = null;
+        ClientEndpoint<Integer> clientEndpoint = null;
+        try {
+            serverEndpoint = sutString.acceptConnections(serverDestination);
+            CountDownLatch sendSocketLatch = new CountDownLatch(1);
+            WebSocket<String>[] sendSocketHolder = new WebSocket[1];
+            serverEndpoint.connectedWebSockets(BackpressureStrategy.BUFFER).subscribe(socket -> {
+                sendSocketHolder[0] = socket;
+                sendSocketLatch.countDown();
+            });
+
+            clientEndpoint = sutInteger.connectTo(clientDestination);
+            sendSocketLatch.await(2, TimeUnit.SECONDS);
+            assertNotNull(sendSocketHolder[0]);
+            testEchoWithUnparsableMessages(clientDestination, clientEndpoint, sendSocketHolder[0]);
+        } finally {
+            if (clientEndpoint != null) {
+                clientEndpoint.close();
+            }
+            if (serverEndpoint != null) serverEndpoint.close();
+            httpServer.shutdownNow();
+        }
+
+    }
+
+    void testEchoFromClientPerspective(String destination, ClientEndpoint<Integer> endpoint) throws Exception {
+        Meter totalSent = metrics.getMeter("websocket", "sent", "total");
+        Meter specificSent = metrics.getMeter("websocket", "sent", destination);
+        Meter totalReceived = metrics.getMeter("websocket", "received", "total");
+        Meter specificReceived = metrics.getMeter("websocket", "received", destination);
+        assertThat(totalReceived.getCount(), is(0l));
+        assertThat(specificReceived.getCount(), is(0l));
+        assertThat(totalSent.getCount(), is(0l));
+        assertThat(specificSent.getCount(), is(0l));
+
+        Flowable<IncomingMessage<Integer, String, WebSocketSpecificDetails>> messages = endpoint.messages(BackpressureStrategy.BUFFER);
         TestSubscriber<IncomingMessage<Integer, String, WebSocketSpecificDetails>> testSubscriber = messages.test();
 
         endpoint.send(1);
         endpoint.send(2);
         endpoint.send(33);
+        assertThat(totalSent.getCount(), is(3l));
+        assertThat(specificSent.getCount(), is(3l));
 
         long maxWaitTime = System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(20);
         while (testSubscriber.valueCount() < 3 && System.currentTimeMillis() < maxWaitTime) {
@@ -126,9 +284,93 @@ class WebsocketAdapterTest {
             assertNotNull(testSubscriber.values().get(i).details);
             assertThat(testSubscriber.values().get(i).details.destination, is(destination));
             assertNotNull(testSubscriber.values().get(i).details.transportSpecificDetails);
-            assertThat(testSubscriber.values().get(i).details.transportSpecificDetails.session, is(clientEndpoint.session.blockingGet()));
+            assertNotNull(testSubscriber.values().get(i).details.transportSpecificDetails.webSocket);
         }
+        assertThat(specificReceived.getCount(), is(3l));
+        assertThat(totalReceived.getCount(), greaterThanOrEqualTo(3l));
         testSubscriber.dispose();
-        clientEndpoint.close();
     }
+
+    void testEchoWithUnparsableMessages(String destination, Endpoint<Integer> receivingEndpoint, WebSocket<String> sendSocket) throws Exception {
+        Meter totalUnparsable = metrics.getMeter("websocket", "received", "unparsable", "total");
+        Meter specificUnparsable = metrics.getMeter("websocket", "received", "unparsable", destination);
+        assertThat(totalUnparsable.getCount(), is(0l));
+        assertThat(specificUnparsable.getCount(), is(0l));
+
+        Flowable<IncomingMessage<Integer, String, WebSocketSpecificDetails>> messages = receivingEndpoint.messages(BackpressureStrategy.BUFFER);
+        TestSubscriber<IncomingMessage<Integer, String, WebSocketSpecificDetails>> testSubscriber = messages.test();
+
+        sendSocket.send("One");
+        sendSocket.send("Two");
+        sendSocket.send("33");
+
+        long maxWaitTime = System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(20);
+        while (testSubscriber.valueCount() < 1 && System.currentTimeMillis() < maxWaitTime) {
+            TimeUnit.MILLISECONDS.sleep(500);
+        }
+        testSubscriber.assertValueCount(1);
+        assertThat(testSubscriber.values().get(0).message, is(33));
+        assertThat(totalUnparsable.getCount(), is(2l));
+        assertThat(specificUnparsable.getCount(), is(2l));
+        testSubscriber.dispose();
+    }
+
+    @Test
+    void broadcastWorks() throws Exception {
+        String serverDestination = "echo";
+        String clientDestination = "ws://127.0.0.1:7777/" + serverDestination;
+
+        CountDownLatch connectionLatch = new CountDownLatch(3);
+        List<WebSocket<Integer>> webSockets = new ArrayList<>();
+        CountDownLatch messageLatch1 = new CountDownLatch(1);
+        CountDownLatch messageLatch2 = new CountDownLatch(2);
+        CountDownLatch messageLatch3 = new CountDownLatch(3);
+        httpServer.start();
+
+        ServerEndpoint<Integer> serverEndpoint = null;
+        try {
+            serverEndpoint = sut.acceptConnections(serverDestination);
+            serverEndpoint.connectedWebSockets(BackpressureStrategy.BUFFER).subscribe(socket -> {
+                webSockets.add(socket);
+                connectionLatch.countDown();
+            });
+
+            TestSubscriber<IncomingMessage<Integer, String, WebSocketSpecificDetails>> testSubscriber1 =
+                    sut.connectTo(clientDestination).messages(BackpressureStrategy.BUFFER).test();
+            TestSubscriber<IncomingMessage<Integer, String, WebSocketSpecificDetails>> testSubscriber2 =
+                    sut.connectTo(clientDestination).messages(BackpressureStrategy.BUFFER).test();
+            sut.connectTo(clientDestination).messages(BackpressureStrategy.BUFFER).subscribe(message -> {
+                messageLatch1.countDown();
+                messageLatch2.countDown();
+                messageLatch3.countDown();
+            });
+
+            connectionLatch.await(2, TimeUnit.SECONDS);
+            assertThat(connectionLatch.getCount(), is(0L));
+
+            serverEndpoint.broadcast(1);
+            messageLatch1.await(2, TimeUnit.SECONDS); assertThat(messageLatch1.getCount(), is(0l));
+            webSockets.remove(0).close();
+
+            serverEndpoint.broadcast(2);
+            messageLatch2.await(2, TimeUnit.SECONDS); assertThat(messageLatch2.getCount(), is(0l));
+            webSockets.remove(0).close();
+
+            serverEndpoint.broadcast(3);
+            messageLatch3.await(2, TimeUnit.SECONDS); assertThat(messageLatch3.getCount(), is(0l));
+
+            testSubscriber1.assertValueCount(1);
+            assertThat(testSubscriber1.values().get(0).message, is(1));
+            testSubscriber2.assertValueCount(2);
+            assertThat(testSubscriber2.values().get(0).message, is(1));
+            assertThat(testSubscriber2.values().get(1).message, is(2));
+
+            webSockets.remove(0).close();
+        } finally {
+            if (serverEndpoint != null) serverEndpoint.close();
+            httpServer.shutdownNow();
+        }
+
+    }
+
 }
