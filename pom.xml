@@ -31,8 +31,9 @@
         <module>comm</module>
         <module>jms</module>
         <module>http</module>
+	    <module>rest-annotations</module>
+        <module>websockets</module>
         <module>kafka</module>
-	<module>rest-annotations</module>
 
         <module>metrics-serialization</module>
         <module>metrics-elastic</module>
