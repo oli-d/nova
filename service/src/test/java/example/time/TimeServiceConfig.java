@@ -9,7 +9,7 @@
  */
 package example.time;
 
-import ch.squaredesk.nova.comm.http.annotation.RestEnablingConfiguration;
+import ch.squaredesk.nova.comm.http.annotation.HttpEnablingConfiguration;
 import ch.squaredesk.nova.service.NovaServiceConfiguration;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
@@ -18,7 +18,7 @@ import org.springframework.context.annotation.Import;
 import org.springframework.core.env.Environment;
 
 @Configuration
-@Import(RestEnablingConfiguration.class)
+@Import(HttpEnablingConfiguration.class)
 public class TimeServiceConfig extends NovaServiceConfiguration<TimeService> {
     @Autowired
     Environment env;

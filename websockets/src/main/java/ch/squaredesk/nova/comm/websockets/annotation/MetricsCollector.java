@@ -8,7 +8,7 @@
  *   https://squaredesk.ch/license/oss/LICENSE
  */
 
-package ch.squaredesk.nova.comm.websockets;
+package ch.squaredesk.nova.comm.websockets.annotation;
 
 import ch.squaredesk.nova.metrics.Metrics;
 import com.codahale.metrics.Counter;

@@ -33,6 +33,7 @@
         <module>http</module>
 	    <module>rest-annotations</module>
         <module>websockets</module>
+        <module>websockets-annotations</module>
         <module>kafka</module>
 
         <module>metrics-serialization</module>

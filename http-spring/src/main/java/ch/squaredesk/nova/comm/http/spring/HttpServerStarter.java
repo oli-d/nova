@@ -1,19 +1,26 @@
-package ch.squaredesk.nova.comm.http.annotation;
+/*
+ * Copyright (c) Squaredesk GmbH and Oliver Dotzauer.
+ *
+ * This program is distributed under the squaredesk open source license. See the LICENSE file
+ * distributed with this work for additional information regarding copyright ownership. You may also
+ * obtain a copy of the license at
+ *
+ *   https://squaredesk.ch/license/oss/LICENSE
+ */
+package ch.squaredesk.nova.comm.http.spring;
 
 import ch.squaredesk.nova.comm.http.HttpServerConfiguration;
 import org.glassfish.grizzly.http.server.HttpServer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.event.ContextRefreshedEvent;
 
 import javax.annotation.PreDestroy;
 import java.io.IOException;
 
-public class RestServerStarter implements ApplicationListener<ContextRefreshedEvent> {
-    private Logger logger = LoggerFactory.getLogger(RestServerStarter.class);
+public class HttpServerStarter implements ApplicationListener<ContextRefreshedEvent> {
+    private Logger logger = LoggerFactory.getLogger(HttpServerStarter.class);
 
     private HttpServer httpServer;
 

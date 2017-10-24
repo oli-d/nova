@@ -10,9 +10,7 @@
 
 package ch.squaredesk.nova.comm.http.annotation;
 
-import ch.squaredesk.nova.Nova;
 import ch.squaredesk.nova.comm.http.HttpServerConfiguration;
-import ch.squaredesk.nova.metrics.Metrics;
 import ch.squaredesk.nova.spring.NovaProvidingConfiguration;
 import org.glassfish.grizzly.http.server.HttpServer;
 import org.glassfish.jersey.server.ResourceConfig;
@@ -29,7 +27,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-class RestEnablingConfigurationTest {
+class HttpEnablingConfigurationTest {
     HttpServerConfiguration serverConfiguration;
     ResourceConfig resourceConfig;
     AnnotationConfigApplicationContext ctx;
@@ -99,12 +97,12 @@ class RestEnablingConfigurationTest {
     }
 
     @Configuration
-    @Import({RestEnablingConfiguration.class, NovaProvidingConfiguration.class })
+    @Import({ch.squaredesk.nova.comm.http.annotation.HttpEnablingConfiguration.class, NovaProvidingConfiguration.class })
     public static class MyConfig {
     }
 
     @Configuration
-    @Import({RestEnablingConfiguration.class, NovaProvidingConfiguration.class})
+    @Import({ch.squaredesk.nova.comm.http.annotation.HttpEnablingConfiguration.class, NovaProvidingConfiguration.class})
     public static class MyConfigWithAnnotatedBean {
         @Bean
         public MyDummyBeanToHaveAtLeastOneRestEndpoint dummyBeanToHaveAtLeastOneRestEndpoint() {

@@ -7,7 +7,7 @@
  *
  *   https://squaredesk.ch/license/oss/LICENSE
  */
-package ch.squaredesk.nova.comm.websockets;
+package ch.squaredesk.nova.comm.websockets.annotation;
 
 public enum CloseReason {
     NORMAL_CLOSURE(1000, "Normal closure"),

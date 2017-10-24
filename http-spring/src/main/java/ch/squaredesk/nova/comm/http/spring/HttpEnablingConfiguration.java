@@ -8,7 +8,7 @@
  *   https://squaredesk.ch/license/oss/LICENSE
  */
 
-package ch.squaredesk.nova.comm.http.annotation;
+package ch.squaredesk.nova.comm.http.spring;
 
 import ch.squaredesk.nova.Nova;
 import ch.squaredesk.nova.comm.http.HttpServerConfiguration;
@@ -34,7 +34,7 @@ import java.net.URI;
 
 @Configuration
 @Order(value = Ordered.LOWEST_PRECEDENCE-10)
-public class RestEnablingConfiguration {
+public class HttpEnablingConfiguration {
     @Autowired
     Environment environment;
     @Autowired
@@ -59,6 +59,16 @@ public class RestEnablingConfiguration {
         return captureMetrics;
     }
 
+    @Bean
+    public HttpServerConfiguration restServerConfiguration() {
+        int restPort = environment.getProperty("NOVA.HTTP.REST.PORT", Integer.class, 10000);
+        String interfaceName = environment.getProperty("NOVA.HTTP.REST.INTERFACE_NAME", "0.0.0.0");
+
+        return new HttpServerConfiguration(
+            interfaceName,
+            restPort
+        );
+    }
 
     @Bean
     HttpServerStarter restServerStarter() {

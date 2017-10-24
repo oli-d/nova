@@ -1,0 +1,35 @@
+<!--
+  ~ Copyright (c) Squaredesk GmbH and Oliver Dotzauer.
+  ~
+  ~ This program is distributed under the squaredesk open source license. See the LICENSE file
+  ~ distributed with this work for additional information regarding copyright ownership. You may also
+  ~ obtain a copy of the license at
+  ~
+  ~   https://squaredesk.ch/license/oss/LICENSE
+  -->
+
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<artifactId>http-spring</artifactId>
+
+	<parent>
+		<groupId>ch.squaredesk.nova</groupId>
+		<artifactId>parentpom</artifactId>
+		<version>4.0.0-SNAPSHOT</version>
+		<relativePath>../parentpom</relativePath>
+	</parent>
+
+	<dependencies>
+		<dependency>
+			<groupId>ch.squaredesk.nova</groupId>
+			<artifactId>http</artifactId>
+			<version>${project.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>ch.squaredesk.nova</groupId>
+			<artifactId>spring-support</artifactId>
+			<version>${project.version}</version>
+		</dependency>
+	</dependencies>
+</project>

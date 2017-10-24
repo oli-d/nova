@@ -1,8 +1,17 @@
-package ch.squaredesk.nova.comm.websockets;
+/*
+ * Copyright (c) Squaredesk GmbH and Oliver Dotzauer.
+ *
+ * This program is distributed under the squaredesk open source license. See the LICENSE file
+ * distributed with this work for additional information regarding copyright ownership. You may also
+ * obtain a copy of the license at
+ *
+ *   https://squaredesk.ch/license/oss/LICENSE
+ */
+package ch.squaredesk.nova.comm.websockets.annotation;
 
 import ch.squaredesk.nova.comm.retrieving.IncomingMessage;
-import ch.squaredesk.nova.comm.websockets.client.ClientEndpoint;
-import ch.squaredesk.nova.comm.websockets.server.ServerEndpoint;
+import ch.squaredesk.nova.comm.websockets.annotation.client.ClientEndpoint;
+import ch.squaredesk.nova.comm.websockets.annotation.server.ServerEndpoint;
 import ch.squaredesk.nova.metrics.Metrics;
 import com.codahale.metrics.Counter;
 import com.codahale.metrics.Meter;
