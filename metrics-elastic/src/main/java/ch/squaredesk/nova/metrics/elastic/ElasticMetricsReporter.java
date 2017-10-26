@@ -19,17 +19,18 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.reactivex.Observable;
 import io.reactivex.Single;
 import io.reactivex.functions.Consumer;
-import org.elasticsearch.action.bulk.BulkRequestBuilder;
+import org.apache.http.HttpHost;
+import org.elasticsearch.action.bulk.BulkRequest;
+import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.index.IndexRequest;
-import org.elasticsearch.client.transport.TransportClient;
+import org.elasticsearch.client.Requests;
+import org.elasticsearch.client.RestClient;
+import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.common.settings.Settings;
-import org.elasticsearch.common.transport.InetSocketTransportAddress;
-import org.elasticsearch.transport.client.PreBuiltTransportClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.net.InetAddress;
-import java.net.UnknownHostException;
+import java.io.IOException;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -48,7 +49,8 @@ public class ElasticMetricsReporter implements Consumer<MetricsDump> {
     private final Map<String, Object> additionalMetricAttributes;
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final ZoneId zoneForTimestamps = ZoneId.of("UTC");
-    private TransportClient client;
+    private RestClient restClient;
+    private RestHighLevelClient client;
 
     public ElasticMetricsReporter(String elasticServer, int elasticPort, String clusterName, String indexName) {
         this(elasticServer, elasticPort, clusterName, indexName, Collections.EMPTY_MAP);
@@ -73,7 +75,7 @@ public class ElasticMetricsReporter implements Consumer<MetricsDump> {
         if (client == null) {
             throw new IllegalStateException("not started yet");
         }
-        fireRequest(requestBuilderFor(metricsDump), exceptionHandler);
+        fireRequest(requestFor(metricsDump), exceptionHandler);
     }
 
     /**
@@ -90,7 +92,7 @@ public class ElasticMetricsReporter implements Consumer<MetricsDump> {
         if (client == null) {
             throw new IllegalStateException("not started yet");
         }
-        fireRequest(requestBuilderFor(metricsDump), exceptionHandler);
+        fireRequest(requestFor(metricsDump), exceptionHandler);
     }
 
     public void startup() {
@@ -100,51 +102,54 @@ public class ElasticMetricsReporter implements Consumer<MetricsDump> {
                 .build();
 
         try {
-            client = new PreBuiltTransportClient(settings)
-                    .addTransportAddress(new InetSocketTransportAddress(InetAddress.getByName(elasticServer), elasticPort));
-        } catch (UnknownHostException e) {
+            restClient = RestClient.builder(new HttpHost(elasticServer, elasticPort, "http")).build();
+            client = new RestHighLevelClient(restClient);
+        } catch (Exception e) {
             logger.error("Unable to connect to Elastic @ " + elasticServer + ":" + elasticPort, e);
         }
         logger.info("\tsuccessfully established connection to Elastic @ " + elasticServer + ":" + elasticPort + " :-)");
     }
 
     public void shutdown() {
-        if (client!=null) {
+        if (client != null) {
             logger.info("Shutting down connection to Elasticsearch");
-            client.close();
-            logger.info("\tsuccessfully shutdown connection to Elasticsearch :-)");
+            try {
+                restClient.close();
+                logger.info("\tsuccessfully shutdown connection to Elasticsearch :-)");
+            } catch (IOException e) {
+                logger.info("Error, trying to close connection to ElasticSearch", e);
+            }
         }
     }
 
-    public void fireRequest (Single<BulkRequestBuilder> bulkRequestBuilderSingle,
-                             Consumer<Throwable> exceptionHandler) {
+    void fireRequest(Single<BulkRequest> bulkRequestSingle,
+                            Consumer<Throwable> exceptionHandler) {
         Objects.requireNonNull(exceptionHandler, "exceptionHandler must not be null");
 
-        bulkRequestBuilderSingle
-                .map(bulkRequestBuilder -> bulkRequestBuilder.get())
-                .subscribe(
-                        response -> {
-                            if (response.hasFailures()) {
-                                logger.warn("Error uploading metrics: " + response.buildFailureMessage());
-                            } else {
-                                logger.trace("Successfully uploaded {} metric(s)", response.getItems().length);
-                            }
-                        },
-                        exceptionHandler
-                );
+        bulkRequestSingle.subscribe(
+                bulkRequest -> {
+                    BulkResponse response = client.bulk(bulkRequest);
+                    if (response.hasFailures()) {
+                        logger.warn("Error uploading metrics: " + response.buildFailureMessage());
+                    } else {
+                        logger.trace("Successfully uploaded {} metric(s)", response.getItems().length);
+                    }
+                },
+                exceptionHandler
+        );
     }
 
-    private Single<BulkRequestBuilder> requestBuilderFor (Map<String, Object> metricsDump) throws Exception {
-        Long timestamp = (Long)metricsDump.remove("timestamp");
+    Single<BulkRequest> requestFor(Map<String, Object> metricsDump) throws Exception {
+        Long timestamp = (Long) metricsDump.remove("timestamp");
         LocalDateTime timestampInUtc = timestamp == null ? null : timestampInUtc(timestamp);
         String hostName = (String) metricsDump.remove("hostName");
         String hostAddress = (String) metricsDump.remove("hostAddress");
         return Observable.fromIterable(metricsDump.entrySet())
                 .filter(entry -> entry.getValue() instanceof Map) // just to protect us, since at this point anyway
-                                                                  // only the Metrics should remain in the map
-                                                                  // and they are all represented as Map<String, Object>
+                // only the Metrics should remain in the map
+                // and they are all represented as Map<String, Object>
                 .map(entry -> {
-                    Map<String, Object> retVal = (Map)entry.getValue();
+                    Map<String, Object> retVal = (Map) entry.getValue();
                     retVal.put("name", entry.getKey());
                     return retVal;
                 })
@@ -159,18 +164,18 @@ public class ElasticMetricsReporter implements Consumer<MetricsDump> {
                             .type(type)
                             .source(metricAsMap);
                 })
-                .reduce(client.prepareBulk(),
+                .reduce(Requests.bulkRequest(),
                         (bulkRequestBuilder, indexRequest) -> {
                             bulkRequestBuilder.add(indexRequest);
                             return bulkRequestBuilder;
-                });
+                        });
     }
 
     private LocalDateTime timestampInUtc(long timestampInMillis) {
         return Instant.ofEpochMilli(timestampInMillis).atZone(zoneForTimestamps).toLocalDateTime();
     }
 
-    private Single<BulkRequestBuilder> requestBuilderFor (MetricsDump metricsDump) throws Exception {
+    Single<BulkRequest> requestFor(MetricsDump metricsDump) throws Exception {
         LocalDateTime timestampInUtc = timestampInUtc(metricsDump.timestamp);
 
         return Observable.fromIterable(metricsDump.metrics.entrySet())
@@ -185,15 +190,15 @@ public class ElasticMetricsReporter implements Consumer<MetricsDump> {
                     return new Pair<>(tupleTypeAndNameAndMetric._1, map);
                 })
                 .map(typeAndMetricAsMap -> new IndexRequest()
-                                .index(indexName)
-                                .type(typeAndMetricAsMap._1)
-                                .source(typeAndMetricAsMap._2)
+                        .index(indexName)
+                        .type(typeAndMetricAsMap._1)
+                        .source(typeAndMetricAsMap._2)
                 )
-                .reduce(client.prepareBulk(),
+                .reduce(Requests.bulkRequest(),
                         (bulkRequestBuilder, indexRequest) -> {
                             bulkRequestBuilder.add(indexRequest);
                             return bulkRequestBuilder;
-                })
+                        })
                 ;
     }
 
