@@ -35,10 +35,12 @@ import java.lang.reflect.Field;
 import java.util.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ElasticMetricsReporterTest {
@@ -79,8 +81,6 @@ class ElasticMetricsReporterTest {
     }
 
     @Test
-    // Note that running this dumps out a stack trace. This is ok, since there is no Elastic to talk to
-    // Important thing is that we inspect the request we have built and which *would* be sent
     void requestFromMetricsDumpIsCreatedAsExpected() throws Exception {
         Metrics metrics = new Metrics();
         metrics.getCounter("test","counter1");
@@ -103,16 +103,11 @@ class ElasticMetricsReporterTest {
             assertNotNull(sourceAsMap.get("hostAddress"));
             assertNotNull(sourceAsMap.get("@timestamp"));
             assertThat(sourceAsMap.get("name"),Matchers.oneOf("test.counter1","test.meter1","test.myMetric1"));
-        };
+        }
     }
 
-    /*
     @Test
-    void mapDumpMissingTypeInfoCausesError() throws Exception {
-        TransportClient client = injectTransportClientMockIntoSut();
-        BulkRequestBuilder brb = new BulkRequestBuilder(client, BulkAction.INSTANCE);
-        Mockito.when(client.prepareBulk()).thenReturn(brb);
-
+    void mapDumpMissingTypeInfoCausesErrorWhenCreatingRequest() throws Exception {
         Map<String, Object> dumpAsMap = new HashMap<>();
         Arrays.asList("counter1", "meter1", "myMetric1")
                 .forEach(name -> {
@@ -122,33 +117,14 @@ class ElasticMetricsReporterTest {
                     dumpAsMap.put("test." + name, metricMap);
                 });
 
-        Throwable[] exceptionHolder = new Throwable[1];
-        CountDownLatch cdl = new CountDownLatch(1);
-        Consumer<Throwable> exceptionHandler = throwable -> {
-            exceptionHolder[0] = throwable;
-            cdl.countDown();
-        };
-        sut.accept(dumpAsMap, exceptionHandler);
-
-        cdl.await(30, TimeUnit.SECONDS);
-        assertThat(cdl.getCount(), is(0L));
-        assertThat(exceptionHolder[0].getMessage(), is("metricMap must contain type entry"));
-
-        Mockito.verify(client).prepareBulk();
-        Mockito.verifyNoMoreInteractions(client);
-
-        List<ActionRequest> requests = brb.request().requests();
-        assertThat(requests.size(), is(0));
+        TestObserver<BulkRequest> bulkRequestObserver = sut.requestFor(dumpAsMap).test();
+        bulkRequestObserver.assertErrorMessage("metricMap must contain type entry");
     }
 
     @Test
     // Note that running this dumps out a stack trace. This is ok, since there is no Elastic to talk to
     // Important thing is that we inspect the request we have built and which *would* be sent
-    void mapDumpIsTransmittedAsExpected() throws Exception {
-        TransportClient client = injectTransportClientMockIntoSut();
-        BulkRequestBuilder brb = new BulkRequestBuilder(client, BulkAction.INSTANCE);
-        Mockito.when(client.prepareBulk()).thenReturn(brb);
-
+    void requestFromMapDumpIsCreatedAsExpected() throws Exception {
         Map<String, Object> dumpAsMap = new HashMap<>();
         Arrays.asList(new Pair<>("counter", "counter1"),
                 new Pair<>("meter", "meter1"),
@@ -159,16 +135,16 @@ class ElasticMetricsReporterTest {
                     metricMap.put("someAttribute", "someVal");
                     dumpAsMap.put("test." + pair._2, metricMap);
                 });
-
         dumpAsMap.put("hostName", "someVal");
-        sut.accept(dumpAsMap);
 
-        Mockito.verify(client).prepareBulk();
-        Mockito.verifyNoMoreInteractions(client);
+        TestObserver<BulkRequest> bulkRequestObserver = sut.requestFor(dumpAsMap).test();
+        bulkRequestObserver.assertComplete();
+        bulkRequestObserver.assertValueCount(1);
+        BulkRequest bulkRequest = bulkRequestObserver.values().get(0);
 
-        List<ActionRequest> requests = brb.request().requests();
+        List<DocWriteRequest> requests = bulkRequest.requests();
         assertThat(requests.size(), is(3));
-        for (ActionRequest request : requests) {
+        for (DocWriteRequest request: requests) {
             assertTrue(request instanceof IndexRequest);
             IndexRequest ir = (IndexRequest) request;
             assertNotNull(ir.type());
@@ -180,6 +156,7 @@ class ElasticMetricsReporterTest {
         }
     }
 
+/*
     private TransportClient injectTransportClientMockIntoSut() throws Exception {
         TransportClient client = Mockito.mock(TransportClient.class);
         Field f = sut.getClass().getDeclaredField("client");
