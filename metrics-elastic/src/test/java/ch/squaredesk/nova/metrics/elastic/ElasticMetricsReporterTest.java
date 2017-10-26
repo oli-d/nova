@@ -14,33 +14,24 @@ import ch.squaredesk.nova.metrics.Metrics;
 import ch.squaredesk.nova.metrics.MetricsDump;
 import ch.squaredesk.nova.tuples.Pair;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.reactivex.Single;
-import io.reactivex.functions.Consumer;
 import io.reactivex.observers.TestObserver;
-import org.elasticsearch.action.ActionRequest;
 import org.elasticsearch.action.DocWriteRequest;
-import org.elasticsearch.action.bulk.BulkAction;
 import org.elasticsearch.action.bulk.BulkRequest;
-import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.action.index.IndexRequest;
-import org.elasticsearch.client.transport.TransportClient;
 import org.elasticsearch.common.bytes.BytesReference;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
 
-import java.lang.reflect.Field;
-import java.util.*;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ElasticMetricsReporterTest {
@@ -48,23 +39,13 @@ class ElasticMetricsReporterTest {
 
     @BeforeEach
     void setup() {
-        sut = new ElasticMetricsReporter("127.0.0.1",9300,"cluster","index");
+        sut = new ElasticMetricsReporter("127.0.0.1",9300,"index");
     }
 
     @Test
     void nothingHappensOnShutdownIfNotConnected() {
         sut.shutdown();
     }
-
-//    @Test
-//    void shutdownClosesConnection() throws Exception {
-//        TransportClient client = injectTransportClientMockIntoSut();
-//
-//        sut.shutdown();
-//
-//        Mockito.verify(client).close();
-//        Mockito.verifyNoMoreInteractions(client);
-//    }
 
     @Test
     void transmittingThrowsIfNotStartedYet() {
@@ -122,8 +103,6 @@ class ElasticMetricsReporterTest {
     }
 
     @Test
-    // Note that running this dumps out a stack trace. This is ok, since there is no Elastic to talk to
-    // Important thing is that we inspect the request we have built and which *would* be sent
     void requestFromMapDumpIsCreatedAsExpected() throws Exception {
         Map<String, Object> dumpAsMap = new HashMap<>();
         Arrays.asList(new Pair<>("counter", "counter1"),
@@ -155,16 +134,6 @@ class ElasticMetricsReporterTest {
             assertThat(sourceAsMap.get("name"), Matchers.oneOf("test.counter1", "test.meter1", "test.myMetric1"));
         }
     }
-
-/*
-    private TransportClient injectTransportClientMockIntoSut() throws Exception {
-        TransportClient client = Mockito.mock(TransportClient.class);
-        Field f = sut.getClass().getDeclaredField("client");
-        f.setAccessible(true);
-        f.set(sut,client);
-        return client;
-    }
-*/
 
     private Map<String,Object> getMapFrom (BytesReference source) throws Exception {
         return new ObjectMapper().readValue(source.utf8ToString(), Map.class);

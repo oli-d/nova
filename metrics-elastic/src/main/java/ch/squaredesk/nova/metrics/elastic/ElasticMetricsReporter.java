@@ -26,7 +26,6 @@ import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.client.Requests;
 import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestHighLevelClient;
-import org.elasticsearch.common.settings.Settings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -44,7 +43,6 @@ public class ElasticMetricsReporter implements Consumer<MetricsDump> {
     private final Consumer<Throwable> defaultExceptionHandler;
     private final String elasticServer;
     private final int elasticPort;
-    private final String clusterName;
     private final String indexName;
     private final Map<String, Object> additionalMetricAttributes;
     private final ObjectMapper objectMapper = new ObjectMapper();
@@ -52,14 +50,13 @@ public class ElasticMetricsReporter implements Consumer<MetricsDump> {
     private RestClient restClient;
     private RestHighLevelClient client;
 
-    public ElasticMetricsReporter(String elasticServer, int elasticPort, String clusterName, String indexName) {
-        this(elasticServer, elasticPort, clusterName, indexName, Collections.EMPTY_MAP);
+    public ElasticMetricsReporter(String elasticServer, int elasticPort, String indexName) {
+        this(elasticServer, elasticPort, indexName, Collections.EMPTY_MAP);
     }
 
-    public ElasticMetricsReporter(String elasticServer, int elasticPort, String clusterName, String indexName, Map<String, Object> additionalMetricAttributes) {
+    public ElasticMetricsReporter(String elasticServer, int elasticPort, String indexName, Map<String, Object> additionalMetricAttributes) {
         this.elasticServer = elasticServer;
         this.elasticPort = elasticPort;
-        this.clusterName = clusterName;
         this.indexName = indexName;
         this.additionalMetricAttributes = additionalMetricAttributes;
         defaultExceptionHandler = exception -> logger.error("Unable to upload metrics to index " + indexName, exception);
@@ -97,10 +94,6 @@ public class ElasticMetricsReporter implements Consumer<MetricsDump> {
 
     public void startup() {
         logger.info("Connecting to Elasticsearch @ " + elasticServer + ":" + elasticPort);
-        Settings settings = Settings.builder()
-                .put("cluster.name", clusterName)
-                .build();
-
         try {
             restClient = RestClient.builder(new HttpHost(elasticServer, elasticPort, "http")).build();
             client = new RestHighLevelClient(restClient);
