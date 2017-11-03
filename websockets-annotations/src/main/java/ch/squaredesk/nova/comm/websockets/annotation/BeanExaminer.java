@@ -21,33 +21,33 @@ import static java.util.Arrays.stream;
 import static java.util.Objects.requireNonNull;
 
 class BeanExaminer {
-    private final Predicate<Annotation> interestingAnnotation = anno -> anno instanceof OnRestRequest;
+    private final Predicate<Annotation> interestingAnnotation = anno -> anno instanceof OnEvent;
 
-    RestEndpoint[] restEndpointsIn (Object bean) {
+    WebSocketEndpoint[] websocketEndpointsIn(Object bean) {
         requireNonNull(bean, "bean to examine must not be null");
 
         return stream(bean.getClass().getDeclaredMethods())
                 .filter(method -> stream(method.getDeclaredAnnotations()).anyMatch(interestingAnnotation))
-                .peek(method -> {
-                    if (!Modifier.isPublic(method.getModifiers()))
-                        throw new IllegalArgumentException(
-                                "Method " + prettyPrint(bean, method) + ", annotated with @" +
-                                OnRestRequest.class.getSimpleName() + " must be public");
-                })
+//                .peek(method -> {
+//                    if (!Modifier.isPublic(method.getModifiers()))
+//                        throw new IllegalArgumentException(
+//                                "Method " + prettyPrint(bean, method) + ", annotated with @" +
+//                                        OnEvent.class.getSimpleName() + " must be public");
+//                })
                 .map(method -> {
-                    OnRestRequest annotation = stream(method.getDeclaredAnnotations())
+                    OnEvent annotation = stream(method.getDeclaredAnnotations())
                             .filter(interestingAnnotation)
                             .findFirst()
-                            .map(anno -> (OnRestRequest)anno)
+                            .map(anno -> (OnEvent)anno)
                             .get();
-                    return new RestEndpoint(
+                    return new WebSocketEndpoint(
                             RestResourceDescriptor.from(annotation.value(),
                                 annotation.requestMethod(),
                                 annotation.produces(),
                                 annotation.consumes()),
                             method);
                 })
-                .toArray(RestEndpoint[]::new);
+                .toArray(WebSocketEndpoint[]::new);
     }
 
     private static String prettyPrint (Object bean, Method method) {

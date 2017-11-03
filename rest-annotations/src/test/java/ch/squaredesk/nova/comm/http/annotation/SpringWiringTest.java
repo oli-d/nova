@@ -75,7 +75,7 @@ public class SpringWiringTest {
 
     @Configuration
     @Order
-    @Import({NovaProvidingConfiguration.class, HttpEnablingConfiguration.class})
+    @Import({NovaProvidingConfiguration.class, RestEnablingConfiguration.class})
     public static class MyMixedConfig  {
         @Autowired
         ApplicationContext applicationContext;
@@ -97,7 +97,7 @@ public class SpringWiringTest {
     }
 
     @Configuration
-    @Import({NovaProvidingConfiguration.class, HttpEnablingConfiguration.class})
+    @Import({NovaProvidingConfiguration.class, RestEnablingConfiguration.class})
     public static class MyConfig  {
         @Bean
         public MyBean myBean() {

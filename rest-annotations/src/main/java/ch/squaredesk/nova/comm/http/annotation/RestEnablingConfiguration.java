@@ -12,6 +12,7 @@ package ch.squaredesk.nova.comm.http.annotation;
 
 import ch.squaredesk.nova.Nova;
 import ch.squaredesk.nova.comm.http.HttpServerConfiguration;
+import ch.squaredesk.nova.comm.http.spring.HttpServerConfigurationProvidingConfiguration;
 import com.codahale.metrics.Timer;
 import org.glassfish.grizzly.http.server.HttpServer;
 import org.glassfish.jersey.grizzly2.httpserver.GrizzlyHttpServerFactory;
@@ -24,6 +25,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
@@ -33,6 +35,7 @@ import javax.ws.rs.core.UriBuilder;
 import java.net.URI;
 
 @Configuration
+@Import(HttpServerConfigurationProvidingConfiguration.class)
 @Order(value = Ordered.LOWEST_PRECEDENCE-10)
 public class RestEnablingConfiguration {
     @Autowired
@@ -41,6 +44,8 @@ public class RestEnablingConfiguration {
     ApplicationContext applicationContext;
     @Autowired
     Nova nova;
+    @Autowired
+    HttpServerConfiguration httpServerConfiguration;
 
     @Bean
     public static RestBeanPostprocessor restBeanPostProcessor() {
@@ -61,8 +66,8 @@ public class RestEnablingConfiguration {
 
 
     @Bean
-    HttpServerStarter restServerStarter() {
-        return new HttpServerStarter();
+    ch.squaredesk.nova.comm.http.annotation.RestServerStarter restServerStarter() {
+        return new RestServerStarter();
     }
 
     @Lazy // must be created after all other beans have been created (because of annotation processing)
@@ -98,8 +103,8 @@ public class RestEnablingConfiguration {
             });
         }
 
-        URI serverAddress = UriBuilder.fromPath("http://" + restServerConfiguration().interfaceName + ":" +
-                restServerConfiguration().port).build();
+        URI serverAddress = UriBuilder.fromPath("http://" + httpServerConfiguration.interfaceName + ":" +
+                httpServerConfiguration.port).build();
         return GrizzlyHttpServerFactory.createHttpServer(serverAddress, resourceConfig, false);
     }
 }

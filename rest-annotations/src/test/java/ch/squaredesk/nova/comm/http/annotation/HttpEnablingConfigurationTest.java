@@ -97,12 +97,12 @@ class HttpEnablingConfigurationTest {
     }
 
     @Configuration
-    @Import({ch.squaredesk.nova.comm.http.annotation.HttpEnablingConfiguration.class, NovaProvidingConfiguration.class })
+    @Import({RestEnablingConfiguration.class, NovaProvidingConfiguration.class })
     public static class MyConfig {
     }
 
     @Configuration
-    @Import({ch.squaredesk.nova.comm.http.annotation.HttpEnablingConfiguration.class, NovaProvidingConfiguration.class})
+    @Import({RestEnablingConfiguration.class, NovaProvidingConfiguration.class})
     public static class MyConfigWithAnnotatedBean {
         @Bean
         public MyDummyBeanToHaveAtLeastOneRestEndpoint dummyBeanToHaveAtLeastOneRestEndpoint() {
