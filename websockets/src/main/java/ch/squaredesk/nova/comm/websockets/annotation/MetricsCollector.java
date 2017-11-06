@@ -16,7 +16,8 @@ import com.codahale.metrics.Meter;
 
 import static java.util.Objects.requireNonNull;
 
-class MetricsCollector {
+// FIXME: split up in client and server part and make package private?
+public class MetricsCollector {
     private final Metrics metrics;
     private final String identifierPrefix;
     private final Meter totalNumberOfReceivedMessages;
@@ -40,22 +41,22 @@ class MetricsCollector {
         totalNumberOfReceivedMessages.mark();
     }
 
-    void unparsableMessageReceived(String destination) {
+    public void unparsableMessageReceived(String destination) {
         metrics.getMeter(identifierPrefix, "received", "unparsable", destination).mark();
         totalNumberOfUnparsabledMessagesReceived.mark();
     }
 
-    void messageSent(String destination) {
+    public void messageSent(String destination) {
         metrics.getMeter(identifierPrefix, "sent", destination).mark();
         totalNumberOfSentMessages.mark();
     }
 
-    void subscriptionCreated (String destination) {
+    public void subscriptionCreated (String destination) {
         metrics.getCounter(identifierPrefix, "subscriptions", destination).inc();
         totalNumberOfSubscriptions.inc();
     }
 
-    void subscriptionDestroyed (String destination) {
+    public void subscriptionDestroyed (String destination) {
         metrics.getCounter(identifierPrefix, "subscriptions", destination).dec();
         totalNumberOfSubscriptions.dec();
     }

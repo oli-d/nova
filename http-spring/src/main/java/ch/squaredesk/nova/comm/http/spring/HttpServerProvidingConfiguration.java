@@ -8,22 +8,24 @@
  *   https://squaredesk.ch/license/oss/LICENSE
  */
 
-package ch.squaredesk.nova.comm.websockets.annotation;
+package ch.squaredesk.nova.comm.http.spring;
 
-import ch.squaredesk.nova.Nova;
+import ch.squaredesk.nova.comm.http.HttpServerConfiguration;
+import ch.squaredesk.nova.comm.http.HttpServerFactory;
+import org.glassfish.grizzly.http.server.HttpServer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Import;
 
 @Configuration
-public class AnnotationEnablingConfiguration {
+@Import(HttpServerConfigurationProvidingConfiguration.class)
+public class HttpServerProvidingConfiguration {
     @Autowired
-    protected Nova nova;
+    HttpServerConfiguration httpServerConfiguration;
 
     @Bean
-    public static WebSocketBeanPostprocessor eventHandlingBeanPostProcessor() {
-        return new WebSocketBeanPostprocessor(httpServer);
+    public HttpServer httpServer() {
+        return HttpServerFactory.serverFor(httpServerConfiguration);
     }
-
 }
-

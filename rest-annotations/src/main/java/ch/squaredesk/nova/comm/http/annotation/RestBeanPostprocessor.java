@@ -38,8 +38,6 @@ import java.io.IOException;
  * the Spring dependency
  */
 public class RestBeanPostprocessor implements BeanPostProcessor {
-    private final BeanExaminer beanExaminer = new BeanExaminer();
-
     final ResourceConfig resourceConfig = new ResourceConfig();
 
 
@@ -50,7 +48,7 @@ public class RestBeanPostprocessor implements BeanPostProcessor {
 
     @Override
     public Object postProcessAfterInitialization(Object bean, String beanName) throws BeansException {
-        RestEndpoint[] restEndpoints = beanExaminer.restEndpointsIn(bean);
+        RestEndpoint[] restEndpoints = BeanExaminer.restEndpointsIn(bean);
         for (RestEndpoint endpointDescription: restEndpoints) {
             resourceConfig.registerResources(RestResourceFactory.resourceFor(endpointDescription.resourceDescriptor, bean, endpointDescription.handlerMethod));
         }

@@ -31,5 +31,5 @@
 			<artifactId>http-spring</artifactId>
 			<version>${project.version}</version>
 		</dependency>
-	</dependencies>
+    </dependencies>
 </project>

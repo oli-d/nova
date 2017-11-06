@@ -18,7 +18,6 @@ import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class BeanExaminerTest {
-    private BeanExaminer sut = new BeanExaminer();
 
     @Test
     void properlyDetectsRestEndpoints() {
@@ -31,8 +30,8 @@ class BeanExaminerTest {
             public void m1(String p1) { }
         }
 
-        assertThat(sut.restEndpointsIn(new MyRestClass1()).length, is(1));
-        assertThat(sut.restEndpointsIn(new MyNonRestClass1()).length, is(0));
+        assertThat(BeanExaminer.restEndpointsIn(new MyRestClass1()).length, is(1));
+        assertThat(BeanExaminer.restEndpointsIn(new MyNonRestClass1()).length, is(0));
     }
 
     @Test
@@ -43,13 +42,13 @@ class BeanExaminerTest {
         }
 
         assertThrows(IllegalArgumentException.class,
-                () -> sut.restEndpointsIn(new MyRestClass2()));
+                () -> BeanExaminer.restEndpointsIn(new MyRestClass2()));
     }
 
     @Test
     void needsNonNullBean() throws Exception {
         Throwable t = assertThrows(NullPointerException.class,
-                () -> sut.restEndpointsIn(null)
+                () -> BeanExaminer.restEndpointsIn(null)
         );
         assertThat(t.getMessage(), containsString("bean"));
     }

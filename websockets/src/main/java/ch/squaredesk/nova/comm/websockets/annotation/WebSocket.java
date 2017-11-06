@@ -10,6 +10,7 @@
 package ch.squaredesk.nova.comm.websockets.annotation;
 
 import java.util.Objects;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 
 public class WebSocket<MessageType> {

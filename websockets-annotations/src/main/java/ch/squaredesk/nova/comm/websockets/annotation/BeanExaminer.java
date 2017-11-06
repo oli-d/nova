@@ -12,7 +12,6 @@ package ch.squaredesk.nova.comm.websockets.annotation;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
 import java.util.Arrays;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -21,9 +20,9 @@ import static java.util.Arrays.stream;
 import static java.util.Objects.requireNonNull;
 
 class BeanExaminer {
-    private final Predicate<Annotation> interestingAnnotation = anno -> anno instanceof OnEvent;
+    private static final Predicate<Annotation> interestingAnnotation = anno -> anno instanceof OnEvent;
 
-    WebSocketEndpoint[] websocketEndpointsIn(Object bean) {
+    static EndpointDescriptor[] websocketEndpointsIn(Object bean) {
         requireNonNull(bean, "bean to examine must not be null");
 
         return stream(bean.getClass().getDeclaredMethods())
@@ -40,14 +39,12 @@ class BeanExaminer {
                             .findFirst()
                             .map(anno -> (OnEvent)anno)
                             .get();
-                    return new WebSocketEndpoint(
-                            RestResourceDescriptor.from(annotation.value(),
-                                annotation.requestMethod(),
-                                annotation.produces(),
-                                annotation.consumes()),
-                            method);
+                    return new EndpointDescriptor(
+                            annotation.value(),
+                            annotation.captureMetrics(),
+                            annotation.backpressureStrategy());
                 })
-                .toArray(WebSocketEndpoint[]::new);
+                .toArray(EndpointDescriptor[]::new);
     }
 
     private static String prettyPrint (Object bean, Method method) {

@@ -36,7 +36,7 @@ import java.net.URI;
 
 @Configuration
 @Import(HttpServerConfigurationProvidingConfiguration.class)
-@Order(value = Ordered.LOWEST_PRECEDENCE-10)
+@Order(value = Ordered.LOWEST_PRECEDENCE)
 public class RestEnablingConfiguration {
     @Autowired
     Environment environment;

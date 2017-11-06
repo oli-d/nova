@@ -21,9 +21,9 @@ import static java.util.Arrays.stream;
 import static java.util.Objects.requireNonNull;
 
 class BeanExaminer {
-    private final Predicate<Annotation> interestingAnnotation = anno -> anno instanceof OnRestRequest;
+    private static final Predicate<Annotation> interestingAnnotation = anno -> anno instanceof OnRestRequest;
 
-    RestEndpoint[] restEndpointsIn (Object bean) {
+    static RestEndpoint[] restEndpointsIn (Object bean) {
         requireNonNull(bean, "bean to examine must not be null");
 
         return stream(bean.getClass().getDeclaredMethods())

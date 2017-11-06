@@ -11,49 +11,46 @@
 package ch.squaredesk.nova.comm.websockets.annotation;
 
 import ch.squaredesk.nova.Nova;
-import ch.squaredesk.nova.comm.http.HttpServerConfiguration;
-import ch.squaredesk.nova.comm.http.spring.HttpServerConfigurationProvidingConfiguration;
-import com.codahale.metrics.Timer;
+import ch.squaredesk.nova.comm.http.spring.HttpServerProvidingConfiguration;
+import ch.squaredesk.nova.comm.http.spring.HttpServerStarter;
+import ch.squaredesk.nova.comm.retrieving.MessageUnmarshaller;
+import ch.squaredesk.nova.comm.sending.MessageMarshaller;
+import com.ning.http.client.AsyncHttpClient;
+import com.ning.http.client.AsyncHttpClientConfig;
 import org.glassfish.grizzly.http.server.HttpServer;
-import org.glassfish.jersey.grizzly2.httpserver.GrizzlyHttpServerFactory;
-import org.glassfish.jersey.server.ResourceConfig;
-import org.glassfish.jersey.server.monitoring.ApplicationEvent;
-import org.glassfish.jersey.server.monitoring.ApplicationEventListener;
-import org.glassfish.jersey.server.monitoring.RequestEvent;
-import org.glassfish.jersey.server.monitoring.RequestEventListener;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
-import org.springframework.context.annotation.Lazy;
-import org.springframework.core.Ordered;
-import org.springframework.core.annotation.Order;
 import org.springframework.core.env.Environment;
 
-import javax.ws.rs.core.UriBuilder;
-import java.net.URI;
-
 @Configuration
-@Import(HttpServerConfigurationProvidingConfiguration.class)
-@Order(value = Ordered.LOWEST_PRECEDENCE-10)
+@Import(HttpServerProvidingConfiguration.class)
 public class WebSocketEnablingConfiguration {
     @Autowired
     Environment environment;
     @Autowired
-    ApplicationContext applicationContext;
-    @Autowired
     Nova nova;
     @Autowired
-    HttpServerConfiguration httpServerConfiguration;
+    HttpServer httpServer;
 
     @Bean
-    public static WebSocketBeanPostprocessor restBeanPostProcessor() {
-        return new WebSocketBeanPostprocessor();
+    public MessageMarshaller messageMarshaller() {
+        return string -> string;
     }
 
-    @Bean(name = "captureRestMetrics")
-    public boolean captureRestMetrics() {
+    @Bean
+    public MessageUnmarshaller messageUnmarshaller() {
+        return string -> string;
+    }
+
+    @Bean
+    public WebSocketBeanPostprocessor webSocketBeanPostProcessor() {
+        return new WebSocketBeanPostprocessor(messageMarshaller(), messageUnmarshaller(), new MetricsCollector(nova.metrics));
+    }
+
+    @Bean(name = "captureWebSocketMetrics")
+    public boolean captureWebSocketMetrics() {
         boolean captureMetrics = true;
         try {
             captureMetrics = Boolean.valueOf(environment.getProperty("NOVA.HTTP.WEB_SOCKETS.CAPTURE_METRICS", "true"));
@@ -64,47 +61,17 @@ public class WebSocketEnablingConfiguration {
         return captureMetrics;
     }
 
-
     @Bean
-    ch.squaredesk.nova.comm.http.annotation.RestServerStarter restServerStarter() {
-        return new RestServerStarter();
+    AsyncHttpClient httpClient() {
+        AsyncHttpClientConfig cf = new AsyncHttpClientConfig.Builder()
+                // .setProxyServer(new ProxyServer("127.0.0.1", 38080))
+                .build();
+        return new AsyncHttpClient(cf);
     }
 
-    @Lazy // must be created after all other beans have been created (because of annotation processing)
     @Bean
-    public HttpServer webSocketHttpServer() {
-        WebSocketBeanPostprocessor webSocketBeanPostprocessor = applicationContext.getBean(WebSocketBeanPostprocessor.class);
-        ResourceConfig resourceConfig = webSocketBeanPostprocessor.resourceConfig;
-
-        if (captureRestMetrics() && nova != null) {
-            RequestEventListener requestEventListener = event -> {
-                String eventId = event.getContainerRequest().getPath(true);
-                Timer timer = nova.metrics.getTimer("rest", eventId);
-                if (event.getType() == RequestEvent.Type.RESOURCE_METHOD_START) {
-                    event.getContainerRequest().setProperty("metricsContext", timer.time());
-                } else if (event.getType() == RequestEvent.Type.RESOURCE_METHOD_FINISHED) {
-                    ((Timer.Context) event.getContainerRequest().getProperty("metricsContext")).stop();
-                    nova.metrics.getCounter("rest", eventId, "total").inc();
-                    if (event.getException() != null) {
-                        nova.metrics.getCounter("rest", eventId, "errors").inc();
-                    }
-                }
-            };
-
-            resourceConfig.register(new ApplicationEventListener() {
-                @Override
-                public void onEvent(ApplicationEvent event) {
-                }
-
-                @Override
-                public RequestEventListener onRequest(RequestEvent requestEvent) {
-                    return requestEventListener;
-                }
-            });
-        }
-
-        URI serverAddress = UriBuilder.fromPath("http://" + httpServerConfiguration.interfaceName + ":" +
-                httpServerConfiguration.port).build();
-        return GrizzlyHttpServerFactory.createHttpServer(serverAddress, resourceConfig, false);
+    HttpServerStarter httpServerStarter() {
+        return new HttpServerStarter();
     }
+
 }
