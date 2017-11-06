@@ -28,7 +28,7 @@
 		</dependency>
 		<dependency>
 			<groupId>ch.squaredesk.nova</groupId>
-			<artifactId>spring-support</artifactId>
+			<artifactId>http-spring</artifactId>
 			<version>${project.version}</version>
 		</dependency>
 	</dependencies>

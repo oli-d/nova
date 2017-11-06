@@ -10,29 +10,16 @@
 
 package ch.squaredesk.nova.comm.websockets.annotation;
 
-import ch.squaredesk.nova.Nova;
-import ch.squaredesk.nova.metrics.Metrics;
-import com.codahale.metrics.Timer;
-import io.reactivex.Flowable;
-import io.reactivex.functions.Consumer;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.glassfish.jersey.server.ResourceConfig;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.config.BeanPostProcessor;
-import org.springframework.context.ApplicationListener;
-import org.springframework.context.event.ContextRefreshedEvent;
 
-import java.lang.reflect.Method;
-import java.util.Arrays;
-import java.util.Objects;
-import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.stream.Collectors;
 
-public class WebSocketBeanPostprocessor implements BeanPostProcessor, ApplicationListener<ContextRefreshedEvent> {
-    private final Logger logger = LoggerFactory.getLogger(WebSocketBeanPostprocessor.class);
+public class WebSocketBeanPostprocessor implements BeanPostProcessor {
     private final BeanExaminer beanExaminer = new BeanExaminer();
 
-    final CopyOnWriteArrayList<EventHandlerDescription> handlerDescriptions = new CopyOnWriteArrayList<>();
+    final ResourceConfig resourceConfig = new ResourceConfig();
+
 
     @Override
     public Object postProcessBeforeInitialization(Object bean, String beanName) throws BeansException {
@@ -41,50 +28,11 @@ public class WebSocketBeanPostprocessor implements BeanPostProcessor, Applicatio
 
     @Override
     public Object postProcessAfterInitialization(Object bean, String beanName) throws BeansException {
-        handlerDescriptions.addAll(Arrays.asList(beanExaminer.examine(bean)));
-        return bean;
-    }
-
-    @Override
-    public void onApplicationEvent(ContextRefreshedEvent event) {
-        Nova nova = event.getApplicationContext().getBean(Nova.class);
-        Objects.requireNonNull(nova,
-                "Unable to initialize event handling, since no Nova instance was found in ApplicationContext");
-        EventContext eventContext = new EventContext(nova.metrics, nova.eventBus);
-        handlerDescriptions.forEach(hd -> registerEventHandler(hd, eventContext, nova.identifier));
-    }
-
-    private void registerEventHandler(EventHandlerDescription eventHandlerDescription, EventContext eventContext, String novaIdentifier) {
-        EventHandlingMethodInvoker invoker = new EventHandlingMethodInvoker(
-                eventHandlerDescription.bean, eventHandlerDescription.methodToInvoke, eventContext);
-        Consumer<Object[]> eventConsumer = invoker;
-        for (String event: eventHandlerDescription.events) {
-            logger.debug("Registering annotated event handler: {} -> {}",
-                    event, prettyPrint(eventHandlerDescription.bean, eventHandlerDescription.methodToInvoke));
-            if (eventHandlerDescription.captureInvocationTimeMetrics) {
-                String timerName = Metrics.name(novaIdentifier, "invocationTime",
-                        eventHandlerDescription.bean.getClass().getSimpleName(), event);
-                Timer timer = eventContext.metrics.getTimer(timerName);
-                eventConsumer = new TimeMeasuringEventHandlingMethodInvoker(timer, invoker);
-            }
-            Flowable<Object[]> flowable = eventContext.eventBus.on(event, eventHandlerDescription.backpressureStrategy);
-            if (eventHandlerDescription.dispatchOnBusinessLogicThread) {
-                flowable = flowable.observeOn(NovaSchedulers.businessLogicThreadScheduler);
-            }
-            flowable.subscribe(eventConsumer);
+        WebSocketEndpoint[] restEndpoints = beanExaminer.websocketEndpointsIn(bean);
+        for (WebSocketEndpoint endpointDescription: restEndpoints) {
+            // resourceConfig.registerResources(RestResourceFactory.resourceFor(endpointDescription.resourceDescriptor, bean, endpointDescription.handlerMethod));
         }
-    }
-
-    private static String prettyPrint(Object bean, Method method) {
-        StringBuilder sb = new StringBuilder(bean.getClass().getName())
-                .append('.')
-                .append(method.getName())
-                .append('(')
-                .append(Arrays.stream(method.getParameterTypes())
-                        .map(paramterClass -> paramterClass.getSimpleName())
-                        .collect(Collectors.joining(", ")))
-                .append(')');
-        return sb.toString();
+        return bean;
     }
 
 }
