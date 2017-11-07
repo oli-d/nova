@@ -19,7 +19,7 @@ import java.lang.annotation.Target;
 
 @Target(ElementType.METHOD)
 @Retention(RetentionPolicy.RUNTIME)
-public @interface OnEvent {
+public @interface OnMessage {
     String value();
     boolean captureMetrics() default true;
     BackpressureStrategy backpressureStrategy() default BackpressureStrategy.BUFFER;

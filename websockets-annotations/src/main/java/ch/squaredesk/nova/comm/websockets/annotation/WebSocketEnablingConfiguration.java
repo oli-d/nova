@@ -49,18 +49,6 @@ public class WebSocketEnablingConfiguration {
         return new WebSocketBeanPostprocessor(messageMarshaller(), messageUnmarshaller(), new MetricsCollector(nova.metrics));
     }
 
-    @Bean(name = "captureWebSocketMetrics")
-    public boolean captureWebSocketMetrics() {
-        boolean captureMetrics = true;
-        try {
-            captureMetrics = Boolean.valueOf(environment.getProperty("NOVA.HTTP.WEB_SOCKETS.CAPTURE_METRICS", "true"));
-        } catch (Exception e) {
-            // noop, stick to default value
-        }
-
-        return captureMetrics;
-    }
-
     @Bean
     AsyncHttpClient httpClient() {
         AsyncHttpClientConfig cf = new AsyncHttpClientConfig.Builder()

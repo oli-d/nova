@@ -20,7 +20,7 @@ import static java.util.Arrays.stream;
 import static java.util.Objects.requireNonNull;
 
 class BeanExaminer {
-    private static final Predicate<Annotation> interestingAnnotation = anno -> anno instanceof OnEvent;
+    private static final Predicate<Annotation> interestingAnnotation = anno -> anno instanceof OnMessage;
 
     static EndpointDescriptor[] websocketEndpointsIn(Object bean) {
         requireNonNull(bean, "bean to examine must not be null");
@@ -31,13 +31,13 @@ class BeanExaminer {
 //                    if (!Modifier.isPublic(method.getModifiers()))
 //                        throw new IllegalArgumentException(
 //                                "Method " + prettyPrint(bean, method) + ", annotated with @" +
-//                                        OnEvent.class.getSimpleName() + " must be public");
+//                                        OnMessage.class.getSimpleName() + " must be public");
 //                })
                 .map(method -> {
-                    OnEvent annotation = stream(method.getDeclaredAnnotations())
+                    OnMessage annotation = stream(method.getDeclaredAnnotations())
                             .filter(interestingAnnotation)
                             .findFirst()
-                            .map(anno -> (OnEvent)anno)
+                            .map(anno -> (OnMessage)anno)
                             .get();
                     return new EndpointDescriptor(
                             annotation.value(),
