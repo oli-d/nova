@@ -42,17 +42,13 @@ public class WebSocketBeanPostprocessor implements BeanPostProcessor {
     public Object postProcessAfterInitialization(Object bean, String beanName) throws BeansException {
         EndpointDescriptor[] endpoints = BeanExaminer.websocketEndpointsIn(bean);
         for (EndpointDescriptor endpointDescriptor: endpoints) {
-            ServerEndpoint se = // webSocketAdapter.acceptConnections(endpointDescriptor.destination);
+            ServerEndpoint se =
                 ServerEndpointFactory.createFor(
                         endpointDescriptor.destination,
                         messageMarshaller,
                         messageUnmarshaller,
-                        endpointDescriptor.captureMetrics ? metricsCollector : null);
-            se.messages(endpointDescriptor.backpressureStrategy).subscribe(
-                msg -> {},
-                error -> {}
-            );
-            // resourceConfig.registerResources(RestResourceFactory.resourceFor(endpointDescription.resourceDescriptor, bean, endpointDescription.handlerMethod));
+                        endpointDescriptor.captureTimings ? metricsCollector : null);
+            se.messages(endpointDescriptor.backpressureStrategy).subscribe(MethodInvoker.createFor(endpointDescriptor, metricsCollector));
         }
         return bean;
     }

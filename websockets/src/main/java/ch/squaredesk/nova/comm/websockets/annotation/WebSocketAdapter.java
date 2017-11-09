@@ -21,6 +21,7 @@ import org.glassfish.grizzly.http.server.HttpServer;
 import org.glassfish.grizzly.http.server.NetworkListener;
 import org.glassfish.grizzly.websockets.WebSocketAddOn;
 
+import java.util.Arrays;
 import java.util.concurrent.CopyOnWriteArraySet;
 
 import static java.util.Objects.requireNonNull;
@@ -39,6 +40,7 @@ public class WebSocketAdapter<MessageType> {
         this.metricsCollector = new MetricsCollector(builder.metrics);
         this.httpServer = builder.httpServer;
         if (httpServer !=null) {
+            // TODO: would be cool, if we could somehow find out whether this was already done
             WebSocketAddOn addon = new WebSocketAddOn();
             for (NetworkListener listener : httpServer.getListeners()) {
                 listener.registerAddOn(addon);

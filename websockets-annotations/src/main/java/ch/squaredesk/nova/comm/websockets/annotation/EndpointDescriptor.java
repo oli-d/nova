@@ -11,14 +11,25 @@ package ch.squaredesk.nova.comm.websockets.annotation;
 
 import io.reactivex.BackpressureStrategy;
 
-public class EndpointDescriptor {
-    public final String destination;
-    public final boolean captureMetrics;
-    public final BackpressureStrategy backpressureStrategy;
+import java.lang.reflect.Method;
 
-    public EndpointDescriptor(String destination, boolean captureMetrics, BackpressureStrategy backpressureStrategy) {
+class EndpointDescriptor {
+    final Object objectToInvokeMethodOn;
+    final Method methodToInvoke;
+    final String destination;
+    final boolean captureTimings;
+    final BackpressureStrategy backpressureStrategy;
+
+    EndpointDescriptor(
+            Object objectToInvokeMethodOn,
+            Method methodToInvoke,
+            String destination,
+            boolean captureMetrics,
+            BackpressureStrategy backpressureStrategy) {
+        this.objectToInvokeMethodOn = objectToInvokeMethodOn;
+        this.methodToInvoke = methodToInvoke;
         this.destination = destination;
-        this.captureMetrics = captureMetrics;
+        this.captureTimings = captureMetrics;
         this.backpressureStrategy = backpressureStrategy;
     }
 }

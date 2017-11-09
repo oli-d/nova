@@ -10,6 +10,8 @@
 
 package ch.squaredesk.nova.comm.websockets.annotation;
 
+import ch.squaredesk.nova.comm.retrieving.MessageUnmarshaller;
+import ch.squaredesk.nova.comm.sending.MessageMarshaller;
 import io.reactivex.BackpressureStrategy;
 
 import java.lang.annotation.ElementType;
@@ -21,7 +23,9 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 public @interface OnMessage {
     String value();
-    boolean captureMetrics() default true;
+    boolean captureTimings() default true;
     BackpressureStrategy backpressureStrategy() default BackpressureStrategy.BUFFER;
+    String messageMarshallerClassName() default "";
+    String messageUnmarshallerClassName() default "";
     // TODO boolean dispatchOnBusinessLogicThread() default false;
 }
