@@ -6,6 +6,7 @@
  * obtain a copy of the license at
  *
  *   https://squaredesk.ch/license/oss/LICENSE
+ *
  */
 
 package ch.squaredesk.nova.comm.websockets.annotation;
@@ -43,12 +44,6 @@ class BeanExaminer {
                                 "Method " + prettyPrint(bean, method) + ", annotated with @" +
                                         OnMessage.class.getSimpleName() + " has an invalid signature");
                 })
-//                .peek(method -> {
-//                    if (!Modifier.isPublic(method.getModifiers()))
-//                        throw new IllegalArgumentException(
-//                                "Method " + prettyPrint(bean, method) + ", annotated with @" +
-//                                        OnMessage.class.getSimpleName() + " must be public");
-//                })
                 .map(method -> {
                     OnMessage annotation = stream(method.getDeclaredAnnotations())
                             .filter(interestingAnnotation)
@@ -69,112 +64,55 @@ class BeanExaminer {
                 .toArray(EndpointDescriptor[]::new);
     }
 
-    static boolean methodSignatureValidForMessageHandler (Method m) {
+    private static boolean methodSignatureValidForMessageHandler (Method m) {
         return m.getReturnType() == void.class &&
                 m.getParameterTypes().length == 2 &&
                 m.getParameterTypes()[1].isAssignableFrom(WebSocket.class);
     }
 
     private static MessageMarshaller instantiateMarshaller(Method method, OnMessage annotation) {
-        MessageMarshaller marshaller = null;
-        if (annotation.messageMarshallerClassName()!=null
-                && !annotation.messageMarshallerClassName().isEmpty()) {
-            marshaller = instantiateMarshaller(method, annotation.messageMarshallerClassName());
+        if (!annotation.messageMarshallerClassName().isEmpty()) {
+            return instantiateMarshaller(method, annotation.messageMarshallerClassName());
         } else {
-            marshaller = getDefaultMarshaller(method);
+//            Class<?> webSocketParamType = ReflectionHelper.getConcreteTypeOfGenericClassExtension(
+//                    method.getParameterTypes()[1],
+//                    0);
+            return DefaultMarshallerFactory.getMarshallerForMessageType(method.getParameterTypes()[0]);
         }
-
-        return marshaller;
     }
 
     private static MessageUnmarshaller instantiateUnmarshaller(Method method, OnMessage annotation)  {
-        MessageUnmarshaller unmarshaller = null;
-        if (annotation.messageUnmarshallerClassName()!=null
-                && !annotation.messageUnmarshallerClassName().isEmpty()) {
-            unmarshaller = instantiateUnmarshaller(method, annotation.messageUnmarshallerClassName());
+        if (!annotation.messageUnmarshallerClassName().isEmpty()) {
+            return instantiateUnmarshaller(method, annotation.messageUnmarshallerClassName());
         } else {
-            unmarshaller = getDefaultUnmarshaller(method);
-        }
-
-        return unmarshaller;
-    }
-
-    /**
-     * Since Lambdas do erase type information, the method only works if the passed marshaller is NOT a lambda!!!
-     *
-     * See: https://stackoverflow.com/questions/21887358/reflection-type-inference-on-java-8-lambdas
-     */
-    static boolean marshallerAcceptsType(MessageMarshaller<?,String> marshaller, Class paramTypeToCheckFor) {
-        Type genericInterfaceType = Arrays.stream(marshaller.getClass().getGenericInterfaces())
-                .filter(t -> t.getTypeName().startsWith(MessageMarshaller.class.getName()))
-                .findFirst()
-                .get();
-
-
-        if (genericInterfaceType instanceof ParameterizedType) {
-            Type inputType = ((ParameterizedType)genericInterfaceType).getActualTypeArguments()[0];
-            return (inputType instanceof Class) && ((Class) inputType).isAssignableFrom(paramTypeToCheckFor);
-        }
-
-        return false;
-    }
-
-    /**
-     * Since Lambdas do erase type information, the method only works if the passed unmarshaller is NOT a lambda!!!
-     *
-     * See: https://stackoverflow.com/questions/21887358/reflection-type-inference-on-java-8-lambdas
-     */
-    static boolean unmarshallerReturnsType(MessageUnmarshaller unmarshaller, Class returnTypeToCheckFor) {
-        Type genericInterfaceType = Arrays.stream(unmarshaller.getClass().getGenericInterfaces())
-                .filter(t -> t.getTypeName().startsWith(MessageUnmarshaller.class.getName()))
-                .findFirst()
-                .get();
-
-
-        if (genericInterfaceType instanceof ParameterizedType) {
-            Type inputType = ((ParameterizedType)genericInterfaceType).getActualTypeArguments()[1];
-            return (inputType instanceof Class) && ((Class) inputType).isAssignableFrom(returnTypeToCheckFor);
-        }
-
-        return false;
-    }
-
-    private static MessageMarshaller getDefaultMarshaller(Method method) {
-        if (method.getParameterTypes()[0].isAssignableFrom(String.class)) {
-            return s -> s;
-        } else {
-            ObjectMapper objectMapper = new ObjectMapper()
-                    .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-            return o -> objectMapper.writeValueAsString(o);
+            return DefaultMarshallerFactory.getUnmarshallerForMessageType(method.getParameterTypes()[0]);
         }
     }
 
-    private static MessageUnmarshaller getDefaultUnmarshaller(Method method) {
-        if (method.getParameterTypes()[0].isAssignableFrom(String.class)) {
-            return s -> s;
-        } else {
-            ObjectMapper objectMapper = new ObjectMapper()
-                    .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-            return s -> objectMapper.readValue((String)s, method.getParameterTypes()[0]);
-        }
+    private static boolean marshallerAcceptsType(MessageMarshaller<?,String> marshaller, Class paramTypeToCheckFor) {
+        Class<?> concreteClass = ReflectionHelper.getConcreteTypeOfGenericInterfaceImplementation(
+                marshaller,
+                MessageMarshaller.class,
+                0);
+
+        return concreteClass != null && concreteClass.isAssignableFrom(paramTypeToCheckFor);
+    }
+
+    private static boolean unmarshallerReturnsType(MessageUnmarshaller unmarshaller, Class returnTypeToCheckFor) {
+        Class<?> concreteClass = ReflectionHelper.getConcreteTypeOfGenericInterfaceImplementation(
+                unmarshaller,
+                MessageUnmarshaller.class,
+                1);
+
+        return concreteClass != null && concreteClass.isAssignableFrom(returnTypeToCheckFor);
     }
 
     private static MessageMarshaller instantiateMarshaller(Method method, String className) {
-        Class classObject = null;
-        try {
-            classObject = Class.forName(className);
-        } catch (ClassNotFoundException e) {
-            throw new IllegalArgumentException("Unable to load class " + className);
-        }
-        if (!classObject.isAssignableFrom(MessageMarshaller.class)) {
+        Object instance = ReflectionHelper.instanceFromClassName(className);
+        if (!(instance instanceof MessageMarshaller)) {
             throw new IllegalArgumentException("Class " + className + " is not a valid MessageMarshaller");
         }
-        MessageMarshaller messageMarshaller;
-        try {
-            messageMarshaller = (MessageMarshaller) classObject.newInstance();
-        } catch (Exception e) {
-            throw new IllegalArgumentException("Unable to instantiate unmarshaller " + className);
-        }
+        MessageMarshaller<?, String> messageMarshaller = (MessageMarshaller)instance;
         if (!marshallerAcceptsType(messageMarshaller, method.getParameterTypes()[0])) {
             throw new IllegalArgumentException("Class " + className + " is not a valid MessageMarshaller for method "
                     + method.getName());
@@ -183,21 +121,11 @@ class BeanExaminer {
     }
 
     private static MessageUnmarshaller instantiateUnmarshaller(Method method, String className)  {
-        Class classObject;
-        try {
-            classObject = Class.forName(className);
-        } catch (Exception e) {
-            throw new IllegalArgumentException("Unable to load class " + className);
-        }
-        if (!classObject.isAssignableFrom(MessageUnmarshaller.class)) {
+        Object instance = ReflectionHelper.instanceFromClassName(className);
+        if (!(instance instanceof MessageUnmarshaller)) {
             throw new IllegalArgumentException("Class " + className + " is not a valid MessageUnmarshaller");
         }
-        MessageUnmarshaller messageUnmarshaller;
-        try {
-            messageUnmarshaller = (MessageUnmarshaller) classObject.newInstance();
-        } catch (Exception e) {
-            throw new IllegalArgumentException("Unable to instantiate unmarshaller " + className);
-        }
+        MessageUnmarshaller<String, ?> messageUnmarshaller = (MessageUnmarshaller) instance;
         if (!unmarshallerReturnsType(messageUnmarshaller, method.getParameterTypes()[0])) {
             throw new IllegalArgumentException("Class " + className + " is not a valid MessageUnmarshaller for method "
                     + method.getName());

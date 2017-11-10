@@ -6,6 +6,7 @@
  * obtain a copy of the license at
  *
  *   https://squaredesk.ch/license/oss/LICENSE
+ *
  */
 
 package ch.squaredesk.nova.comm.kafka;
@@ -33,6 +34,7 @@ class KafkaObjectFactory {
         producers = new CopyOnWriteArraySet<>();
     }
 
+    // TODO: is it ok to subscribe multiple times to the same topic???
     private Consumer<String, String> consumerForTopic(String topic) {
         KafkaConsumer kafkaConsumer = new KafkaConsumer<>(consumerProperties);
         kafkaConsumer.subscribe(Arrays.asList(topic));

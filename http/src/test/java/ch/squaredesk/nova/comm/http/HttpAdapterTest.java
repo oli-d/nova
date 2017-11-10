@@ -6,6 +6,7 @@
  * obtain a copy of the license at
  *
  *   https://squaredesk.ch/license/oss/LICENSE
+ *
  */
 
 package ch.squaredesk.nova.comm.http;
@@ -100,7 +101,6 @@ class HttpAdapterTest {
                 .setMessageUnmarshaller(incomingMessage -> incomingMessage)
                 .setHttpServer(httpServer)
                 .setMetrics(new Metrics())
-                .setHttpServer(httpServer)
                 .setErrorReplyFactory(t -> "Error: " + t.getMessage())
                 .build();
         TestObserver<String> observer = commAdapter.sendGetRequest("http://httpbin.org/post").test();
