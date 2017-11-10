@@ -71,7 +71,7 @@ public class RestEnablingConfiguration {
     }
 
     @Lazy // must be created after all other beans have been created (because of annotation processing)
-    @Bean
+    @Bean("httpServer")
     public HttpServer restHttpServer() {
         RestBeanPostprocessor restBeanPostprocessor = applicationContext.getBean(RestBeanPostprocessor.class);
         ResourceConfig resourceConfig = restBeanPostprocessor.resourceConfig;

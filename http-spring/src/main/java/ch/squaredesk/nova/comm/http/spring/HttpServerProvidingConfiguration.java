@@ -24,7 +24,7 @@ public class HttpServerProvidingConfiguration {
     @Autowired
     HttpServerConfiguration httpServerConfiguration;
 
-    @Bean
+    @Bean("httpServer")
     public HttpServer httpServer() {
         return HttpServerFactory.serverFor(httpServerConfiguration);
     }

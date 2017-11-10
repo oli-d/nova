@@ -25,7 +25,7 @@ public class HttpServerStarter implements ApplicationListener<ContextRefreshedEv
 
     @Override
     public void onApplicationEvent(ContextRefreshedEvent event) {
-        httpServer = event.getApplicationContext().getBean(HttpServer.class);
+        httpServer = event.getApplicationContext().getBean("httpServer", HttpServer.class);
 
         if (!httpServer.isStarted()) {
             try {
