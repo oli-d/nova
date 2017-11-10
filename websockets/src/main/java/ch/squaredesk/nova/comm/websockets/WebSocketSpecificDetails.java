@@ -7,7 +7,7 @@
  *
  *   https://squaredesk.ch/license/oss/LICENSE
  */
-package ch.squaredesk.nova.comm.websockets.annotation;
+package ch.squaredesk.nova.comm.websockets;
 
 
 public class WebSocketSpecificDetails {

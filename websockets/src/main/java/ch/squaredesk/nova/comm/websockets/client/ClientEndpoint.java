@@ -7,12 +7,12 @@
  *
  *   https://squaredesk.ch/license/oss/LICENSE
  */
-package ch.squaredesk.nova.comm.websockets.annotation.client;
+package ch.squaredesk.nova.comm.websockets.client;
 
-import ch.squaredesk.nova.comm.websockets.annotation.CloseReason;
-import ch.squaredesk.nova.comm.websockets.annotation.Endpoint;
-import ch.squaredesk.nova.comm.websockets.annotation.EndpointStreamSource;
-import ch.squaredesk.nova.comm.websockets.annotation.WebSocket;
+import ch.squaredesk.nova.comm.websockets.CloseReason;
+import ch.squaredesk.nova.comm.websockets.Endpoint;
+import ch.squaredesk.nova.comm.websockets.EndpointStreamSource;
+import ch.squaredesk.nova.comm.websockets.WebSocket;
 
 import java.util.function.Consumer;
 

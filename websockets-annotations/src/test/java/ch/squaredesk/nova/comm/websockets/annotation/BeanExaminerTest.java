@@ -13,6 +13,7 @@ package ch.squaredesk.nova.comm.websockets.annotation;
 
 import ch.squaredesk.nova.comm.retrieving.MessageUnmarshaller;
 import ch.squaredesk.nova.comm.sending.MessageMarshaller;
+import ch.squaredesk.nova.comm.websockets.WebSocket;
 import io.reactivex.BackpressureStrategy;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;

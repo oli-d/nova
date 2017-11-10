@@ -13,8 +13,9 @@ package ch.squaredesk.nova.comm.websockets.annotation;
 
 import ch.squaredesk.nova.comm.retrieving.MessageUnmarshaller;
 import ch.squaredesk.nova.comm.sending.MessageMarshaller;
-import ch.squaredesk.nova.comm.websockets.annotation.server.ServerEndpoint;
-import ch.squaredesk.nova.comm.websockets.annotation.server.ServerEndpointFactory;
+import ch.squaredesk.nova.comm.websockets.MetricsCollector;
+import ch.squaredesk.nova.comm.websockets.server.ServerEndpoint;
+import ch.squaredesk.nova.comm.websockets.server.ServerEndpointFactory;
 import org.glassfish.jersey.server.ResourceConfig;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.config.BeanPostProcessor;

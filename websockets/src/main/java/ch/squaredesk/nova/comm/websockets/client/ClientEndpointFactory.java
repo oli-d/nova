@@ -7,11 +7,15 @@
  *
  *   https://squaredesk.ch/license/oss/LICENSE
  */
-package ch.squaredesk.nova.comm.websockets.annotation.client;
+package ch.squaredesk.nova.comm.websockets.client;
 
 import ch.squaredesk.nova.comm.retrieving.MessageUnmarshaller;
 import ch.squaredesk.nova.comm.sending.MessageMarshaller;
-import ch.squaredesk.nova.comm.websockets.annotation.*;
+import ch.squaredesk.nova.comm.websockets.EndpointStreamSource;
+import ch.squaredesk.nova.comm.websockets.EndpointStreamSourceFactory;
+import ch.squaredesk.nova.comm.websockets.MetricsCollector;
+import ch.squaredesk.nova.comm.websockets.WebSocket;
+import ch.squaredesk.nova.comm.websockets.CloseReason;
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.ws.WebSocketUpgradeHandler;
 

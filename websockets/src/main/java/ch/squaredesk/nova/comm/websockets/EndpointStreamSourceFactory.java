@@ -7,7 +7,7 @@
  *
  *   https://squaredesk.ch/license/oss/LICENSE
  */
-package ch.squaredesk.nova.comm.websockets.annotation;
+package ch.squaredesk.nova.comm.websockets;
 
 import ch.squaredesk.nova.tuples.Pair;
 import ch.squaredesk.nova.tuples.Tuple3;
@@ -15,7 +15,7 @@ import io.reactivex.Observable;
 
 import java.util.function.Function;
 
-public class EndpointStreamSourceFactory<MessageType> {
+public class EndpointStreamSourceFactory {
     public static <SomeMessageType, SomeWebSocketType> EndpointStreamSource<SomeMessageType> createStreamSourceFor(
             String destination,
             Function<SomeWebSocketType, WebSocket<SomeMessageType>> webSocketFactory,

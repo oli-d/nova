@@ -7,22 +7,19 @@
  *
  *   https://squaredesk.ch/license/oss/LICENSE
  */
-package ch.squaredesk.nova.comm.websockets.annotation;
+package ch.squaredesk.nova.comm.websockets;
 
 import ch.squaredesk.nova.comm.retrieving.MessageUnmarshaller;
 import ch.squaredesk.nova.comm.sending.MessageMarshaller;
-import ch.squaredesk.nova.comm.websockets.annotation.client.ClientEndpoint;
-import ch.squaredesk.nova.comm.websockets.annotation.client.ClientEndpointFactory;
-import ch.squaredesk.nova.comm.websockets.annotation.server.ServerEndpoint;
-import ch.squaredesk.nova.comm.websockets.annotation.server.ServerEndpointFactory;
+import ch.squaredesk.nova.comm.websockets.client.ClientEndpoint;
+import ch.squaredesk.nova.comm.websockets.client.ClientEndpointFactory;
+import ch.squaredesk.nova.comm.websockets.server.ServerEndpoint;
+import ch.squaredesk.nova.comm.websockets.server.ServerEndpointFactory;
 import ch.squaredesk.nova.metrics.Metrics;
 import com.ning.http.client.AsyncHttpClient;
 import org.glassfish.grizzly.http.server.HttpServer;
 import org.glassfish.grizzly.http.server.NetworkListener;
 import org.glassfish.grizzly.websockets.WebSocketAddOn;
-
-import java.util.Arrays;
-import java.util.concurrent.CopyOnWriteArraySet;
 
 import static java.util.Objects.requireNonNull;
 

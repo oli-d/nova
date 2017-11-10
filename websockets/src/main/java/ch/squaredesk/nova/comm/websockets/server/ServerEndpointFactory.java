@@ -7,14 +7,15 @@
  *
  *   https://squaredesk.ch/license/oss/LICENSE
  */
-package ch.squaredesk.nova.comm.websockets.annotation.server;
+package ch.squaredesk.nova.comm.websockets.server;
 
 import ch.squaredesk.nova.comm.retrieving.MessageUnmarshaller;
 import ch.squaredesk.nova.comm.sending.MessageMarshaller;
-import ch.squaredesk.nova.comm.websockets.annotation.*;
-import ch.squaredesk.nova.tuples.Pair;
-import ch.squaredesk.nova.tuples.Tuple3;
-import io.reactivex.Observable;
+import ch.squaredesk.nova.comm.websockets.EndpointStreamSource;
+import ch.squaredesk.nova.comm.websockets.EndpointStreamSourceFactory;
+import ch.squaredesk.nova.comm.websockets.MetricsCollector;
+import ch.squaredesk.nova.comm.websockets.WebSocket;
+import ch.squaredesk.nova.comm.websockets.CloseReason;
 import io.reactivex.disposables.Disposable;
 import org.glassfish.grizzly.websockets.WebSocketEngine;
 
@@ -22,8 +23,6 @@ import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.function.Consumer;
 import java.util.function.Function;
-
-import static java.util.Objects.requireNonNull;
 
 public class ServerEndpointFactory {
     private static <MessageType> WebSocket<MessageType> createWebSocket(

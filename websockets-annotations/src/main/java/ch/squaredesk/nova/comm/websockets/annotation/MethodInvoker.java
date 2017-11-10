@@ -12,6 +12,8 @@
 package ch.squaredesk.nova.comm.websockets.annotation;
 
 import ch.squaredesk.nova.comm.retrieving.IncomingMessage;
+import ch.squaredesk.nova.comm.websockets.MetricsCollector;
+import ch.squaredesk.nova.comm.websockets.WebSocketSpecificDetails;
 import io.reactivex.functions.Consumer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

@@ -12,7 +12,9 @@ package ch.squaredesk.nova.comm.websockets.annotation;
 
 import ch.squaredesk.nova.Nova;
 import ch.squaredesk.nova.comm.http.HttpServerConfiguration;
-import ch.squaredesk.nova.comm.websockets.annotation.client.ClientEndpoint;
+import ch.squaredesk.nova.comm.websockets.WebSocket;
+import ch.squaredesk.nova.comm.websockets.WebSocketAdapter;
+import ch.squaredesk.nova.comm.websockets.client.ClientEndpoint;
 import ch.squaredesk.nova.metrics.Metrics;
 import ch.squaredesk.nova.spring.NovaProvidingConfiguration;
 import com.ning.http.client.AsyncHttpClient;

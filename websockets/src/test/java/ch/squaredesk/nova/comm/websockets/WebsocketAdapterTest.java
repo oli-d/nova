@@ -7,11 +7,15 @@
  *
  *   https://squaredesk.ch/license/oss/LICENSE
  */
-package ch.squaredesk.nova.comm.websockets.annotation;
+package ch.squaredesk.nova.comm.websockets;
 
 import ch.squaredesk.nova.comm.retrieving.IncomingMessage;
-import ch.squaredesk.nova.comm.websockets.annotation.client.ClientEndpoint;
-import ch.squaredesk.nova.comm.websockets.annotation.server.ServerEndpoint;
+import ch.squaredesk.nova.comm.websockets.Endpoint;
+import ch.squaredesk.nova.comm.websockets.WebSocket;
+import ch.squaredesk.nova.comm.websockets.WebSocketAdapter;
+import ch.squaredesk.nova.comm.websockets.WebSocketSpecificDetails;
+import ch.squaredesk.nova.comm.websockets.client.ClientEndpoint;
+import ch.squaredesk.nova.comm.websockets.server.ServerEndpoint;
 import ch.squaredesk.nova.metrics.Metrics;
 import com.codahale.metrics.Counter;
 import com.codahale.metrics.Meter;

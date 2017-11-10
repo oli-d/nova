@@ -13,18 +13,13 @@ package ch.squaredesk.nova.comm.websockets.annotation;
 
 import ch.squaredesk.nova.comm.retrieving.MessageUnmarshaller;
 import ch.squaredesk.nova.comm.sending.MessageMarshaller;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import ch.squaredesk.nova.comm.websockets.WebSocket;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
-import java.lang.reflect.ParameterizedType;
-import java.lang.reflect.Type;
 import java.util.Arrays;
-import java.util.Optional;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static java.util.Arrays.sort;
 import static java.util.Arrays.stream;

@@ -16,6 +16,7 @@ import ch.squaredesk.nova.comm.http.spring.HttpServerProvidingConfiguration;
 import ch.squaredesk.nova.comm.http.spring.HttpServerStarter;
 import ch.squaredesk.nova.comm.retrieving.MessageUnmarshaller;
 import ch.squaredesk.nova.comm.sending.MessageMarshaller;
+import ch.squaredesk.nova.comm.websockets.MetricsCollector;
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.AsyncHttpClientConfig;
 import org.glassfish.grizzly.http.server.HttpServer;
@@ -26,8 +27,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.core.env.Environment;
-
-import java.util.Arrays;
 
 @Configuration
 @Import(HttpServerProvidingConfiguration.class)

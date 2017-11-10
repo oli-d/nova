@@ -7,7 +7,7 @@
  *
  *   https://squaredesk.ch/license/oss/LICENSE
  */
-package ch.squaredesk.nova.comm.websockets.annotation;
+package ch.squaredesk.nova.comm.websockets;
 
 import ch.squaredesk.nova.tuples.Pair;
 import ch.squaredesk.nova.tuples.Tuple3;

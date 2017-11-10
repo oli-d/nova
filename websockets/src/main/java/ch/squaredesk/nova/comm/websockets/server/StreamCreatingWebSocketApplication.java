@@ -7,10 +7,10 @@
  *
  *   https://squaredesk.ch/license/oss/LICENSE
  */
-package ch.squaredesk.nova.comm.websockets.annotation.server;
+package ch.squaredesk.nova.comm.websockets.server;
 
-import ch.squaredesk.nova.comm.websockets.annotation.CloseReason;
-import ch.squaredesk.nova.comm.websockets.annotation.StreamCreatingEndpointWrapper;
+import ch.squaredesk.nova.comm.websockets.CloseReason;
+import ch.squaredesk.nova.comm.websockets.StreamCreatingEndpointWrapper;
 import ch.squaredesk.nova.tuples.Pair;
 import io.reactivex.Observable;
 import io.reactivex.subjects.PublishSubject;

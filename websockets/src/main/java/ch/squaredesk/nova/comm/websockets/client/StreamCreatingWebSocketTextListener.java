@@ -7,10 +7,10 @@
  *
  *   https://squaredesk.ch/license/oss/LICENSE
  */
-package ch.squaredesk.nova.comm.websockets.annotation.client;
+package ch.squaredesk.nova.comm.websockets.client;
 
-import ch.squaredesk.nova.comm.websockets.annotation.CloseReason;
-import ch.squaredesk.nova.comm.websockets.annotation.StreamCreatingEndpointWrapper;
+import ch.squaredesk.nova.comm.websockets.CloseReason;
+import ch.squaredesk.nova.comm.websockets.StreamCreatingEndpointWrapper;
 import ch.squaredesk.nova.tuples.Pair;
 import com.ning.http.client.ws.WebSocket;
 import com.ning.http.client.ws.WebSocketTextListener;

@@ -8,7 +8,7 @@
  *   https://squaredesk.ch/license/oss/LICENSE
  */
 
-package ch.squaredesk.nova.comm.websockets.annotation;
+package ch.squaredesk.nova.comm.websockets;
 
 import ch.squaredesk.nova.metrics.Metrics;
 import com.codahale.metrics.Counter;
@@ -25,7 +25,7 @@ public class MetricsCollector {
     private final Meter totalNumberOfSentMessages;
     private final Counter totalNumberOfSubscriptions;
 
-    MetricsCollector(Metrics metrics) {
+    public MetricsCollector(Metrics metrics) {
         requireNonNull(metrics, "metrics must not be null");
         this.metrics = metrics;
         this.identifierPrefix = Metrics.name("websocket");
