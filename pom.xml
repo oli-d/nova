@@ -31,6 +31,7 @@
         <module>comm</module>
         <module>jms</module>
         <module>http</module>
+        <module>http-spring</module>
 	    <module>rest-annotations</module>
         <module>websockets</module>
         <module>websockets-annotations</module>

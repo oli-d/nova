@@ -1,7 +1,5 @@
 # annotation based REST communication
 
----
-
 This package provides the ```OnRestRequest``` annotation. With this, you can conveniently register a REST request
 handler method, simply by adding the annotation to your handling method. 
 
