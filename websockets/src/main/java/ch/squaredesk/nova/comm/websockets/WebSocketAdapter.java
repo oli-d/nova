@@ -37,6 +37,9 @@ public class WebSocketAdapter<MessageType> {
         this.metricsCollector = new MetricsCollector(builder.metrics);
         this.httpServer = builder.httpServer;
         if (httpServer !=null) {
+            if (httpServer.isStarted()) {
+                throw new IllegalArgumentException("HttpServer MUST NOT BE STARTED before WebSocketAdapter is created");
+            }
             // TODO: would be cool, if we could somehow find out whether this was already done
             WebSocketAddOn addon = new WebSocketAddOn();
             for (NetworkListener listener : httpServer.getListeners()) {

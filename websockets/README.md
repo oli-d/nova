@@ -22,7 +22,9 @@ representation. **Mandatory**
 
 * ```httpServer``` - The ```HttpServer``` instance used to listen for incoming connections. Can be null, but
 in that case, connections cannot be accepted. The adapter will throw a ```RuntimeException``` if
-you try.
+you try. Also, make sure that the passed server is NOT started before the ```WebSocketAdapter``` instance is
+created. Otherwise the WebSocket feature cannot be properly initialized. Since we like to fail fast, the
+system checks the current state of the passed server, and if it is already running also throws a ```RuntimeException```
 
 * ```httpClient``` - The ```AsyncHttpClient``` instance used to initiate connections. Can be null, but
 in that case, connections cannot be initiated. The adapter will throw a ```RuntimeException``` if
@@ -42,43 +44,34 @@ retrieve messages.
 To see this in real life, here's how the implementation of an EchoServer would look like:
 
 ```Java
-  // Instantiate the WebSocketAdapter
-  WebSocketAdapter<String> webSocketAdapter = WebSocketAdapter.<String>builder()
-                              .setMessageMarshaller(Object::toString)
-                              .setMessageUnmarshaller(String::valueOf)
-                              .setMetrics(metrics)
-                              .setHttpServer(httpServer)
-                              .setHttpClient(httpClient)
-                              .build();
+        // Instantiate the WebSocketAdapter
+        WebSocketAdapter<String> webSocketAdapter = webSocketAdapter();
 
-  // Get the "server side" endpoint
-  Endpoint<String> endpoint = webSocketAdapter.acceptConnections("/echo");
-  // Subscribe to incoming messages
-  endpoint.messages(BackpressureStrategy.BUFFER).subscribe(
-      incomingMessage -> {
-          // Get the WebSocket that represents the connection to the sender
-          WebSocket<String> webSocket = incomingMessage.details.transportSpecificDetails.webSocket; 
-          // and just send the message back to the sender
-          webSocket.send(incomingMessage.message));
-  });
+        // Get the "server side" endpoint
+        ServerEndpoint<String> acceptingEndpoint = webSocketAdapter.acceptConnections("/echo");
+        // Subscribe to incoming messages
+        acceptingEndpoint.messages(BackpressureStrategy.BUFFER).subscribe(
+                incomingMessage -> {
+                    // Get the WebSocket that represents the connection to the sender
+                    WebSocket<String> webSocket = incomingMessage.details.transportSpecificDetails.webSocket;
+                    // and just send the message back to the sender
+                    webSocket.send(incomingMessage.message);
+                });
 ```
 
 The code to connect to that server and send a few messages would look like that:
 
 ```Java
-  // Instantiate the WebSocketAdapter
-  WebSocketAdapter<String> webSocketAdapter = ...
-
-  // Get the "client side" endpoint
-  Endpoint<String> endpoint = webSocketAdapter.connectTo("ws://127.0.0.1/echo");
-  // Subscribe to incoming replies
-  endpoint.messages(BackpressureStrategy.BUFFER).subscribe(
-      incomingMessage -> {
-          // Simply print them out
-          System.out.println("Echo server replied: " + incomingMessage.message));
-  });
-  // Send a message
-  endpoint.send("Hello echo");
+        // Connect to the "server side" endpoint
+        ClientEndpoint<String> initiatingEndpoint = webSocketAdapter.connectTo("ws://127.0.0.1:10000/echo");
+        // Subscribe to messages returned from the echo server
+        initiatingEndpoint.messages(BackpressureStrategy.BUFFER).subscribe(
+                incomingMessage -> {
+                    System.out.println("Echo server returned " + incomingMessage.message);
+                });
+        // and send a few messages
+        initiatingEndpoint.send("One");
+        initiatingEndpoint.send("Two");
+        initiatingEndpoint.send("Three");
 ```
-
-The ```WebSocket```s handle the real communication 
+_(You can find the full source code [here](./src/test/java/examples/EchoServer.java/README.md))_

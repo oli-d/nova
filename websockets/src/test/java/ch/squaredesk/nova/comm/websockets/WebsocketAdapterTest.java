@@ -10,10 +10,6 @@
 package ch.squaredesk.nova.comm.websockets;
 
 import ch.squaredesk.nova.comm.retrieving.IncomingMessage;
-import ch.squaredesk.nova.comm.websockets.Endpoint;
-import ch.squaredesk.nova.comm.websockets.WebSocket;
-import ch.squaredesk.nova.comm.websockets.WebSocketAdapter;
-import ch.squaredesk.nova.comm.websockets.WebSocketSpecificDetails;
 import ch.squaredesk.nova.comm.websockets.client.ClientEndpoint;
 import ch.squaredesk.nova.comm.websockets.server.ServerEndpoint;
 import ch.squaredesk.nova.metrics.Metrics;
@@ -35,9 +31,7 @@ import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import static org.hamcrest.Matchers.contains;
-import static org.hamcrest.Matchers.greaterThanOrEqualTo;
-import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.*;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -45,9 +39,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 @Tag("integrationTest")
 class WebsocketAdapterTest {
     HttpServer httpServer = HttpServer.createSimpleServer("/", 7777);
-    AsyncHttpClientConfig cf = new AsyncHttpClientConfig.Builder()
-            // .setProxyServer(new ProxyServer("127.0.0.1", 38080))
-            .build();
+    AsyncHttpClientConfig cf = new AsyncHttpClientConfig.Builder().build();
     AsyncHttpClient httpClient = new AsyncHttpClient(cf);
 
     Metrics metrics;
