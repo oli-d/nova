@@ -43,16 +43,25 @@ solve it in a consistent way, making it easy to combine them. They provide solut
 allowing service developers to concentrate on the required business logic. 
 
 Currently, the following libraries exist:
-* [core](./core/README.md): core functionality, used by all other components
-* [spring-support](./spring-support/README.md): convenient creation of Nova bean with Spring
-* [comm](./comm/README.md): communication base library providing protocol agnostic, reactive message sending and retrieval
-* [jms](./jms/README.md): reactive JMS messaging
-* [http](./http/README.md): reactive HTTP communication
-* [rest-annotations](./rest-annotations/README.md): annotation based REST communication
-* [kafka](./kafka/README.md): reactive Kafka communication
-* [event-annotations](./event-annotations/README.md): allows your spring beans to automatically connect to the EventBus using annotations
-* [service](./service/README.md): Small service skeleton with a defined lifecycle and easy access to Nova and its EventBus 
-* [metrics-serialization](./metrics-serialization/README.md): Utility to easily serialize MetricDumps
-* [metrics-elastic](./metrics-elastic/README.md): Utility to push Metrics to Elasticsearch
-* [metrics-kafka](./metrics-kafka/README.md): Utility to push Metrics to Kafka
+
+- Core functionality
+  * [core](./core/README.md): core functionality, used by all other components
+  * [spring-support](./spring-support/README.md): convenient creation of Nova bean with Spring
+  * [event-annotations](./event-annotations/README.md): allows your spring beans to automatically connect to the EventBus using annotations
+
+- Communication
+  * [comm](./comm/README.md): communication base library providing protocol agnostic, reactive message sending and retrieval
+  * [jms](./jms/README.md): reactive JMS messaging
+  * [http](./http/README.md): reactive HTTP communication
+  * [http-spring](./http-spring/README.md): convenience classes to easily enable HTTP communication with spring
+  * [rest-annotations](./rest-annotations/README.md): annotation based REST communication
+  * [websockets](./websockets/README.md): reactive WebSocket communication
+  * [websockets-annotations](./websockets-annotations/README.md): annotation based WebSocket communication
+  * [kafka](./kafka/README.md): reactive Kafka communication
+
+- Service related
+  * [service](./service/README.md): Small service skeleton with a defined lifecycle and easy access to Nova and its EventBus 
+  * [metrics-serialization](./metrics-serialization/README.md): Utility to easily serialize MetricDumps
+  * [metrics-elastic](./metrics-elastic/README.md): Utility to push Metrics to Elasticsearch
+  * [metrics-kafka](./metrics-kafka/README.md): Utility to push Metrics to Kafka
 

@@ -17,7 +17,6 @@ import ch.squaredesk.nova.metrics.Metrics;
 import ch.squaredesk.nova.spring.NovaProvidingConfiguration;
 import io.reactivex.BackpressureStrategy;
 import org.glassfish.grizzly.http.server.HttpServer;
-import org.glassfish.jersey.server.ResourceConfig;
 import org.hamcrest.MatcherAssert;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;

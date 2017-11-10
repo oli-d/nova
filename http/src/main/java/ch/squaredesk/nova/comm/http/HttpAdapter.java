@@ -6,6 +6,7 @@
  * obtain a copy of the license at
  *
  *   https://squaredesk.ch/license/oss/LICENSE
+ *
  */
 
 package ch.squaredesk.nova.comm.http;
@@ -36,7 +37,7 @@ public class HttpAdapter<MessageType> {
     private final TimeUnit defaultRequestTimeUnit;
 
 
-    private HttpAdapter(Builder builder) {
+    private HttpAdapter(Builder<MessageType> builder) {
         this.rpcClient = builder.rpcClient;
         this.rpcServer = builder.rpcServer;
         this.defaultRequestTimeout = builder.defaultRequestTimeout;

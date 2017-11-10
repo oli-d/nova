@@ -23,7 +23,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class RpcServerTest {
-    private HttpServerConfiguration rsc = new HttpServerConfiguration("localhost", 8888);
+    private HttpServerConfiguration rsc = new HttpServerConfiguration("localhost", 10000);
     private HttpServer httpServer = HttpServerFactory.serverFor(rsc);
     private RpcServer<String> sut;
     private RpcClient<String> rpcClient;
@@ -44,7 +44,7 @@ class RpcServerTest {
     @Test
     void sutCannotBeCreatedWithoutConfigs() {
         NullPointerException npe = assertThrows(NullPointerException.class,
-                () -> new RpcServer<>(null, s->s, s-> s, new Metrics()));
+                () -> new RpcServer<>(null, s -> s, s -> s, new Metrics()));
         assertThat(npe.getMessage(), is("httpServer must not be null"));
     }
 

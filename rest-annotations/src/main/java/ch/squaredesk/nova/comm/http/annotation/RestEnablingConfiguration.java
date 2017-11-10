@@ -12,6 +12,7 @@ package ch.squaredesk.nova.comm.http.annotation;
 
 import ch.squaredesk.nova.Nova;
 import ch.squaredesk.nova.comm.http.HttpServerConfiguration;
+import ch.squaredesk.nova.comm.http.spring.HttpServerConfigurationProvidingConfiguration;
 import com.codahale.metrics.Timer;
 import org.glassfish.grizzly.http.server.HttpServer;
 import org.glassfish.jersey.grizzly2.httpserver.GrizzlyHttpServerFactory;
@@ -20,12 +21,11 @@ import org.glassfish.jersey.server.monitoring.ApplicationEvent;
 import org.glassfish.jersey.server.monitoring.ApplicationEventListener;
 import org.glassfish.jersey.server.monitoring.RequestEvent;
 import org.glassfish.jersey.server.monitoring.RequestEventListener;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
@@ -35,7 +35,8 @@ import javax.ws.rs.core.UriBuilder;
 import java.net.URI;
 
 @Configuration
-@Order(value = Ordered.LOWEST_PRECEDENCE-10)
+@Import(HttpServerConfigurationProvidingConfiguration.class)
+@Order(value = Ordered.LOWEST_PRECEDENCE)
 public class RestEnablingConfiguration {
     @Autowired
     Environment environment;
@@ -43,6 +44,8 @@ public class RestEnablingConfiguration {
     ApplicationContext applicationContext;
     @Autowired
     Nova nova;
+    @Autowired
+    HttpServerConfiguration httpServerConfiguration;
 
     @Bean
     public static RestBeanPostprocessor restBeanPostProcessor() {
@@ -61,24 +64,14 @@ public class RestEnablingConfiguration {
         return captureMetrics;
     }
 
-    @Bean
-    public HttpServerConfiguration restServerConfiguration() {
-        int restPort = environment.getProperty("NOVA.HTTP.REST.PORT", Integer.class, 10000);
-        String interfaceName = environment.getProperty("NOVA.HTTP.REST.INTERFACE_NAME", "0.0.0.0");
-
-        return new HttpServerConfiguration(
-            interfaceName,
-            restPort
-        );
-    }
 
     @Bean
-    RestServerStarter restServerStarter() {
+    ch.squaredesk.nova.comm.http.annotation.RestServerStarter restServerStarter() {
         return new RestServerStarter();
     }
 
     @Lazy // must be created after all other beans have been created (because of annotation processing)
-    @Bean
+    @Bean("httpServer")
     public HttpServer restHttpServer() {
         RestBeanPostprocessor restBeanPostprocessor = applicationContext.getBean(RestBeanPostprocessor.class);
         ResourceConfig resourceConfig = restBeanPostprocessor.resourceConfig;
@@ -110,8 +103,8 @@ public class RestEnablingConfiguration {
             });
         }
 
-        URI serverAddress = UriBuilder.fromPath("http://" + restServerConfiguration().interfaceName + ":" +
-                restServerConfiguration().port).build();
+        URI serverAddress = UriBuilder.fromPath("http://" + httpServerConfiguration.interfaceName + ":" +
+                httpServerConfiguration.port).build();
         return GrizzlyHttpServerFactory.createHttpServer(serverAddress, resourceConfig, false);
     }
 }
