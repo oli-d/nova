@@ -23,10 +23,6 @@ import java.util.Collections;
 import java.util.Map;
 
 public class KafkaMetricsReporter implements Consumer<MetricsDump> {
-    private static final Logger logger = LoggerFactory.getLogger(KafkaMetricsReporter.class);
-
-    private final ObjectMapper objectMapper = new ObjectMapper();
-    private final ZoneId zoneForTimestamps = ZoneId.of("UTC");
     private final KafkaAdapter<Object> kafkaAdapter;
     private final String topicName;
     private final Map<String, Object> additionalMetricAttributes;
