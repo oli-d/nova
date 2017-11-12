@@ -34,11 +34,25 @@ multiple instances in your service.
   _Note: if you are using Spring, take a look at the [http-spring](./http-spring/README.md) package to 
   conveniently create a server instance_. **Mandatory**
 
-* ```messageMarshaller``` - The function used to transform your messages to the wire format (always ```String```)
-before they are sent out. **Mandatory**
+* ```messageMarshaller``` - The function used to transform your messages to the wire format (always ```String``` in our example)
+before they are sent out. If you do not specify your own marshaller, the
+system tries to instantiate a default one. Default marshallers can be created
+for ```String```, ```Integer```, ```Double``` and ```BigDecimal``` message types. For
+all other message types, the implementation checks, whether the ```ObjectMapper``` from
+the ```com.fasterxml.jackson``` library can be found on the classpath. If so,
+all messages will be marshalled to a JSON string before sent. If the ```ObjectMapper```
+cannot be found, the system gives up and throws an error. All default marshallers
+transform the messages to a String.
 
 * ```messageUnmarshaller``` - The function used to transform incoming messages (```String```) to your internal 
-representation. **Mandatory**
+representation. If you do not specify your own unmarshaller, the
+system tries to instantiate a default one. Default unmarshallers can be created
+for ```String```, ```Integer```, ```Double``` and ```BigDecimal``` message types. For
+all other message types, the implementation checks, whether the ```ObjectMapper``` from
+the ```com.fasterxml.jackson``` library can be found on the classpath. If so,
+all messages will be unmarshalled from a JSON string to the specific type. If the ```ObjectMapper```
+cannot be found, the system gives up and throws an error. All default unmarshallers
+expect the incoming messages to be represented as a String.
 
 * ```errorReplyFactory``` - The function used to transform an exception that occurred during request processing to 
 an outgoing reply messages. **Mandatory**

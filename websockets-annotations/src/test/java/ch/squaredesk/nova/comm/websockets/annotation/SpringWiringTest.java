@@ -23,6 +23,7 @@ import org.glassfish.grizzly.http.server.HttpServer;
 import org.hamcrest.MatcherAssert;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -58,13 +59,7 @@ public class SpringWiringTest {
         Metrics metrics = ctx.getBean(Nova.class).metrics;
         MatcherAssert.assertThat(metrics.getMeter("websocket", "received", "echo").getCount(), is(0L));
 
-        WebSocketAdapter<Integer> webSocketAdapter = WebSocketAdapter.<Integer>builder()
-                .setMessageMarshaller(Object::toString)
-                .setMessageUnmarshaller(Integer::parseInt)
-                .setMetrics(metrics)
-                .setHttpServer(ctx.getBean(HttpServer.class))
-                .setHttpClient(ctx.getBean(AsyncHttpClient.class))
-                .build();
+        WebSocketAdapter<Integer> webSocketAdapter = ctx.getBean(WebSocketAdapter.class);
         ClientEndpoint<Integer> clientSideSocket = webSocketAdapter.connectTo(serverUrl+"/echo");
         CountDownLatch cdl = new CountDownLatch(1);
         Integer[] resultHolder = new Integer[1];
@@ -85,9 +80,25 @@ public class SpringWiringTest {
     @Configuration
     @Import({NovaProvidingConfiguration.class, WebSocketEnablingConfiguration.class})
     public static class MyConfig  {
+        @Autowired
+        Nova nova;
+        @Autowired
+        HttpServer httpServer;
+        @Autowired
+        AsyncHttpClient httpClient;
+
         @Bean
         public MyBean myBean() {
             return new MyBean();
+        }
+
+        @Bean
+        public WebSocketAdapter<Integer> webSocketAdapter() {
+            return WebSocketAdapter.builder(Integer.class)
+                    .setHttpServer(httpServer)
+                    .setHttpClient(httpClient)
+                    .setMetrics(nova.metrics)
+                    .build();
         }
 
     }

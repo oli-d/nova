@@ -10,7 +10,6 @@
 
 package ch.squaredesk.nova.comm.jms;
 
-import ch.squaredesk.nova.metrics.Metrics;
 import org.apache.activemq.ActiveMQConnectionFactory;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.AfterEach;
@@ -26,7 +25,7 @@ import java.util.concurrent.TimeUnit;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 class CommAdapterDestinationListenerTest {
-    private JmsCommAdapter<String> sut;
+    private JmsAdapter<String> sut;
     private TestJmsHelper jmsHelper;
 
     private EmbeddedActiveMQBroker broker;
@@ -37,12 +36,9 @@ class CommAdapterDestinationListenerTest {
         broker.start();
 
         ConnectionFactory connectionFactory = new ActiveMQConnectionFactory("vm://embedded-broker?create=false");
-        sut = JmsCommAdapter.<String>builder()
-                .setMessageMarshaller(message -> message)
-                .setMessageUnmarshaller(message -> message)
+        sut = JmsAdapter.builder(String.class)
                 .setConnectionFactory(connectionFactory)
                 .setErrorReplyFactory(error -> "Error")
-                .setMetrics(new Metrics())
                 .build();
         sut.start();
 
@@ -75,12 +71,12 @@ class CommAdapterDestinationListenerTest {
         ConnectionFactory connectionFactory = new ActiveMQConnectionFactory("vm://embedded-broker?create=false");
         RuntimeException myException = new RuntimeException("Outer", new InvalidDestinationException("for test"));
         sut.shutdown();
-        sut = JmsCommAdapter.<String>builder()
-                .setMessageMarshaller(message -> { throw myException; })
-                .setMessageUnmarshaller(message -> message)
+        sut = JmsAdapter.builder(String.class)
                 .setConnectionFactory(connectionFactory)
-                .setMetrics(new Metrics())
                 .setErrorReplyFactory(error -> "Error")
+                .setMessageMarshaller(message -> {
+                    throw myException;
+                })
                 .build();
         sut.start();
 

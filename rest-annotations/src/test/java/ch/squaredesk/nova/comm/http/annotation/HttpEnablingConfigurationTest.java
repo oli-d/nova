@@ -75,22 +75,6 @@ class HttpEnablingConfigurationTest {
     }
 
     @Test
-    void portCanBeOverridenWithEnvironmentVariable() throws Exception{
-        System.setProperty("NOVA.HTTP.REST.PORT", "9999");
-        setupContext(MyConfig.class);
-        assertThat(serverConfiguration.port, is(9999));
-        assertTrue(resourceConfig.getResources().isEmpty());
-    }
-
-    @Test
-    void interfaceCanBeOverridenWithEnvironmentVariable() throws Exception{
-        System.setProperty("NOVA.HTTP.REST.INTERFACE_NAME", "myInterface");
-        setupContext(MyConfig.class);
-        assertThat(serverConfiguration.interfaceName, is("myInterface"));
-        assertTrue(resourceConfig.getResources().isEmpty());
-    }
-
-    @Test
     void annotatedBeansAreAddedToResourceConfig() throws Exception{
         setupContext(MyConfigWithAnnotatedBean.class);
         assertThat(resourceConfig.getResources().size(), is(2));

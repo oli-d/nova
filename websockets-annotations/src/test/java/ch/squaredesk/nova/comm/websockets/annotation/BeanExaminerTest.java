@@ -24,6 +24,7 @@ import static org.hamcrest.junit.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class BeanExaminerTest {
+
     @Test
     void beanExaminerThrowsForMethodWithInvalidSignature() throws Exception {
         class EmptyClass {

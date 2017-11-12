@@ -11,7 +11,6 @@
 
 package ch.squaredesk.nova.comm.http;
 
-import ch.squaredesk.nova.metrics.Metrics;
 import io.reactivex.observers.TestObserver;
 import org.glassfish.grizzly.http.server.HttpServer;
 import org.junit.jupiter.api.BeforeEach;
@@ -33,11 +32,8 @@ class HttpAdapterTest {
 
     @BeforeEach
     void setup() {
-        sut = HttpAdapter.<BigDecimal>builder()
-                .setMessageMarshaller(BigDecimal::toString)
-                .setMessageUnmarshaller(BigDecimal::new)
+        sut = HttpAdapter.builder(BigDecimal.class)
                 .setErrorReplyFactory(t -> BigDecimal.ZERO)
-                .setMetrics(new Metrics())
                 .setHttpServer(httpServer)
                 .build();
 
@@ -79,10 +75,7 @@ class HttpAdapterTest {
     @Test
     void postRequestCanBeSpecified() throws Exception {
         // we send a POST to httpbin/get and check that they return an error
-        HttpAdapter<String> commAdapter = HttpAdapter.<String>builder()
-                .setMessageMarshaller(outgoingMessage -> outgoingMessage)
-                .setMessageUnmarshaller(incomingMessage -> incomingMessage)
-                .setMetrics(new Metrics())
+        HttpAdapter<String> commAdapter = HttpAdapter.builder(String.class)
                 .setErrorReplyFactory(t -> "Error: " + t.getMessage())
                 .setHttpServer(httpServer)
                 .build();
@@ -96,11 +89,8 @@ class HttpAdapterTest {
     @Test
     void getRequestCanBeSpecified() throws Exception {
         // we send a POST to httpbin/get and check that they return an error
-        HttpAdapter<String> commAdapter = HttpAdapter.<String>builder()
-                .setMessageMarshaller(outgoingMessage -> outgoingMessage)
-                .setMessageUnmarshaller(incomingMessage -> incomingMessage)
+        HttpAdapter<String> commAdapter = HttpAdapter.builder(String.class)
                 .setHttpServer(httpServer)
-                .setMetrics(new Metrics())
                 .setErrorReplyFactory(t -> "Error: " + t.getMessage())
                 .build();
         TestObserver<String> observer = commAdapter.sendGetRequest("http://httpbin.org/post").test();
@@ -110,10 +100,7 @@ class HttpAdapterTest {
 
     @Test
     void rpcWorksProperly() throws Exception {
-        HttpAdapter<String> xxx = HttpAdapter.<String>builder()
-                .setMessageMarshaller(outgoingMessage ->  outgoingMessage)
-                .setMessageUnmarshaller(incomingMessage -> incomingMessage)
-                .setMetrics(new Metrics())
+        HttpAdapter<String> xxx = HttpAdapter.builder(String.class)
                 .setErrorReplyFactory(t -> "Error: " + t.getMessage())
                 .setHttpServer(httpServer)
                 .build();

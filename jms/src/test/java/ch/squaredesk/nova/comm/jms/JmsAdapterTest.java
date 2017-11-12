@@ -34,8 +34,8 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.*;
 
-class JmsCommAdapterTest {
-    private JmsCommAdapter<String> sut;
+class JmsAdapterTest {
+    private JmsAdapter<String> sut;
     private TestJmsHelper jmsHelper;
     private ConnectionFactory connectionFactory;
 
@@ -55,12 +55,8 @@ class JmsCommAdapterTest {
     }
     private void initializSut(JmsRpcClient<String> rpcClient) throws Exception {
         connectionFactory = new ActiveMQConnectionFactory("vm://embedded-broker?create=false");
-        sut = JmsCommAdapter.<String>builder()
-                .setMetrics(null)
-                .setMessageMarshaller(message -> message)
-                .setMessageUnmarshaller(message -> message)
+        sut = JmsAdapter.builder(String.class)
                 .setConnectionFactory(connectionFactory)
-                .setMetrics(new Metrics())
                 .setRpcClient(rpcClient)
                 .setErrorReplyFactory(error -> "Error")
                 .build();
@@ -89,56 +85,10 @@ class JmsCommAdapterTest {
         }
     }
 
-
-    @Test
-    void instanceCannotBeCreatedWithoutMetrics() {
-        Throwable t = assertThrows(NullPointerException.class,
-                () -> JmsCommAdapter.<String>builder()
-                .setMessageMarshaller(message -> message)
-                .setMessageUnmarshaller(message -> message)
-                .setConnectionFactory(connectionFactory)
-                .setRpcClient(null)
-                .setErrorReplyFactory(error -> "Error")
-                .build());
-        assertThat(t.getMessage(), containsString("metrics"));
-    }
-
-    @Test
-    void instanceCannotBeCreatedWithoutMarshaller() {
-        Throwable t = assertThrows(NullPointerException.class,
-                () -> JmsCommAdapter.<String>builder()
-                        .setMetrics(new Metrics())
-                        .setMessageUnmarshaller(message -> message)
-                        .setConnectionFactory(connectionFactory)
-                        .setMetrics(new Metrics())
-                        .setRpcClient(null)
-                        .setErrorReplyFactory(error -> "Error")
-                        .build());
-        assertThat(t.getMessage(), containsString("messageMarshaller"));
-    }
-
-    @Test
-    void instanceCannotBeCreatedWithoutUnmarshaller() {
-        Throwable t = assertThrows(NullPointerException.class,
-                () -> JmsCommAdapter.<String>builder()
-                        .setMetrics(new Metrics())
-                        .setMessageMarshaller(message -> message)
-                        .setConnectionFactory(connectionFactory)
-                        .setMetrics(new Metrics())
-                        .setRpcClient(null)
-                        .setErrorReplyFactory(error -> "Error")
-                        .build());
-        assertThat(t.getMessage(), containsString("messageUnmarshaller"));
-    }
-
     @Test
     void instanceCannotBeCreatedWithoutConnectionFactory() {
         Throwable t = assertThrows(NullPointerException.class,
-                () -> JmsCommAdapter.<String>builder()
-                .setMetrics(new Metrics())
-                .setMessageMarshaller(message -> message)
-                .setMessageUnmarshaller(message -> message)
-                .setMetrics(new Metrics())
+                () -> JmsAdapter.builder(String.class)
                 .setRpcClient(null)
                 .setErrorReplyFactory(error -> "Error")
                 .build());
@@ -148,12 +98,8 @@ class JmsCommAdapterTest {
     @Test
     void instanceCannotBeCreatedWithoutErrorReplyFactory() {
         Throwable t = assertThrows(NullPointerException.class,
-                () -> JmsCommAdapter.<String>builder()
-                        .setMetrics(new Metrics())
-                        .setMessageMarshaller(message -> message)
-                        .setMessageUnmarshaller(message -> message)
+                () -> JmsAdapter.builder(String.class)
                         .setConnectionFactory(connectionFactory)
-                        .setMetrics(new Metrics())
                         .setRpcClient(null)
                         .build());
         assertThat(t.getMessage(), containsString("errorReplyFactory"));
@@ -342,12 +288,12 @@ class JmsCommAdapterTest {
     @Test
     void sendMessageWithException() throws Exception {
         ConnectionFactory connectionFactory = new ActiveMQConnectionFactory("vm://embedded-broker?create=false");
-        sut = JmsCommAdapter.<String>builder()
-                .setMessageMarshaller(message -> { throw new MyException("4 test");})
-                .setMessageUnmarshaller(message -> message)
+        sut = JmsAdapter.builder(String.class)
                 .setConnectionFactory(connectionFactory)
-                .setMetrics(new Metrics())
                 .setErrorReplyFactory(error -> "Error")
+                .setMessageMarshaller(message -> {
+                    throw new MyException("4 test");
+                })
                 .build();
         sut.start();
         Destination queue = jmsHelper.createQueue("sendTest");

@@ -56,8 +56,9 @@ public abstract class MessageSender<DestinationType, InternalMessageType, Transp
                             .withDestination(destination)
                             .withTransportSpecificInfo(transportSpecificSendingInfo)
                             .build();
+            Completable retVal = doSend(transportMessage, msi);
             metricsCollector.messageSent(destination);
-            return doSend(transportMessage, msi);
+            return retVal;
         } catch (Throwable t) {
             return Completable.error(t);
         }

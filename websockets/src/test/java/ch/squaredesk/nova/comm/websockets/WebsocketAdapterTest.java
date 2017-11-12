@@ -50,12 +50,10 @@ class WebsocketAdapterTest {
     void setup() throws Exception {
         metrics = new Metrics();
 
-        sut = WebSocketAdapter.<Integer>builder()
-                .setMessageMarshaller(Object::toString)
-                .setMessageUnmarshaller(Integer::parseInt)
-                .setMetrics(metrics)
+        sut = WebSocketAdapter.builder(Integer.class)
                 .setHttpServer(httpServer)
                 .setHttpClient(httpClient)
+                .setMetrics(metrics)
                 .build();
 
         httpServer.start();
@@ -68,9 +66,7 @@ class WebsocketAdapterTest {
 
     @Test
     void serverFunctionsCannotBeInvokedIfNotProperlySetup() {
-        sut = WebSocketAdapter.<Integer>builder()
-                .setMessageMarshaller(Object::toString)
-                .setMessageUnmarshaller(Integer::parseInt)
+        sut = WebSocketAdapter.builder(Integer.class)
                 .setMetrics(new Metrics())
                 .build();
 
@@ -82,9 +78,7 @@ class WebsocketAdapterTest {
 
     @Test
     void clientFunctionsCannotBeInvokedIfNotProperlySetup() {
-        sut = WebSocketAdapter.<Integer>builder()
-                .setMessageMarshaller(Object::toString)
-                .setMessageUnmarshaller(Integer::parseInt)
+        sut = WebSocketAdapter.builder(Integer.class)
                 .setMetrics(new Metrics())
                 .build();
 
@@ -168,17 +162,13 @@ class WebsocketAdapterTest {
 
     @Test
     void receiveUnparsableMessagesServerSide() throws Exception {
-        WebSocketAdapter<Integer> sutInteger = WebSocketAdapter.<Integer>builder()
-                .setMessageMarshaller(Object::toString)
-                .setMessageUnmarshaller(Integer::parseInt)
-                .setMetrics(metrics)
+        WebSocketAdapter<Integer> sutInteger = WebSocketAdapter.builder(Integer.class)
                 .setHttpServer(httpServer)
-                .build();
-        WebSocketAdapter<String> sutString = WebSocketAdapter.<String>builder()
-                .setMessageMarshaller(Object::toString)
-                .setMessageUnmarshaller(String::valueOf)
                 .setMetrics(metrics)
+                .build();
+        WebSocketAdapter<String> sutString = WebSocketAdapter.builder(String.class)
                 .setHttpClient(httpClient)
+                .setMetrics(metrics)
                 .build();
 
         String serverDestination = "echoBroken";
@@ -215,17 +205,13 @@ class WebsocketAdapterTest {
 
     @Test
     void receiveUnparsableMessagesClientSide() throws Exception {
-        WebSocketAdapter<Integer> sutInteger = WebSocketAdapter.<Integer>builder()
-                .setMessageMarshaller(Object::toString)
-                .setMessageUnmarshaller(Integer::parseInt)
+        WebSocketAdapter<Integer> sutInteger = WebSocketAdapter.builder(Integer.class)
                 .setHttpClient(httpClient)
                 .setMetrics(metrics)
                 .build();
-        WebSocketAdapter<String> sutString = WebSocketAdapter.<String>builder()
-                .setMessageMarshaller(Object::toString)
-                .setMessageUnmarshaller(String::valueOf)
-                .setMetrics(metrics)
+        WebSocketAdapter<String> sutString = WebSocketAdapter.builder(String.class)
                 .setHttpServer(httpServer)
+                .setMetrics(metrics)
                 .build();
 
         String serverDestination = "echoBroken";
@@ -455,6 +441,4 @@ class WebsocketAdapterTest {
 
         assertThat(closeReasons, contains(CloseReason.GOING_AWAY, CloseReason.GOING_AWAY));
     }
-
-
 }

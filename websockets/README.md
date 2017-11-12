@@ -15,10 +15,24 @@ the WebSocket has been created, both ends are equal peers.
 * ```metrics``` - The ```Metrics``` instance used to capture communication metrics. **Mandatory**
 
 * ```messageMarshaller``` - The function used to transform your messages to the wire format (always ```String```)
-before they are sent out. **Mandatory**
+before they are sent out. If you do not specify your own marshaller, the
+system tries to instantiate a default one. Default marshallers can be created
+for ```String```, ```Integer```, ```Double``` and ```BigDecimal``` message types. For
+all other message types, the implementation checks, whether the ```ObjectMapper``` from
+the ```com.fasterxml.jackson``` library can be found on the classpath. If so,
+all messages will be marshalled to a JSON string before sent. If the ```ObjectMapper```
+cannot be found, the system gives up and throws an error. All default marshallers
+transform the messages to a String.
 
 * ```messageUnmarshaller``` - The function used to transform incoming messages (```String```) to your internal 
-representation. **Mandatory**
+representation. If you do not specify your own unmarshaller, the
+system tries to instantiate a default one. Default unmarshallers can be created
+for ```String```, ```Integer```, ```Double``` and ```BigDecimal``` message types. For
+all other message types, the implementation checks, whether the ```ObjectMapper``` from
+the ```com.fasterxml.jackson``` library can be found on the classpath. If so,
+all messages will be unmarshalled from a JSON string to the specific type. If the ```ObjectMapper```
+cannot be found, the system gives up and throws an error. All default unmarshallers
+expect the incoming messages to be represented as a String.
 
 * ```httpServer``` - The ```HttpServer``` instance used to listen for incoming connections. Can be null, but
 in that case, connections cannot be accepted. The adapter will throw a ```RuntimeException``` if

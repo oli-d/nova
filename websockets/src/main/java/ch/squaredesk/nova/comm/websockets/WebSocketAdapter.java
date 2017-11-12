@@ -9,19 +9,17 @@
  */
 package ch.squaredesk.nova.comm.websockets;
 
+import ch.squaredesk.nova.comm.CommAdapterBuilder;
 import ch.squaredesk.nova.comm.retrieving.MessageUnmarshaller;
 import ch.squaredesk.nova.comm.sending.MessageMarshaller;
 import ch.squaredesk.nova.comm.websockets.client.ClientEndpoint;
 import ch.squaredesk.nova.comm.websockets.client.ClientEndpointFactory;
 import ch.squaredesk.nova.comm.websockets.server.ServerEndpoint;
 import ch.squaredesk.nova.comm.websockets.server.ServerEndpointFactory;
-import ch.squaredesk.nova.metrics.Metrics;
 import com.ning.http.client.AsyncHttpClient;
 import org.glassfish.grizzly.http.server.HttpServer;
 import org.glassfish.grizzly.http.server.NetworkListener;
 import org.glassfish.grizzly.websockets.WebSocketAddOn;
-
-import static java.util.Objects.requireNonNull;
 
 public class WebSocketAdapter<MessageType> {
     private final HttpServer httpServer;
@@ -37,9 +35,9 @@ public class WebSocketAdapter<MessageType> {
         this.metricsCollector = new MetricsCollector(builder.metrics);
         this.httpServer = builder.httpServer;
         if (httpServer !=null) {
-            if (httpServer.isStarted()) {
-                throw new IllegalArgumentException("HttpServer MUST NOT BE STARTED before WebSocketAdapter is created");
-            }
+//            if (httpServer.isStarted()) {
+//                throw new IllegalArgumentException("HttpServer MUST NOT BE STARTED before WebSocketAdapter is created");
+//            }
             // TODO: would be cool, if we could somehow find out whether this was already done
             WebSocketAddOn addon = new WebSocketAddOn();
             for (NetworkListener listener : httpServer.getListeners()) {
@@ -78,18 +76,16 @@ public class WebSocketAdapter<MessageType> {
     }
 
 
-    public static <MessageType> Builder<MessageType> builder() {
-        return new Builder<>();
+    public static <MessageType> Builder<MessageType> builder(Class<MessageType> messageTypeClass) {
+        return new Builder<>(messageTypeClass);
     }
 
-    public static class Builder<MessageType> {
-        private MessageMarshaller<MessageType, String> messageMarshaller;
-        private MessageUnmarshaller<String, MessageType> messageUnmarshaller;
-        private Metrics metrics;
+    public static class Builder<MessageType> extends CommAdapterBuilder<MessageType, WebSocketAdapter<MessageType>>{
         private HttpServer httpServer;
         private AsyncHttpClient httpClient;
 
-        private Builder() {
+        private Builder(Class<MessageType> messageTypeClass) {
+            super(messageTypeClass);
         }
 
         public Builder<MessageType> setHttpClient (AsyncHttpClient httpClient) {
@@ -102,28 +98,7 @@ public class WebSocketAdapter<MessageType> {
             return this;
         }
 
-        public Builder<MessageType> setMetrics (Metrics metrics) {
-            this.metrics = metrics;
-            return this;
-        }
-
-        public Builder<MessageType> setMessageMarshaller(MessageMarshaller<MessageType, String> marshaller) {
-            this.messageMarshaller = marshaller;
-            return this;
-        }
-
-        public Builder<MessageType> setMessageUnmarshaller(MessageUnmarshaller<String, MessageType> unmarshaller) {
-            this.messageUnmarshaller = unmarshaller;
-            return this;
-        }
-
-        private void validate() {
-            requireNonNull(metrics, "metrics must be provided");
-            requireNonNull(messageMarshaller, " messageMarshaller instance must not be null");
-            requireNonNull(messageUnmarshaller, " messageUnmarshaller instance must not be null");
-        }
-
-        public WebSocketAdapter<MessageType> build() {
+        public WebSocketAdapter<MessageType> createInstance() {
             validate();
             return new WebSocketAdapter<>(this);
         }

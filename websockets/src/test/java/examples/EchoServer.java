@@ -21,12 +21,12 @@ public class EchoServer {
     private WebSocketAdapter<String> webSocketAdapter() {
         HttpServer httpServer = httpServer();
 
-        WebSocketAdapter<String> webSocketAdapter = WebSocketAdapter.<String>builder()
+        WebSocketAdapter<String> webSocketAdapter = WebSocketAdapter.builder(String.class)
+                .setHttpServer(httpServer)
+                .setHttpClient(httpClient())
                 .setMessageMarshaller(Object::toString)
                 .setMessageUnmarshaller(String::valueOf)
                 .setMetrics(metrics())
-                .setHttpServer(httpServer)
-                .setHttpClient(httpClient())
                 .build();
 
         try {

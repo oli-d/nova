@@ -11,6 +11,8 @@
 
 package ch.squaredesk.nova.comm.websockets.annotation;
 
+import ch.squaredesk.nova.comm.DefaultMarshallerFactory;
+import ch.squaredesk.nova.comm.ReflectionHelper;
 import ch.squaredesk.nova.comm.retrieving.MessageUnmarshaller;
 import ch.squaredesk.nova.comm.sending.MessageMarshaller;
 import ch.squaredesk.nova.comm.websockets.WebSocket;
@@ -21,7 +23,6 @@ import java.util.Arrays;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
-import static java.util.Arrays.sort;
 import static java.util.Arrays.stream;
 import static java.util.Objects.requireNonNull;
 

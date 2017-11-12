@@ -10,7 +10,6 @@
 
 package ch.squaredesk.nova.comm.kafka;
 
-import ch.squaredesk.nova.metrics.Metrics;
 import io.reactivex.observers.TestObserver;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -23,17 +22,14 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.startsWith;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-class KafkaCommAdapterErrorTest {
+class KafkaAdapterErrorTest {
     private static final int KAFKA_PORT = 11_000;
-    private KafkaCommAdapter<String> sut;
+    private KafkaAdapter<String> sut;
 
     @BeforeEach
     void setUp() throws Exception {
-        sut = KafkaCommAdapter.<String>builder()
+        sut = KafkaAdapter.builder(String.class)
                 .setServerAddress("127.0.0.1:" + KAFKA_PORT)
-                .setMessageMarshaller(message -> message)
-                .setMessageUnmarshaller(message -> message)
-                .setMetrics(new Metrics())
                 .setIdentifier("Test")
                 .build();
     }
@@ -66,12 +62,10 @@ class KafkaCommAdapterErrorTest {
 
     @Test
     void sendMessageWithException() throws Exception {
-        sut = KafkaCommAdapter.<String>builder()
+        sut = KafkaAdapter.builder(String.class)
                 .setServerAddress("127.0.0.1:" + KAFKA_PORT)
-                .setMessageMarshaller(message -> { throw new MyException("4 test");})
-                .setMessageUnmarshaller(message -> message)
-                .setMetrics(new Metrics())
                 .setIdentifier("Test")
+                .setMessageMarshaller(message -> { throw new MyException("4 test");})
                 .build();
 
         TestObserver<Void> observer = sut.sendMessage("someTopic","Hallo").test();

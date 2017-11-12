@@ -11,7 +11,6 @@
 package ch.squaredesk.nova.comm.kafka;
 
 import ch.qos.logback.classic.Level;
-import ch.squaredesk.nova.metrics.Metrics;
 import com.github.charithe.kafka.EphemeralKafkaBroker;
 import io.reactivex.BackpressureStrategy;
 import io.reactivex.disposables.Disposable;
@@ -26,7 +25,6 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Properties;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -34,10 +32,10 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 
-class KafkaCommAdapterTest {
+class KafkaAdapterTest {
     private static final int KAFKA_PORT = 11_000;
     private EphemeralKafkaBroker kafkaBroker;
-    private KafkaCommAdapter<String> sut;
+    private KafkaAdapter<String> sut;
 
     @BeforeAll
     static void initLogging() {
@@ -57,11 +55,8 @@ class KafkaCommAdapterTest {
         kafkaBroker = EphemeralKafkaBroker.create(KAFKA_PORT);
         kafkaBroker.start().get();
 
-        sut = KafkaCommAdapter.<String>builder()
+        sut = KafkaAdapter.builder(String.class)
                 .setServerAddress("127.0.0.1:" + KAFKA_PORT)
-                .setMessageMarshaller(message -> message)
-                .setMessageUnmarshaller(message -> message)
-                .setMetrics(new Metrics())
                 .setIdentifier("Test")
                 .addProducerProperty(ProducerConfig.BATCH_SIZE_CONFIG, "1")
                 .addConsumerProperty(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest")

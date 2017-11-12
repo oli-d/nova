@@ -11,8 +11,6 @@
 
 package ch.squaredesk.nova.comm.websockets.annotation;
 
-import ch.squaredesk.nova.comm.retrieving.MessageUnmarshaller;
-import ch.squaredesk.nova.comm.sending.MessageMarshaller;
 import io.reactivex.BackpressureStrategy;
 
 import java.lang.annotation.ElementType;
