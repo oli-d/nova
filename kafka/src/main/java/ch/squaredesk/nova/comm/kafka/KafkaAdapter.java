@@ -10,9 +10,7 @@
 
 package ch.squaredesk.nova.comm.kafka;
 
-import ch.squaredesk.nova.comm.retrieving.MessageUnmarshaller;
-import ch.squaredesk.nova.comm.sending.MessageMarshaller;
-import ch.squaredesk.nova.metrics.Metrics;
+import ch.squaredesk.nova.comm.CommAdapterBuilder;
 import io.reactivex.BackpressureStrategy;
 import io.reactivex.Completable;
 import io.reactivex.Flowable;
@@ -32,8 +30,8 @@ import java.util.concurrent.Executors;
 
 import static java.util.Objects.requireNonNull;
 
-public class KafkaCommAdapter<InternalMessageType> {
-    private static final Logger logger = LoggerFactory.getLogger(KafkaCommAdapter.class);
+public class KafkaAdapter<InternalMessageType> {
+    private static final Logger logger = LoggerFactory.getLogger(KafkaAdapter.class);
 
     private final KafkaMessageSender<InternalMessageType> messageSender;
     private final KafkaMessageReceiver<InternalMessageType> messageReceiver;
@@ -41,10 +39,10 @@ public class KafkaCommAdapter<InternalMessageType> {
     private final KafkaObjectFactory kafkaObjectFactory;
 
 
-    KafkaCommAdapter(KafkaMessageSender<InternalMessageType> messageSender,
-                     KafkaMessageReceiver<InternalMessageType> messageReceiver,
-                     BackpressureStrategy defaultBackpressureStrategy,
-                     KafkaObjectFactory kafkaObjectFactory) {
+    KafkaAdapter(KafkaMessageSender<InternalMessageType> messageSender,
+                 KafkaMessageReceiver<InternalMessageType> messageReceiver,
+                 BackpressureStrategy defaultBackpressureStrategy,
+                 KafkaObjectFactory kafkaObjectFactory) {
         this.messageReceiver = messageReceiver;
         this.messageSender = messageSender;
         this.defaultBackpressureStrategy = defaultBackpressureStrategy;
@@ -90,7 +88,7 @@ public class KafkaCommAdapter<InternalMessageType> {
     /////////////////////////
     public void shutdown() {
         kafkaObjectFactory.shutdown();
-        logger.info("KafkaCommAdapter shut down");
+        logger.info("KafkaAdapter shut down");
     }
 
 
@@ -99,16 +97,13 @@ public class KafkaCommAdapter<InternalMessageType> {
     //    the  Builder     //
     //                     //
     /////////////////////////
-    public static <InternalMessageType> Builder<InternalMessageType> builder() {
-        return new Builder<>();
+    public static <InternalMessageType> Builder<InternalMessageType> builder(Class<InternalMessageType> messageTypeClass) {
+        return new Builder<>(messageTypeClass);
     }
 
-    public static class Builder<InternalMessageType> {
+    public static class Builder<InternalMessageType> extends CommAdapterBuilder<InternalMessageType, KafkaAdapter<InternalMessageType>>{
         private String serverAddress;
         private String identifier;
-        private Metrics metrics;
-        private MessageUnmarshaller<String,InternalMessageType> messageUnmarshaller;
-        private MessageMarshaller<InternalMessageType,String> messageMarshaller;
         private BackpressureStrategy defaultBackpressureStrategy = BackpressureStrategy.BUFFER;
         private KafkaMessageSender<InternalMessageType> messageSender;
         private KafkaMessageReceiver<InternalMessageType> messageReceiver;
@@ -117,7 +112,8 @@ public class KafkaCommAdapter<InternalMessageType> {
         private Properties consumerProperties = new Properties();
         private Properties producerProperties = new Properties();
 
-        private Builder() {
+        private Builder(Class<InternalMessageType> messageTypeClass) {
+            super(messageTypeClass);
         }
 
         public Builder<InternalMessageType> setConsumerProperties(Properties consumerProperties) {
@@ -164,27 +160,12 @@ public class KafkaCommAdapter<InternalMessageType> {
             return this;
         }
 
-        public Builder<InternalMessageType> setMetrics(Metrics metrics) {
-            this.metrics = metrics;
-            return this;
-        }
-
         public Builder<InternalMessageType> setDefaultBackpressureStrategy(BackpressureStrategy defaultBackpressureStrategy) {
             this.defaultBackpressureStrategy = defaultBackpressureStrategy;
             return this;
         }
 
-        public Builder<InternalMessageType> setMessageMarshaller(MessageMarshaller<InternalMessageType, String> messageMarshaller) {
-            this.messageMarshaller = messageMarshaller;
-            return this;
-        }
-
-        public Builder<InternalMessageType> setMessageUnmarshaller(MessageUnmarshaller<String,InternalMessageType> messageUnmarshaller) {
-            this.messageUnmarshaller = messageUnmarshaller;
-            return this;
-        }
-
-        public Builder<InternalMessageType> validate() {
+        public void validate() {
             requireNonNull(serverAddress,"serverAddress must be provided");
             requireNonNull(messageUnmarshaller,"messageUnmarshaller must be provided");
             requireNonNull(messageMarshaller,"messageMarshaller must be provided");
@@ -198,15 +179,12 @@ public class KafkaCommAdapter<InternalMessageType> {
             }
             if (consumerProperties==null) consumerProperties = new Properties();
             if (producerProperties==null) producerProperties = new Properties();
-            return this;
         }
 
-        public KafkaCommAdapter<InternalMessageType> build() {
-            validate();
-
+        public KafkaAdapter<InternalMessageType> createInstance() {
             // set a few default consumer and producer properties
-            String clientId = identifier == null ? "KafkaCommAdapter-"+UUID.randomUUID() : identifier;
-            String groupId = identifier == null ? "KafkaCommAdapter-ReadGroup" : identifier + "ReadGroup";
+            String clientId = identifier == null ? "KafkaAdapter-"+UUID.randomUUID() : identifier;
+            String groupId = identifier == null ? "KafkaAdapter-ReadGroup" : identifier + "ReadGroup";
             setPropertyIfNotPresent(consumerProperties, ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, serverAddress);
             setPropertyIfNotPresent(consumerProperties, ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
             setPropertyIfNotPresent(consumerProperties, ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
@@ -221,7 +199,7 @@ public class KafkaCommAdapter<InternalMessageType> {
             kafkaObjectFactory = new KafkaObjectFactory(this.consumerProperties, this.producerProperties);
             messageReceiver = new KafkaMessageReceiver<>(identifier, kafkaObjectFactory, subscriptionScheduler, messageUnmarshaller, metrics);
             messageSender = new KafkaMessageSender<>(identifier, kafkaObjectFactory, messageMarshaller, metrics);
-            return new KafkaCommAdapter<>(this.messageSender,
+            return new KafkaAdapter<>(this.messageSender,
                     this.messageReceiver,
                     this.defaultBackpressureStrategy,
                     this.kafkaObjectFactory);

@@ -10,24 +10,16 @@
 
 package ch.squaredesk.nova.metrics.kafka;
 
-import ch.squaredesk.nova.comm.kafka.KafkaCommAdapter;
-import ch.squaredesk.nova.metrics.CompoundMetric;
+import ch.squaredesk.nova.comm.kafka.KafkaAdapter;
 import ch.squaredesk.nova.metrics.MetricsDump;
 import ch.squaredesk.nova.metrics.MetricsDumpToMapConverter;
-import ch.squaredesk.nova.tuples.Pair;
-import ch.squaredesk.nova.tuples.Tuple3;
-import com.codahale.metrics.Metric;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.reactivex.Observable;
 import io.reactivex.functions.Consumer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.time.Instant;
-import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.Map;
 
 public class KafkaMetricsReporter implements Consumer<MetricsDump> {
@@ -35,16 +27,16 @@ public class KafkaMetricsReporter implements Consumer<MetricsDump> {
 
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final ZoneId zoneForTimestamps = ZoneId.of("UTC");
-    private final KafkaCommAdapter<Object> kafkaCommAdapter;
+    private final KafkaAdapter<Object> kafkaAdapter;
     private final String topicName;
     private final Map<String, Object> additionalMetricAttributes;
 
-    public KafkaMetricsReporter(KafkaCommAdapter<Object> kafkaCommAdapter, String topicName) {
-        this(kafkaCommAdapter, topicName, Collections.EMPTY_MAP);
+    public KafkaMetricsReporter(KafkaAdapter<Object> kafkaAdapter, String topicName) {
+        this(kafkaAdapter, topicName, Collections.EMPTY_MAP);
     }
 
-    public KafkaMetricsReporter(KafkaCommAdapter<Object> kafkaCommAdapter, String topicName, Map<String, Object> additionalMetricAttributes) {
-        this.kafkaCommAdapter = kafkaCommAdapter;
+    public KafkaMetricsReporter(KafkaAdapter<Object> kafkaAdapter, String topicName, Map<String, Object> additionalMetricAttributes) {
+        this.kafkaAdapter = kafkaAdapter;
         this.topicName = topicName;
         this.additionalMetricAttributes = additionalMetricAttributes;
     }
@@ -52,7 +44,7 @@ public class KafkaMetricsReporter implements Consumer<MetricsDump> {
     @Override
     public void accept(MetricsDump metricsDump) throws Exception {
         Map<String, Object> dumpAsMap = MetricsDumpToMapConverter.convert(metricsDump);
-        kafkaCommAdapter.sendMessage(topicName, dumpAsMap).subscribe();
+        kafkaAdapter.sendMessage(topicName, dumpAsMap).subscribe();
     }
 
 }

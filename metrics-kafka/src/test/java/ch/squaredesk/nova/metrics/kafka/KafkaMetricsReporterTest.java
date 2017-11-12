@@ -12,7 +12,7 @@ package ch.squaredesk.nova.metrics.kafka;
 
 import ch.qos.logback.classic.Level;
 import ch.squaredesk.nova.Nova;
-import ch.squaredesk.nova.comm.kafka.KafkaCommAdapter;
+import ch.squaredesk.nova.comm.kafka.KafkaAdapter;
 import ch.squaredesk.nova.metrics.Metrics;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.charithe.kafka.EphemeralKafkaBroker;
@@ -36,7 +36,7 @@ class KafkaMetricsReporterTest {
     private static final ObjectMapper objectMapper = new ObjectMapper();
 
     private EphemeralKafkaBroker kafkaBroker;
-    private KafkaCommAdapter kafkaAdapter;
+    private KafkaAdapter<Object> kafkaAdapter;
     private KafkaMetricsReporter sut;
 
     @BeforeAll
@@ -57,11 +57,8 @@ class KafkaMetricsReporterTest {
         kafkaBroker = EphemeralKafkaBroker.create(KAFKA_PORT);
         kafkaBroker.start().get();
 
-        kafkaAdapter = KafkaCommAdapter.builder()
+        kafkaAdapter = KafkaAdapter.builder(Object.class)
                 .setServerAddress("127.0.0.1:" + KAFKA_PORT)
-                .setMessageMarshaller(KafkaMetricsReporterTest::serialize)
-                .setMessageUnmarshaller(KafkaMetricsReporterTest::deserialize)
-                .setMetrics(new Metrics())
                 .setIdentifier("Test")
                 .addProducerProperty(ProducerConfig.BATCH_SIZE_CONFIG, "1")
                 .addConsumerProperty(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest")
@@ -70,15 +67,6 @@ class KafkaMetricsReporterTest {
                 .build();
 
         sut = new KafkaMetricsReporter(kafkaAdapter, "test.metrics");
-    }
-
-    public static String serialize (Object dump) throws Exception {
-        String s = objectMapper.writeValueAsString(dump);
-        return s;
-    }
-
-    public static Object deserialize (String message) throws Exception {
-        return objectMapper.readValue(message, Object.class);
     }
 
     @Test

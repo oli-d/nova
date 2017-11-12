@@ -9,19 +9,16 @@
  *
  */
 
-package ch.squaredesk.nova.comm.websockets.annotation;
+package ch.squaredesk.nova.comm;
 
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 
-import static ch.squaredesk.nova.comm.websockets.annotation.ReflectionHelper.*;
+import static ch.squaredesk.nova.comm.ReflectionHelper.*;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 class ReflectionHelperTest {
     @Test

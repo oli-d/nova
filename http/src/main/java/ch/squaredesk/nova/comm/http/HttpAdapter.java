@@ -11,11 +11,9 @@
 
 package ch.squaredesk.nova.comm.http;
 
-import ch.squaredesk.nova.comm.retrieving.MessageUnmarshaller;
+import ch.squaredesk.nova.comm.CommAdapterBuilder;
 import ch.squaredesk.nova.comm.rpc.RpcInvocation;
-import ch.squaredesk.nova.comm.sending.MessageMarshaller;
 import ch.squaredesk.nova.comm.sending.MessageSendingInfo;
-import ch.squaredesk.nova.metrics.Metrics;
 import io.reactivex.BackpressureStrategy;
 import io.reactivex.Flowable;
 import io.reactivex.Single;
@@ -142,17 +140,14 @@ public class HttpAdapter<MessageType> {
         rpcServer.shutdown();
     }
 
-    public static <MessageType> Builder<MessageType> builder() {
-        return new Builder<>();
+    public static <MessageType> Builder<MessageType> builder(Class<MessageType> messageTypeClass) {
+        return new Builder<>(messageTypeClass);
     }
 
-    public static class Builder<MessageType> {
+    public static class Builder<MessageType> extends CommAdapterBuilder<MessageType, HttpAdapter<MessageType>>{
         private static Logger logger = LoggerFactory.getLogger(Builder.class);
 
         private String identifier;
-        private Metrics metrics;
-        private MessageMarshaller<MessageType,String> messageMarshaller;
-        private MessageUnmarshaller<String,MessageType> messageUnmarshaller;
         private HttpServer httpServer;
         private Function<Throwable, MessageType> errorReplyFactory;
         private RpcClient<MessageType> rpcClient;
@@ -161,7 +156,8 @@ public class HttpAdapter<MessageType> {
         private TimeUnit defaultRequestTimeUnit;
         private Integer serverPort;
 
-        private Builder() {
+        private Builder(Class<MessageType> messageTypeClass) {
+            super(messageTypeClass);
         }
 
         public Builder<MessageType> setDefaultRequestTimeout(long timeout, TimeUnit timeUnit) {
@@ -188,32 +184,14 @@ public class HttpAdapter<MessageType> {
             return this;
         }
 
-        public Builder<MessageType> setMetrics(Metrics metrics) {
-            this.metrics = metrics;
-            return this;
-        }
-
-        public Builder<MessageType> setMessageMarshaller(MessageMarshaller<MessageType,String> marshaller) {
-            this.messageMarshaller = marshaller;
-            return this;
-        }
-
-        public Builder<MessageType> setMessageUnmarshaller(MessageUnmarshaller<String,MessageType> unmarshaller) {
-            this.messageUnmarshaller = unmarshaller;
-            return this;
-        }
-
         public Builder<MessageType> setErrorReplyFactory(Function<Throwable, MessageType> errorReplyFactory) {
             this.errorReplyFactory = errorReplyFactory;
             return this;
         }
 
-        public Builder<MessageType> validate() {
+        protected void validate() {
             requireNonNull(httpServer,"httpServer instance must not be null");
-            requireNonNull(messageMarshaller," messageMarshaller instance must not be null");
-            requireNonNull(messageUnmarshaller," messageUnmarshaller instance must not be null");
             requireNonNull(errorReplyFactory," errorReplyFactory instance must not be null");
-            requireNonNull(metrics," Metrics instance must not be null");
             if (defaultRequestTimeout==null) {
                 defaultRequestTimeout = 5L;
                 defaultRequestTimeUnit = TimeUnit.SECONDS;
@@ -222,10 +200,9 @@ public class HttpAdapter<MessageType> {
                 serverPort = 10000;
                 logger.warn("No HTTP server port specified, falling back to default " + serverPort);
             }
-            return this;
         }
 
-        public HttpAdapter<MessageType> build() {
+        public HttpAdapter<MessageType> createInstance() {
             validate();
             rpcClient = new RpcClient<>(identifier, messageMarshaller, messageUnmarshaller, metrics);
             rpcServer = new RpcServer<>(identifier, httpServer, messageMarshaller, messageUnmarshaller, metrics);

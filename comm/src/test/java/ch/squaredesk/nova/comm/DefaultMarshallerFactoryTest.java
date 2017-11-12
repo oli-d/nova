@@ -9,7 +9,7 @@
  *
  */
 
-package ch.squaredesk.nova.comm.websockets.annotation;
+package ch.squaredesk.nova.comm;
 
 import ch.squaredesk.nova.comm.retrieving.MessageUnmarshaller;
 import ch.squaredesk.nova.comm.sending.MessageMarshaller;
@@ -17,34 +17,32 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.junit.jupiter.api.Test;
 
-import static ch.squaredesk.nova.comm.websockets.annotation.DefaultMarshallerFactory.getMarshallerForMessageType;
-import static ch.squaredesk.nova.comm.websockets.annotation.DefaultMarshallerFactory.getUnmarshallerForMessageType;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 class DefaultMarshallerFactoryTest {
     @Test
     void properMessageUnmarshallerCreatedForMessageHandler() throws Exception {
-        MessageUnmarshaller unmarshaller = getUnmarshallerForMessageType(String.class);
+        MessageUnmarshaller unmarshaller = DefaultMarshallerFactory.getUnmarshallerForMessageType(String.class);
         assertThat(unmarshaller.unmarshal("4"), is("4"));
-        unmarshaller = getUnmarshallerForMessageType(Integer.class);
+        unmarshaller = DefaultMarshallerFactory.getUnmarshallerForMessageType(Integer.class);
         assertThat(unmarshaller.unmarshal("4"), is(4));
-        unmarshaller = getUnmarshallerForMessageType(Double.class);
+        unmarshaller = DefaultMarshallerFactory.getUnmarshallerForMessageType(Double.class);
         assertThat(unmarshaller.unmarshal("4"), is(4.0));
-        unmarshaller = getUnmarshallerForMessageType(MyClass.class);
+        unmarshaller = DefaultMarshallerFactory.getUnmarshallerForMessageType(MyClass.class);
         assertThat(unmarshaller.unmarshal("{ \"field\":\"Hallo\"}"), is(new MyClass("Hallo")));
 
     }
 
     @Test
     void properMessageMarshallerCreatedForMessageHandler() throws Exception {
-        MessageMarshaller marshaller = getMarshallerForMessageType(String.class);
+        MessageMarshaller marshaller = DefaultMarshallerFactory.getMarshallerForMessageType(String.class);
         assertThat(marshaller.marshal("4"), is("4"));
-        marshaller = getMarshallerForMessageType(Integer.class);
+        marshaller = DefaultMarshallerFactory.getMarshallerForMessageType(Integer.class);
         assertThat(marshaller.marshal(4), is("4"));
-        marshaller = getMarshallerForMessageType(Double.class);
+        marshaller = DefaultMarshallerFactory.getMarshallerForMessageType(Double.class);
         assertThat(marshaller.marshal(4.0), is("4.0"));
-        marshaller = getMarshallerForMessageType(MyClass.class);
+        marshaller = DefaultMarshallerFactory.getMarshallerForMessageType(MyClass.class);
         assertThat(marshaller.marshal(new MyClass("xxx")), is("{\"field\":\"xxx\"}"));
     }
 

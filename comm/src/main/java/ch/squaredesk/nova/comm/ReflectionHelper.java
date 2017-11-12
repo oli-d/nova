@@ -9,7 +9,7 @@
  *
  */
 
-package ch.squaredesk.nova.comm.websockets.annotation;
+package ch.squaredesk.nova.comm;
 
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;

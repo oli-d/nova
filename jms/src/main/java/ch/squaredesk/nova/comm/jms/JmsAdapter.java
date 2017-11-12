@@ -10,11 +10,9 @@
 
 package ch.squaredesk.nova.comm.jms;
 
-import ch.squaredesk.nova.comm.retrieving.MessageUnmarshaller;
+import ch.squaredesk.nova.comm.CommAdapterBuilder;
 import ch.squaredesk.nova.comm.rpc.RpcInvocation;
-import ch.squaredesk.nova.comm.sending.MessageMarshaller;
 import ch.squaredesk.nova.comm.sending.MessageSendingInfo;
-import ch.squaredesk.nova.metrics.Metrics;
 import io.reactivex.*;
 import io.reactivex.schedulers.Schedulers;
 import org.slf4j.Logger;
@@ -31,10 +29,10 @@ import java.util.function.Supplier;
 
 import static java.util.Objects.requireNonNull;
 
-public class JmsCommAdapter<InternalMessageType> {
-    private static final Logger logger = LoggerFactory.getLogger(JmsCommAdapter.class);
+public class JmsAdapter<InternalMessageType> {
+    private static final Logger logger = LoggerFactory.getLogger(JmsAdapter.class);
     final static Scheduler jmsSubscriptionScheduler = Schedulers.from(Executors.newSingleThreadExecutor(runnable -> {
-        Thread t = new Thread(runnable, "JmsCommAdapter[Subscription]");
+        Thread t = new Thread(runnable, "JmsAdapter[Subscription]");
         t.setDaemon(true);
         return t;
     }));
@@ -54,7 +52,7 @@ public class JmsCommAdapter<InternalMessageType> {
     private final TimeUnit defaultRpcTimeUnit;
 
 
-    protected JmsCommAdapter(Builder<InternalMessageType> builder) {
+    protected JmsAdapter(Builder<InternalMessageType> builder) {
         this.messageReceiver = builder.messageReceiver;
         this.messageSender = builder.messageSender;
         this.rpcServer = builder.rpcServer;
@@ -289,16 +287,13 @@ public class JmsCommAdapter<InternalMessageType> {
     //    the  Builder     //
     //                     //
     /////////////////////////
-    public static <InternalMessageType> Builder<InternalMessageType> builder() {
-        return new Builder<>();
+    public static <InternalMessageType> Builder<InternalMessageType> builder(Class<InternalMessageType> messageTypeClass) {
+        return new Builder<>(messageTypeClass);
     }
 
-    public static class Builder<InternalMessageType> {
+    public static class Builder<InternalMessageType> extends CommAdapterBuilder<InternalMessageType, JmsAdapter<InternalMessageType>>{
         private String identifier;
-        private Metrics metrics;
         private Supplier<String> correlationIdGenerator;
-        private MessageUnmarshaller<String,InternalMessageType> messageUnmarshaller;
-        private MessageMarshaller<InternalMessageType,String> messageMarshaller;
         private Function<Throwable, InternalMessageType> errorReplyFactory;
         private Function<Destination, String> destinationIdGenerator;
         private ConnectionFactory connectionFactory;
@@ -318,16 +313,12 @@ public class JmsCommAdapter<InternalMessageType> {
         private long defaultRpcTimeout;
         private TimeUnit defaultRpcTimeUnit;
 
-        private Builder() {
+        private Builder(Class<InternalMessageType> messageTypeClass) {
+            super(messageTypeClass);
         }
 
         public Builder<InternalMessageType> setIdentifier(String identifier) {
             this.identifier = identifier;
-            return this;
-        }
-
-        public Builder<InternalMessageType> setMetrics(Metrics metrics) {
-            this.metrics = metrics;
             return this;
         }
 
@@ -382,16 +373,6 @@ public class JmsCommAdapter<InternalMessageType> {
             return this;
         }
 
-        public Builder<InternalMessageType> setMessageMarshaller(MessageMarshaller<InternalMessageType, String> messageMarshaller) {
-            this.messageMarshaller = messageMarshaller;
-            return this;
-        }
-
-        public Builder<InternalMessageType> setMessageUnmarshaller(MessageUnmarshaller<String,InternalMessageType> messageUnmarshaller) {
-            this.messageUnmarshaller = messageUnmarshaller;
-            return this;
-        }
-
         public Builder<InternalMessageType> setCorrelationIdGenerator(Supplier<String> correlationIdGenerator) {
             this.correlationIdGenerator = correlationIdGenerator;
             return this;
@@ -414,7 +395,7 @@ public class JmsCommAdapter<InternalMessageType> {
             return this;
         }
 
-        public Builder<InternalMessageType> validate() {
+        protected void validate() {
             requireNonNull(metrics,"metrics must be provided");
             requireNonNull(messageUnmarshaller,"messageUnmarshaller must be provided");
             requireNonNull(messageMarshaller,"messageMarshaller must be provided");
@@ -432,12 +413,9 @@ public class JmsCommAdapter<InternalMessageType> {
                 defaultRpcTimeout = 30;
                 defaultRpcTimeUnit = TimeUnit.SECONDS;
             }
-
-            return this;
         }
 
-        public JmsCommAdapter<InternalMessageType> build() {
-            validate();
+        public JmsAdapter<InternalMessageType> createInstance() {
             Connection connection;
             try {
                 logger.debug("Creating connection to broker...");
@@ -456,7 +434,7 @@ public class JmsCommAdapter<InternalMessageType> {
             if (rpcClient==null) { // only false for testing
                 rpcClient = new JmsRpcClient<>(identifier, messageReceiver, messageSender, metrics);
             }
-            return new JmsCommAdapter<>(this);
+            return new JmsAdapter<>(this);
         }
     }
 }

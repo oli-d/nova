@@ -61,6 +61,6 @@ class JmsMessageSender<InternalMessageType> extends MessageSender<Destination, I
             } catch (Throwable t) {
                 s.onError(t);
             }
-        }).subscribeOn(JmsCommAdapter.jmsSubscriptionScheduler);
+        }).subscribeOn(JmsAdapter.jmsSubscriptionScheduler);
     }
 }

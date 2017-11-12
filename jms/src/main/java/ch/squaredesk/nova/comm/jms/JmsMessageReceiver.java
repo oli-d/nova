@@ -86,7 +86,7 @@ public class JmsMessageReceiver<InternalMessageType>
             } catch (Throwable t) {
                 subscription.onError(t);
             }
-        }).subscribeOn(JmsCommAdapter.jmsSubscriptionScheduler);
+        }).subscribeOn(JmsAdapter.jmsSubscriptionScheduler);
 
         // FIXME: threading
 
