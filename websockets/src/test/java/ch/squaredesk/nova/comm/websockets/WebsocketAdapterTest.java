@@ -27,13 +27,17 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Random;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.hamcrest.Matchers.*;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @Tag("integrationTest")
@@ -440,5 +444,104 @@ class WebsocketAdapterTest {
         assertThat(closeLatch.getCount(), is (0L));
 
         assertThat(closeReasons, contains(CloseReason.GOING_AWAY, CloseReason.GOING_AWAY));
+    }
+
+    @Test
+    void informationCanBeAppendedToWebSocket() throws Exception {
+        Metrics metrics = new Metrics();
+        WebSocketAdapter<String> sut = WebSocketAdapter.builder(String.class)
+                .setHttpServer(httpServer)
+                .setHttpClient(httpClient)
+                .setMetrics(metrics)
+                .build();
+        httpServer.start();
+
+        Random random = new Random();
+        AtomicInteger clientId = new AtomicInteger();
+        CountDownLatch connectionLatch = new CountDownLatch(2);
+        CountDownLatch idLatch = new CountDownLatch(2);
+        CountDownLatch latch = new CountDownLatch(4);
+
+        String serverDestination = "infoAttachment";
+        String clientDestination = "ws://127.0.0.1:7777/" + serverDestination;
+
+        // create echo endpoint
+        ServerEndpoint<String> serverEndpoint = sut.acceptConnections(serverDestination);
+        // echo all incoming message and append the clientID
+        serverEndpoint.messages(BackpressureStrategy.BUFFER).subscribe(incomingMessage -> {
+            WebSocket<String> webSocket = incomingMessage.details.transportSpecificDetails.webSocket;
+            if (incomingMessage.message.startsWith("ID=")) {
+                String id = incomingMessage.message.substring("ID=".length());
+                webSocket.setUserProperty("clientId", id);
+                webSocket.send("ACK " + id);
+            } else {
+                String id = webSocket.getUserProperty("clientId");
+                webSocket.send(id + " - " + incomingMessage.message);
+            }
+        });
+
+
+        // connect multiple clients to server
+        ClientEndpoint<String>[] clientEndpoints = new ClientEndpoint[] {
+                sut.connectTo(clientDestination),
+                sut.connectTo(clientDestination)
+        };
+        Arrays.stream(clientEndpoints).forEach(endpoint -> {
+            endpoint.messages(BackpressureStrategy.BUFFER).subscribe(incomingMessage -> {
+                if (incomingMessage.message.startsWith("ACK ")) {
+                    String myId = endpoint.getUserProperty("myId");
+                    String receivedId = incomingMessage.message.substring("ACK ".length());
+                    assertThat(receivedId, is(myId));
+                    idLatch.countDown();
+                } else {
+                    String myId = endpoint.getUserProperty("myId");
+                    String receivedId = incomingMessage.message.substring(0, incomingMessage.message.indexOf(" - "));
+                    assertThat(receivedId, is(myId));
+                    // assert message starts with my ID
+                    latch.countDown();
+                }
+            });
+        });
+
+        // wait till connected
+        Arrays.stream(clientEndpoints).forEach(endpoint -> {
+            endpoint.connectedWebSockets(BackpressureStrategy.BUFFER).subscribe(incomingMessage -> {
+                connectionLatch.countDown();
+            });
+        });
+        connectionLatch.await(5, TimeUnit.SECONDS);
+        assertThat(connectionLatch.getCount(), is (0L));
+
+        // send "login"
+        Arrays.stream(clientEndpoints).forEach(endpoint -> {
+            String myId = String.valueOf(clientId.incrementAndGet());
+            endpoint.setUserProperty("myId", myId);
+            endpoint.send("ID=" + myId);
+        });
+        idLatch.await(5, TimeUnit.SECONDS);
+        assertThat(idLatch.getCount(), is (0L));
+
+        // and two more messages
+        Arrays.stream(clientEndpoints).forEach(endpoint -> {
+            endpoint.send("xxx" + random.nextInt());
+            endpoint.send("xxx" + random.nextInt());
+        });
+
+        latch.await(5, TimeUnit.SECONDS);
+        assertThat(latch.getCount(), is (0L));
+
+        // verify that we can clear a single user property
+        assertNotNull(clientEndpoints[0].getUserProperty("myId"));
+        clientEndpoints[0].setUserProperty("myId", null);
+        assertNull(clientEndpoints[0].getUserProperty("myId"));
+
+        // verify that we can clear all user properties
+        clientEndpoints[1].setUserProperty("myId2", "null");
+        assertNotNull(clientEndpoints[1].getUserProperty("myId"));
+        assertNotNull(clientEndpoints[1].getUserProperty("myId2"));
+        clientEndpoints[1].clearUserProperties();
+        assertNull(clientEndpoints[1].getUserProperty("myId"));
+        assertNull(clientEndpoints[1].getUserProperty("myId2"));
+
     }
 }

@@ -24,6 +24,7 @@ public class WebSocketBeanPostprocessor implements BeanPostProcessor {
     private final MessageMarshaller messageMarshaller;
     private final MessageUnmarshaller messageUnmarshaller;
     private final MetricsCollector metricsCollector;
+    private final ServerEndpointFactory serverEndpointFactory = new ServerEndpointFactory();
 
     public WebSocketBeanPostprocessor(MessageMarshaller<?, String> messageMarshaller, MessageUnmarshaller<String, ?> messageUnmarshaller, MetricsCollector metricsCollector) {
         this.messageMarshaller = messageMarshaller;
@@ -42,7 +43,7 @@ public class WebSocketBeanPostprocessor implements BeanPostProcessor {
         EndpointDescriptor[] endpoints = BeanExaminer.websocketEndpointsIn(bean);
         for (EndpointDescriptor endpointDescriptor: endpoints) {
             ServerEndpoint se =
-                ServerEndpointFactory.createFor(
+                serverEndpointFactory.createFor(
                         endpointDescriptor.destination,
                         messageMarshaller,
                         messageUnmarshaller,

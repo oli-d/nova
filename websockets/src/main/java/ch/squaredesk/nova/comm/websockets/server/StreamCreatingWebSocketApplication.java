@@ -38,7 +38,7 @@ public class StreamCreatingWebSocketApplication<MessageType>
 
     private final Function<String, MessageType> messageUnmarshaller;
 
-    public StreamCreatingWebSocketApplication(Function<String, MessageType> messageUnmarshaller) {
+    StreamCreatingWebSocketApplication(Function<String, MessageType> messageUnmarshaller) {
         this.messageUnmarshaller = messageUnmarshaller;
     }
 
@@ -98,7 +98,7 @@ public class StreamCreatingWebSocketApplication<MessageType>
         return errorSubject;
     }
 
-    public void close() {
+    void close() {
         messageSubject.onComplete();
         connectionSubject.onComplete();
         closeSubject.onComplete();

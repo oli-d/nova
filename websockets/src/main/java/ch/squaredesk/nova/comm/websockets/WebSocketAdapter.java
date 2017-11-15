@@ -28,6 +28,7 @@ public class WebSocketAdapter<MessageType> {
     private final MessageMarshaller<MessageType, String> messageMarshaller;
     private final MessageUnmarshaller<String, MessageType> messageUnmarshaller;
     private final MetricsCollector metricsCollector;
+    private final ServerEndpointFactory serverEndpointFactory = new ServerEndpointFactory();
 
     private WebSocketAdapter(Builder<MessageType> builder) {
         this.messageMarshaller = builder.messageMarshaller;
@@ -67,7 +68,7 @@ public class WebSocketAdapter<MessageType> {
             throw new IllegalStateException("Adapter not initialized properly for server mode");
         }
 
-        return ServerEndpointFactory.createFor(
+        return serverEndpointFactory.createFor(
                 destination,
                 messageMarshaller,
                 messageUnmarshaller,

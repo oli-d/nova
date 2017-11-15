@@ -36,7 +36,7 @@ public class StreamCreatingWebSocketTextListener<MessageType>
 
     private final Function<String, MessageType> messageUnmarshaller;
 
-    public StreamCreatingWebSocketTextListener(Function<String, MessageType> messageUnmarshaller) {
+    StreamCreatingWebSocketTextListener(Function<String, MessageType> messageUnmarshaller) {
         this.messageUnmarshaller = messageUnmarshaller;
     }
 
@@ -86,7 +86,7 @@ public class StreamCreatingWebSocketTextListener<MessageType>
         return errorSubject;
     }
 
-    public void close() {
+    void close() {
         messageSubject.onComplete();
         connectionSubject.onComplete();
         errorSubject.onComplete();

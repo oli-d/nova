@@ -16,34 +16,48 @@ import io.reactivex.disposables.Disposable;
 import org.glassfish.grizzly.websockets.WebSocketEngine;
 
 import java.util.Set;
-import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
 public class ServerEndpointFactory {
-    private static <MessageType> WebSocket<MessageType> createWebSocket(
+    private final ConcurrentHashMap<org.glassfish.grizzly.websockets.WebSocket, WebSocket<?>> webSockets = new ConcurrentHashMap<>();
+
+    private <MessageType> WebSocket<MessageType> instantiateNewWebSocket(
             String destination,
             org.glassfish.grizzly.websockets.WebSocket webSocket,
             MessageMarshaller<MessageType, String> messageMarshaller,
             MetricsCollector metricsCollector) {
 
-        return new WebSocket<>(
-                message -> {
-                    String messageAsString = marshal(message, messageMarshaller);
-                    webSocket.send(messageAsString);
-                    if (metricsCollector != null) { // we could optimize and remove the if, but for now we rely on JIT compilation
-                        metricsCollector.messageSent(destination);
-                    }
-                },
-                () -> {
-                    webSocket.close();
-                    if (metricsCollector != null) { // we could optimize and remove the if, but for now we rely on JIT compilation
-                        metricsCollector.subscriptionDestroyed(destination);
-                    }
-                });
+            return new WebSocket<>(
+                    message -> {
+                        String messageAsString = marshal(message, messageMarshaller);
+                        webSocket.send(messageAsString);
+                        if (metricsCollector != null) { // we could optimize and remove the if, but for now we rely on JIT compilation
+                            metricsCollector.messageSent(destination);
+                        }
+                    },
+                    () -> {
+                        webSocket.close();
+                        if (metricsCollector != null) { // we could optimize and remove the if, but for now we rely on JIT compilation
+                            metricsCollector.subscriptionDestroyed(destination);
+                        }
+                    });
     }
 
-    private static <MessageType> String marshal (MessageType message, MessageMarshaller<MessageType, String> messageMarshaller) {
+    private <MessageType> WebSocket<MessageType> createWebSocket(
+            String destination,
+            org.glassfish.grizzly.websockets.WebSocket webSocket,
+            MessageMarshaller<MessageType, String> messageMarshaller,
+            MetricsCollector metricsCollector) {
+
+            WebSocket<?> retVal = webSockets.computeIfAbsent(
+                    webSocket,
+                    key -> instantiateNewWebSocket(destination, key, messageMarshaller, metricsCollector));
+            return (WebSocket<MessageType>) retVal;
+    }
+
+    private <MessageType> String marshal (MessageType message, MessageMarshaller<MessageType, String> messageMarshaller) {
         try {
             return messageMarshaller.marshal(message);
         } catch (Exception e) {
@@ -52,7 +66,7 @@ public class ServerEndpointFactory {
         }
     }
 
-    private static <MessageType> MessageType unmarshal (
+    private <MessageType> MessageType unmarshal (
             String destination,
             String message,
             MessageUnmarshaller<String, MessageType> messageUnmarshaller,
@@ -67,7 +81,7 @@ public class ServerEndpointFactory {
         }
     }
 
-    public static <MessageType> ServerEndpoint<MessageType> createFor(
+    public <MessageType> ServerEndpoint<MessageType> createFor(
             String destination,
             MessageMarshaller<MessageType, String> messageMarshaller,
             MessageUnmarshaller<String, MessageType> messageUnmarshaller,
@@ -80,16 +94,16 @@ public class ServerEndpointFactory {
                 new StreamCreatingWebSocketApplication<>(text -> unmarshal(destinationForMetrics, text, messageUnmarshaller, metricsCollector));
         WebSocketEngine.getEngine().register("", destinationForSubscription, app);
 
-        // FIXME: everything released when closed???
-        Function<org.glassfish.grizzly.websockets.WebSocket, WebSocket<MessageType>> webSocketFactory =
+        Function<org.glassfish.grizzly.websockets.WebSocket, WebSocket<MessageType>> webSocketCreator =
                 socket -> createWebSocket(destinationForMetrics, socket, messageMarshaller, metricsCollector);
 
         EndpointStreamSource<MessageType> endpointStreamSource =
-                EndpointStreamSourceFactory.createStreamSourceFor(destinationForMetrics, webSocketFactory, app, metricsCollector);
+                EndpointStreamSourceFactory.createStreamSourceFor(destinationForMetrics, webSocketCreator, app, metricsCollector);
 
-        Set<org.glassfish.grizzly.websockets.WebSocket> allSockets = new CopyOnWriteArraySet<>(); // FIXME: proper data structure
-        Disposable subscriptionConnections = app.connectingSockets().subscribe(allSockets::add);
-        Disposable subscriptionDisconnections = app.closingSockets().subscribe(pair -> allSockets.remove(pair._1));
+        // register all connecting WebSockets
+        Disposable subscriptionConnections = app.connectingSockets().subscribe(socket -> webSocketCreator.apply(socket));
+        // unregister all disconnecting WebSockets
+        Disposable subscriptionDisconnections = app.closingSockets().subscribe(pair -> webSockets.remove(pair._1));
         Consumer<MessageType> broadcastAction = message -> {
             String messageAsString;
             try {
@@ -100,27 +114,28 @@ public class ServerEndpointFactory {
             }
 
             // Optional<org.glassfish.grizzly.websockets.WebSocket> broadcastSocket =
-            allSockets
-            .stream()
-            .filter(socket -> {
-                // verify that the socket was not just closed in the meantime...
-                try {
-                    socket.broadcast(allSockets, messageAsString);
-                    return true;
-                } catch (Exception ex) {
-                    // arrg, looks like the socket was just closed. So we fail silently and hope for the next one
-                }
-                return false;
-            })
-            .findAny();
-            // System.out.println("Successfully broadcast? " + broadcastSocket.isPresent());
+            Set<org.glassfish.grizzly.websockets.WebSocket> allSockets = webSockets.keySet();
+            allSockets.stream()
+                .filter(socket -> {
+                    // verify that the socket was not just closed in the meantime...
+                    try {
+                        socket.broadcast(allSockets, messageAsString);
+                        return true;
+                    } catch (Exception ex) {
+                        // arrg, looks like the socket was just closed. So we fail silently and hope for the next one
+                    }
+                    return false;
+                })
+                .findAny();
+                // System.out.println("Successfully broadcast? " + broadcastSocket.isPresent());
         };
 
         Consumer<CloseReason> closeAction = closeReason -> {
             subscriptionConnections.dispose();
             subscriptionDisconnections.dispose();
+            Set<org.glassfish.grizzly.websockets.WebSocket> allSockets = webSockets.keySet();
             allSockets.forEach(s -> s.close(closeReason.code, closeReason.text));
-            allSockets.clear();
+            webSockets.clear();
             app.close();
         };
         return new ServerEndpoint<>(endpointStreamSource, broadcastAction, closeAction);

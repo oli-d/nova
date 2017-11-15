@@ -29,4 +29,19 @@ public class ClientEndpoint<MessageType> extends Endpoint<MessageType> {
     public void send(MessageType message) {
         webSocket.send(message);
     }
+
+    public String getUserProperty(String propertyId) {
+        return getUserProperty(propertyId, String.class);
+    }
+    public <PropertyType> PropertyType getUserProperty(String propertyId, Class<PropertyType> propertyType) {
+        return webSocket.getUserProperty(propertyId, propertyType);
+    }
+
+    public void setUserProperty(String propertyId, Object value) {
+        webSocket.setUserProperty(propertyId, value);
+    }
+
+    public void clearUserProperties() {
+        webSocket.clearUserProperties();
+    }
 }
