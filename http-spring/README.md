@@ -14,10 +14,14 @@ The following classes are provided
   When you import this class in your own ```Configuration```, the app context will
   automatically contain a ```HttpServerConfiguration``` bean with sensible defaults:
 
-  | Parameter / @Bean name  | Environnment variable name      | Description                               | Default value |
-  |-------------------------|---------------------------------|-------------------------------------------|---------------|
-  | httpServerPort          | NOVA.HTTP.SERVER.PORT           | the port, the HTTP server listens on      | 10000         |
-  | httpServerInterfaceName | NOVA.HTTP.SERVER.INTERFACE_NAME | the interface, the HTTP server listens on | "0.0.0.0"     |
+  | Parameter / @Bean name   | Environnment variable name        | Description                               | Default value |
+  |--------------------------|-----------------------------------|-------------------------------------------|---------------|
+  | httpServerPort           | NOVA.HTTP.SERVER.PORT             | the port, the HTTP server listens on      | 10000         |
+  | httpServerInterfaceName  | NOVA.HTTP.SERVER.INTERFACE_NAME   | the interface, the HTTP server listens on | "0.0.0.0"     |
+  | httpServerKeyStore       | NOVA.HTTP.SERVER.KEY_STORE        | the keystore to use. Switches on SSL      | <null>        |
+  | httpServerKeyStorePass   | NOVA.HTTP.SERVER.KEY_STORE_PASS   | the password for the keystore             | <null>        |
+  | httpServerTrustStore     | NOVA.HTTP.SERVER.TRUST_STORE      | the truststore to use to validate clients | <null>        |
+  | httpServerTrustStorePass | NOVA.HTTP.SERVER.TRUST_STORE_PASS | the password for the truststore           | <null>        |
 
   So, to override this values you can either set the appropriately named environment
   variables, or - if you prefer to code it - provide the appropriately named beans yourself.

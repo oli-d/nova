@@ -26,7 +26,7 @@ import static org.hamcrest.Matchers.containsString;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class HttpAdapterTest {
-    private HttpServerConfiguration rsc = new HttpServerConfiguration("localhost", 8888);
+    private HttpServerConfiguration rsc = HttpServerConfiguration.builder().interfaceName("localhost").port(10000).build();
     private HttpServer httpServer = HttpServerFactory.serverFor(rsc);
     private HttpAdapter<BigDecimal> sut;
 

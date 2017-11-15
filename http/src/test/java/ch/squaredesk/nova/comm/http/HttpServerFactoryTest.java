@@ -13,7 +13,7 @@ class HttpServerFactoryTest {
 
     @BeforeEach
     void setup() {
-        serverConfig = new HttpServerConfiguration( "localhost", 5678);
+        serverConfig = HttpServerConfiguration.builder().interfaceName("localhost").port(5678).build();
         resourceConfig = new ResourceConfig();
         resourceConfig.registerResources(Resource.builder().build());
     }

@@ -37,8 +37,36 @@ public class HttpServerConfigurationProvidingConfiguration {
         return environment.getProperty("NOVA.HTTP.SERVER.INTERFACE_NAME", "0.0.0.0");
     }
 
+    @Bean("httpServerTrustStore")
+    public String sslTrustStorePass() {
+        return environment.getProperty("NOVA.HTTP.SERVER.TRUST_STORE");
+    }
+
+    @Bean("httpServerTrustStorePass")
+    public String sslTrustStorePath() {
+        return environment.getProperty("NOVA.HTTP.SERVER.TRUST_STORE_PASS");
+    }
+
+    @Bean("httpServerKeyStore")
+    public String sslKeyStorePass() {
+        return environment.getProperty("NOVA.HTTP.SERVER.KEY_STORE");
+    }
+
+    @Bean("httpServerKeyStorePass")
+    public String sslKeyStorePath() {
+        return environment.getProperty("NOVA.HTTP.SERVER.KEY_STORE_PASS");
+    }
+
     @Bean("httpServerConfiguration")
     public HttpServerConfiguration httpServerConfiguration() {
-        return new HttpServerConfiguration(interfaceName(), httpServerPort());
+        return HttpServerConfiguration.builder()
+                .interfaceName(interfaceName())
+                .port(httpServerPort())
+                .sslKeyStorePath(sslKeyStorePath())
+                .sslKeyStorePass(sslKeyStorePass())
+                .sslTrustStorePath(sslTrustStorePath())
+                .sslTrustStorePass(sslTrustStorePass())
+                .build();
     }
+
 }

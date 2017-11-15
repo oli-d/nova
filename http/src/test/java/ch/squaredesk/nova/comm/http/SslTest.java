@@ -10,12 +10,18 @@ import org.glassfish.grizzly.http.server.HttpServer;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
+import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManagerFactory;
 import java.net.URL;
+import java.security.KeyStore;
+import java.security.SecureRandom;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.ConsoleHandler;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.stream.IntStream;
 
 import static org.hamcrest.Matchers.is;
@@ -23,18 +29,45 @@ import static org.hamcrest.junit.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-class RpcServerTest {
-    private HttpServerConfiguration rsc = HttpServerConfiguration.builder().interfaceName("localhost").port(10000).build();
+class SslTest {
+    private HttpServerConfiguration rsc = HttpServerConfiguration.builder()
+            .interfaceName("127.0.0.1")
+            .port(10000)
+            .sslKeyStorePath("src/test/resources/ssl/keystore.jks")
+            .sslKeyStorePass("storepass") // also the keypass
+            .build();
     private HttpServer httpServer = HttpServerFactory.serverFor(rsc);
     private RpcServer<String> sut;
     private RpcClient<String> rpcClient;
-    private Logger logger = LoggerFactory.getLogger(RpcServerTest.class);
 
 
     @BeforeEach
-    void setup() {
+    void setup() throws Exception {
+        KeyStore keyStore = readKeyStore(); //your method to obtain KeyStore
+        SSLContext sslContext = SSLContext.getInstance("SSL");
+        TrustManagerFactory trustManagerFactory = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
+        trustManagerFactory.init(keyStore);
+        KeyManagerFactory keyManagerFactory = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
+        keyManagerFactory.init(keyStore, "keystore_pass".toCharArray());
+        sslContext.init(keyManagerFactory.getKeyManagers(),trustManagerFactory.getTrustManagers(), new SecureRandom());
+        OkHttpClient client = new OkHttpClient.Builder().sslSocketFactory(sslContext.getSocketFactory()).build();
         sut = new RpcServer<>(httpServer, s->s, s->s, new Metrics());
-        rpcClient = new RpcClient<>(null, new OkHttpClient(), s -> s, s -> s, new Metrics());
+        rpcClient = new RpcClient<>(null, client, s -> s, s -> s, new Metrics());
+    }
+
+    KeyStore readKeyStore() throws Exception {
+        KeyStore ks = KeyStore.getInstance(KeyStore.getDefaultType());
+
+        java.io.FileInputStream fis = null;
+        try {
+            fis = new java.io.FileInputStream("src/test/resources/ssl/truststore.jks");
+            ks.load(fis, "storepass".toCharArray());
+        } finally {
+            if (fis != null) {
+                fis.close();
+            }
+        }
+        return ks;
     }
 
     @AfterEach
@@ -43,35 +76,14 @@ class RpcServerTest {
     }
 
     @Test
-    void sutCannotBeCreatedWithoutConfigs() {
-        NullPointerException npe = assertThrows(NullPointerException.class,
-                () -> new RpcServer<>(null, s -> s, s -> s, new Metrics()));
-        assertThat(npe.getMessage(), is("httpServer must not be null"));
-    }
-
-    @Test
-    void sutCannotBeCreatedWithoutMarshaller() {
-        NullPointerException npe = assertThrows(NullPointerException.class,
-                () -> new RpcServer<>(httpServer, null, s-> s, new Metrics()));
-        assertThat(npe.getMessage(), is("messageMarshaller must not be null"));
-    }
-
-    @Test
-    void sutCannotBeCreatedWithoutUnmarshaller() {
-        NullPointerException npe = assertThrows(NullPointerException.class,
-                () -> new RpcServer<String>(httpServer, s-> s, null, new Metrics()));
-        assertThat(npe.getMessage(), is("messageUnmarshaller must not be null"));
-    }
-
-    @Test
-    void subscriptionsCanBeMadeAfterServerStarted() throws Exception {
-        assertNotNull(sut.requests("/requests", BackpressureStrategy.BUFFER));
-        sut.start();
-        sut.requests("/failing", BackpressureStrategy.BUFFER);
-    }
-
-    @Test
     void requestsProperlyDispatched() throws Exception {
+        System.setProperty("https.protocols","TLSv1.1,TLSv1.2");
+        Logger l = Logger.getLogger("org.glassfish.grizzly.http.server.HttpHandler");
+        l.setLevel(Level.FINE);
+        l.setUseParentHandlers(false);
+        ConsoleHandler ch = new ConsoleHandler();
+        ch.setLevel(Level.ALL);
+        l.addHandler(ch);
         sut.start();
         int numRequests = 5;
         String path = "/bla";
@@ -91,7 +103,7 @@ class RpcServerTest {
     private void sendRestRequestInNewThread(String path, int i) {
         new Thread(() -> {
             try {
-                String urlAsString = "http://" + rsc.interfaceName + ":" + rsc.port + path + "?p=" + i;
+                String urlAsString = "https://" + rsc.interfaceName + ":" + rsc.port + path + "?p=" + i;
 
                 MessageSendingInfo<URL, HttpSpecificInfo> msi = new MessageSendingInfo.Builder<URL, HttpSpecificInfo>()
                         .withDestination(new URL(urlAsString))

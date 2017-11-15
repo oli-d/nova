@@ -26,16 +26,18 @@ import static java.util.Objects.requireNonNull;
 
 class RpcClient<InternalMessageType> extends ch.squaredesk.nova.comm.rpc.RpcClient<URL, InternalMessageType, HttpSpecificInfo> {
     private static final MediaType JSON = okhttp3.MediaType.parse("application/json; charset=utf-8");
-    private final OkHttpClient client = new OkHttpClient();
 
+    private final OkHttpClient client;
     private final MessageMarshaller<InternalMessageType, String> messageMarshaller;
     private final MessageUnmarshaller<String, InternalMessageType> messageUnmarshaller;
 
     RpcClient(String identifier,
+              OkHttpClient client,
               MessageMarshaller<InternalMessageType, String> messageMarshaller,
               MessageUnmarshaller<String, InternalMessageType> messageUnmarshaller,
               Metrics metrics) {
         super(identifier, metrics);
+        this.client = client;
         this.messageUnmarshaller = messageUnmarshaller;
         this.messageMarshaller = messageMarshaller;
     }

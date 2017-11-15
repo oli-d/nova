@@ -17,6 +17,7 @@ import ch.squaredesk.nova.comm.sending.MessageSendingInfo;
 import io.reactivex.BackpressureStrategy;
 import io.reactivex.Flowable;
 import io.reactivex.Single;
+import okhttp3.OkHttpClient;
 import org.glassfish.grizzly.http.server.HttpServer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -204,7 +205,8 @@ public class HttpAdapter<MessageType> {
 
         public HttpAdapter<MessageType> createInstance() {
             validate();
-            rpcClient = new RpcClient<>(identifier, messageMarshaller, messageUnmarshaller, metrics);
+            OkHttpClient httpClient = new OkHttpClient();
+            rpcClient = new RpcClient<>(identifier, httpClient, messageMarshaller, messageUnmarshaller, metrics);
             rpcServer = new RpcServer<>(identifier, httpServer, messageMarshaller, messageUnmarshaller, metrics);
             return new HttpAdapter<>(this);
         }
