@@ -15,35 +15,49 @@ import ch.squaredesk.nova.comm.retrieving.MessageUnmarshaller;
 import ch.squaredesk.nova.comm.sending.MessageMarshaller;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import org.hamcrest.Matchers;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import java.math.BigDecimal;
+
+import static ch.squaredesk.nova.comm.DefaultMarshallerFactory.getMarshallerForMessageType;
+import static ch.squaredesk.nova.comm.DefaultMarshallerFactory.getUnmarshallerForMessageType;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class DefaultMarshallerFactoryTest {
     @Test
     void properMessageUnmarshallerCreatedForMessageHandler() throws Exception {
-        MessageUnmarshaller unmarshaller = DefaultMarshallerFactory.getUnmarshallerForMessageType(String.class);
+        MessageUnmarshaller unmarshaller = getUnmarshallerForMessageType(String.class);
         assertThat(unmarshaller.unmarshal("4"), is("4"));
-        unmarshaller = DefaultMarshallerFactory.getUnmarshallerForMessageType(Integer.class);
+        unmarshaller = getUnmarshallerForMessageType(Integer.class);
         assertThat(unmarshaller.unmarshal("4"), is(4));
-        unmarshaller = DefaultMarshallerFactory.getUnmarshallerForMessageType(Double.class);
+        unmarshaller = getUnmarshallerForMessageType(Double.class);
         assertThat(unmarshaller.unmarshal("4"), is(4.0));
-        unmarshaller = DefaultMarshallerFactory.getUnmarshallerForMessageType(MyClass.class);
+        unmarshaller = getUnmarshallerForMessageType(BigDecimal.class);
+        assertThat(unmarshaller.unmarshal("1"), is(BigDecimal.ONE));
+        unmarshaller = getUnmarshallerForMessageType(MyClass.class);
         assertThat(unmarshaller.unmarshal("{ \"field\":\"Hallo\"}"), is(new MyClass("Hallo")));
-
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> getUnmarshallerForMessageType(Object.class) );
+        assertThat(ex.getMessage(), Matchers.endsWith("not supported"));
     }
 
     @Test
     void properMessageMarshallerCreatedForMessageHandler() throws Exception {
-        MessageMarshaller marshaller = DefaultMarshallerFactory.getMarshallerForMessageType(String.class);
+        MessageMarshaller marshaller = getMarshallerForMessageType(String.class);
         assertThat(marshaller.marshal("4"), is("4"));
-        marshaller = DefaultMarshallerFactory.getMarshallerForMessageType(Integer.class);
+        marshaller = getMarshallerForMessageType(Integer.class);
         assertThat(marshaller.marshal(4), is("4"));
-        marshaller = DefaultMarshallerFactory.getMarshallerForMessageType(Double.class);
+        marshaller = getMarshallerForMessageType(Double.class);
         assertThat(marshaller.marshal(4.0), is("4.0"));
-        marshaller = DefaultMarshallerFactory.getMarshallerForMessageType(MyClass.class);
+        marshaller = getMarshallerForMessageType(Double.class);
+        assertThat(marshaller.marshal(BigDecimal.ONE), is("1"));
+        marshaller = getMarshallerForMessageType(MyClass.class);
         assertThat(marshaller.marshal(new MyClass("xxx")), is("{\"field\":\"xxx\"}"));
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> getMarshallerForMessageType(Object.class) );
+        assertThat(ex.getMessage(), Matchers.endsWith("not supported"));
     }
 
     public static class MyClass {

@@ -19,13 +19,19 @@ import java.math.BigDecimal;
 
 public class DefaultMarshallerFactory {
     public static MessageMarshaller<?, String> getMarshallerForMessageType(Class<?> messageType) {
-        if (messageType.isAssignableFrom(String.class)) {
+        if (messageType.equals(Object.class)) {
+            // Jackson obviously can transfer arbitrary objects into a String, so we would not need to
+            // throw an exception here. Unfortunately unmarshalling would not work, since the
+            // call objectMapper.readValue(string, Object.class) will always return a String.
+            // Since we want to be "symmetric", we therefore also don't allow default marshaller for Object.class
+            throw new IllegalArgumentException("default marshaller for class java.lang.Object is not supported");
+        } else if (String.class.isAssignableFrom(messageType)) {
             return object -> object == null ? null : String.valueOf(object);
-        } else if (messageType.isAssignableFrom(Integer.class)) {
+        } else if (Integer.class.isAssignableFrom(messageType)) {
             return String::valueOf;
-        } else if (messageType.isAssignableFrom(Double.class)) {
+        } else if (Double.class.isAssignableFrom(messageType)) {
             return String::valueOf;
-        } else if (messageType.isAssignableFrom(BigDecimal.class)) {
+        } else if (BigDecimal.class.isAssignableFrom(messageType)) {
             return String::valueOf;
         } else {
             Object objectMapper = instantiateObjectMapperViaReflection();
@@ -44,13 +50,16 @@ public class DefaultMarshallerFactory {
     }
 
     public static MessageUnmarshaller<String, ?> getUnmarshallerForMessageType(Class<?> messageType) {
-        if (messageType.isAssignableFrom(String.class)) {
+        if (messageType.equals(Object.class)) {
+            // Does not work, since the call objectMapper.readValue(string, Object.class) will always return a String.
+            throw new IllegalArgumentException("default unmarshaller for class java.lang.Object is not supported");
+        } else if (String.class.isAssignableFrom(messageType)) {
             return s -> s;
-        } else if (messageType.isAssignableFrom(Integer.class)) {
+        } else if (Integer.class.isAssignableFrom(messageType)) {
             return Integer::parseInt;
-        } else if (messageType.isAssignableFrom(Double.class)) {
+        } else if (Double.class.isAssignableFrom(messageType)) {
             return Double::parseDouble;
-        } else if (messageType.isAssignableFrom(BigDecimal.class)) {
+        } else if (BigDecimal.class.isAssignableFrom(messageType)) {
             return BigDecimal::new;
         } else {
             Object objectMapper = instantiateObjectMapperViaReflection();
