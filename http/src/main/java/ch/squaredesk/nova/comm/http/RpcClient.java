@@ -14,9 +14,10 @@ import ch.squaredesk.nova.comm.retrieving.MessageUnmarshaller;
 import ch.squaredesk.nova.comm.sending.MessageMarshaller;
 import ch.squaredesk.nova.comm.sending.MessageSendingInfo;
 import ch.squaredesk.nova.metrics.Metrics;
+import com.ning.http.client.AsyncHttpClient;
+import com.ning.http.client.ListenableFuture;
+import com.ning.http.client.Response;
 import io.reactivex.Single;
-import okhttp3.*;
-import okhttp3.MediaType;
 
 import java.net.URL;
 import java.util.concurrent.TimeUnit;
@@ -25,14 +26,12 @@ import java.util.concurrent.TimeoutException;
 import static java.util.Objects.requireNonNull;
 
 class RpcClient<InternalMessageType> extends ch.squaredesk.nova.comm.rpc.RpcClient<URL, InternalMessageType, HttpSpecificInfo> {
-    private static final MediaType JSON = okhttp3.MediaType.parse("application/json; charset=utf-8");
-
-    private final OkHttpClient client;
+    private final AsyncHttpClient client;
     private final MessageMarshaller<InternalMessageType, String> messageMarshaller;
     private final MessageUnmarshaller<String, InternalMessageType> messageUnmarshaller;
 
     RpcClient(String identifier,
-              OkHttpClient client,
+              AsyncHttpClient client,
               MessageMarshaller<InternalMessageType, String> messageMarshaller,
               MessageUnmarshaller<String, InternalMessageType> messageUnmarshaller,
               Metrics metrics) {
@@ -57,41 +56,38 @@ class RpcClient<InternalMessageType> extends ch.squaredesk.nova.comm.rpc.RpcClie
             return Single.error(e);
         }
 
-        Request.Builder requestBuilder = new Request.Builder().url(messageSendingInfo.destination);
-        Request httpRequest;
+        AsyncHttpClient.BoundRequestBuilder requestBuilder;
         if (messageSendingInfo.transportSpecificInfo.requestMethod == HttpRequestMethod.POST) {
-            RequestBody body = RequestBody.create(JSON, requestAsString);
-            httpRequest = requestBuilder.post(body).build();
+            requestBuilder = client.preparePost(messageSendingInfo.destination.toString()).setBody(requestAsString);
         } else if (messageSendingInfo.transportSpecificInfo.requestMethod == HttpRequestMethod.PUT) {
-            RequestBody body = RequestBody.create(JSON, requestAsString);
-            httpRequest = requestBuilder.put(body).build();
+            requestBuilder = client.preparePut(messageSendingInfo.destination.toString()).setBody(requestAsString);
         } else if (messageSendingInfo.transportSpecificInfo.requestMethod == HttpRequestMethod.DELETE) {
-            RequestBody body = RequestBody.create(JSON, requestAsString);
-            httpRequest = requestBuilder.delete(body).build();
+            requestBuilder = client.prepareDelete(messageSendingInfo.destination.toString()).setBody(requestAsString);
         } else {
-            httpRequest = requestBuilder.get().build();
+            requestBuilder = client.prepareGet(messageSendingInfo.destination.toString());
         }
-        Call call = client.newCall(httpRequest);
+
+        ListenableFuture<Response> resultFuture = requestBuilder
+                .addHeader("Content-Type","application/json; charset=utf-8")
+                .execute();
 
         Single timeoutSingle = Single
                 .timer(timeout, timeUnit)
                 .map(zero -> {
                     metricsCollector.rpcTimedOut(messageSendingInfo.destination.toExternalForm());
-                    call.cancel();
+                    resultFuture.cancel(true);
                     throw new TimeoutException();
                 });
 
-        Single<ReplyType> resultSingle = Single.fromCallable(() -> {
-            Response response = call.execute();
-            metricsCollector.rpcCompleted(messageSendingInfo.destination, response);
-            if (response.isSuccessful()) {
-                return response.body().string();
-            } else {
-                throw new RuntimeException(response.message());
+        Single<ReplyType> resultSingle = Single.fromFuture(resultFuture).map(response -> {
+            int statusCode = response.getStatusCode();
+            if (statusCode<200 || statusCode >= 300) {
+                // TODO: we should think about a better concept
+                throw new RuntimeException("" + statusCode + " - " + response.getStatusText());
             }
-        }).map(callResult -> {
-            metricsCollector.rpcCompleted(messageSendingInfo.destination, callResult);
-            return (ReplyType) messageUnmarshaller.unmarshal(callResult);
+            String responseBody = response.getResponseBody();
+            metricsCollector.rpcCompleted(messageSendingInfo.destination, responseBody);
+            return (ReplyType) messageUnmarshaller.unmarshal(responseBody);
         });
 
         return timeoutSingle.ambWith(resultSingle);

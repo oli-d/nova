@@ -3,9 +3,10 @@ package ch.squaredesk.nova.comm.http;
 import ch.squaredesk.nova.comm.rpc.RpcInvocation;
 import ch.squaredesk.nova.comm.sending.MessageSendingInfo;
 import ch.squaredesk.nova.metrics.Metrics;
+import com.ning.http.client.AsyncHttpClient;
+import com.ning.http.client.AsyncHttpClientConfig;
 import io.reactivex.BackpressureStrategy;
 import io.reactivex.Flowable;
-import okhttp3.OkHttpClient;
 import org.glassfish.grizzly.http.server.HttpServer;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -19,15 +20,10 @@ import java.security.KeyStore;
 import java.security.SecureRandom;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-import java.util.logging.ConsoleHandler;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.stream.IntStream;
 
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class SslTest {
     private HttpServerConfiguration rsc = HttpServerConfiguration.builder()
@@ -43,14 +39,15 @@ class SslTest {
 
     @BeforeEach
     void setup() throws Exception {
-        KeyStore keyStore = readKeyStore(); //your method to obtain KeyStore
+        KeyStore keyStore = readKeyStore();
         SSLContext sslContext = SSLContext.getInstance("SSL");
         TrustManagerFactory trustManagerFactory = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
         trustManagerFactory.init(keyStore);
         KeyManagerFactory keyManagerFactory = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
         keyManagerFactory.init(keyStore, "keystore_pass".toCharArray());
         sslContext.init(keyManagerFactory.getKeyManagers(),trustManagerFactory.getTrustManagers(), new SecureRandom());
-        OkHttpClient client = new OkHttpClient.Builder().sslSocketFactory(sslContext.getSocketFactory()).build();
+        AsyncHttpClientConfig asyncHttpClientConfig = new AsyncHttpClientConfig.Builder().setSSLContext(sslContext).build();
+        AsyncHttpClient client = new AsyncHttpClient(asyncHttpClientConfig);
         sut = new RpcServer<>(httpServer, s->s, s->s, new Metrics());
         rpcClient = new RpcClient<>(null, client, s -> s, s -> s, new Metrics());
     }
@@ -77,13 +74,6 @@ class SslTest {
 
     @Test
     void requestsProperlyDispatched() throws Exception {
-        System.setProperty("https.protocols","TLSv1.1,TLSv1.2");
-        Logger l = Logger.getLogger("org.glassfish.grizzly.http.server.HttpHandler");
-        l.setLevel(Level.FINE);
-        l.setUseParentHandlers(false);
-        ConsoleHandler ch = new ConsoleHandler();
-        ch.setLevel(Level.ALL);
-        l.addHandler(ch);
         sut.start();
         int numRequests = 5;
         String path = "/bla";

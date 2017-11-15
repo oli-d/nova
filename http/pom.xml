@@ -30,28 +30,46 @@
         <dependency>
             <groupId>org.glassfish.grizzly</groupId>
             <artifactId>grizzly-http-server-core</artifactId>
-            <version>2.4.0</version>
+            <version>${grizzly.version}</version>
+        </dependency>
+
+        <!--all:-->
+            <!--grizzly-http-server-core-->
+            <!--grizzly-http-servlet-->
+            <!--grizzly-comet-->
+            <!--grizzly-websockets-->
+            <!--javax.servlet:javax-servlet-api:4.0.0-b07-->
+
+        <!-- The Grizzly AsyncHttpClient currently requires grizzly 2.3.33. Since we want to
+                use the latest, we have to manually massage the dependencies: -->
+        <dependency>
+            <groupId>org.glassfish.grizzly</groupId>
+            <artifactId>grizzly-http-client</artifactId>
+            <version>1.14</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.glassfish.grizzly</groupId>
+                    <artifactId>connection-pool</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.glassfish.grizzly</groupId>
+                    <artifactId>grizzly-websockets</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-api</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
-            <groupId>org.glassfish.jersey.containers</groupId>
-            <artifactId>jersey-container-grizzly2-http</artifactId>
-            <version>2.26</version>
+            <groupId>org.glassfish.grizzly</groupId>
+            <artifactId>connection-pool</artifactId>
+            <version>${grizzly.version}</version>
         </dependency>
         <dependency>
-            <groupId>org.glassfish.jersey.test-framework.providers</groupId>
-            <artifactId>jersey-test-framework-provider-grizzly2</artifactId>
-            <version>2.26</version>
-            <scope>test</scope>
+            <groupId>org.glassfish.grizzly</groupId>
+            <artifactId>grizzly-websockets</artifactId>
+            <version>${grizzly.version}</version>
         </dependency>
-		<dependency>
-			<groupId>org.glassfish.jersey.inject</groupId>
-			<artifactId>jersey-hk2</artifactId>
-            <version>2.26</version>
-		</dependency>
-		<dependency>
-			<groupId>com.squareup.okhttp3</groupId>
-			<artifactId>okhttp</artifactId>
-			<version>3.8.1</version>
-		</dependency>
 	</dependencies>
 </project>

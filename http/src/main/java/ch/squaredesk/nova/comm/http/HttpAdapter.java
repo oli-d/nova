@@ -14,10 +14,10 @@ package ch.squaredesk.nova.comm.http;
 import ch.squaredesk.nova.comm.CommAdapterBuilder;
 import ch.squaredesk.nova.comm.rpc.RpcInvocation;
 import ch.squaredesk.nova.comm.sending.MessageSendingInfo;
+import com.ning.http.client.AsyncHttpClient;
 import io.reactivex.BackpressureStrategy;
 import io.reactivex.Flowable;
 import io.reactivex.Single;
-import okhttp3.OkHttpClient;
 import org.glassfish.grizzly.http.server.HttpServer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -205,7 +205,7 @@ public class HttpAdapter<MessageType> {
 
         public HttpAdapter<MessageType> createInstance() {
             validate();
-            OkHttpClient httpClient = new OkHttpClient();
+            AsyncHttpClient httpClient = new AsyncHttpClient();
             rpcClient = new RpcClient<>(identifier, httpClient, messageMarshaller, messageUnmarshaller, metrics);
             rpcServer = new RpcServer<>(identifier, httpServer, messageMarshaller, messageUnmarshaller, metrics);
             return new HttpAdapter<>(this);

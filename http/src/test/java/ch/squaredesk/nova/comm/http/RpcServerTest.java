@@ -3,15 +3,13 @@ package ch.squaredesk.nova.comm.http;
 import ch.squaredesk.nova.comm.rpc.RpcInvocation;
 import ch.squaredesk.nova.comm.sending.MessageSendingInfo;
 import ch.squaredesk.nova.metrics.Metrics;
+import com.ning.http.client.AsyncHttpClient;
 import io.reactivex.BackpressureStrategy;
 import io.reactivex.Flowable;
-import okhttp3.OkHttpClient;
 import org.glassfish.grizzly.http.server.HttpServer;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.net.URL;
 import java.util.concurrent.CountDownLatch;
@@ -28,13 +26,11 @@ class RpcServerTest {
     private HttpServer httpServer = HttpServerFactory.serverFor(rsc);
     private RpcServer<String> sut;
     private RpcClient<String> rpcClient;
-    private Logger logger = LoggerFactory.getLogger(RpcServerTest.class);
-
 
     @BeforeEach
     void setup() {
         sut = new RpcServer<>(httpServer, s->s, s->s, new Metrics());
-        rpcClient = new RpcClient<>(null, new OkHttpClient(), s -> s, s -> s, new Metrics());
+        rpcClient = new RpcClient<>(null, new AsyncHttpClient(), s -> s, s -> s, new Metrics());
     }
 
     @AfterEach
