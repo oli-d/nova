@@ -25,6 +25,7 @@ import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -36,7 +37,7 @@ class KafkaMetricsReporterTest {
     private static final ObjectMapper objectMapper = new ObjectMapper();
 
     private EphemeralKafkaBroker kafkaBroker;
-    private KafkaAdapter<Object> kafkaAdapter;
+    private KafkaAdapter<Map> kafkaAdapter;
     private KafkaMetricsReporter sut;
 
     @BeforeAll
@@ -57,7 +58,7 @@ class KafkaMetricsReporterTest {
         kafkaBroker = EphemeralKafkaBroker.create(KAFKA_PORT);
         kafkaBroker.start().get();
 
-        kafkaAdapter = KafkaAdapter.builder(Object.class)
+        kafkaAdapter = KafkaAdapter.builder(Map.class)
                 .setServerAddress("127.0.0.1:" + KAFKA_PORT)
                 .setIdentifier("Test")
                 .addProducerProperty(ProducerConfig.BATCH_SIZE_CONFIG, "1")

@@ -23,15 +23,15 @@ import java.util.Collections;
 import java.util.Map;
 
 public class KafkaMetricsReporter implements Consumer<MetricsDump> {
-    private final KafkaAdapter<Object> kafkaAdapter;
+    private final KafkaAdapter<Map> kafkaAdapter;
     private final String topicName;
     private final Map<String, Object> additionalMetricAttributes;
 
-    public KafkaMetricsReporter(KafkaAdapter<Object> kafkaAdapter, String topicName) {
+    public KafkaMetricsReporter(KafkaAdapter<Map> kafkaAdapter, String topicName) {
         this(kafkaAdapter, topicName, Collections.EMPTY_MAP);
     }
 
-    public KafkaMetricsReporter(KafkaAdapter<Object> kafkaAdapter, String topicName, Map<String, Object> additionalMetricAttributes) {
+    public KafkaMetricsReporter(KafkaAdapter<Map> kafkaAdapter, String topicName, Map<String, Object> additionalMetricAttributes) {
         this.kafkaAdapter = kafkaAdapter;
         this.topicName = topicName;
         this.additionalMetricAttributes = additionalMetricAttributes;
