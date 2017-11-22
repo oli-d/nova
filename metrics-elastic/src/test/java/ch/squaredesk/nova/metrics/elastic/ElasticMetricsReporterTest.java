@@ -127,11 +127,12 @@ class ElasticMetricsReporterTest {
             assertTrue(request instanceof IndexRequest);
             IndexRequest ir = (IndexRequest) request;
             assertNotNull(ir.type());
-            assertThat(ir.type(), Matchers.oneOf("counter", "meter", "MyMetric"));
+            assertThat(ir.type(), is("doc"));
             Map<String, Object> sourceAsMap = getMapFrom(ir.source());
             assertNotNull(sourceAsMap.get("host"));
             assertNotNull(sourceAsMap.get("someAttribute"));
             assertThat(sourceAsMap.get("name"), Matchers.oneOf("test.counter1", "test.meter1", "test.myMetric1"));
+            assertThat(sourceAsMap.get("type"), Matchers.oneOf("counter", "meter", "MyMetric"));
         }
     }
 

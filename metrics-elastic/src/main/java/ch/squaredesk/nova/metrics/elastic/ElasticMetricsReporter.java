@@ -25,6 +25,7 @@ import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.client.Requests;
 import org.elasticsearch.client.RestClient;
+import org.elasticsearch.client.RestClientBuilder;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -95,8 +96,9 @@ public class ElasticMetricsReporter implements Consumer<MetricsDump> {
     public void startup() {
         logger.info("Connecting to Elasticsearch @ " + elasticServer + ":" + elasticPort);
         try {
-            restClient = RestClient.builder(new HttpHost(elasticServer, elasticPort, "http")).build();
-            client = new RestHighLevelClient(restClient);
+            RestClientBuilder restClientBuilder = RestClient.builder(new HttpHost(elasticServer, elasticPort, "http"));
+            restClient = restClientBuilder.build();
+            client = new RestHighLevelClient(restClientBuilder);
         } catch (Exception e) {
             logger.error("Unable to connect to Elastic @ " + elasticServer + ":" + elasticPort, e);
         }
@@ -147,14 +149,13 @@ public class ElasticMetricsReporter implements Consumer<MetricsDump> {
                     return retVal;
                 })
                 .map(metricAsMap -> {
-                    String type = (String) metricAsMap.remove("type");
-                    Objects.requireNonNull(type, "metricMap must contain type entry");
+                    Objects.requireNonNull(metricAsMap.get("type"), "metricMap must contain type entry");
                     metricAsMap.put("@timestamp", timestampInUtc);
                     metricAsMap.put("host", hostName);
                     metricAsMap.put("hostAddress", hostAddress);
                     return new IndexRequest()
                             .index(indexName)
-                            .type(type)
+                            .type("doc")
                             .source(metricAsMap);
                 })
                 .reduce(Requests.bulkRequest(),

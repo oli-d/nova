@@ -36,12 +36,12 @@
 		<dependency>
 			<groupId>org.elasticsearch.client</groupId>
 			<artifactId>elasticsearch-rest-client</artifactId>
-			<version>5.6.3</version>
+			<version>6.0.0</version>
 		</dependency>
 		<dependency>
 			<groupId>org.elasticsearch.client</groupId>
 			<artifactId>elasticsearch-rest-high-level-client</artifactId>
-			<version>5.6.3</version>
+			<version>6.0.0</version>
 		</dependency>
 
 		<dependency>
