@@ -60,7 +60,7 @@ public class FileReader extends JFrame {
      */
     private void readFileAsync(String pathToFile) {
         textArea.setText("Reading file " + pathToFile + "...");
-        nova.filesystem.readFile(pathToFile).subscribe(
+        nova.filesystem.readTextFileFully(pathToFile).subscribe(
                 s ->  textArea.setText(s),
                 t ->  textArea.setText("Unable to read file.\nError: " + t));
     }
