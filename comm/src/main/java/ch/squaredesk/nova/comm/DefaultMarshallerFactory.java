@@ -29,6 +29,8 @@ public class DefaultMarshallerFactory {
             return object -> object == null ? null : String.valueOf(object);
         } else if (Integer.class.isAssignableFrom(messageType)) {
             return String::valueOf;
+        } else if (Long.class.isAssignableFrom(messageType)) {
+            return String::valueOf;
         } else if (Double.class.isAssignableFrom(messageType)) {
             return String::valueOf;
         } else if (BigDecimal.class.isAssignableFrom(messageType)) {
@@ -57,6 +59,8 @@ public class DefaultMarshallerFactory {
             return s -> s;
         } else if (Integer.class.isAssignableFrom(messageType)) {
             return Integer::parseInt;
+        } else if (Long.class.isAssignableFrom(messageType)) {
+            return Long::parseLong;
         } else if (Double.class.isAssignableFrom(messageType)) {
             return Double::parseDouble;
         } else if (BigDecimal.class.isAssignableFrom(messageType)) {
