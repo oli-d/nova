@@ -21,56 +21,31 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.TimeUnit;
 
+import static java.util.Collections.singletonList;
+
 class KafkaObjectFactory {
     private final Properties consumerProperties;
     private final Properties producerProperties;
-    final Map<String, KafkaPoller> topicToPoller;
     protected final Set<Producer<String, String>> producers;
 
     public KafkaObjectFactory(Properties consumerProperties, Properties producerProperties) {
         this.consumerProperties = consumerProperties;
         this.producerProperties = producerProperties;
-        topicToPoller = new ConcurrentHashMap<>();
         producers = new CopyOnWriteArraySet<>();
     }
 
     // TODO: is it ok to subscribe multiple times to the same topic???
-    private Consumer<String, String> consumerForTopic(String topic) {
-        KafkaConsumer kafkaConsumer = new KafkaConsumer<>(consumerProperties);
-        kafkaConsumer.subscribe(Arrays.asList(topic));
+    Consumer<String, String> consumerForTopic(String topic) {
+        KafkaConsumer<String, String> kafkaConsumer = new KafkaConsumer<>(consumerProperties);
+        kafkaConsumer.subscribe(singletonList(topic));
         return kafkaConsumer;
     }
 
-    public KafkaPoller pollerForTopic(String topic, long pollFrequency, TimeUnit pollFrequencyTimeUnit) {
-        Objects.requireNonNull(pollFrequencyTimeUnit, "timeUnit must not be null");
-        if (pollFrequency <=0 ) {
-            throw new IllegalArgumentException("pollFrequency must be greater than zero");
-        }
-        return topicToPoller.computeIfAbsent(topic, key -> new KafkaPoller(consumerForTopic(key), pollFrequency, pollFrequencyTimeUnit));
-    }
 
-    public void destroyPollerForTopic(String topic) {
-        KafkaPoller poller =  topicToPoller.remove(topic);
-        if (poller!=null) {
-            poller.shutdown();
-        }
-    }
-
-    public Producer<String,String> producer() {
+    Producer<String,String> producer() {
         Producer<String, String> p = new KafkaProducer<>(producerProperties);
         producers.add(p);
         return p;
     }
 
-    public void shutdown() {
-        Set<String> topicsCurrentlyListenedTo = new HashSet<>(topicToPoller.keySet());
-        for (String topic: topicsCurrentlyListenedTo) {
-            destroyPollerForTopic(topic);
-        }
-
-        new HashSet<>(producers).forEach(p -> {
-            p.close(1, TimeUnit.SECONDS);
-            producers.remove(p);
-        });
-    }
 }

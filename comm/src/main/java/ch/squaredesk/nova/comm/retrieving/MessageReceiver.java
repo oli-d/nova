@@ -24,9 +24,8 @@ import static java.util.Objects.requireNonNull;
 public abstract class MessageReceiver<DestinationType, InternalMessageType, TransportMessageType, TransportSpecificInfoType> {
     private static final Logger logger = LoggerFactory.getLogger(MessageReceiver.class);
 
-    private final ConcurrentHashMap<DestinationType, Observable<IncomingMessage<InternalMessageType, DestinationType, TransportSpecificInfoType>>> mapDestinationToListeners = new ConcurrentHashMap<>();
     protected final MessageUnmarshaller<TransportMessageType, InternalMessageType> messageUnmarshaller;
-    private final MetricsCollector metricsCollector;
+    protected final MetricsCollector metricsCollector;
 
     protected MessageReceiver(MessageUnmarshaller<TransportMessageType, InternalMessageType> messageUnmarshaller, Metrics metrics) {
         this(null, messageUnmarshaller, metrics);
@@ -39,47 +38,7 @@ public abstract class MessageReceiver<DestinationType, InternalMessageType, Tran
         this.metricsCollector = new MetricsCollector(identifier, metrics);
     }
 
-    /**
-     * @param destination
-     * @return an observable that constantly onNext()s new messages whenever they arrive on the passed destination. Note
-     * that the returned Observable does not have to make sure that unsubscription is triggered when the last observer
-     * goes away. This is automatically handled
-     */
-    protected abstract Observable<IncomingMessage<InternalMessageType, DestinationType, TransportSpecificInfoType>>
-        doSubscribe(DestinationType destination);
-
-    /**
-     * @param destination
-     */
-    protected abstract void doUnsubscribe(DestinationType destination);
-
-    public Flowable<IncomingMessage<InternalMessageType, DestinationType, TransportSpecificInfoType>>
-        messages(DestinationType destination, BackpressureStrategy backpressureStrategy) {
-        requireNonNull(destination, "Destination must not be null");
-        requireNonNull(backpressureStrategy, "backpressureStrategy must not be null");
-
-        Observable<IncomingMessage<InternalMessageType, DestinationType, TransportSpecificInfoType>> source =
-                mapDestinationToListeners.computeIfAbsent(destination, key -> {
-                    Observable<IncomingMessage<InternalMessageType, DestinationType, TransportSpecificInfoType>> observable =
-                            doSubscribe(destination);
-                    metricsCollector.subscriptionCreated(destination);
-
-                    return observable
-                            .doOnNext(x -> metricsCollector.messageReceived(destination))
-                            .doFinally(() -> {
-                                logger.info("Closing connection to " + destination);
-                                try {
-                                    mapDestinationToListeners.remove(destination);
-                                    doUnsubscribe(destination);
-                                    metricsCollector.subscriptionDestroyed(destination);
-                                } catch (Throwable t) {
-                                    logger.error("An error occurred, trying to close the connection to " + destination,t);
-                                }
-                            })
-                            .share();
-                });
-
-        return source.toFlowable(backpressureStrategy);
-    }
+    public abstract Flowable<IncomingMessage<InternalMessageType, DestinationType, TransportSpecificInfoType>>
+        messages(DestinationType destination);
 
 }

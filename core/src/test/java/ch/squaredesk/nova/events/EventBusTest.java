@@ -17,6 +17,9 @@ import io.reactivex.BackpressureStrategy;
 import io.reactivex.Flowable;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.functions.Consumer;
+import io.reactivex.schedulers.Schedulers;
+import io.reactivex.subjects.PublishSubject;
+import io.reactivex.subjects.Subject;
 import io.reactivex.subscribers.TestSubscriber;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -26,6 +29,7 @@ import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
@@ -41,6 +45,124 @@ public class EventBusTest {
                 "test",
                 new EventBusConfig(BackpressureStrategy.BUFFER, false),
                 new Metrics());
+    }
+
+    private class Publisher extends Thread {
+        private final int numEvents;
+        private final Subject<Long> subject;
+        private final long sleepTime;
+        private final TimeUnit sleepTimeUnit;
+
+        private Publisher(int numEvents, Subject<Long> subject, long sleepTime, TimeUnit sleepTimeUnit) {
+            super("Publisher");
+            this.sleepTime = sleepTime;
+            this.sleepTimeUnit = sleepTimeUnit;
+            this.numEvents = numEvents;
+            this.subject = subject;
+            setDaemon(true);
+        }
+
+        @Override
+        public void run() {
+            long start = System.currentTimeMillis();
+            for (int i = 0; i < numEvents; i++) {
+                if (sleepTime>0) {
+                    try {
+                        sleepTimeUnit.sleep(sleepTime);
+                    } catch (InterruptedException e) {
+                    }
+                }
+                subject.onNext((long)i);
+            }
+            double time = (System.currentTimeMillis() - start) / 1000.0;
+            System.out.println("Publisher finished after " + time + " seconds");
+            subject.onComplete();
+        }
+    }
+
+    @Test
+    void rxFunGenerate() throws Exception {
+        long numEvents = 200000;
+        Flowable<Long> f = Flowable.generate(
+                () -> new AtomicLong(),
+                (counter, emitter) -> {
+                    long l = counter.incrementAndGet();
+                    if (l == numEvents) emitter.onComplete();
+                    else emitter.onNext(l);
+                    return counter;
+                }
+        );
+        f = f
+                .subscribeOn(Schedulers.io())
+                .share()
+                ;
+
+        CountDownLatch mainLatch = new CountDownLatch(1);
+
+        AtomicInteger counter1 = new AtomicInteger();
+        AtomicInteger counter2 = new AtomicInteger();
+        Disposable subs1 = f
+                .observeOn(Schedulers.newThread(), false, 5)
+                .subscribe(x -> {
+                            System.out.println("1: got " + x);
+                            counter1.incrementAndGet();
+                            Thread.sleep(100);
+                        })
+                ;
+        Disposable subs2 = f
+                .onBackpressureLatest()
+                .observeOn(Schedulers.newThread(), false, 2)
+                .subscribe(x -> {
+                            System.out.println("2: got " + x);
+                            counter2.incrementAndGet();
+                            if (x == numEvents-1) mainLatch.countDown();
+                            Thread.sleep(3000);
+                        })
+                ;
+
+
+        mainLatch.await();
+
+        System.out.println("Number of events received 1: " + counter1.get());
+        System.out.println("Number of events received 2: " + counter2.get());
+    }
+
+    @Test
+    void rxFun() throws Exception {
+        PublishSubject<Long> subject = PublishSubject.create();
+        int numEvents = 200000;
+        Publisher publisher = new Publisher(numEvents, subject, 0, TimeUnit.MILLISECONDS);
+
+        CountDownLatch mainLatch = new CountDownLatch(1);
+
+        AtomicInteger counter1 = new AtomicInteger();
+        AtomicInteger counter2 = new AtomicInteger();
+        Disposable subs1 = subject
+                .toFlowable(BackpressureStrategy.BUFFER)
+                .observeOn(Schedulers.newThread(), false, 5)
+                .subscribe(x -> {
+                            System.out.println("1: got " + x);
+                            counter1.incrementAndGet();
+                            Thread.sleep(100);
+                        })
+                ;
+        Disposable subs2 = subject
+                .toFlowable(BackpressureStrategy.LATEST)
+                .observeOn(Schedulers.newThread(), false, 2)
+                .subscribe(x -> {
+                            System.out.println("2: got " + x);
+                            counter2.incrementAndGet();
+                            if (x == numEvents-1) mainLatch.countDown();
+                            Thread.sleep(300);
+                        })
+                ;
+
+
+        publisher.start();
+        mainLatch.await();
+
+        System.out.println("Number of events received 1: " + counter1.get());
+        System.out.println("Number of events received 2: " + counter2.get());
     }
 
     @Test

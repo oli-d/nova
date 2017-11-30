@@ -15,6 +15,8 @@ import ch.squaredesk.nova.comm.retrieving.IncomingMessageDetails;
 import ch.squaredesk.nova.comm.retrieving.MessageReceiver;
 import ch.squaredesk.nova.comm.retrieving.MessageUnmarshaller;
 import ch.squaredesk.nova.metrics.Metrics;
+import io.reactivex.BackpressureStrategy;
+import io.reactivex.Flowable;
 import io.reactivex.Observable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -41,6 +43,10 @@ public class JmsMessageReceiver<InternalMessageType>
         this.messageDetailsCreator = new JmsMessageDetailsCreator();
     }
 
+    @Override
+    public Flowable<IncomingMessage<InternalMessageType, Destination, JmsSpecificInfo>> messages(Destination destination, BackpressureStrategy backpressureStrategy) {
+        return null;
+    }
 
     @Override
     public Observable<IncomingMessage<InternalMessageType, Destination, JmsSpecificInfo>>

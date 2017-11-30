@@ -10,19 +10,23 @@
 
 package ch.squaredesk.nova.comm.jms;
 
+import ch.squaredesk.nova.comm.retrieving.IncomingMessage;
+import io.reactivex.BackpressureStrategy;
+import io.reactivex.Flowable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.jms.*;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 
 class JmsObjectRepository {
     private final Logger logger = LoggerFactory.getLogger(JmsObjectRepository.class);
 
-    private final Map<String, MessageConsumer> mapDestinationIdToMessageConsumer = new HashMap<>();
-    private final Map<String, MessageProducer> mapDestinationIdToMessageProducer = new HashMap<>();
+    private final Map<String, MessageConsumer> mapDestinationIdToMessageConsumer = new ConcurrentHashMap<>();
+    private final Map<String, MessageProducer> mapDestinationIdToMessageProducer = new ConcurrentHashMap<>();
 
     private Session producerSession;
     private Session consumerSession;
@@ -52,6 +56,10 @@ class JmsObjectRepository {
             }
         }
         return tempQueue;
+    }
+
+    public Flowable<IncomingMessage<InternalMessageType, Destination, JmsSpecificInfo>> messages(Destination destination, BackpressureStrategy backpressureStrategy) {
+        return null;
     }
 
     MessageConsumer createMessageConsumer(Destination destination) throws JMSException {

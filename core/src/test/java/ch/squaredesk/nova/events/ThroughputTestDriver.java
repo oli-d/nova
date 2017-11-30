@@ -48,7 +48,6 @@ public class ThroughputTestDriver {
     }
 
     public void go (EventBus eventBus) throws Exception {
-        Scheduler scheduler = Schedulers.io();
         CountDownLatch cdl = new CountDownLatch(numEventsTotal);
 
         for (int i = 0; i < numSubscribersPerTopic; i++) {

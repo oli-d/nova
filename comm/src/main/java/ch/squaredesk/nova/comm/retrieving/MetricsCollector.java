@@ -16,7 +16,7 @@ import com.codahale.metrics.Meter;
 
 import static java.util.Objects.requireNonNull;
 
-class MetricsCollector {
+public class MetricsCollector {
     private final Metrics metrics;
     private final String identifierPrefix;
     private final Meter totalNumberOfReceivedMessages;

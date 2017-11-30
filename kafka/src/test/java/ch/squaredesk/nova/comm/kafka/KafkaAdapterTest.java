@@ -76,7 +76,7 @@ class KafkaAdapterTest {
         AtomicInteger counter = new AtomicInteger(0);
         CountDownLatch cdl = new CountDownLatch(2);
         List<String> messages = new ArrayList<>();
-        Disposable subscription1 = sut.messages(topic, BackpressureStrategy.BUFFER).subscribe(
+        Disposable subscription1 = sut.messages(topic).subscribe(
             x -> {
                 messages.add(x);
                 counter.incrementAndGet();
@@ -193,7 +193,7 @@ class KafkaAdapterTest {
         List<String> messages = new ArrayList<>();
         CountDownLatch cdl = new CountDownLatch(3);
 
-        sut.messages(topic, BackpressureStrategy.BUFFER).subscribe(msg -> {
+        sut.messages(topic).subscribe(msg -> {
             messages.add(msg);
             cdl.countDown();
         });
@@ -239,7 +239,7 @@ class KafkaAdapterTest {
         List<String> messages = new ArrayList<>();
         CountDownLatch cdl = new CountDownLatch(6);
 
-        sut.messages(topic, BackpressureStrategy.BUFFER).subscribe(msg -> {
+        sut.messages(topic).subscribe(msg -> {
             messages.add(msg);
             cdl.countDown();
         });

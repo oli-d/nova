@@ -33,6 +33,8 @@ class KafkaObjectFactoryTest {
     private Properties consumerProps;
     private Properties producerProps;
 
+    // FIXME
+    /*
     @BeforeEach
     void setup() {
         consumerProps = new Properties();

@@ -11,7 +11,7 @@
 package ch.squaredesk.nova.comm.kafka;
 
 import ch.squaredesk.nova.comm.CommAdapterBuilder;
-import io.reactivex.BackpressureStrategy;
+import ch.squaredesk.nova.comm.retrieving.IncomingMessage;
 import io.reactivex.Completable;
 import io.reactivex.Flowable;
 import io.reactivex.Scheduler;
@@ -35,17 +35,14 @@ public class KafkaAdapter<InternalMessageType> {
 
     private final KafkaMessageSender<InternalMessageType> messageSender;
     private final KafkaMessageReceiver<InternalMessageType> messageReceiver;
-    private final BackpressureStrategy defaultBackpressureStrategy;
     private final KafkaObjectFactory kafkaObjectFactory;
 
 
     KafkaAdapter(KafkaMessageSender<InternalMessageType> messageSender,
                  KafkaMessageReceiver<InternalMessageType> messageReceiver,
-                 BackpressureStrategy defaultBackpressureStrategy,
                  KafkaObjectFactory kafkaObjectFactory) {
         this.messageReceiver = messageReceiver;
         this.messageSender = messageSender;
-        this.defaultBackpressureStrategy = defaultBackpressureStrategy;
         this.kafkaObjectFactory = kafkaObjectFactory;
     }
 
@@ -72,14 +69,9 @@ public class KafkaAdapter<InternalMessageType> {
     //                              //
     //////////////////////////////////
     public Flowable<InternalMessageType> messages (String destination) {
-        return messages(destination, defaultBackpressureStrategy);
+        return messageReceiver.messages(destination).map(incomingMessage -> incomingMessage.message);
     }
 
-    public Flowable<InternalMessageType> messages (
-            String destination, BackpressureStrategy backpressureStrategy) {
-        return this.messageReceiver.messages(destination, backpressureStrategy)
-                .map(incomingMessage -> incomingMessage.message);
-    }
 
     /////////////////////////
     //                     //
@@ -87,7 +79,7 @@ public class KafkaAdapter<InternalMessageType> {
     //                     //
     /////////////////////////
     public void shutdown() {
-        kafkaObjectFactory.shutdown();
+        messageReceiver.shutdown();
         logger.info("KafkaAdapter shut down");
     }
 
@@ -104,7 +96,6 @@ public class KafkaAdapter<InternalMessageType> {
     public static class Builder<InternalMessageType> extends CommAdapterBuilder<InternalMessageType, KafkaAdapter<InternalMessageType>>{
         private String serverAddress;
         private String identifier;
-        private BackpressureStrategy defaultBackpressureStrategy = BackpressureStrategy.BUFFER;
         private KafkaMessageSender<InternalMessageType> messageSender;
         private KafkaMessageReceiver<InternalMessageType> messageReceiver;
         private KafkaObjectFactory kafkaObjectFactory;
@@ -160,11 +151,6 @@ public class KafkaAdapter<InternalMessageType> {
             return this;
         }
 
-        public Builder<InternalMessageType> setDefaultBackpressureStrategy(BackpressureStrategy defaultBackpressureStrategy) {
-            this.defaultBackpressureStrategy = defaultBackpressureStrategy;
-            return this;
-        }
-
         public void validate() {
             requireNonNull(serverAddress,"serverAddress must be provided");
             requireNonNull(messageUnmarshaller,"messageUnmarshaller must be provided");
@@ -197,11 +183,10 @@ public class KafkaAdapter<InternalMessageType> {
             setPropertyIfNotPresent(producerProperties, ProducerConfig.CLIENT_ID_CONFIG, clientId);
 
             kafkaObjectFactory = new KafkaObjectFactory(this.consumerProperties, this.producerProperties);
-            messageReceiver = new KafkaMessageReceiver<>(identifier, kafkaObjectFactory, subscriptionScheduler, messageUnmarshaller, metrics);
+            messageReceiver = new KafkaMessageReceiver<>(identifier, kafkaObjectFactory, messageUnmarshaller, metrics);
             messageSender = new KafkaMessageSender<>(identifier, kafkaObjectFactory, messageMarshaller, metrics);
             return new KafkaAdapter<>(this.messageSender,
                     this.messageReceiver,
-                    this.defaultBackpressureStrategy,
                     this.kafkaObjectFactory);
         }
 

@@ -15,17 +15,18 @@ import ch.squaredesk.nova.comm.retrieving.IncomingMessageDetails;
 import ch.squaredesk.nova.comm.retrieving.MessageReceiver;
 import ch.squaredesk.nova.comm.retrieving.MessageUnmarshaller;
 import ch.squaredesk.nova.metrics.Metrics;
+import io.reactivex.BackpressureStrategy;
+import io.reactivex.Flowable;
 import io.reactivex.Observable;
 import io.reactivex.Scheduler;
+import io.reactivex.schedulers.Schedulers;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.List;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
 public class KafkaMessageReceiver<InternalMessageType>
@@ -33,68 +34,91 @@ public class KafkaMessageReceiver<InternalMessageType>
 
     private final Logger logger = LoggerFactory.getLogger(KafkaMessageReceiver.class);
 
+    final Map<String, Flowable<IncomingMessage<InternalMessageType, String, KafkaSpecificInfo>>> topicToPoller;
+
     private final KafkaObjectFactory kafkaObjectFactory;
-    private final Scheduler schedulerToSubscribeOn;
 
     KafkaMessageReceiver(String identifier,
                          KafkaObjectFactory kafkaObjectFactory,
-                         Scheduler schedulerToSubscribeOn,
                          MessageUnmarshaller<String, InternalMessageType> messageUnmarshaller,
                          Metrics metrics) {
         super(identifier, messageUnmarshaller, metrics);
         this.kafkaObjectFactory = kafkaObjectFactory;
-        this.schedulerToSubscribeOn = schedulerToSubscribeOn;
+        this.topicToPoller = new ConcurrentHashMap<>();
     }
 
-
-    private List<IncomingMessage<InternalMessageType, String, KafkaSpecificInfo>> convert(ConsumerRecords<String, String> records) {
-        if (records == null || records.isEmpty()) {
-            return Collections.emptyList();
-        }
-
-        List<IncomingMessage<InternalMessageType, String, KafkaSpecificInfo>> returnValue = new ArrayList<>();
-
-        Iterator<ConsumerRecord<String, String>> iterator = records.iterator();
-        while (iterator.hasNext()) {
-            ConsumerRecord<String,String> record = iterator.next();
-            try {
-                InternalMessageType internalMessage = messageUnmarshaller.unmarshal(record.value());
-                // FIXME: which data?
-                KafkaSpecificInfo kafkaSpecificInfo = new KafkaSpecificInfo();
-                IncomingMessageDetails<String, KafkaSpecificInfo> messageDetails = new IncomingMessageDetails.Builder<String, KafkaSpecificInfo>()
-                        .withDestination(record.topic())
-                        .withTransportSpecificDetails(kafkaSpecificInfo)
-                        .build();
-
-                returnValue.add(new IncomingMessage<>(internalMessage,messageDetails));
-            } catch (Throwable t) {
-                logger.error("Unable to parse incoming message " + record, t);
-            }
-        }
-        return returnValue;
-    }
-
-    @Override
-    public Observable<IncomingMessage<InternalMessageType, String, KafkaSpecificInfo>>
-        doSubscribe(String destination) {
-
-        return Observable.<IncomingMessage<InternalMessageType, String, KafkaSpecificInfo>>create(subscription -> {
-            long pollTimeout = 1; // FIXME: field
-            TimeUnit pollTimeUnit = TimeUnit.SECONDS;  // FIXME: field
-            KafkaPoller kafkaPoller = kafkaObjectFactory.pollerForTopic(destination, pollTimeout, pollTimeUnit);
-            kafkaPoller.setRecordsConsumer(records -> {
-                List<IncomingMessage<InternalMessageType, String, KafkaSpecificInfo>> incomingMessages = convert(records);
-                incomingMessages.forEach(message -> subscription.onNext(message));
+    public Flowable<InternalMessageType> unmarshall (ConsumerRecords<String, String> consumerRecords) {
+        return Flowable.create(s -> {
+            consumerRecords.forEach(record -> {
+                try {
+                    InternalMessageType internalMessage = messageUnmarshaller.unmarshal(record.value());
+                    s.onNext(internalMessage);
+                } catch (Throwable t) {
+                    // FIXME: metricsCollector.unparsableMessageReceived(destination, record.value());
+                    logger.error("Unable to parse incoming message " + record, t);
+                }
             });
-            kafkaPoller.start();
-            logger.info("Subscribed to topic " + destination);
-        }).subscribeOn(schedulerToSubscribeOn);
+            s.onComplete();
+        }, BackpressureStrategy.BUFFER);
     }
 
     @Override
-    protected void doUnsubscribe(String destination)  {
-        kafkaObjectFactory.destroyPollerForTopic(destination);
-        logger.info("Unsubscribed from topic " + destination);
+    public Flowable<IncomingMessage<InternalMessageType, String, KafkaSpecificInfo>> messages (String destination) {
+        Objects.requireNonNull(destination, "destination must not be null");
+        Objects.requireNonNull(messageUnmarshaller, "unmarshaller must not be null");
+
+        long pollTimeout = 1; // FIXME: field
+        TimeUnit pollTimeUnit = TimeUnit.SECONDS;  // FIXME: field
+
+        return topicToPoller.computeIfAbsent(destination, key -> {
+            Flowable<ConsumerRecords<String, String>> rawMessages = Flowable.generate(
+                    () -> kafkaObjectFactory.consumerForTopic(key),
+                    (consumer, emitter) -> {
+                        ConsumerRecords<String, String> consumerRecords = null;
+                        do {
+                            consumerRecords = consumer.poll(pollTimeUnit.toMillis(pollTimeout));
+                        } while (consumerRecords == null);
+                        // FIXME: additional condition to break in case of shutdown - check and call onComplete()
+                        emitter.onNext(consumerRecords);
+                    },
+                    consumer -> {
+                        topicToPoller.remove(destination);
+                        consumer.close();
+                    }
+            );
+            return rawMessages
+                    .subscribeOn(Schedulers.io())
+                    .concatMap(this::unmarshall)
+                    .map(message -> {
+                        // FIXME: which data?
+                        KafkaSpecificInfo kafkaSpecificInfo = new KafkaSpecificInfo();
+                        IncomingMessageDetails<String, KafkaSpecificInfo> messageDetails = new IncomingMessageDetails.Builder<String, KafkaSpecificInfo>()
+                                .withDestination(destination)
+                                .withTransportSpecificDetails(kafkaSpecificInfo)
+                                .build();
+
+                        return new IncomingMessage<>(message, messageDetails);
+                    })
+                    .share();
+        });
     }
 
+    public void destroyPollerForTopic(String topic) {
+        // FIXME:
+    }
+
+    public void shutdown() {
+        // FIXME - to be implemented
+        Set<String> topicsCurrentlyListenedTo = new HashSet<>(topicToPoller.keySet());
+        for (String topic: topicsCurrentlyListenedTo) {
+            destroyPollerForTopic(topic);
+        }
+
+        /*
+        new HashSet<>(producers).forEach(p -> {
+            p.close(1, TimeUnit.SECONDS);
+            producers.remove(p);
+        });
+        */
+    }
 }
