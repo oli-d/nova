@@ -20,6 +20,8 @@ import javax.jms.Destination;
 import javax.jms.MessageProducer;
 import javax.jms.TextMessage;
 
+import java.util.function.Function;
+
 import static java.util.Objects.requireNonNull;
 
 class JmsMessageSender<InternalMessageType> extends MessageSender<Destination, InternalMessageType, String, JmsSpecificInfo> {

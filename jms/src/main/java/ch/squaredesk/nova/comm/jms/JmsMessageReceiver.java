@@ -31,81 +31,22 @@ public class JmsMessageReceiver<InternalMessageType>
 
     private final Logger logger = LoggerFactory.getLogger(JmsMessageReceiver.class);
 
-    private final JmsMessageDetailsCreator messageDetailsCreator;
     private final JmsObjectRepository jmsObjectRepository;
 
     JmsMessageReceiver(String identifier,
-                       JmsObjectRepository jmsObjectRepository,
+                       JmsObjectRepository<InternalMessageType> jmsObjectRepository,
                        MessageUnmarshaller<String, InternalMessageType> messageUnmarshaller,
                        Metrics metrics) {
         super(identifier, messageUnmarshaller, metrics);
         this.jmsObjectRepository = jmsObjectRepository;
-        this.messageDetailsCreator = new JmsMessageDetailsCreator();
     }
 
     @Override
-    public Flowable<IncomingMessage<InternalMessageType, Destination, JmsSpecificInfo>> messages(Destination destination, BackpressureStrategy backpressureStrategy) {
-        return null;
-    }
-
-    @Override
-    public Observable<IncomingMessage<InternalMessageType, Destination, JmsSpecificInfo>>
-        doSubscribe(Destination destination) {
-
-        return Observable.<IncomingMessage<InternalMessageType, Destination, JmsSpecificInfo>>create(subscription -> {
-            logger.info("Creating connection to " + destination);
-            try {
-                MessageConsumer consumer = jmsObjectRepository.createMessageConsumer(destination);
-                if (consumer.getMessageListener() != null) {
-                    logger.warn("Destination " + destination + " already wired up with listener, not doing anything!?!?");
-                } else {
-                    consumer.setMessageListener(jmsMessage -> {
-                        if (!(jmsMessage instanceof TextMessage)) {
-                            logger.error("Unsupported type of incoming message " + jmsMessage.getClass());
-                            return;
-                        }
-
-                        String transportMessage;
-                        try {
-                            transportMessage = ((TextMessage) jmsMessage).getText();
-                        } catch (Exception e) {
-                            logger.error("Unable to read incoming message " + jmsMessage, e);
-                            return;
-                        }
-
-                        InternalMessageType internalMessage;
-                        try {
-                            internalMessage = messageUnmarshaller.unmarshal(transportMessage);
-                        } catch (Exception e) {
-                            logger.error("Unable to unmarshal incoming message " + transportMessage, e);
-                            return;
-                        }
-
-                        IncomingMessageDetails<Destination, JmsSpecificInfo> messageDetails =
-                                messageDetailsCreator.createMessageDetailsFor(jmsMessage);
-                        IncomingMessage<InternalMessageType,Destination,JmsSpecificInfo> incomingMessage =
-                                new IncomingMessage<>(internalMessage,messageDetails);
-
-                        subscription.onNext(incomingMessage);
-                    });
-                }
-            } catch (Throwable t) {
-                subscription.onError(t);
-            }
-        }).subscribeOn(JmsAdapter.jmsSubscriptionScheduler);
-
-        // FIXME: threading
-
-
-    }
-
-    @Override
-    protected void doUnsubscribe(Destination destination)  {
+    public Flowable<IncomingMessage<InternalMessageType, Destination, JmsSpecificInfo>> messages(Destination destination) {
         try {
-            jmsObjectRepository.destroyMessageConsumer(destination);
+            return jmsObjectRepository.messages(destination, messageUnmarshaller);
         } catch (JMSException e) {
-            logger.error("Error, trying to unsubscribe from destination " + destination, e);
+            return Flowable.error(e);
         }
     }
-
 }

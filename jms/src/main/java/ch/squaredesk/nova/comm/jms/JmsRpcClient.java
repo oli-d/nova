@@ -47,7 +47,7 @@ public class JmsRpcClient<InternalMessageType> extends RpcClient<Destination, In
 
         // listen to RPC reply. This must be done BEFORE sending the request, otherwise we could miss a very fast response
         // if the Observable is hot
-        Single replySingle = messageReceiver.messages(messageSendingInfo.transportSpecificInfo.replyDestination, BackpressureStrategy.BUFFER)
+        Single replySingle = messageReceiver.messages(messageSendingInfo.transportSpecificInfo.replyDestination)
                 .filter(incomingMessage ->
                         incomingMessage.details.transportSpecificDetails != null &&
                         messageSendingInfo.transportSpecificInfo.correlationId.equals(incomingMessage.details.transportSpecificDetails.correlationId))
