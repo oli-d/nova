@@ -8,7 +8,7 @@
  *   https://squaredesk.ch/license/oss/LICENSE
  */
 
-package ch.squaredesk.nova.comm.http.annotation;
+package ch.squaredesk.nova.comm.rest.annotation;
 
 import ch.squaredesk.nova.Nova;
 import ch.squaredesk.nova.comm.http.HttpServerConfiguration;
@@ -66,7 +66,7 @@ public class RestEnablingConfiguration {
 
 
     @Bean
-    ch.squaredesk.nova.comm.http.annotation.RestServerStarter restServerStarter() {
+    ch.squaredesk.nova.comm.rest.annotation.RestServerStarter restServerStarter() {
         return new RestServerStarter();
     }
 
