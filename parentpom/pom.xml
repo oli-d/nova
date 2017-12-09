@@ -44,8 +44,8 @@
         </dependency>
         <dependency>
             <groupId>org.hamcrest</groupId>
-            <artifactId>hamcrest-junit</artifactId>
             <version>${hamcrest.version}</version>
+            <artifactId>hamcrest-junit</artifactId>
             <scope>test</scope>
             <exclusions>
                 <exclusion>
@@ -53,6 +53,11 @@
                     <artifactId>junit</artifactId>
                 </exclusion>
             </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>ch.squaredesk.nova</groupId>
+            <artifactId>test-utils</artifactId>
+            <scope>test</scope>
         </dependency>
 
         <!--logging-->
