@@ -55,6 +55,7 @@ public class JmsMessageReceiver<InternalMessageType>
             Flowable<IncomingMessage<InternalMessageType, Destination, JmsSpecificInfo>> f = Flowable.generate(
                     () -> {
                         logger.info("Opening connection to destination " + destinationId);
+                        metricsCollector.subscriptionCreated(destinationId);
                         return jmsObjectRepository.createMessageConsumer(destination);
                     },
                     (consumer, emitter) -> {
@@ -105,6 +106,7 @@ public class JmsMessageReceiver<InternalMessageType>
                             emitter.onNext(incomingMessage);
                     },
                     consumer -> {
+                        metricsCollector.subscriptionDestroyed(destinationId);
                         jmsObjectRepository.destroyConsumer(consumer);
                         mapDestinationIdToMessageStream.remove(destinationId);
                         logger.info("Closed connection to destination " + destinationId);

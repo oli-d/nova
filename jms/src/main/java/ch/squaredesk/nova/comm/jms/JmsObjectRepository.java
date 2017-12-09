@@ -110,11 +110,11 @@ class JmsObjectRepository {
     }
 
     void shutdown() {
-        mapDestinationIdToMessageProducer.entrySet().forEach(entry -> {
+        mapDestinationIdToMessageProducer.forEach((key, value) -> {
             try {
-                entry.getValue().close();
+                value.close();
             } catch (Exception e) {
-                logger.warn("Unable to close producer for destination " + entry.getKey(), e);
+                logger.warn("Unable to close producer for destination " + key, e);
             }
         });
         mapDestinationIdToMessageProducer.clear();
