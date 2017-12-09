@@ -46,8 +46,7 @@ public class JmsRpcServer<InternalMessageType> extends RpcServer<Destination, In
 
     @Override
     public <RequestType extends InternalMessageType, ReplyType extends InternalMessageType>
-        Flowable<RpcInvocation<RequestType, ReplyType, JmsSpecificInfo>> requests(Destination destination,
-                                                                 BackpressureStrategy backpressureStrategy) {
+        Flowable<RpcInvocation<RequestType, ReplyType, JmsSpecificInfo>> requests(Destination destination) {
         return messageReceiver.messages(destination)
                 .filter(this::isRpcRequest)
                 .map(incomingMessage -> {

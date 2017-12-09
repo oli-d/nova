@@ -19,6 +19,7 @@ import io.reactivex.subscribers.TestSubscriber;
 import org.apache.activemq.ActiveMQConnectionFactory;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -154,7 +155,7 @@ class JmsAdapterTest {
 
         jmsHelper.sendMessage(queue, "Three");
 
-        cdlHolder2[0].await(1, SECONDS);
+        cdlHolder2[0].await(5, SECONDS);
         assertThat(cdlHolder2[0].getCount(), is(0L));
         assertThat(messages, contains("One", "Two"));
         assertThat(messages2, contains("Three"));

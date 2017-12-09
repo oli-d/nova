@@ -10,26 +10,20 @@
 
 package ch.squaredesk.nova.comm.jms;
 
-import ch.squaredesk.nova.comm.retrieving.IncomingMessage;
-import ch.squaredesk.nova.comm.retrieving.IncomingMessageDetails;
-import ch.squaredesk.nova.comm.retrieving.MessageUnmarshaller;
-import io.reactivex.Flowable;
-import io.reactivex.schedulers.Schedulers;
+import io.reactivex.Observable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.jms.*;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
-class JmsObjectRepository<InternalMessageType> {
+class JmsObjectRepository {
     private final Logger logger = LoggerFactory.getLogger(JmsObjectRepository.class);
 
-    private final Map<String, Flowable<IncomingMessage<InternalMessageType, Destination, JmsSpecificInfo>>>
-            mapDestinationIdToMessageConsumer = new ConcurrentHashMap<>();
     private final Map<String, MessageProducer> mapDestinationIdToMessageProducer = new ConcurrentHashMap<>();
-    private final JmsMessageDetailsCreator messageDetailsCreator = new JmsMessageDetailsCreator();
 
     private Session producerSession;
     private Session consumerSession;
@@ -61,117 +55,51 @@ class JmsObjectRepository<InternalMessageType> {
         return tempQueue;
     }
 
-    public Flowable<IncomingMessage<InternalMessageType, Destination, JmsSpecificInfo>> messages(
-            Destination destination, MessageUnmarshaller<String, InternalMessageType> messageUnmarshaller) throws JMSException {
-
-        String destinationId = destinationIdGenerator.apply(destination);
-        // FIXME: cast
-        return mapDestinationIdToMessageConsumer.computeIfAbsent(destinationId, key -> {
-            Flowable<IncomingMessage<InternalMessageType, Destination, JmsSpecificInfo>> f = Flowable.generate(
-                    () -> {
-                        logger.info("Opening connection to destination " + destinationId);
-                        return createMessageConsumer(destination);
-                    },
-                    (consumer, emitter) -> {
-                        IncomingMessage<InternalMessageType, Destination, JmsSpecificInfo> incomingMessage = null;
-                        while (incomingMessage == null) {
-                            Message m = consumer.receive(); // FIXME: how do we signal that we do not want to receive any longer???
-                            if (m == null) {
-                                // we assume the consumer is closed
-                                emitter.onComplete();
-                                return;
-                            }
-
-                            if (!(m instanceof TextMessage)) {
-                                logger.error("Unsupported type of incoming message " + m);
-                                // TODO: metrics
-                                continue;
-                            }
-
-                            String transportMessage;
-                            try {
-                                transportMessage = ((TextMessage) m).getText();
-                            } catch (Exception e) {
-                                logger.error("Unable to read incoming message " + m, e);
-                                // TODO: metrics
-                                continue;
-                            }
-
-                            InternalMessageType internalMessage = null;
-                            try {
-                                internalMessage = messageUnmarshaller.unmarshal(transportMessage);
-                            } catch (Exception e) {
-                                logger.error("Unable to unmarshal incoming message " + transportMessage, e);
-                                // TODO: metrics
-                                continue;
-                            }
-
-                            IncomingMessageDetails<Destination, JmsSpecificInfo> messageDetails =
-                                    messageDetailsCreator.createMessageDetailsFor(m);
-                            incomingMessage = new IncomingMessage<>(internalMessage, messageDetails);
-                        }
-                        if (incomingMessage != null)
-                            emitter.onNext(incomingMessage);
-                    },
-                    consumer -> {
-                        mapDestinationIdToMessageConsumer.remove(destinationId);
-                        consumer.close();
-                        logger.info("Closed connection to destination " + destinationId);
-                    }
-            );
-            return f.subscribeOn(Schedulers.io())
-                    .share();
-        });
-    }
 
     MessageConsumer createMessageConsumer(Destination destination) throws JMSException {
-        MessageConsumer consumer = consumerSession.createConsumer(destination);
-        return consumer;
+        return consumerSession.createConsumer(destination);
     }
 
-
-    MessageProducer createMessageProducer(Destination destination) throws JMSException {
-        String destinationId = destinationIdGenerator.apply(destination);
-        MessageProducer producer = mapDestinationIdToMessageProducer.get(destinationId);
-        if (producer == null) {
-            producer = producerSession.createProducer(destination);
-            mapDestinationIdToMessageProducer.put(destinationId, producer);
-        }
-        return producer;
+    String idFor (Destination destination) {
+        return destinationIdGenerator.apply(destination);
     }
+
+    void destroyConsumer(MessageConsumer consumer) {
+        // we defer the closing of the MessageProducer (for the magical amount of 1 second"
+        // because we ran into issues (which we do not understand at all) when we close a consumer
+        // and very quickly afterwards create a new consumer for the same destination. This is a common
+        // scenario during testing. In such a case it happened, that the new consumer never returned any
+        // messages. Our theory is that for some reason the ActiveMQ broker runs into timing issues. We
+        // do not have an explanation for what happens, but we saw, that if we delay the closing of the
+        // no longer needed consumer, we did not experience any problems.
+        Observable.timer(1, TimeUnit.SECONDS)
+                .subscribe(x -> {
+                    try {
+                        TimeUnit.SECONDS.sleep(1);
+                        consumer.close();
+                    } catch (Exception e) {
+                        // noop, we did our best
+                    }
+                });
+    }
+
 
     TextMessage createTextMessage() throws JMSException {
         return producerSession.createTextMessage();
     }
 
-
-    void destroyMessageProducer(Destination destination) throws JMSException {
+    MessageProducer createMessageProducer(Destination destination) {
         String destinationId = destinationIdGenerator.apply(destination);
-        MessageProducer producer = mapDestinationIdToMessageProducer.remove(destinationId);
-        if (producer != null) {
-            try {
-                producer.close();
-            } catch (Exception e) {
-                logger.warn("Unable to close producer for destination " + destinationId, e);
-            }
-        }
+        return mapDestinationIdToMessageProducer.computeIfAbsent(destinationId,
+                key -> {
+                    try {
+                        return producerSession.createProducer(destination);
+                    } catch (JMSException e) {
+                        throw new RuntimeException(e);
+                    }
+                });
     }
 
-
-    void destroyMessageConsumer(Destination destination) throws JMSException {
-        // FIXME: implememnt
-        /*
-        String destinationId = destinationIdGenerator.apply(destination);
-        MessageConsumer consumer = mapDestinationIdToMessageConsumer.remove(destinationId);
-        if (consumer != null) {
-            try {
-                consumer.close();
-            } catch (Exception e) {
-                logger.warn("Unable to close producer for destination " + destinationId, e);
-            }
-        }
-        */
-    }
 
     void start() throws JMSException {
         connection.start();
@@ -190,17 +118,6 @@ class JmsObjectRepository<InternalMessageType> {
             }
         });
         mapDestinationIdToMessageProducer.clear();
-        // FIXME: implememnt
-        /*
-        mapDestinationIdToMessageConsumer.entrySet().forEach(entry -> {
-            try {
-                entry.getValue().close();
-            } catch (Exception e) {
-                logger.warn("Unable to close consumer for destination " + entry.getKey(), e);
-            }
-        });
-        */
-        mapDestinationIdToMessageConsumer.clear();
         try {
             consumerSession.close();
         } catch (Exception e) {
