@@ -242,7 +242,7 @@ public class JmsAdapter<InternalMessageType> {
     }
 
     private static boolean exceptionSignalsDestinationDown(Throwable error) {
-        // TODO: is there a proper way to determine this???!?!?!?!
+        // TODO: is there a proper way to determine this???!?!?!?! Works for ActiveMQ, but how are other brokers behave?
         Function<Throwable, Boolean> testFunc = ex ->
                 (ex instanceof InvalidDestinationException) ||
                         (String.valueOf(ex).contains("does not exist"));
