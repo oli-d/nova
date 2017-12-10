@@ -35,7 +35,7 @@ class RpcServerTest {
 
         @Override
         public <RequestType extends String, ReplyType extends String> Flowable<RpcInvocation<RequestType, ReplyType, Void>>
-            requests(String destination, BackpressureStrategy backpressureStrategy) {
+            requests(String destination) {
             return Flowable.empty();
         }
     }

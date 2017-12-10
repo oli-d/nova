@@ -78,7 +78,7 @@ class SslTest {
         int numRequests = 5;
         String path = "/bla";
         CountDownLatch cdl = new CountDownLatch(numRequests);
-        Flowable<RpcInvocation<String, String, HttpSpecificInfo>> requests = sut.requests(path, BackpressureStrategy.BUFFER);
+        Flowable<RpcInvocation<String, String, HttpSpecificInfo>> requests = sut.requests(path);
         requests.subscribe(rpcInvocation -> {
             rpcInvocation.complete(" description " + rpcInvocation.transportSpecificInfo.parameters.get("p"));
             cdl.countDown();

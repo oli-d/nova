@@ -4,7 +4,6 @@ import ch.squaredesk.nova.comm.rpc.RpcInvocation;
 import ch.squaredesk.nova.comm.sending.MessageSendingInfo;
 import ch.squaredesk.nova.metrics.Metrics;
 import com.ning.http.client.AsyncHttpClient;
-import io.reactivex.BackpressureStrategy;
 import io.reactivex.Flowable;
 import org.glassfish.grizzly.http.server.HttpServer;
 import org.junit.jupiter.api.AfterEach;
@@ -55,15 +54,15 @@ class RpcServerTest {
     @Test
     void sutCannotBeCreatedWithoutUnmarshaller() {
         NullPointerException npe = assertThrows(NullPointerException.class,
-                () -> new RpcServer<String>(httpServer, s-> s, null, new Metrics()));
+                () -> new RpcServer<String>(httpServer, s->s, null, new Metrics()));
         assertThat(npe.getMessage(), is("messageUnmarshaller must not be null"));
     }
 
     @Test
     void subscriptionsCanBeMadeAfterServerStarted() throws Exception {
-        assertNotNull(sut.requests("/requests", BackpressureStrategy.BUFFER));
+        assertNotNull(sut.requests("/requests"));
         sut.start();
-        sut.requests("/failing", BackpressureStrategy.BUFFER);
+        sut.requests("/failing");
     }
 
     @Test
@@ -72,7 +71,7 @@ class RpcServerTest {
         int numRequests = 5;
         String path = "/bla";
         CountDownLatch cdl = new CountDownLatch(numRequests);
-        Flowable<RpcInvocation<String, String, HttpSpecificInfo>> requests = sut.requests(path, BackpressureStrategy.BUFFER);
+        Flowable<RpcInvocation<String, String, HttpSpecificInfo>> requests = sut.requests(path);
         requests.subscribe(rpcInvocation -> {
             rpcInvocation.complete(" description " + rpcInvocation.transportSpecificInfo.parameters.get("p"));
             cdl.countDown();

@@ -18,6 +18,7 @@ import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.ListenableFuture;
 import com.ning.http.client.Response;
 import io.reactivex.Single;
+import io.reactivex.exceptions.Exceptions;
 
 import java.net.URL;
 import java.util.concurrent.TimeUnit;
@@ -48,7 +49,6 @@ class RpcClient<InternalMessageType> extends ch.squaredesk.nova.comm.rpc.RpcClie
                                       long timeout, TimeUnit timeUnit) {
         requireNonNull(timeUnit, "timeUnit must not be null");
 
-        // TODO: threading?
         String requestAsString;
         try {
             requestAsString = request != null ? messageMarshaller.marshal(request) : null;
@@ -82,7 +82,7 @@ class RpcClient<InternalMessageType> extends ch.squaredesk.nova.comm.rpc.RpcClie
         Single<ReplyType> resultSingle = Single.fromFuture(resultFuture).map(response -> {
             int statusCode = response.getStatusCode();
             if (statusCode<200 || statusCode >= 300) {
-                // TODO: we should think about a better concept
+                // TODO: we need to think about a better concept
                 throw new RuntimeException("" + statusCode + " - " + response.getStatusText());
             }
             String responseBody = response.getResponseBody();

@@ -59,7 +59,6 @@ class HttpAdapterTest {
                 .sendGetRequest("http://cvf.bn.c")
                 .test();
         observer.await(5, SECONDS);
-        System.out.println(observer.errors());
         observer.assertError(Exception.class);
     }
 
