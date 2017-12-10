@@ -17,11 +17,10 @@ import ch.squaredesk.nova.comm.retrieving.MessageUnmarshaller;
 import ch.squaredesk.nova.metrics.Metrics;
 import io.reactivex.BackpressureStrategy;
 import io.reactivex.Flowable;
-import io.reactivex.Observable;
-import io.reactivex.Scheduler;
 import io.reactivex.schedulers.Schedulers;
-import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
+import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -29,23 +28,31 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
+import static java.util.Collections.singletonList;
+
 public class KafkaMessageReceiver<InternalMessageType>
         extends MessageReceiver<String, InternalMessageType, String, KafkaSpecificInfo> {
 
     private final Logger logger = LoggerFactory.getLogger(KafkaMessageReceiver.class);
+    private final Properties consumerProperties;
 
-    final Map<String, Flowable<IncomingMessage<InternalMessageType, String, KafkaSpecificInfo>>> topicToPoller;
-
-    private final KafkaObjectFactory kafkaObjectFactory;
+    final Map<String, Flowable<IncomingMessage<InternalMessageType, String, KafkaSpecificInfo>>> topicToMessageStream;
 
     KafkaMessageReceiver(String identifier,
-                         KafkaObjectFactory kafkaObjectFactory,
+                         Properties consumerProperties,
                          MessageUnmarshaller<String, InternalMessageType> messageUnmarshaller,
                          Metrics metrics) {
         super(identifier, messageUnmarshaller, metrics);
-        this.kafkaObjectFactory = kafkaObjectFactory;
-        this.topicToPoller = new ConcurrentHashMap<>();
+        this.consumerProperties = consumerProperties;
+        this.topicToMessageStream = new ConcurrentHashMap<>();
     }
+
+    Consumer<String, String> consumerForTopic(String topic) {
+        KafkaConsumer<String, String> kafkaConsumer = new KafkaConsumer<>(consumerProperties);
+        kafkaConsumer.subscribe(singletonList(topic));
+        return kafkaConsumer;
+    }
+
 
     public Flowable<InternalMessageType> unmarshall (ConsumerRecords<String, String> consumerRecords) {
         return Flowable.create(s -> {
@@ -54,7 +61,7 @@ public class KafkaMessageReceiver<InternalMessageType>
                     InternalMessageType internalMessage = messageUnmarshaller.unmarshal(record.value());
                     s.onNext(internalMessage);
                 } catch (Throwable t) {
-                    // FIXME: metricsCollector.unparsableMessageReceived(destination, record.value());
+                    metricsCollector.unparsableMessageReceived(record.topic());
                     logger.error("Unable to parse incoming message " + record, t);
                 }
             });
@@ -67,12 +74,16 @@ public class KafkaMessageReceiver<InternalMessageType>
         Objects.requireNonNull(destination, "destination must not be null");
         Objects.requireNonNull(messageUnmarshaller, "unmarshaller must not be null");
 
-        long pollTimeout = 1; // FIXME: field
-        TimeUnit pollTimeUnit = TimeUnit.SECONDS;  // FIXME: field
+        long pollTimeout = 1; // TODO: configurable
+        TimeUnit pollTimeUnit = TimeUnit.SECONDS;  // TODO: configurable
 
-        return topicToPoller.computeIfAbsent(destination, key -> {
+        return topicToMessageStream.computeIfAbsent(destination, key -> {
             Flowable<ConsumerRecords<String, String>> rawMessages = Flowable.generate(
-                    () -> kafkaObjectFactory.consumerForTopic(key),
+                    () -> {
+                        logger.info("Subscribing to " + destination);
+                        metricsCollector.subscriptionCreated(destination);
+                        return consumerForTopic(key);
+                    },
                     (consumer, emitter) -> {
                         ConsumerRecords<String, String> consumerRecords = null;
                         do {
@@ -82,15 +93,17 @@ public class KafkaMessageReceiver<InternalMessageType>
                         emitter.onNext(consumerRecords);
                     },
                     consumer -> {
-                        topicToPoller.remove(destination);
+                        topicToMessageStream.remove(destination);
+                        metricsCollector.subscriptionDestroyed(destination);
                         consumer.close();
+                        logger.info("Stopped listening to " + destination);
                     }
             );
             return rawMessages
                     .subscribeOn(Schedulers.io())
                     .concatMap(this::unmarshall)
                     .map(message -> {
-                        // FIXME: which data?
+                        // TODO: what kind of data is interesting for consumers?
                         KafkaSpecificInfo kafkaSpecificInfo = new KafkaSpecificInfo();
                         IncomingMessageDetails<String, KafkaSpecificInfo> messageDetails = new IncomingMessageDetails.Builder<String, KafkaSpecificInfo>()
                                 .withDestination(destination)
@@ -103,22 +116,12 @@ public class KafkaMessageReceiver<InternalMessageType>
         });
     }
 
-    public void destroyPollerForTopic(String topic) {
-        // FIXME:
-    }
-
     public void shutdown() {
-        // FIXME - to be implemented
-        Set<String> topicsCurrentlyListenedTo = new HashSet<>(topicToPoller.keySet());
-        for (String topic: topicsCurrentlyListenedTo) {
-            destroyPollerForTopic(topic);
-        }
-
-        /*
-        new HashSet<>(producers).forEach(p -> {
-            p.close(1, TimeUnit.SECONDS);
-            producers.remove(p);
-        });
-        */
+        // TODO - how do we stop the message streams? Is this needed at all?
+//        Set<String> topicsCurrentlyListenedTo = new HashSet<>(topicToMessageStream.keySet());
+//        for (String topic: topicsCurrentlyListenedTo) {
+//             destroyPollerForTopic(topic);
+//        }
+        topicToMessageStream.clear();
     }
 }

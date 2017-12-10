@@ -35,15 +35,12 @@ public class KafkaAdapter<InternalMessageType> {
 
     private final KafkaMessageSender<InternalMessageType> messageSender;
     private final KafkaMessageReceiver<InternalMessageType> messageReceiver;
-    private final KafkaObjectFactory kafkaObjectFactory;
 
 
     KafkaAdapter(KafkaMessageSender<InternalMessageType> messageSender,
-                 KafkaMessageReceiver<InternalMessageType> messageReceiver,
-                 KafkaObjectFactory kafkaObjectFactory) {
+                 KafkaMessageReceiver<InternalMessageType> messageReceiver) {
         this.messageReceiver = messageReceiver;
         this.messageSender = messageSender;
-        this.kafkaObjectFactory = kafkaObjectFactory;
     }
 
     /////////////////////////////////
@@ -98,7 +95,6 @@ public class KafkaAdapter<InternalMessageType> {
         private String identifier;
         private KafkaMessageSender<InternalMessageType> messageSender;
         private KafkaMessageReceiver<InternalMessageType> messageReceiver;
-        private KafkaObjectFactory kafkaObjectFactory;
         private Scheduler subscriptionScheduler;
         private Properties consumerProperties = new Properties();
         private Properties producerProperties = new Properties();
@@ -182,12 +178,9 @@ public class KafkaAdapter<InternalMessageType> {
             setPropertyIfNotPresent(producerProperties, ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
             setPropertyIfNotPresent(producerProperties, ProducerConfig.CLIENT_ID_CONFIG, clientId);
 
-            kafkaObjectFactory = new KafkaObjectFactory(this.consumerProperties, this.producerProperties);
-            messageReceiver = new KafkaMessageReceiver<>(identifier, kafkaObjectFactory, messageUnmarshaller, metrics);
-            messageSender = new KafkaMessageSender<>(identifier, kafkaObjectFactory, messageMarshaller, metrics);
-            return new KafkaAdapter<>(this.messageSender,
-                    this.messageReceiver,
-                    this.kafkaObjectFactory);
+            messageReceiver = new KafkaMessageReceiver<>(identifier, consumerProperties, messageUnmarshaller, metrics);
+            messageSender = new KafkaMessageSender<>(identifier, producerProperties, messageMarshaller, metrics);
+            return new KafkaAdapter<>(this.messageSender, this.messageReceiver);
         }
 
         private static void setPropertyIfNotPresent (Properties props, String key, String value) {

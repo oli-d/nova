@@ -10,6 +10,7 @@
 
 package ch.squaredesk.nova.comm.kafka;
 
+import ch.squaredesk.nova.metrics.Metrics;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.Producer;
@@ -28,100 +29,35 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-class KafkaObjectFactoryTest {
-    private Properties consumerProps;
-    private Properties producerProps;
+class KafkaMessageSenderTest {
+    Properties producerProps;
+    KafkaMessageSender<String> sut;
 
-    // FIXME
-    /*
     @BeforeEach
     void setup() {
-        consumerProps = new Properties();
-        consumerProps.put("bootstrap.servers","127.0.0.1:8888");
-        consumerProps.put("key.deserializer",StringDeserializer.class.getName());
-        consumerProps.put("value.deserializer", StringDeserializer.class.getName());
-        consumerProps.put("client.id", UUID.randomUUID().toString());
         producerProps = new Properties();
         producerProps.put("bootstrap.servers","127.0.0.1:8888");
         producerProps.put("key.serializer",StringSerializer.class.getName());
         producerProps.put("value.serializer", StringSerializer.class.getName());
         producerProps.put("client.id", UUID.randomUUID().toString());
 
-        sut = new KafkaObjectFactory(consumerProps, producerProps);
+        sut = new KafkaMessageSender<>("ID", producerProps, s->s, new Metrics());
     }
 
     @Test
-    void producerAlwaysReturnsNewInstance()  {
-        Producer p1 = sut.producer();
-        Producer p2 = sut.producer();
-        assertThat(p1, not(sameInstance(p2)));
-    }
-
-    @Test
-    void producerConsidersPassedProperties()  throws Exception {
-        Producer p = sut.producer();
-        assertTrue(p instanceof KafkaProducer);
-        ProducerConfig producerConfig = getProducerConfigFrom(p);
+    void sutConsidersPassedProperties()  throws Exception {
+        ProducerConfig producerConfig = getProducerConfigFrom(sut);
         assertThat(producerConfig.getString("client.id"), is(producerProps.get("client.id")));
     }
 
-    private ProducerConfig getProducerConfigFrom (Producer p) throws Exception {
-        Field f = KafkaProducer.class.getDeclaredField("producerConfig");
+    private static ProducerConfig getProducerConfigFrom (KafkaMessageSender<?> kafkaMessageSender) throws Exception {
+        Field f = KafkaMessageSender.class.getDeclaredField("producer");
+        f.setAccessible(true);
+        Producer p = (Producer)f.get(kafkaMessageSender);
+
+        f = KafkaProducer.class.getDeclaredField("producerConfig");
         f.setAccessible(true);
         return (ProducerConfig)f.get(p);
     }
 
-    private void askSutForPollers(int numPollers) throws Exception {
-        String[] topics = new String[numPollers];
-        for (int i = 0; i < topics.length; i++) {
-            topics[i] = "shutdownTestTopic" + i;
-        }
-        for (String topic: topics)  sut.pollerForTopic(topic, 1, TimeUnit.HOURS);
-    }
-
-    private void askSutForProducers(int numProducers) throws Exception {
-        for (int i = 0; i < numProducers; i++) {
-            sut.producer();
-        }
-    }
-
-    /*
-    @Test
-    void shutdownClosesAllOpenPollersAndProducers() throws Exception {
-        // first, we create a few pollers
-        int numPollers = 5;
-        askSutForPollers(numPollers);
-        assertThat(sut.topicToMessageStream.size(), is(numPollers));
-
-        // and producers
-        int numProducers = 5;
-        askSutForProducers(numProducers);
-        assertThat(sut.producers.size(), is(numProducers));
-
-        // then we replace those objects with our mocks
-        Set<String> topics = new HashSet<>(sut.topicToMessageStream.keySet());
-        for (String topic: topics) {
-            sut.topicToMessageStream.put(topic, new MyPollerMock());
-        }
-        sut.producers.clear();
-        for (int i = 0; i < numProducers; i++) {
-            sut.producers.add(new MyProducerMock());
-        }
-
-        // ask to shut down
-        sut.shutdown();
-
-        // and verify that shutdown shuts down each open poller and producer
-        for (KafkaPoller mock: sut.topicToMessageStream.values()) {
-            assertTrue(((MyPollerMock)mock).shutdown);
-        }
-        for (Producer mock: sut.producers) {
-            assertTrue(((MyProducerMock)mock).shutdown);
-        }
-
-        // and clears the caches
-        assertTrue(sut.topicToMessageStream.isEmpty());
-        assertTrue(sut.producers.isEmpty());
-    }
-    */
 }

@@ -15,8 +15,11 @@ import ch.squaredesk.nova.comm.sending.MessageSender;
 import ch.squaredesk.nova.comm.sending.MessageSendingInfo;
 import ch.squaredesk.nova.metrics.Metrics;
 import io.reactivex.Completable;
+import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerRecord;
+
+import java.util.Properties;
 
 import static java.util.Objects.requireNonNull;
 
@@ -24,13 +27,12 @@ class KafkaMessageSender<InternalMessageType> extends MessageSender<String, Inte
     private final Producer<String, String> producer;
 
     KafkaMessageSender(String identifier,
-                       KafkaObjectFactory kafkaObjectFactory,
+                       Properties producerProperties,
                        MessageMarshaller<InternalMessageType,String> messageMarshaller,
                        Metrics metrics) {
         super(identifier, messageMarshaller, metrics);
-        this.producer = kafkaObjectFactory.producer();
+        this.producer = new KafkaProducer<>(producerProperties);
     }
-
 
     @Override
     public Completable doSend(String message, MessageSendingInfo<String, KafkaSpecificInfo> sendingInfo) {

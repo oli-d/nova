@@ -11,9 +11,12 @@
 package ch.squaredesk.nova.comm.kafka;
 
 import ch.qos.logback.classic.Level;
+import ch.squaredesk.nova.metrics.Metrics;
 import com.github.charithe.kafka.EphemeralKafkaBroker;
 import io.reactivex.BackpressureStrategy;
+import io.reactivex.Completable;
 import io.reactivex.disposables.Disposable;
+import io.reactivex.observers.TestObserver;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.junit.jupiter.api.AfterEach;
@@ -25,6 +28,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Properties;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -184,6 +188,26 @@ class KafkaAdapterTest {
         cdl.await(10, SECONDS);
         assertThat(cdl.getCount(),is(1L)); // should have NOT seen "3"
         assertThat(messages, contains(1));
+    }
+
+    @Test
+    void messageMarshallingErrorOnSendForwardedToSubscriber() throws Exception {
+        sut = KafkaAdapter.builder(String.class)
+                .setServerAddress("127.0.0.1:" + KAFKA_PORT)
+                .setIdentifier("Test")
+                .addProducerProperty(ProducerConfig.BATCH_SIZE_CONFIG, "1")
+                .addConsumerProperty(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest")
+                .addConsumerProperty(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "true")
+                .setMessageMarshaller(s -> {
+                    throw new RuntimeException("for test");
+                })
+                .build();
+
+        Completable completable = sut.sendMessage("dest", "myMessage");
+        TestObserver<Void> observer = completable.test();
+        observer.await();
+        observer.assertError(RuntimeException.class);
+        observer.assertErrorMessage("for test");
     }
 
     @Test
