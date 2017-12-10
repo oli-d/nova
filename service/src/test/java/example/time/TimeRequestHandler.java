@@ -9,7 +9,7 @@
  */
 package example.time;
 
-import ch.squaredesk.nova.comm.http.annotation.OnRestRequest;
+import ch.squaredesk.nova.comm.rest.annotation.OnRestRequest;
 
 import java.time.LocalDateTime;
 

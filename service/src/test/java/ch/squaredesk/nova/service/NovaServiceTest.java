@@ -304,7 +304,6 @@ public class NovaServiceTest {
     public static class MyConfigForBrokenInitService extends NovaServiceConfiguration<MyBrokenInitService> {
         @Bean
         public MyBrokenInitService serviceInstance() {
-            System.out.println("--- " + Thread.currentThread() + " - service instance creation");
             return new MyBrokenInitService();
         }
     }

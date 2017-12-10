@@ -29,7 +29,6 @@ import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class KafkaObjectFactoryTest {
-    private KafkaObjectFactory sut;
     private Properties consumerProps;
     private Properties producerProps;
 
@@ -49,13 +48,6 @@ class KafkaObjectFactoryTest {
         producerProps.put("client.id", UUID.randomUUID().toString());
 
         sut = new KafkaObjectFactory(consumerProps, producerProps);
-    }
-
-    @Test
-    void pollerForTopicConsidersPassedProperties() throws Exception {
-        KafkaPoller kp = sut.pollerForTopic("pollerPropsTest", 1, TimeUnit.SECONDS);
-        String clientId = getClientIdFrom(kp);
-        assertThat(clientId, is(consumerProps.getProperty("client.id")));
     }
 
     @Test
@@ -79,16 +71,6 @@ class KafkaObjectFactoryTest {
         return (ProducerConfig)f.get(p);
     }
 
-    private String getClientIdFrom (KafkaPoller poller) throws Exception {
-        Field f = KafkaPoller.class.getDeclaredField("kafkaConsumer");
-        f.setAccessible(true);
-        KafkaConsumer kafkaConsumer = (KafkaConsumer)f.get(poller);
-        f = KafkaConsumer.class.getDeclaredField("clientId");
-        f.setAccessible(true);
-
-        return (String)f.get(kafkaConsumer);
-    }
-
     private void askSutForPollers(int numPollers) throws Exception {
         String[] topics = new String[numPollers];
         for (int i = 0; i < topics.length; i++) {
@@ -109,7 +91,7 @@ class KafkaObjectFactoryTest {
         // first, we create a few pollers
         int numPollers = 5;
         askSutForPollers(numPollers);
-        assertThat(sut.topicToPoller.size(), is(numPollers));
+        assertThat(sut.topicToMessageStream.size(), is(numPollers));
 
         // and producers
         int numProducers = 5;
@@ -117,9 +99,9 @@ class KafkaObjectFactoryTest {
         assertThat(sut.producers.size(), is(numProducers));
 
         // then we replace those objects with our mocks
-        Set<String> topics = new HashSet<>(sut.topicToPoller.keySet());
+        Set<String> topics = new HashSet<>(sut.topicToMessageStream.keySet());
         for (String topic: topics) {
-            sut.topicToPoller.put(topic, new MyPollerMock());
+            sut.topicToMessageStream.put(topic, new MyPollerMock());
         }
         sut.producers.clear();
         for (int i = 0; i < numProducers; i++) {
@@ -130,7 +112,7 @@ class KafkaObjectFactoryTest {
         sut.shutdown();
 
         // and verify that shutdown shuts down each open poller and producer
-        for (KafkaPoller mock: sut.topicToPoller.values()) {
+        for (KafkaPoller mock: sut.topicToMessageStream.values()) {
             assertTrue(((MyPollerMock)mock).shutdown);
         }
         for (Producer mock: sut.producers) {
@@ -138,7 +120,7 @@ class KafkaObjectFactoryTest {
         }
 
         // and clears the caches
-        assertTrue(sut.topicToPoller.isEmpty());
+        assertTrue(sut.topicToMessageStream.isEmpty());
         assertTrue(sut.producers.isEmpty());
     }
     */
