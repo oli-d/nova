@@ -16,7 +16,7 @@ import com.codahale.metrics.Meter;
 
 import static java.util.Objects.requireNonNull;
 
-// FIXME: split up in client and server part and make package private?
+// TODO: split up in client and server part and make package private?
 public class MetricsCollector {
     private final Metrics metrics;
     private final String identifierPrefix;
@@ -36,7 +36,7 @@ public class MetricsCollector {
     }
 
 
-    void messageReceived(String destination) {
+    public void messageReceived(String destination) {
         metrics.getMeter(identifierPrefix, "received", destination).mark();
         totalNumberOfReceivedMessages.mark();
     }

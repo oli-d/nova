@@ -72,7 +72,9 @@ public class ServerEndpointFactory {
             MessageUnmarshaller<String, MessageType> messageUnmarshaller,
             MetricsCollector metricsCollector) {
         try {
-            return messageUnmarshaller.unmarshal(message);
+            MessageType unmarshalledMessage = messageUnmarshaller.unmarshal(message);
+            metricsCollector.messageReceived(destination);
+            return unmarshalledMessage;
         } catch (Exception e) {
             if (metricsCollector != null) {
                 metricsCollector.unparsableMessageReceived(destination);
@@ -105,13 +107,7 @@ public class ServerEndpointFactory {
         // unregister all disconnecting WebSockets
         Disposable subscriptionDisconnections = app.closingSockets().subscribe(pair -> webSockets.remove(pair._1));
         Consumer<MessageType> broadcastAction = message -> {
-            String messageAsString;
-            try {
-                messageAsString = marshal(message, messageMarshaller);
-            } catch (Exception e) {
-                // TODO: metric?
-                throw new RuntimeException("Unable to marshal broadcast message " + message, e);
-            }
+            String messageAsString = marshal(message, messageMarshaller);
 
             // Optional<org.glassfish.grizzly.websockets.WebSocket> broadcastSocket =
             Set<org.glassfish.grizzly.websockets.WebSocket> allSockets = webSockets.keySet();

@@ -64,6 +64,7 @@ public class ClientEndpointFactory {
             MessageMarshaller<MessageType, String> messageMarshaller,
             MetricsCollector metricsCollector) {
 
+        metricsCollector.subscriptionCreated(destination);
         return new WebSocket<>(
                 message -> {
                     String messageAsString = marshal(message, messageMarshaller);
