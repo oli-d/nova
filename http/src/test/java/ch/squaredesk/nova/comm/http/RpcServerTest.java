@@ -88,7 +88,7 @@ class RpcServerTest {
     void requestFailsAndErrorIsDispatched() throws Exception {
         sut.start();
         String path = "/fail";
-        Flowable<RpcInvocation<String, String, HttpSpecificInfo>> requests = sut.requests(path, BackpressureStrategy.BUFFER);
+        Flowable<RpcInvocation<String, String, HttpSpecificInfo>> requests = sut.requests(path);
         requests.subscribe(rpcInvocation -> {
             rpcInvocation.completeExceptionally(new Exception("no content"));
         });
@@ -102,7 +102,7 @@ class RpcServerTest {
         RuntimeException exception = Assertions.assertThrows(RuntimeException.class, () -> {
             rpcClient.sendRequest("{}", msi, 15, TimeUnit.SECONDS).blockingGet();
         });
-        assertThat(exception.getMessage(), is("400 - Bad Request"));
+        assertThat(exception.getMessage(), is("400 - Bad request"));
     }
 
     private void sendRestRequestInNewThread(String path, int i) {

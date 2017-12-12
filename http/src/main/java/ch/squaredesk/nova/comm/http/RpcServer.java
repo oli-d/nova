@@ -1,5 +1,6 @@
 package ch.squaredesk.nova.comm.http;
 
+import ch.squaredesk.nova.comm.BackpressuredStreamFromAsyncSource;
 import ch.squaredesk.nova.comm.retrieving.MessageUnmarshaller;
 import ch.squaredesk.nova.comm.rpc.RpcInvocation;
 import ch.squaredesk.nova.comm.sending.MessageMarshaller;
@@ -22,8 +23,6 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
@@ -43,7 +42,7 @@ public class RpcServer<InternalMessageType> extends ch.squaredesk.nova.comm.rpc.
         this(null, httpServer, messageMarshaller, messageUnmarshaller, metrics);
     }
 
-    public RpcServer(String identifier,
+    RpcServer(String identifier,
                         HttpServer httpServer,
                         MessageMarshaller<InternalMessageType, String> messageMarshaller,
                         MessageUnmarshaller<String, InternalMessageType> messageUnmarshaller,
@@ -62,26 +61,25 @@ public class RpcServer<InternalMessageType> extends ch.squaredesk.nova.comm.rpc.
     Flowable<RpcInvocation<RequestType, ReplyType, HttpSpecificInfo>> requests(String destination) {
         Flowable retVal = mapDestinationToIncomingMessages
                 .computeIfAbsent(destination, key -> {
-                    Flowable<RpcInvocation<? extends InternalMessageType, ? extends InternalMessageType, HttpSpecificInfo>> flowable = Flowable.generate(
-                            () -> {
-                                NonBlockingHttpHandler httpHandler = new NonBlockingHttpHandler();
-                                httpServer.getServerConfiguration().addHttpHandler(httpHandler, destination);
-                                logger.info("Listening to requests on " + destination);
-                                return httpHandler;
-                            },
-                            (handler, emitter) -> {
-                                RpcInvocation<? extends InternalMessageType, ? extends InternalMessageType, HttpSpecificInfo>
-                                        rpcInvocation = handler.requestQueue.take();
-                                metricsCollector.requestReceived(rpcInvocation.request);
-                                emitter.onNext(rpcInvocation);
-                            },
-                            handler -> {
-                                mapDestinationToIncomingMessages.remove(destination);
-                                httpServer.getServerConfiguration().removeHttpHandler(handler);
-                                logger.info("Stopped listening to requests on " + destination);
-                            }
-                    );
-                    return flowable
+                    logger.info("Listening to requests on " + destination);
+
+                    HttpHandler[] containerForCloseAction = new HttpHandler[1];
+                    Runnable closeAction = () -> {
+                        mapDestinationToIncomingMessages.remove(destination);
+                        httpServer.getServerConfiguration().removeHttpHandler(containerForCloseAction[0]);
+                        logger.info("Stopped listening to requests on " + destination);
+                    };
+
+                    BackpressuredStreamFromAsyncSource<RpcInvocation<
+                                                ? extends InternalMessageType,
+                                                ? extends InternalMessageType,
+                                                HttpSpecificInfo>> stream = new BackpressuredStreamFromAsyncSource<>(closeAction);
+                    NonBlockingHttpHandler httpHandler = new NonBlockingHttpHandler(stream);
+                    containerForCloseAction[0] = httpHandler;
+
+                    httpServer.getServerConfiguration().addHttpHandler(httpHandler, destination);
+
+                    return stream.toFlowable()
                             .subscribeOn(Schedulers.io())
                             .share();
                 });
@@ -173,9 +171,16 @@ public class RpcServer<InternalMessageType> extends ch.squaredesk.nova.comm.rpc.
      * able to process. The size of the queue defines, how many requests we are willing to lose in the worst case
      */
     private class NonBlockingHttpHandler extends HttpHandler {
-        private static final int QUEUE_BUFFER_SIZE = 128;
         private static final int READ_CHUNK_SIZE = 256;
-        private final BlockingQueue<RpcInvocation<? extends InternalMessageType, ? extends InternalMessageType, HttpSpecificInfo>> requestQueue = new ArrayBlockingQueue<>(QUEUE_BUFFER_SIZE);
+        private final BackpressuredStreamFromAsyncSource<RpcInvocation<
+                ? extends InternalMessageType,
+                ? extends InternalMessageType,
+                HttpSpecificInfo>> stream;
+
+        private NonBlockingHttpHandler(
+                BackpressuredStreamFromAsyncSource<RpcInvocation<? extends InternalMessageType, ? extends InternalMessageType, HttpSpecificInfo>> stream) {
+            this.stream = stream;
+        }
 
         public void service(Request request, Response response) throws Exception {
             response.suspend();
@@ -221,7 +226,12 @@ public class RpcServer<InternalMessageType> extends ch.squaredesk.nova.comm.rpc.
                                         metricsCollector.requestCompleted(requestObject, responseAsString);
                                     } catch (Exception e) {
                                         metricsCollector.requestCompletedExceptionally(requestObject, e);
-                                        logger.error("An error occurred trying to write HTTP response", e);
+                                        logger.error("An error occurred trying to send HTTP response " + reply, e);
+                                        try {
+                                            response.sendError(500, "Internal server error");
+                                        } catch (Exception any) {
+                                            logger.error("Failed to send error 500 back to client", any);
+                                        }
                                     } finally {
                                         try {
                                             out.close();
@@ -234,14 +244,15 @@ public class RpcServer<InternalMessageType> extends ch.squaredesk.nova.comm.rpc.
                                 error -> {
                                     logger.error("An error occurred trying to process HTTP request " + requestAsString, error);
                                     try {
-                                        response.sendError(400);
+                                        response.sendError(400, "Bad request");
                                     } catch (Exception any) {
-                                        logger.error("Failed to respond with error", any);
+                                        logger.error("Failed to send error 400 back to client", any);
                                     }
                                 }
                             );
 
-                    requestQueue.put(rpci); // blocking!!! (backpressure applied)
+                    metricsCollector.requestReceived(rpci.request);
+                    stream.onNext(rpci); // blocking!!! (backpressure applied)
                 }
             });
         }
