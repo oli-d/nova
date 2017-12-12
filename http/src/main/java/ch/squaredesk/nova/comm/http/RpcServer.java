@@ -24,7 +24,6 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 public class RpcServer<InternalMessageType> extends ch.squaredesk.nova.comm.rpc.RpcServer<String, InternalMessageType, HttpSpecificInfo> {
@@ -207,7 +206,7 @@ public class RpcServer<InternalMessageType> extends ch.squaredesk.nova.comm.rpc.
                             error -> {
                                 logger.error("An error occurred trying to process HTTP request", error);
                                 try {
-                                    response.sendError(400, Optional.ofNullable(error.getMessage()).orElse("Bad request"));
+                                    response.sendError(400);
                                 } catch (Exception any) {
                                     logger.error("Failed to respond with error", any);
                                 }

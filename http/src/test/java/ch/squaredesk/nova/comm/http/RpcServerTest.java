@@ -103,7 +103,7 @@ class RpcServerTest {
         RuntimeException exception = Assertions.assertThrows(RuntimeException.class, () -> {
             rpcClient.sendRequest("{}", msi, 15, TimeUnit.SECONDS).blockingGet();
         });
-        assertThat(exception.getMessage(), is("400 - no content"));
+        assertThat(exception.getMessage(), is("400 - Bad Request"));
     }
 
     private void sendRestRequestInNewThread(String path, int i) {
