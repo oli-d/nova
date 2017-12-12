@@ -7,6 +7,7 @@ import com.ning.http.client.AsyncHttpClient;
 import io.reactivex.Flowable;
 import org.glassfish.grizzly.http.server.HttpServer;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -81,6 +82,27 @@ class RpcServerTest {
 
         cdl.await(20, TimeUnit.SECONDS);
         assertThat(cdl.getCount(), is (0L));
+    }
+
+    @Test
+    void requestFailsAndErrorIsDispatched() throws Exception {
+        sut.start();
+        String path = "/fail";
+        Flowable<RpcInvocation<String, String, HttpSpecificInfo>> requests = sut.requests(path, BackpressureStrategy.BUFFER);
+        requests.subscribe(rpcInvocation -> {
+            rpcInvocation.completeExceptionally(new Exception("no content"));
+        });
+
+        String urlAsString = "http://" + rsc.interfaceName + ":" + rsc.port + path + "?p=";
+        MessageSendingInfo<URL, HttpSpecificInfo> msi = new MessageSendingInfo.Builder<URL, HttpSpecificInfo>()
+                .withDestination(new URL(urlAsString))
+                .withTransportSpecificInfo(new HttpSpecificInfo(HttpRequestMethod.POST))
+                .build();
+
+        RuntimeException exception = Assertions.assertThrows(RuntimeException.class, () -> {
+            rpcClient.sendRequest("{}", msi, 15, TimeUnit.SECONDS).blockingGet();
+        });
+        assertThat(exception.getMessage(), is("400 - Bad Request"));
     }
 
     private void sendRestRequestInNewThread(String path, int i) {

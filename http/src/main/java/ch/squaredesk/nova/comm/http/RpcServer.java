@@ -200,6 +200,7 @@ public class RpcServer<InternalMessageType> extends ch.squaredesk.nova.comm.rpc.
                 @Override
                 public void onAllDataRead() throws Exception {
                     inputBuffer = appendAvailableDataToBuffer(in, READ_CHUNK_SIZE, inputBuffer);
+                    String requestAsString = new String(inputBuffer);
                     try {
                         in.close();
                     } catch (Exception ignored) {
@@ -231,9 +232,14 @@ public class RpcServer<InternalMessageType> extends ch.squaredesk.nova.comm.rpc.
                                     }
                                 },
                                 error -> {
-                                    logger.error("An error occurred trying to process HTTP request", error);
+                                    logger.error("An error occurred trying to process HTTP request " + requestAsString, error);
+                                    try {
+                                        response.sendError(400);
+                                    } catch (Exception any) {
+                                        logger.error("Failed to respond with error", any);
+                                    }
                                 }
-                    );
+                            );
 
                     requestQueue.put(rpci); // blocking!!! (backpressure applied)
                 }
