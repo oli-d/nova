@@ -204,8 +204,12 @@ public class RpcServer<InternalMessageType> extends ch.squaredesk.nova.comm.rpc.
                                 }
                             },
                             error -> {
-                                // FIXME: write error or return Single.error()
                                 logger.error("An error occurred trying to process HTTP request", error);
+                                try {
+                                    response.sendError(400);
+                                } catch (Exception any) {
+                                    logger.error("Failed to respond with error", any);
+                                }
                             }
                     );
 
