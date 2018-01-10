@@ -33,16 +33,16 @@ public class Endpoint<MessageType>  {
         this.closeAction = Optional.ofNullable(closeAction);
     }
 
-    public Flowable<WebSocket<MessageType>> connectedWebSockets(BackpressureStrategy backpressureStrategy) {
+    // FIXME: backpressure
+    public Flowable<WebSocket<MessageType>> connectedWebSockets() {
         return streamSource
-                .connectingSockets
-                .toFlowable(backpressureStrategy);
+                .connectingSockets;
     }
 
-    public Flowable<IncomingMessage<MessageType, String, WebSocketSpecificDetails>> messages (BackpressureStrategy backpressureStrategy) {
+    // FIXME: backpressure
+    public Flowable<IncomingMessage<MessageType, String, WebSocketSpecificDetails>> messages () {
         return streamSource
                 .messages
-                .toFlowable(backpressureStrategy)
                 .map(tuple -> {
                     WebSocketSpecificDetails webSocketSpecificDetails =
                             new WebSocketSpecificDetails(tuple._3);
@@ -55,16 +55,16 @@ public class Endpoint<MessageType>  {
                 });
     }
 
-    public Flowable<Pair<WebSocket<MessageType>, Throwable>> errors (BackpressureStrategy backpressureStrategy) {
+    // FIXME: backpressure
+    public Flowable<Pair<WebSocket<MessageType>, Throwable>> errors () {
         return streamSource
-            .errors
-            .toFlowable(backpressureStrategy);
+            .errors;
     }
 
-    public Flowable<Pair<WebSocket<MessageType>, CloseReason>> closedWebSockets(BackpressureStrategy backpressureStrategy) {
+    // FIXME: backpressure
+    public Flowable<Pair<WebSocket<MessageType>, CloseReason>> closedWebSockets() {
         return streamSource
-                .closingSockets
-                .toFlowable(backpressureStrategy);
+                .closingSockets;
     }
 
     public void close () {

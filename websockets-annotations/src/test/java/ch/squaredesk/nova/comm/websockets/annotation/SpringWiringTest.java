@@ -49,7 +49,7 @@ public class SpringWiringTest {
     }
 
     @AfterEach
-    public void tearDown() throws Exception {
+    public void tearDown() {
         ctx.close();
     }
 
@@ -63,7 +63,7 @@ public class SpringWiringTest {
         ClientEndpoint<Integer> clientSideSocket = webSocketAdapter.connectTo(serverUrl+"/echo");
         CountDownLatch cdl = new CountDownLatch(1);
         Integer[] resultHolder = new Integer[1];
-        clientSideSocket.messages(BackpressureStrategy.BUFFER).subscribe(msg -> {
+        clientSideSocket.messages().subscribe(msg -> {
             resultHolder[0] = msg.message;
             cdl.countDown();
         });

@@ -48,7 +48,8 @@ public class WebSocketBeanPostprocessor implements BeanPostProcessor {
                         messageMarshaller,
                         messageUnmarshaller,
                         endpointDescriptor.captureTimings ? metricsCollector : null);
-            se.messages(endpointDescriptor.backpressureStrategy).subscribe(MethodInvoker.createFor(endpointDescriptor, metricsCollector));
+            // FIXME: endpointDescriptor supports backpressureStrategy. Either we drop the attribute or apply it on the messages stream
+            se.messages().subscribe(MethodInvoker.createFor(endpointDescriptor, metricsCollector));
         }
         return bean;
     }

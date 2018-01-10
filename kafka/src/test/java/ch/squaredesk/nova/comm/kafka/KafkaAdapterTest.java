@@ -19,10 +19,7 @@ import io.reactivex.disposables.Disposable;
 import io.reactivex.observers.TestObserver;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.ProducerConfig;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -163,6 +160,11 @@ class KafkaAdapterTest {
         assertThat(valuesSubscriber2, contains("msg1", "msg2"));
         assertThat(valuesSubscriber3.size(), is(1));
         assertThat(valuesSubscriber3, contains("msg2"));
+    }
+
+    @Test
+    void multipleTopicsProperlySupported() throws Exception {
+        Assertions.fail("not implemented");
     }
 
     @Test

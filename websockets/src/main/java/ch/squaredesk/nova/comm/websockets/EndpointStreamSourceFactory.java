@@ -11,6 +11,7 @@ package ch.squaredesk.nova.comm.websockets;
 
 import ch.squaredesk.nova.tuples.Pair;
 import ch.squaredesk.nova.tuples.Tuple3;
+import io.reactivex.Flowable;
 import io.reactivex.Observable;
 
 import java.util.function.Function;
@@ -22,16 +23,16 @@ public class EndpointStreamSourceFactory {
             StreamCreatingEndpointWrapper<SomeWebSocketType, SomeMessageType> streamCreatingEndpointWrapper,
             MetricsCollector metricsCollector) {
 
-        Observable<Tuple3<SomeMessageType, String, WebSocket<SomeMessageType>>> messages = streamCreatingEndpointWrapper.messages()
+        Flowable<Tuple3<SomeMessageType, String, WebSocket<SomeMessageType>>> messages = streamCreatingEndpointWrapper.messages()
                 .map(pair -> new Tuple3<>(pair._2, destination, webSocketFactory.apply(pair._1)))
                 .doOnNext(tuple -> metricsCollector.messageReceived(destination));
-        Observable<WebSocket<SomeMessageType>> connectingSockets = streamCreatingEndpointWrapper.connectingSockets()
+        Flowable<WebSocket<SomeMessageType>> connectingSockets = streamCreatingEndpointWrapper.connectingSockets()
                 .map(webSocketFactory::apply)
                 .doOnNext(socket -> metricsCollector.subscriptionCreated(destination));
-        Observable<Pair<WebSocket<SomeMessageType>, CloseReason>> closingSockets = streamCreatingEndpointWrapper.closingSockets()
+        Flowable<Pair<WebSocket<SomeMessageType>, CloseReason>> closingSockets = streamCreatingEndpointWrapper.closingSockets()
                 .map(pair -> new Pair<>(webSocketFactory.apply(pair._1), pair._2))
                 .doOnNext(socket -> metricsCollector.subscriptionDestroyed(destination));
-        Observable<Pair<WebSocket<SomeMessageType>, Throwable>> errors = streamCreatingEndpointWrapper.errors()
+        Flowable<Pair<WebSocket<SomeMessageType>, Throwable>> errors = streamCreatingEndpointWrapper.errors()
                 .map(pair -> new Pair<>(webSocketFactory.apply(pair._1), pair._2)); // TODO metric?
         return new EndpointStreamSource<>(
                 messages,

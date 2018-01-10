@@ -12,7 +12,10 @@ package ch.squaredesk.nova.comm.websockets.server;
 import ch.squaredesk.nova.comm.retrieving.MessageUnmarshaller;
 import ch.squaredesk.nova.comm.sending.MessageMarshaller;
 import ch.squaredesk.nova.comm.websockets.*;
+import io.reactivex.Flowable;
+import io.reactivex.Scheduler;
 import io.reactivex.disposables.Disposable;
+import io.reactivex.schedulers.Schedulers;
 import org.glassfish.grizzly.websockets.WebSocketEngine;
 
 import java.util.Set;
@@ -21,27 +24,22 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 
 public class ServerEndpointFactory {
+    private static final Scheduler housekeepingScheduler = Schedulers.io(); // TODO: proper name.
+                                                                            // TODO: do we want to let the user define this?
     private final ConcurrentHashMap<org.glassfish.grizzly.websockets.WebSocket, WebSocket<?>> webSockets = new ConcurrentHashMap<>();
 
     private <MessageType> WebSocket<MessageType> instantiateNewWebSocket(
             String destination,
             org.glassfish.grizzly.websockets.WebSocket webSocket,
-            MessageMarshaller<MessageType, String> messageMarshaller,
-            MetricsCollector metricsCollector) {
+            MessageMarshaller<MessageType, String> messageMarshaller) {
 
             return new WebSocket<>(
                     message -> {
                         String messageAsString = marshal(message, messageMarshaller);
                         webSocket.send(messageAsString);
-                        if (metricsCollector != null) { // we could optimize and remove the if, but for now we rely on JIT compilation
-                            metricsCollector.messageSent(destination);
-                        }
                     },
                     () -> {
                         webSocket.close();
-                        if (metricsCollector != null) { // we could optimize and remove the if, but for now we rely on JIT compilation
-                            metricsCollector.subscriptionDestroyed(destination);
-                        }
                     });
     }
 
@@ -53,7 +51,7 @@ public class ServerEndpointFactory {
 
             WebSocket<?> retVal = webSockets.computeIfAbsent(
                     webSocket,
-                    key -> instantiateNewWebSocket(destination, key, messageMarshaller, metricsCollector));
+                    key -> instantiateNewWebSocket(destination, key, messageMarshaller));
             return (WebSocket<MessageType>) retVal;
     }
 
@@ -103,9 +101,11 @@ public class ServerEndpointFactory {
                 EndpointStreamSourceFactory.createStreamSourceFor(destinationForMetrics, webSocketCreator, app, metricsCollector);
 
         // register all connecting WebSockets
-        Disposable subscriptionConnections = app.connectingSockets().subscribe(socket -> webSocketCreator.apply(socket));
+        Disposable subscriptionConnections = app.connectingSockets()
+                .subscribeOn(housekeepingScheduler).subscribe(socket -> webSocketCreator.apply(socket));
         // unregister all disconnecting WebSockets
-        Disposable subscriptionDisconnections = app.closingSockets().subscribe(pair -> webSockets.remove(pair._1));
+        Disposable subscriptionDisconnections = app.closingSockets()
+                .subscribeOn(housekeepingScheduler).subscribe(pair -> webSockets.remove(pair._1));
         Consumer<MessageType> broadcastAction = message -> {
             String messageAsString = marshal(message, messageMarshaller);
 

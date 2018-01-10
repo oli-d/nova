@@ -9,12 +9,11 @@
  */
 package ch.squaredesk.nova.comm.websockets.server;
 
+import ch.squaredesk.nova.comm.BackpressuredStreamFromAsyncSource;
 import ch.squaredesk.nova.comm.websockets.CloseReason;
 import ch.squaredesk.nova.comm.websockets.StreamCreatingEndpointWrapper;
 import ch.squaredesk.nova.tuples.Pair;
-import io.reactivex.Observable;
-import io.reactivex.subjects.PublishSubject;
-import io.reactivex.subjects.Subject;
+import io.reactivex.Flowable;
 import org.glassfish.grizzly.websockets.ClosingFrame;
 import org.glassfish.grizzly.websockets.DataFrame;
 import org.glassfish.grizzly.websockets.WebSocket;
@@ -31,10 +30,10 @@ public class StreamCreatingWebSocketApplication<MessageType>
     private static final Logger logger = LoggerFactory.getLogger(StreamCreatingWebSocketApplication.class);
 
     // TODO: do we need toSerialized versions? grizzly is nio, though...
-    private final Subject<Pair<WebSocket, MessageType>> messageSubject = PublishSubject.create();
-    private final Subject<WebSocket> connectionSubject = PublishSubject.create();
-    private final Subject<Pair<WebSocket, CloseReason>> closeSubject = PublishSubject.create();
-    private final Subject<Pair<WebSocket, Throwable>> errorSubject = PublishSubject.create();
+    private final BackpressuredStreamFromAsyncSource<Pair<WebSocket, MessageType>> messages = new BackpressuredStreamFromAsyncSource<>();
+    private final BackpressuredStreamFromAsyncSource<WebSocket> connectedSockets = new BackpressuredStreamFromAsyncSource<>();
+    private final BackpressuredStreamFromAsyncSource<Pair<WebSocket, CloseReason>> closedSockets = new BackpressuredStreamFromAsyncSource<>();
+    private final BackpressuredStreamFromAsyncSource<Pair<WebSocket, Throwable>> errors = new BackpressuredStreamFromAsyncSource<>();
 
     private final Function<String, MessageType> messageUnmarshaller;
 
@@ -53,17 +52,17 @@ public class StreamCreatingWebSocketApplication<MessageType>
             logger.error("Unexpected close code " + closingFrame.getCode() + " in closing dataFrame " + frame);
             closeReason = CloseReason.UNEXPECTED_CONDITION;
         }
-        closeSubject.onNext(new Pair<>(socket, closeReason));
+        closedSockets.onNext(new Pair<>(socket, closeReason));
     }
 
     @Override
     public void onConnect(WebSocket socket) {
-        connectionSubject.onNext(socket);
+        connectedSockets.onNext(socket);
     }
 
     @Override
     protected boolean onError(WebSocket socket, Throwable t) {
-        errorSubject.onNext(new Pair<>(socket, t));
+        errors.onNext(new Pair<>(socket, t));
         return true; // close webSocket
         // TODO verify: is onClose() invoked?
     }
@@ -71,7 +70,7 @@ public class StreamCreatingWebSocketApplication<MessageType>
     @Override
     public void onMessage(WebSocket socket, String text) {
         try {
-            messageSubject.onNext(new Pair<>(socket, messageUnmarshaller.apply(text)));
+            messages.onNext(new Pair<>(socket, messageUnmarshaller.apply(text)));
         } catch (Exception e) {
             // must be caught to keep the Observable functional
             logger.info("", e);
@@ -79,30 +78,30 @@ public class StreamCreatingWebSocketApplication<MessageType>
     }
 
     @Override
-    public Observable<Pair<WebSocket, MessageType>> messages() {
-        return messageSubject;
+    public Flowable<Pair<WebSocket, MessageType>> messages() {
+        return messages.toFlowable();
     }
 
     @Override
-    public Observable<WebSocket> connectingSockets() {
-        return connectionSubject;
+    public Flowable<WebSocket> connectingSockets() {
+        return connectedSockets.toFlowable();
     }
 
     @Override
-    public Observable<Pair<WebSocket, CloseReason>> closingSockets() {
-        return closeSubject;
+    public Flowable<Pair<WebSocket, CloseReason>> closingSockets() {
+        return closedSockets.toFlowable();
     }
 
     @Override
-    public Observable<Pair<WebSocket, Throwable>> errors() {
-        return errorSubject;
+    public Flowable<Pair<WebSocket, Throwable>> errors() {
+        return errors.toFlowable();
     }
 
     void close() {
-        messageSubject.onComplete();
-        connectionSubject.onComplete();
-        closeSubject.onComplete();
-        errorSubject.onComplete();
+        messages.onComplete();
+        connectedSockets.onComplete();
+        closedSockets.onComplete();
+        errors.onComplete();
     }
 
 }

@@ -9,15 +9,13 @@
  */
 package ch.squaredesk.nova.comm.websockets.client;
 
+import ch.squaredesk.nova.comm.BackpressuredStreamFromAsyncSource;
 import ch.squaredesk.nova.comm.websockets.CloseReason;
 import ch.squaredesk.nova.comm.websockets.StreamCreatingEndpointWrapper;
 import ch.squaredesk.nova.tuples.Pair;
 import com.ning.http.client.ws.WebSocket;
 import com.ning.http.client.ws.WebSocketTextListener;
-import io.reactivex.Observable;
-import io.reactivex.subjects.BehaviorSubject;
-import io.reactivex.subjects.PublishSubject;
-import io.reactivex.subjects.Subject;
+import io.reactivex.Flowable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -28,11 +26,10 @@ public class StreamCreatingWebSocketTextListener<MessageType>
 
     private static final Logger logger = LoggerFactory.getLogger(StreamCreatingEndpointWrapper.class);
 
-    // TODO: do we need toSerialized versions? grizzly is nio, though...
-    private final Subject<Pair<WebSocket, MessageType>> messageSubject = PublishSubject.create();
-    private final Subject<WebSocket> connectionSubject = BehaviorSubject.create();
-    private final Subject<Pair<WebSocket, CloseReason>> closeSubject = PublishSubject.create();
-    private final Subject<Pair<WebSocket, Throwable>> errorSubject = PublishSubject.create();
+    private final BackpressuredStreamFromAsyncSource<Pair<WebSocket, MessageType>> messages = new BackpressuredStreamFromAsyncSource<>();
+    private final BackpressuredStreamFromAsyncSource<WebSocket> connectedSockets = new BackpressuredStreamFromAsyncSource<>();
+    private final BackpressuredStreamFromAsyncSource<Pair<WebSocket, CloseReason>> closedSockets = new BackpressuredStreamFromAsyncSource<>();
+    private final BackpressuredStreamFromAsyncSource<Pair<WebSocket, Throwable>> errors = new BackpressuredStreamFromAsyncSource<>();
 
     private final Function<String, MessageType> messageUnmarshaller;
 
@@ -43,7 +40,7 @@ public class StreamCreatingWebSocketTextListener<MessageType>
     @Override
     public void onMessage(String messageText) {
         try {
-            messageSubject.onNext(new Pair<>(null, messageUnmarshaller.apply(messageText)));
+            messages.onNext(new Pair<>(null, messageUnmarshaller.apply(messageText)));
         } catch (Exception e) {
             // must be caught to keep the Observable functional
             logger.info("Unable to unmarshal incoming message " + messageText, e);
@@ -52,44 +49,44 @@ public class StreamCreatingWebSocketTextListener<MessageType>
 
     @Override
     public void onOpen(WebSocket websocket) {
-        connectionSubject.onNext(websocket);
+        connectedSockets.onNext(websocket);
     }
 
     @Override
     public void onClose(WebSocket websocket) {
         // FIXME: close reason
-        closeSubject.onNext(new Pair<>(websocket, CloseReason.NO_STATUS_CODE));
+        closedSockets.onNext(new Pair<>(websocket, CloseReason.NO_STATUS_CODE));
     }
 
     @Override
     public void onError(Throwable t) {
-        errorSubject.onNext(new Pair<>(null, t));
+        errors.onNext(new Pair<>(null, t));
     }
 
     @Override
-    public Observable<Pair<WebSocket, MessageType>> messages() {
-        return messageSubject;
+    public Flowable<Pair<WebSocket, MessageType>> messages() {
+        return messages.toFlowable();
     }
 
     @Override
-    public Observable<WebSocket> connectingSockets() {
-        return connectionSubject;
+    public Flowable<WebSocket> connectingSockets() {
+        return connectedSockets.toFlowable();
     }
 
     @Override
-    public Observable<Pair<WebSocket, CloseReason>> closingSockets() {
-        return closeSubject;
+    public Flowable<Pair<WebSocket, CloseReason>> closingSockets() {
+        return closedSockets.toFlowable();
     }
 
     @Override
-    public Observable<Pair<WebSocket, Throwable>> errors() {
-        return errorSubject;
+    public Flowable<Pair<WebSocket, Throwable>> errors() {
+        return errors.toFlowable();
     }
 
     void close() {
-        messageSubject.onComplete();
-        connectionSubject.onComplete();
-        errorSubject.onComplete();
+        closedSockets.onComplete();
+        connectedSockets.onComplete();
+        errors.onComplete();
         // FIXME closeSubject.onComplete();
     }
 }
