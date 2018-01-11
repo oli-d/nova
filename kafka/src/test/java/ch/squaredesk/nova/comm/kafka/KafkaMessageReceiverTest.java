@@ -48,7 +48,7 @@ class KafkaMessageReceiverTest {
 
     @Test
     void pollerForTopicConsidersPassedProperties() throws Exception {
-        Consumer<String, String> consumer = sut.consumerForTopic("pollerPropsTest");
+        Consumer<String, String> consumer = null; // FIXME: sut.consumerForTopic("pollerPropsTest");
         String clientId = getClientIdFrom(consumer);
         assertThat(clientId, is(consumerProps.getProperty("client.id")));
     }

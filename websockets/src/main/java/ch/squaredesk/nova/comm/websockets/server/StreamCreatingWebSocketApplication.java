@@ -29,7 +29,6 @@ public class StreamCreatingWebSocketApplication<MessageType>
 
     private static final Logger logger = LoggerFactory.getLogger(StreamCreatingWebSocketApplication.class);
 
-    // TODO: do we need toSerialized versions? grizzly is nio, though...
     private final BackpressuredStreamFromAsyncSource<Pair<WebSocket, MessageType>> messages = new BackpressuredStreamFromAsyncSource<>();
     private final BackpressuredStreamFromAsyncSource<WebSocket> connectedSockets = new BackpressuredStreamFromAsyncSource<>();
     private final BackpressuredStreamFromAsyncSource<Pair<WebSocket, CloseReason>> closedSockets = new BackpressuredStreamFromAsyncSource<>();

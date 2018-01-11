@@ -15,8 +15,12 @@ import ch.squaredesk.nova.metrics.Metrics;
 import com.github.charithe.kafka.EphemeralKafkaBroker;
 import io.reactivex.BackpressureStrategy;
 import io.reactivex.Completable;
+import io.reactivex.Flowable;
+import io.reactivex.Single;
 import io.reactivex.disposables.Disposable;
+import io.reactivex.functions.Consumer;
 import io.reactivex.observers.TestObserver;
+import io.reactivex.schedulers.Schedulers;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.junit.jupiter.api.*;
@@ -26,6 +30,7 @@ import org.slf4j.LoggerFactory;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
+import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -58,7 +63,7 @@ class KafkaAdapterTest {
 
         sut = KafkaAdapter.builder(String.class)
                 .setServerAddress("127.0.0.1:" + KAFKA_PORT)
-                .setIdentifier("Test")
+                .setIdentifier("Test" + UUID.randomUUID())
                 .addProducerProperty(ProducerConfig.BATCH_SIZE_CONFIG, "1")
                 .addConsumerProperty(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest")
                 .addConsumerProperty(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "true")
@@ -164,7 +169,39 @@ class KafkaAdapterTest {
 
     @Test
     void multipleTopicsProperlySupported() throws Exception {
-        Assertions.fail("not implemented");
+        String topicEven = "even";
+        String topicOdd = "odd";
+
+        AtomicInteger counterEven = new AtomicInteger();
+        AtomicInteger counterOdd = new AtomicInteger();
+        CountDownLatch cdlZero = new CountDownLatch(1);
+
+        Consumer<String> messageConsumerOdd = msg -> {
+            int i = Integer.parseInt(msg);
+            if (i==0) {
+                cdlZero.countDown();
+            } else {
+                counterOdd.incrementAndGet();
+            }
+        };
+        Disposable subscriptionEven1 =  sut.messages(topicEven).subscribe(msg -> counterEven.incrementAndGet());
+        Disposable subscriptionEven2 =  sut.messages(topicEven).subscribe(msg -> counterEven.incrementAndGet());
+        Disposable subscriptionOdd1 =  sut.messages(topicOdd).subscribe(messageConsumerOdd);
+        Disposable subscriptionOdd2 =  sut.messages(topicOdd).subscribe(messageConsumerOdd);
+
+        sut.sendMessage(topicOdd, "1").blockingAwait();
+        sut.sendMessage(topicEven, "2").blockingAwait();
+        sut.sendMessage(topicOdd, "3").blockingAwait();
+        sut.sendMessage(topicEven, "4").blockingAwait();
+
+        sut.sendMessage(topicOdd, "0").blockingAwait();
+
+        cdlZero.await(10, SECONDS);
+
+
+        assertThat(cdlZero.getCount(), is (0L));
+        assertThat(counterOdd.get(), is (4)); // twice the number of messages sent, since we have two consumers
+        assertThat(counterEven.get(), is (4)); // twice the number of messages sent, since we have two consumers
     }
 
     @Test
