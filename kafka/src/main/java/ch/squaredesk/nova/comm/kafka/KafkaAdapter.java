@@ -11,7 +11,6 @@
 package ch.squaredesk.nova.comm.kafka;
 
 import ch.squaredesk.nova.comm.CommAdapterBuilder;
-import ch.squaredesk.nova.comm.retrieving.IncomingMessage;
 import io.reactivex.Completable;
 import io.reactivex.Flowable;
 import io.reactivex.Scheduler;

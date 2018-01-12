@@ -12,7 +12,6 @@ package ch.squaredesk.nova.comm.websockets;
 import ch.squaredesk.nova.tuples.Pair;
 import ch.squaredesk.nova.tuples.Tuple3;
 import io.reactivex.Flowable;
-import io.reactivex.Observable;
 
 public class EndpointStreamSource<MessageType>  {
     final Flowable<Tuple3<MessageType, String, WebSocket<MessageType>>> messages;

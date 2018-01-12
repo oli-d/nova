@@ -11,7 +11,6 @@
 package ch.squaredesk.nova.comm.rpc;
 
 import ch.squaredesk.nova.metrics.Metrics;
-import io.reactivex.BackpressureStrategy;
 import io.reactivex.Flowable;
 import org.junit.jupiter.api.Test;
 

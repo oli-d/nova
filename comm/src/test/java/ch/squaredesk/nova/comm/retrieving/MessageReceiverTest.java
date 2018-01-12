@@ -11,21 +11,9 @@
 package ch.squaredesk.nova.comm.retrieving;
 
 import ch.squaredesk.nova.comm.TestTransportInfo;
-import ch.squaredesk.nova.metrics.Metrics;
-import io.reactivex.BackpressureStrategy;
-import io.reactivex.Observable;
-import io.reactivex.functions.Predicate;
-import io.reactivex.subscribers.TestSubscriber;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
-
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.*;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class MessageReceiverTest {
     private List<String> destinationsSubscribedTo;

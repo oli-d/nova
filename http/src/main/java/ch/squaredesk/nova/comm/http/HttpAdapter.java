@@ -15,7 +15,6 @@ import ch.squaredesk.nova.comm.CommAdapterBuilder;
 import ch.squaredesk.nova.comm.rpc.RpcInvocation;
 import ch.squaredesk.nova.comm.sending.MessageSendingInfo;
 import com.ning.http.client.AsyncHttpClient;
-import io.reactivex.BackpressureStrategy;
 import io.reactivex.Flowable;
 import io.reactivex.Single;
 import org.glassfish.grizzly.http.server.HttpServer;

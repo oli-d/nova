@@ -11,16 +11,9 @@
 package ch.squaredesk.nova.events.annotation;
 
 import ch.squaredesk.nova.Nova;
-import ch.squaredesk.nova.metrics.Metrics;
-import com.codahale.metrics.Timer;
-import io.reactivex.BackpressureStrategy;
-import io.reactivex.Flowable;
-import io.reactivex.functions.Consumer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-
-import java.lang.reflect.Method;
 
 @Configuration
 public class AnnotationEnablingConfiguration {

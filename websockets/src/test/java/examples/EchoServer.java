@@ -7,8 +7,6 @@ import ch.squaredesk.nova.comm.websockets.server.ServerEndpoint;
 import ch.squaredesk.nova.metrics.Metrics;
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.AsyncHttpClientConfig;
-import io.reactivex.BackpressureStrategy;
-import io.reactivex.schedulers.Schedulers;
 import org.glassfish.grizzly.http.server.HttpServer;
 
 import java.io.IOException;

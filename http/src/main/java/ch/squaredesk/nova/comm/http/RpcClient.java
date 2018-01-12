@@ -18,7 +18,6 @@ import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.ListenableFuture;
 import com.ning.http.client.Response;
 import io.reactivex.Single;
-import io.reactivex.exceptions.Exceptions;
 
 import java.net.URL;
 import java.util.concurrent.TimeUnit;

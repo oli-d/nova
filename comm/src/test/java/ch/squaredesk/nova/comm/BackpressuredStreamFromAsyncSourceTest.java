@@ -1,18 +1,14 @@
 package ch.squaredesk.nova.comm;
 
 import io.reactivex.schedulers.Schedulers;
-import org.hamcrest.Matchers;
-import org.hamcrest.junit.MatcherAssert;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class BackpressuredStreamFromAsyncSourceTest {
     @Test

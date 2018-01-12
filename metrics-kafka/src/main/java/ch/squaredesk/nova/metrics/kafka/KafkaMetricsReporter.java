@@ -13,12 +13,8 @@ package ch.squaredesk.nova.metrics.kafka;
 import ch.squaredesk.nova.comm.kafka.KafkaAdapter;
 import ch.squaredesk.nova.metrics.MetricsDump;
 import ch.squaredesk.nova.metrics.MetricsDumpToMapConverter;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.reactivex.functions.Consumer;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-import java.time.ZoneId;
 import java.util.Collections;
 import java.util.Map;
 

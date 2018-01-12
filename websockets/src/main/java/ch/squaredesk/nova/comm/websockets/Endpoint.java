@@ -12,7 +12,6 @@ package ch.squaredesk.nova.comm.websockets;
 import ch.squaredesk.nova.comm.retrieving.IncomingMessage;
 import ch.squaredesk.nova.comm.retrieving.IncomingMessageDetails;
 import ch.squaredesk.nova.tuples.Pair;
-import io.reactivex.BackpressureStrategy;
 import io.reactivex.Flowable;
 
 import java.util.Objects;

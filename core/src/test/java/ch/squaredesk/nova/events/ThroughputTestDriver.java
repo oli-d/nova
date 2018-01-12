@@ -11,8 +11,6 @@
 package ch.squaredesk.nova.events;
 
 import ch.squaredesk.nova.Nova;
-import io.reactivex.Scheduler;
-import io.reactivex.schedulers.Schedulers;
 
 import java.text.DecimalFormat;
 import java.util.concurrent.CountDownLatch;

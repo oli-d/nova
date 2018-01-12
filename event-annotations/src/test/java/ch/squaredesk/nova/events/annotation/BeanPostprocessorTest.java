@@ -10,15 +10,6 @@
 
 package ch.squaredesk.nova.events.annotation;
 
-import ch.squaredesk.nova.Nova;
-import ch.squaredesk.nova.events.EventBus;
-import ch.squaredesk.nova.metrics.Metrics;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.is;
-
 public class BeanPostprocessorTest {
     /*
     private EventBus eventBus;
