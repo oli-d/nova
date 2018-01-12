@@ -13,7 +13,11 @@ import ch.squaredesk.nova.comm.BackpressuredStreamFromAsyncSource;
 import ch.squaredesk.nova.comm.websockets.CloseReason;
 import ch.squaredesk.nova.comm.websockets.StreamCreatingEndpointWrapper;
 import ch.squaredesk.nova.tuples.Pair;
+import io.reactivex.BackpressureStrategy;
 import io.reactivex.Flowable;
+import io.reactivex.subjects.BehaviorSubject;
+import io.reactivex.subjects.PublishSubject;
+import io.reactivex.subjects.Subject;
 import org.glassfish.grizzly.websockets.ClosingFrame;
 import org.glassfish.grizzly.websockets.DataFrame;
 import org.glassfish.grizzly.websockets.WebSocket;
@@ -30,9 +34,9 @@ public class StreamCreatingWebSocketApplication<MessageType>
     private static final Logger logger = LoggerFactory.getLogger(StreamCreatingWebSocketApplication.class);
 
     private final BackpressuredStreamFromAsyncSource<Pair<WebSocket, MessageType>> messages = new BackpressuredStreamFromAsyncSource<>();
-    private final BackpressuredStreamFromAsyncSource<WebSocket> connectedSockets = new BackpressuredStreamFromAsyncSource<>();
-    private final BackpressuredStreamFromAsyncSource<Pair<WebSocket, CloseReason>> closedSockets = new BackpressuredStreamFromAsyncSource<>();
-    private final BackpressuredStreamFromAsyncSource<Pair<WebSocket, Throwable>> errors = new BackpressuredStreamFromAsyncSource<>();
+    private final Subject<WebSocket> connectedSockets = PublishSubject.create();
+    private final Subject<Pair<WebSocket, CloseReason>> closedSockets = PublishSubject.create();
+    private final Subject<Pair<WebSocket, Throwable>> errors = PublishSubject.create();
 
     private final Function<String, MessageType> messageUnmarshaller;
 
@@ -70,6 +74,15 @@ public class StreamCreatingWebSocketApplication<MessageType>
     public void onMessage(WebSocket socket, String text) {
         try {
             messages.onNext(new Pair<>(socket, messageUnmarshaller.apply(text)));
+            /**
+             * One comment regarding backpressure: if the stream subscribers are too slow,
+             * backpressure will be applied here. So if e.g. the subscriber need one hour
+             * to process a message, the next onNext() call will be blocked for that hour.
+             * But be aware that the next message has already been read from the wire into
+             * memory, so if the process is killed at this point in time the message that
+             * was not yet read from the wire is lost.
+             * TL;DR: backpressure is applied, but it does not prevent from loss of messages
+             */
         } catch (Exception e) {
             // must be caught to keep the Observable functional
             logger.info("", e);
@@ -83,17 +96,17 @@ public class StreamCreatingWebSocketApplication<MessageType>
 
     @Override
     public Flowable<WebSocket> connectingSockets() {
-        return connectedSockets.toFlowable();
+        return connectedSockets.toFlowable(BackpressureStrategy.BUFFER);
     }
 
     @Override
     public Flowable<Pair<WebSocket, CloseReason>> closingSockets() {
-        return closedSockets.toFlowable();
+        return closedSockets.toFlowable(BackpressureStrategy.BUFFER);
     }
 
     @Override
     public Flowable<Pair<WebSocket, Throwable>> errors() {
-        return errors.toFlowable();
+        return errors.toFlowable(BackpressureStrategy.BUFFER);
     }
 
     void close() {

@@ -106,8 +106,8 @@ class WebsocketAdapterTest {
         assertThat(specificSubscriptions.getCount(), is(0l));
 
         ClientEndpoint<Integer> endpoint = sut.connectTo(destinationUri);
-        endpoint.connectedWebSockets().subscribe( socket -> connectionLatch.countDown());
-        endpoint.closedWebSockets().subscribe( socket -> closeLatch.countDown());
+        endpoint.connectedWebSockets().subscribe( socket -> connectionLatch.countDown() );
+        endpoint.closedWebSockets().subscribe( socket -> closeLatch.countDown() );
         connectionLatch.await(2, TimeUnit.SECONDS);
         assertThat(connectionLatch.getCount(), is(0L));
         assertThat(totalSubscriptions.getCount(), is(1l));

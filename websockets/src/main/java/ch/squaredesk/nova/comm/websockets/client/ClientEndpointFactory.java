@@ -71,7 +71,6 @@ public class ClientEndpointFactory {
                     metricsCollector.messageSent(destination);
                 },
                 () -> {
-                    webSocket.close();
                     metricsCollector.subscriptionDestroyed(destination);
                 });
     }

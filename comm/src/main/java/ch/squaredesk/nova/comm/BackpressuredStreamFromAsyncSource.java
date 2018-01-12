@@ -3,6 +3,7 @@ package ch.squaredesk.nova.comm;
 import ch.squaredesk.nova.tuples.Pair;
 import com.conversantmedia.util.concurrent.DisruptorBlockingQueue;
 import io.reactivex.Flowable;
+import io.reactivex.schedulers.Schedulers;
 
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
@@ -63,7 +64,7 @@ public class BackpressuredStreamFromAsyncSource<MessageType> {
     }
 
     public Flowable<MessageType> toFlowable() {
-        return Flowable.generate(
+        Flowable<MessageType> theFlowable = Flowable.generate(
                 () -> new Pair<>(queue, shutdown),
                 (queueShutdownPair, emitter) -> {
                     MessageType element = null;
@@ -87,6 +88,7 @@ public class BackpressuredStreamFromAsyncSource<MessageType> {
                         closeAction.run();
                     }
                 });
+        return theFlowable.subscribeOn(Schedulers.io());
     }
 
 }

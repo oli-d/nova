@@ -23,10 +23,12 @@ public class EndpointStreamSourceFactory {
             StreamCreatingEndpointWrapper<SomeWebSocketType, SomeMessageType> streamCreatingEndpointWrapper,
             MetricsCollector metricsCollector) {
 
-        Flowable<Tuple3<SomeMessageType, String, WebSocket<SomeMessageType>>> messages = streamCreatingEndpointWrapper.messages()
+        Flowable<Tuple3<SomeMessageType, String, WebSocket<SomeMessageType>>> messages = streamCreatingEndpointWrapper
+                .messages()
                 .map(pair -> new Tuple3<>(pair._2, destination, webSocketFactory.apply(pair._1)))
                 .doOnNext(tuple -> metricsCollector.messageReceived(destination));
-        Flowable<WebSocket<SomeMessageType>> connectingSockets = streamCreatingEndpointWrapper.connectingSockets()
+        Flowable<WebSocket<SomeMessageType>> connectingSockets = streamCreatingEndpointWrapper
+                .connectingSockets()
                 .map(webSocketFactory::apply)
                 .doOnNext(socket -> metricsCollector.subscriptionCreated(destination));
         Flowable<Pair<WebSocket<SomeMessageType>, CloseReason>> closingSockets = streamCreatingEndpointWrapper.closingSockets()

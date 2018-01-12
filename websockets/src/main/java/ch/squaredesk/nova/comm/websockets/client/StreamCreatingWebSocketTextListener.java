@@ -15,7 +15,11 @@ import ch.squaredesk.nova.comm.websockets.StreamCreatingEndpointWrapper;
 import ch.squaredesk.nova.tuples.Pair;
 import com.ning.http.client.ws.WebSocket;
 import com.ning.http.client.ws.WebSocketTextListener;
+import io.reactivex.BackpressureStrategy;
 import io.reactivex.Flowable;
+import io.reactivex.subjects.BehaviorSubject;
+import io.reactivex.subjects.PublishSubject;
+import io.reactivex.subjects.Subject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -27,9 +31,9 @@ public class StreamCreatingWebSocketTextListener<MessageType>
     private static final Logger logger = LoggerFactory.getLogger(StreamCreatingEndpointWrapper.class);
 
     private final BackpressuredStreamFromAsyncSource<Pair<WebSocket, MessageType>> messages = new BackpressuredStreamFromAsyncSource<>();
-    private final BackpressuredStreamFromAsyncSource<WebSocket> connectedSockets = new BackpressuredStreamFromAsyncSource<>();
-    private final BackpressuredStreamFromAsyncSource<Pair<WebSocket, CloseReason>> closedSockets = new BackpressuredStreamFromAsyncSource<>();
-    private final BackpressuredStreamFromAsyncSource<Pair<WebSocket, Throwable>> errors = new BackpressuredStreamFromAsyncSource<>();
+    private final Subject<WebSocket> connectedSockets = BehaviorSubject.create();
+    private final Subject<Pair<WebSocket, CloseReason>> closedSockets = PublishSubject.create();
+    private final Subject<Pair<WebSocket, Throwable>> errors = PublishSubject.create();
 
     private final Function<String, MessageType> messageUnmarshaller;
 
@@ -70,23 +74,23 @@ public class StreamCreatingWebSocketTextListener<MessageType>
 
     @Override
     public Flowable<WebSocket> connectingSockets() {
-        return connectedSockets.toFlowable();
+        return connectedSockets.toFlowable(BackpressureStrategy.BUFFER);
     }
 
     @Override
     public Flowable<Pair<WebSocket, CloseReason>> closingSockets() {
-        return closedSockets.toFlowable();
+        return closedSockets.toFlowable(BackpressureStrategy.BUFFER);
     }
 
     @Override
     public Flowable<Pair<WebSocket, Throwable>> errors() {
-        return errors.toFlowable();
+        return errors.toFlowable(BackpressureStrategy.BUFFER);
     }
 
     void close() {
-        closedSockets.onComplete();
+        messages.onComplete();
         connectedSockets.onComplete();
         errors.onComplete();
-        // FIXME closeSubject.onComplete();
+        // FIXME: if we call this, Flowable will be closed before we could inform eventual subscriber... closedSockets.onComplete();
     }
 }

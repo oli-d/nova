@@ -12,7 +12,6 @@ package ch.squaredesk.nova.comm.websockets.server;
 import ch.squaredesk.nova.comm.retrieving.MessageUnmarshaller;
 import ch.squaredesk.nova.comm.sending.MessageMarshaller;
 import ch.squaredesk.nova.comm.websockets.*;
-import io.reactivex.Flowable;
 import io.reactivex.Scheduler;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.schedulers.Schedulers;
@@ -29,7 +28,6 @@ public class ServerEndpointFactory {
     private final ConcurrentHashMap<org.glassfish.grizzly.websockets.WebSocket, WebSocket<?>> webSockets = new ConcurrentHashMap<>();
 
     private <MessageType> WebSocket<MessageType> instantiateNewWebSocket(
-            String destination,
             org.glassfish.grizzly.websockets.WebSocket webSocket,
             MessageMarshaller<MessageType, String> messageMarshaller) {
 
@@ -44,14 +42,12 @@ public class ServerEndpointFactory {
     }
 
     private <MessageType> WebSocket<MessageType> createWebSocket(
-            String destination,
             org.glassfish.grizzly.websockets.WebSocket webSocket,
-            MessageMarshaller<MessageType, String> messageMarshaller,
-            MetricsCollector metricsCollector) {
+            MessageMarshaller<MessageType, String> messageMarshaller) {
 
             WebSocket<?> retVal = webSockets.computeIfAbsent(
                     webSocket,
-                    key -> instantiateNewWebSocket(destination, key, messageMarshaller));
+                    key -> instantiateNewWebSocket(key, messageMarshaller));
             return (WebSocket<MessageType>) retVal;
     }
 
@@ -71,7 +67,6 @@ public class ServerEndpointFactory {
             MetricsCollector metricsCollector) {
         try {
             MessageType unmarshalledMessage = messageUnmarshaller.unmarshal(message);
-            metricsCollector.messageReceived(destination);
             return unmarshalledMessage;
         } catch (Exception e) {
             if (metricsCollector != null) {
@@ -95,7 +90,7 @@ public class ServerEndpointFactory {
         WebSocketEngine.getEngine().register("", destinationForSubscription, app);
 
         Function<org.glassfish.grizzly.websockets.WebSocket, WebSocket<MessageType>> webSocketCreator =
-                socket -> createWebSocket(destinationForMetrics, socket, messageMarshaller, metricsCollector);
+                socket -> createWebSocket(socket, messageMarshaller);
 
         EndpointStreamSource<MessageType> endpointStreamSource =
                 EndpointStreamSourceFactory.createStreamSourceFor(destinationForMetrics, webSocketCreator, app, metricsCollector);
