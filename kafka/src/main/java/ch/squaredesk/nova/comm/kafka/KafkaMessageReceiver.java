@@ -16,20 +16,27 @@ import ch.squaredesk.nova.comm.retrieving.MessageReceiver;
 import ch.squaredesk.nova.comm.retrieving.MessageUnmarshaller;
 import ch.squaredesk.nova.metrics.Metrics;
 import ch.squaredesk.nova.tuples.Pair;
+import com.sun.media.jfxmediaimpl.MediaDisposer;
 import io.reactivex.BackpressureStrategy;
 import io.reactivex.Flowable;
 import io.reactivex.Scheduler;
 import io.reactivex.Single;
+import io.reactivex.disposables.Disposable;
 import io.reactivex.schedulers.Schedulers;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import sun.awt.windows.ThemeReader;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
+import java.util.function.Consumer;
+import java.util.function.Function;
 
 import static java.util.Collections.singletonList;
 
@@ -38,12 +45,11 @@ public class KafkaMessageReceiver<InternalMessageType>
 
     private final Logger logger = LoggerFactory.getLogger(KafkaMessageReceiver.class);
     private final Flowable<IncomingMessage<InternalMessageType, String, KafkaSpecificInfo>> allMessagesStream;
+    private final Disposable allMessageStreamSubscription;
     private final Scheduler scheduler = Schedulers.io();
 
     final Map<String, Flowable<IncomingMessage<InternalMessageType, String, KafkaSpecificInfo>>> topicToMessageStream = new ConcurrentHashMap<>();
     final AtomicBoolean topicSubscriptionsChanged = new AtomicBoolean(false);
-    final AtomicBoolean shutdown = new AtomicBoolean(false);
-
     KafkaMessageReceiver(String identifier,
                          Properties consumerProperties,
                          MessageUnmarshaller<String, InternalMessageType> messageUnmarshaller,
@@ -52,28 +58,57 @@ public class KafkaMessageReceiver<InternalMessageType>
 
         long pollTimeout = 1; // TODO: configurable
         TimeUnit pollTimeUnit = TimeUnit.SECONDS;  // TODO: configurable
-        Flowable<ConsumerRecords<String, String>> rawMessages = Flowable.generate(
+        AtomicBoolean shutdown = new AtomicBoolean(false);
+
+        Function<KafkaConsumer<String, String>, ConsumerRecords<String, String>> poller = consumer -> {
+            ConsumerRecords<String, String> consumerRecords = null;
+            do {
+                try {
+                    consumerRecords = consumer.poll(pollTimeUnit.toMillis(pollTimeout));
+                } catch (Exception ex) {
+                    break;
+                }
+                if (consumerRecords != null && consumerRecords.isEmpty()) {
+                    logger.trace("Ignoring empty consumer records");
+                }
+            } while (consumerRecords == null && !shutdown.get());
+            return consumerRecords;
+        };
+
+        Runnable sleeper = () -> {
+            logger.trace("No topic subscribed yet, sleeping {} {}", pollTimeout, pollTimeUnit);
+            try {
+                Thread.currentThread().sleep(pollTimeUnit.toMillis(pollTimeout));
+            } catch (InterruptedException e) {
+                // ignored
+            }
+        };
+
+        BiFunction<Set<String>, KafkaConsumer<String, String>, Boolean> subscriptionMaintainer = (subscribedTopics, consumer) -> {
+            if (topicSubscriptionsChanged.getAndSet(false)) {
+                logger.debug("Changing topic subscriptions to " + subscribedTopics);
+                consumer.subscribe(subscribedTopics);
+            }
+            return !subscribedTopics.isEmpty();
+        };
+
+        Flowable<ConsumerRecords<String, String>> consumerRecordsStream = Flowable.generate(
                 () -> {
                     logger.info("Opening connection to Kafka broker");
                     return new KafkaConsumer<String, String>(consumerProperties);
                 },
                 (consumer, emitter) -> {
-                    ConsumerRecords<String, String> consumerRecords;
-                    do {
-                        if (topicSubscriptionsChanged.getAndSet(false)) {
-                            Set<String> topics = this.topicToMessageStream.keySet();
-                            logger.debug("Changing topic subscriptions to " + topics);
-                            consumer.subscribe(topics);
-                        }
-                        consumerRecords = consumer.poll(pollTimeUnit.toMillis(pollTimeout));
-                    } while (consumerRecords == null && !shutdown.get());
-
-                    if (consumerRecords != null) {
-                        emitter.onNext(consumerRecords);
+                    while (!subscriptionMaintainer.apply(topicToMessageStream.keySet(), consumer)) {
+                        // nothing subscribed
+                        sleeper.run();
                     }
-
-                    if (shutdown.get()) {
+                    ConsumerRecords<String, String> consumerRecords = poller.apply(consumer);
+                    if (consumerRecords == null) {
+                        // only happens, if shutdown was initiated
                         emitter.onComplete();
+                    } else {
+                        logger.trace("Read consumer records, size = {}", consumerRecords.count());
+                        emitter.onNext(consumerRecords);
                     }
                 },
                 consumer -> {
@@ -81,11 +116,11 @@ public class KafkaMessageReceiver<InternalMessageType>
                     try {
                         consumer.close();
                     } catch (Exception e) {
-                        logger.info("An error occurred trying to close KafkaConsumer");
+                        logger.info("An error occurred trying to close KafkaConsumer", e.getCause());
                     }
                 }
         );
-        allMessagesStream = rawMessages
+        allMessagesStream = consumerRecordsStream
                 .subscribeOn(scheduler)
                 .concatMap(this::unmarshall)
                 .map(topicAndMessage -> {
@@ -99,6 +134,9 @@ public class KafkaMessageReceiver<InternalMessageType>
                     return new IncomingMessage<>(topicAndMessage._2, messageDetails);
                 })
                 .share();
+
+        // we eagerly create the subscription to the broker
+        allMessageStreamSubscription = allMessagesStream.subscribe();
     }
 
     Flowable<Pair<String, InternalMessageType>> unmarshall (ConsumerRecords<String, String> consumerRecords) {
@@ -124,6 +162,7 @@ public class KafkaMessageReceiver<InternalMessageType>
         return topicToMessageStream.computeIfAbsent(
                 destination,
                 key -> {
+                    logger.debug("Creating new stream for topic " + destination);
                     return allMessagesStream
                             .filter(incomingMessage -> destination.equals(incomingMessage.details.destination))
                             .doOnSubscribe(s -> {
@@ -147,7 +186,8 @@ public class KafkaMessageReceiver<InternalMessageType>
     }
 
     public void shutdown() {
+        logger.info("Shutting down, currently subscribed to " + topicToMessageStream.keySet());
         topicToMessageStream.clear();
-        shutdown.set(true);
+        allMessageStreamSubscription.dispose();
     }
 }

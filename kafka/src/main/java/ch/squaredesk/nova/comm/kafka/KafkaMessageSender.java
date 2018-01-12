@@ -37,20 +37,8 @@ class KafkaMessageSender<InternalMessageType> extends MessageSender<String, Inte
     @Override
     public Completable doSend(String message, MessageSendingInfo<String, KafkaSpecificInfo> sendingInfo) {
         requireNonNull(message, "message must not be null");
-        return Completable.create(s -> {
-            try {
-                ProducerRecord<String,String> record = new ProducerRecord<String, String>(sendingInfo.destination,message);
-                producer.send(record, (metadata, exception) -> {
-                    if (exception!=null) {
-                        s.onError(exception);
-                    } else {
-                        s.onComplete();
-                    }
-                });
-            } catch (Throwable t) {
-                s.onError(t);
-            }
-        });
+        ProducerRecord<String,String> record = new ProducerRecord<String, String>(sendingInfo.destination,message);
+        return Completable.fromFuture(producer.send(record));
     }
 
 }

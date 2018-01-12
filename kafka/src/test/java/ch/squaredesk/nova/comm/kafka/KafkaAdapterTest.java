@@ -23,14 +23,14 @@ import io.reactivex.observers.TestObserver;
 import io.reactivex.schedulers.Schedulers;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.ProducerConfig;
+import org.junit.AfterClass;
+import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.jupiter.api.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Properties;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -40,27 +40,22 @@ import static org.hamcrest.Matchers.*;
 
 class KafkaAdapterTest {
     private static final int KAFKA_PORT = 11_000;
-    private EphemeralKafkaBroker kafkaBroker;
+    private static EphemeralKafkaBroker kafkaBroker;
     private KafkaAdapter<String> sut;
 
     @BeforeAll
-    static void initLogging() {
-        Logger logger = LoggerFactory.getLogger("org.apache.kafka");
-        ch.qos.logback.classic.Logger l2 = (ch.qos.logback.classic.Logger) logger;
-        l2.setLevel(Level.WARN);
-        logger = LoggerFactory.getLogger("kafka");
-        l2 = (ch.qos.logback.classic.Logger) logger;
-        l2.setLevel(Level.WARN);
-        logger = LoggerFactory.getLogger("org.apache.zookeeper");
-        l2 = (ch.qos.logback.classic.Logger) logger;
-        l2.setLevel(Level.WARN);
+    static void startKafkaBroker() throws Exception {
+        kafkaBroker = EphemeralKafkaBroker.create(KAFKA_PORT);
+        kafkaBroker.start().get();
+    }
+
+    @AfterAll
+    static void shutdownKafkaBroker() throws Exception {
+        kafkaBroker.stop();
     }
 
     @BeforeEach
     void setUp() throws Exception {
-        kafkaBroker = EphemeralKafkaBroker.create(KAFKA_PORT);
-        kafkaBroker.start().get();
-
         sut = KafkaAdapter.builder(String.class)
                 .setServerAddress("127.0.0.1:" + KAFKA_PORT)
                 .setIdentifier("Test" + UUID.randomUUID())
@@ -73,7 +68,6 @@ class KafkaAdapterTest {
     @AfterEach
     void tearDown() throws Exception {
         sut.shutdown();
-        kafkaBroker.stop();
     }
 
     @Test
@@ -102,7 +96,7 @@ class KafkaAdapterTest {
         // dispose the subscription, resubscribe and send another message
         subscription1.dispose();
 
-        CountDownLatch cdl2 = new CountDownLatch(3);
+        CountDownLatch cdl2 = new CountDownLatch(1);
         List<String> messages2 = new ArrayList<>();
         Disposable subscription2 = sut.messages(topic).subscribe(x -> {
             messages2.add(x);
@@ -112,12 +106,11 @@ class KafkaAdapterTest {
         // ensure that only the second subscription was invoked
         sut.sendMessage(topic, "Three").blockingAwait();
 
-        cdl2.await(30, SECONDS);
+        cdl2.await(10, SECONDS);
         assertThat(counter.get(), is(2));
         assertThat(cdl2.getCount(), is(0L));
         assertThat(messages, contains("One", "Two"));
-        // assertThat(messages2, contains("Three"));
-        assertThat(messages2, contains("One", "Two", "Three")); // Since Kafka persists all messages, we also retrieve One and Two
+        assertThat(messages2, contains("Three"));
 
         subscription2.dispose();
     }
@@ -172,36 +165,27 @@ class KafkaAdapterTest {
         String topicEven = "even";
         String topicOdd = "odd";
 
-        AtomicInteger counterEven = new AtomicInteger();
-        AtomicInteger counterOdd = new AtomicInteger();
-        CountDownLatch cdlZero = new CountDownLatch(1);
+        CountDownLatch cdlEven = new CountDownLatch(4);
+        CountDownLatch cdlOdd = new CountDownLatch(6);
 
-        Consumer<String> messageConsumerOdd = msg -> {
-            int i = Integer.parseInt(msg);
-            if (i==0) {
-                cdlZero.countDown();
-            } else {
-                counterOdd.incrementAndGet();
-            }
-        };
-        Disposable subscriptionEven1 =  sut.messages(topicEven).subscribe(msg -> counterEven.incrementAndGet());
-        Disposable subscriptionEven2 =  sut.messages(topicEven).subscribe(msg -> counterEven.incrementAndGet());
-        Disposable subscriptionOdd1 =  sut.messages(topicOdd).subscribe(messageConsumerOdd);
-        Disposable subscriptionOdd2 =  sut.messages(topicOdd).subscribe(messageConsumerOdd);
+        Consumer<String> messageConsumerOdd = msg -> cdlOdd.countDown();
+        Consumer<String> messageConsumerEven = msg -> cdlEven.countDown();
+        sut.messages(topicEven).subscribe(messageConsumerEven);
+        sut.messages(topicEven).subscribe(messageConsumerEven);
+        sut.messages(topicOdd).subscribe(messageConsumerOdd);
+        sut.messages(topicOdd).subscribe(messageConsumerOdd);
 
         sut.sendMessage(topicOdd, "1").blockingAwait();
         sut.sendMessage(topicEven, "2").blockingAwait();
         sut.sendMessage(topicOdd, "3").blockingAwait();
         sut.sendMessage(topicEven, "4").blockingAwait();
+        sut.sendMessage(topicOdd, "5").blockingAwait();
 
-        sut.sendMessage(topicOdd, "0").blockingAwait();
+        cdlEven.await(20, SECONDS);
+        cdlOdd.await(20, SECONDS);
 
-        cdlZero.await(10, SECONDS);
-
-
-        assertThat(cdlZero.getCount(), is (0L));
-        assertThat(counterOdd.get(), is (4)); // twice the number of messages sent, since we have two consumers
-        assertThat(counterEven.get(), is (4)); // twice the number of messages sent, since we have two consumers
+        assertThat(cdlEven.getCount(), is (0L));
+        assertThat(cdlOdd.getCount(), is (0L));
     }
 
     @Test
@@ -225,8 +209,47 @@ class KafkaAdapterTest {
         sut.sendMessage(topic, "3").blockingAwait();
 
         cdl.await(10, SECONDS);
-        assertThat(cdl.getCount(),is(1L)); // should have NOT seen "3"
-        assertThat(messages, contains(1));
+        assertThat(cdl.getCount(),is(1L));
+        assertThat(messages, containsInAnyOrder(1));
+    }
+
+    @Test
+    void errorInMessageHandlingForOneSubscriptionDoesNotAffectOtherSubscriptions() throws InterruptedException {
+        String topic = "topic4SubsErrorMultipleTest";
+        AtomicInteger counterBrokenSubscriprion = new AtomicInteger();
+        CountDownLatch cdlGood = new CountDownLatch(3);
+        List<Integer> messagesGood = new ArrayList<>();
+        List<Integer> messagesBroken = new ArrayList<>();
+        sut.messages(topic).subscribe(
+                x -> {
+                    try {
+                        messagesBroken.add(Integer.parseInt(x));
+                    } finally {
+                        counterBrokenSubscriprion.incrementAndGet();
+                    }
+                }
+        );
+        sut.messages(topic).subscribe(
+                x -> {
+                    try {
+                        messagesGood.add(Integer.parseInt(x));
+                    } catch (Exception e) {
+                        // noop
+                    } finally {
+                        cdlGood.countDown();
+                    }
+                }
+        );
+
+        // send two good and one bad message
+        sut.sendMessage(topic, "1").blockingAwait();
+        sut.sendMessage(topic, "Two").blockingAwait();
+        sut.sendMessage(topic, "3").blockingAwait();
+
+        cdlGood.await(10, SECONDS);
+        assertThat(cdlGood.getCount(),is(0L));
+        assertThat(counterBrokenSubscriprion.get(),is(2));
+        assertThat(messagesGood, containsInAnyOrder(1, 3));
     }
 
     @Test
@@ -312,7 +335,7 @@ class KafkaAdapterTest {
         sender1.join();
         sender2.join();
 
-        cdl.await();
+        cdl.await(20, SECONDS);
         assertThat(cdl.getCount(), is(0L));
 
         assertThat(messages, containsInAnyOrder("One-1", "Two-1", "Three-1", "One-2", "Two-2", "Three-2"));
