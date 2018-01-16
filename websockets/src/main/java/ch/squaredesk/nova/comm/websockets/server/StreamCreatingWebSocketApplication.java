@@ -9,7 +9,6 @@
  */
 package ch.squaredesk.nova.comm.websockets.server;
 
-import ch.squaredesk.nova.comm.BackpressuredStreamFromAsyncSource;
 import ch.squaredesk.nova.comm.websockets.CloseReason;
 import ch.squaredesk.nova.comm.websockets.StreamCreatingEndpointWrapper;
 import ch.squaredesk.nova.tuples.Pair;
@@ -32,7 +31,7 @@ public class StreamCreatingWebSocketApplication<MessageType>
 
     private static final Logger logger = LoggerFactory.getLogger(StreamCreatingWebSocketApplication.class);
 
-    private final BackpressuredStreamFromAsyncSource<Pair<WebSocket, MessageType>> messages = new BackpressuredStreamFromAsyncSource<>();
+    private final Subject<Pair<WebSocket, MessageType>> messages = PublishSubject.<Pair<WebSocket, MessageType>>create().toSerialized();
     private final Subject<WebSocket> connectedSockets = PublishSubject.create();
     private final Subject<Pair<WebSocket, CloseReason>> closedSockets = PublishSubject.create();
     private final Subject<Pair<WebSocket, Throwable>> errors = PublishSubject.create();
@@ -90,7 +89,7 @@ public class StreamCreatingWebSocketApplication<MessageType>
 
     @Override
     public Flowable<Pair<WebSocket, MessageType>> messages() {
-        return messages.toFlowable();
+        return messages.toFlowable(BackpressureStrategy.BUFFER);
     }
 
     @Override
