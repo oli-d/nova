@@ -24,7 +24,6 @@ import org.slf4j.LoggerFactory;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Function;
 
 import static java.util.Objects.requireNonNull;
 
