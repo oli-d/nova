@@ -18,6 +18,9 @@ import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.ListenableFuture;
 import com.ning.http.client.Response;
 import io.reactivex.Single;
+import io.reactivex.exceptions.Exceptions;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.net.URL;
 import java.util.concurrent.TimeUnit;
@@ -73,9 +76,16 @@ class RpcClient<InternalMessageType> extends ch.squaredesk.nova.comm.rpc.RpcClie
         Single timeoutSingle = Single
                 .timer(timeout, timeUnit)
                 .map(zero -> {
+                    TimeoutException te = new TimeoutException(
+                        "Request"
+                        + (request == null ? "" : "" + String.valueOf(request))
+                        + " to " + messageSendingInfo.destination
+                        + " ran into timeout after "
+                        + timeout + " " + String.valueOf(timeUnit).toLowerCase());
                     metricsCollector.rpcTimedOut(messageSendingInfo.destination.toExternalForm());
-                    resultFuture.cancel(true);
-                    throw new TimeoutException();
+                    resultFuture.abort(te);
+                    Exceptions.propagate(te);
+                    return null;
                 });
 
         Single<ReplyType> resultSingle = Single.fromFuture(resultFuture).map(response -> {

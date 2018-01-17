@@ -5,6 +5,7 @@ import ch.squaredesk.nova.comm.sending.MessageSendingInfo;
 import ch.squaredesk.nova.metrics.Metrics;
 import com.ning.http.client.AsyncHttpClient;
 import io.reactivex.Flowable;
+import io.reactivex.schedulers.Schedulers;
 import org.glassfish.grizzly.http.server.HttpServer;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
@@ -69,11 +70,11 @@ class RpcServerTest {
     @Test
     void requestsProperlyDispatched() throws Exception {
         sut.start();
-        int numRequests = 5;
+        int numRequests = 15;
         String path = "/bla";
         CountDownLatch cdl = new CountDownLatch(numRequests);
         Flowable<RpcInvocation<String, String, HttpSpecificInfo>> requests = sut.requests(path);
-        requests.subscribe(rpcInvocation -> {
+        requests.subscribeOn(Schedulers.io()).subscribe(rpcInvocation -> {
             rpcInvocation.complete(" description " + rpcInvocation.transportSpecificInfo.parameters.get("p"));
             cdl.countDown();
         });

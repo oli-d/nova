@@ -6,6 +6,7 @@ import ch.squaredesk.nova.metrics.Metrics;
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.AsyncHttpClientConfig;
 import io.reactivex.Flowable;
+import io.reactivex.schedulers.Schedulers;
 import org.glassfish.grizzly.http.server.HttpServer;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -78,7 +79,7 @@ class SslTest {
         String path = "/bla";
         CountDownLatch cdl = new CountDownLatch(numRequests);
         Flowable<RpcInvocation<String, String, HttpSpecificInfo>> requests = sut.requests(path);
-        requests.subscribe(rpcInvocation -> {
+        requests.subscribeOn(Schedulers.io()).subscribe(rpcInvocation -> {
             rpcInvocation.complete(" description " + rpcInvocation.transportSpecificInfo.parameters.get("p"));
             cdl.countDown();
         });

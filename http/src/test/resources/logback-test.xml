@@ -1,0 +1,24 @@
+<!--
+  ~ Copyright (c) Squaredesk GmbH and Oliver Dotzauer.
+  ~
+  ~ This program is distributed under the squaredesk open source license. See the LICENSE file
+  ~ distributed with this work for additional information regarding copyright ownership. You may also
+  ~ obtain a copy of the license at
+  ~
+  ~   https://squaredesk.ch/license/oss/LICENSE
+  -->
+<configuration>
+
+    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <root level="debug">
+        <appender-ref ref="STDOUT"/>
+    </root>
+
+    <logger name="com.ning.http.client.providers.grizzly.AhcEventFilter" level="INFO"/>
+    <logger name="com.ning.http.client.providers.grizzly.AsyncHttpClientFilter" level="INFO"/>
+</configuration>
