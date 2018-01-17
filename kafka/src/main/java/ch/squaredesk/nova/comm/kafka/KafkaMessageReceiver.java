@@ -103,7 +103,7 @@ public class KafkaMessageReceiver<InternalMessageType>
                         // only happens, if shutdown was initiated
                         emitter.onComplete();
                     } else {
-                        logger.trace("Read consumer records, size = {}", consumerRecords.count());
+                        logger.debug("Read consumer records, size = {}", consumerRecords.count());
                         emitter.onNext(consumerRecords);
                     }
                 },
