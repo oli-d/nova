@@ -33,6 +33,9 @@
     <logger name="kafka.controller" level="WARN"/>
     <logger name="kafka.server.BrokerMetadataCheckpoint" level="INFO"/>
     <logger name="org.apache.kafka.clients.NetworkClient" level="INFO"/>
+    <logger name="org.apache.kafka.common.utils.AppInfoParser" level="ERROR"/>
     <logger name="com.yammer.metrics.reporting.JmxReporter" level="ERROR"/>
+<!--
     <logger name="ch.squaredesk.nova.comm.kafka.KafkaMessageReceiver" level="DEBUG"/>
+-->
 </configuration>

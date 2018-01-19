@@ -19,20 +19,17 @@ import ch.squaredesk.nova.tuples.Pair;
 import io.reactivex.BackpressureStrategy;
 import io.reactivex.Flowable;
 import io.reactivex.Scheduler;
-import io.reactivex.disposables.Disposable;
 import io.reactivex.schedulers.Schedulers;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Map;
-import java.util.Objects;
-import java.util.Properties;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
@@ -41,11 +38,9 @@ public class KafkaMessageReceiver<InternalMessageType>
 
     private final Logger logger = LoggerFactory.getLogger(KafkaMessageReceiver.class);
     private final Flowable<IncomingMessage<InternalMessageType, String, KafkaSpecificInfo>> allMessagesStream;
-    private final Disposable allMessageStreamSubscription;
     private final Scheduler scheduler = Schedulers.io();
+    private final Map<String, AtomicInteger> topicToSubscriptionCount = new ConcurrentHashMap<>();
 
-    final Map<String, Flowable<IncomingMessage<InternalMessageType, String, KafkaSpecificInfo>>> topicToMessageStream = new ConcurrentHashMap<>();
-    final AtomicBoolean topicSubscriptionsChanged = new AtomicBoolean(false);
     KafkaMessageReceiver(String identifier,
                          Properties consumerProperties,
                          MessageUnmarshaller<String, InternalMessageType> messageUnmarshaller,
@@ -80,25 +75,29 @@ public class KafkaMessageReceiver<InternalMessageType>
             }
         };
 
-        BiFunction<Set<String>, KafkaConsumer<String, String>, Boolean> subscriptionMaintainer = (subscribedTopics, consumer) -> {
-            if (topicSubscriptionsChanged.getAndSet(false)) {
-                logger.debug("Changing topic subscriptions to " + subscribedTopics);
-                consumer.subscribe(subscribedTopics);
-            }
-            return !subscribedTopics.isEmpty();
+        BiFunction<Set<String>, Pair<KafkaConsumer<String, String>, HashSet<String>>, Boolean> subscriptionMaintainer =
+                (subscribedTopics, consumerTopicsPair) -> {
+                    if (!consumerTopicsPair._2.equals(subscribedTopics)) {
+                        logger.debug("Changing topic subscriptions to " + subscribedTopics);
+                        consumerTopicsPair._2.clear();
+                        consumerTopicsPair._2.addAll(subscribedTopics);
+                        consumerTopicsPair._1.subscribe(subscribedTopics);
+                    }
+                return !consumerTopicsPair._2.isEmpty();
         };
 
         Flowable<ConsumerRecords<String, String>> consumerRecordsStream = Flowable.generate(
                 () -> {
                     logger.info("Opening connection to Kafka broker");
-                    return new KafkaConsumer<String, String>(consumerProperties);
+                    return new Pair<>(new KafkaConsumer<String, String>(consumerProperties),
+                            new HashSet<String>());
                 },
-                (consumer, emitter) -> {
-                    while (!subscriptionMaintainer.apply(topicToMessageStream.keySet(), consumer)) {
+                (consumerTopicsPair, emitter) -> {
+                    while (!subscriptionMaintainer.apply(topicToSubscriptionCount.keySet(), consumerTopicsPair)) {
                         // nothing subscribed
                         sleeper.run();
                     }
-                    ConsumerRecords<String, String> consumerRecords = poller.apply(consumer);
+                    ConsumerRecords<String, String> consumerRecords = poller.apply(consumerTopicsPair._1);
                     if (consumerRecords == null) {
                         // only happens, if shutdown was initiated
                         emitter.onComplete();
@@ -107,10 +106,10 @@ public class KafkaMessageReceiver<InternalMessageType>
                         emitter.onNext(consumerRecords);
                     }
                 },
-                consumer -> {
+                consumerTopicsPair -> {
                     logger.info("Shutting down connection to Kafka broker");
                     try {
-                        consumer.close();
+                        consumerTopicsPair._1.close();
                     } catch (Exception e) {
                         logger.info("An error occurred trying to close KafkaConsumer", e.getCause());
                     }
@@ -130,9 +129,6 @@ public class KafkaMessageReceiver<InternalMessageType>
                     return new IncomingMessage<>(topicAndMessage._2, messageDetails);
                 })
                 .share();
-
-        // we eagerly create the subscription to the broker
-        allMessageStreamSubscription = allMessagesStream.subscribe();
     }
 
     Flowable<Pair<String, InternalMessageType>> unmarshall (ConsumerRecords<String, String> consumerRecords) {
@@ -155,35 +151,41 @@ public class KafkaMessageReceiver<InternalMessageType>
         Objects.requireNonNull(destination, "destination must not be null");
         Objects.requireNonNull(messageUnmarshaller, "unmarshaller must not be null");
 
-        return topicToMessageStream.computeIfAbsent(
-                destination,
-                key -> {
-                    logger.debug("Creating new stream for topic " + destination);
-                    return allMessagesStream
-                            .filter(incomingMessage -> destination.equals(incomingMessage.details.destination))
-                            .doOnSubscribe(s -> {
-                                scheduler.scheduleDirect(() -> {
-                                    topicSubscriptionsChanged.set(true);
-                                    logger.info("Subscribing to topic " + destination);
-                                    metricsCollector.subscriptionCreated(destination);
-                                });
-                            })
-                            .doFinally(() -> {
-                                scheduler.scheduleDirect(() -> {
-                                    topicToMessageStream.remove(destination);
-                                    metricsCollector.subscriptionDestroyed(destination);
-                                    topicSubscriptionsChanged.set(true);
-                                    logger.info("Unsubscribed from topic " + destination);
-                                });
-                            })
-                            .share();
-                }
-        );
+        return allMessagesStream
+                .filter(incomingMessage -> destination.equals(incomingMessage.details.destination))
+                .doOnSubscribe(s -> {
+                    scheduler.scheduleDirect(() -> {
+                        AtomicInteger subsCounter = topicToSubscriptionCount.computeIfAbsent(
+                                destination,
+                                key -> new AtomicInteger(0)
+                        );
+                        int count = subsCounter.incrementAndGet();
+                        logger.info("Subscribing to topic {}, current subscription count is  {}", destination, count);
+                        metricsCollector.subscriptionCreated(destination);
+                    });
+                })
+                .doFinally(() -> {
+                    scheduler.scheduleDirect(() -> {
+                        metricsCollector.subscriptionDestroyed(destination);
+                        AtomicInteger subsCounter = topicToSubscriptionCount.get(destination);
+                        if (subsCounter==null) {
+                            logger.error("WTF! Unsubscribing topic {} but the counter is gone?!?!?", destination);
+                        } else {
+                            int count = subsCounter.decrementAndGet();
+                            if (count==0) {
+                                topicToSubscriptionCount.remove(destination);
+                                logger.info("Unsubscribed last subscription to topic " + destination);
+                            } else {
+                                logger.info("Unsubscribed from topic {}, current subscription count is  {}", destination, count);
+                            }
+                        }
+                    });
+                });
     }
 
     public void shutdown() {
-        logger.info("Shutting down, currently subscribed to " + topicToMessageStream.keySet());
-        topicToMessageStream.clear();
-        allMessageStreamSubscription.dispose();
+        logger.info("Shutting down, currently subscribed to " + topicToSubscriptionCount.keySet());
+        topicToSubscriptionCount.clear();
+//        allMessageStreamSubscription.dispose();
     }
 }
