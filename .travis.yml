@@ -10,7 +10,7 @@ cache:
   directories:
   - "$HOME/.cache"
 
-script: mvn -Pci-build-medium install"
+script: mvn -Pci-build-medium install
 
 #deploy:
 #  provider: script
