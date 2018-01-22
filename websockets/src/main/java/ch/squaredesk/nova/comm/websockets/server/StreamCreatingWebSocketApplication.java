@@ -44,7 +44,6 @@ public class StreamCreatingWebSocketApplication<MessageType>
 
     @Override
     public void onClose(WebSocket socket, DataFrame frame) {
-        // FIXME: convert dataFrame to something useful
         ClosingFrame closingFrame = (ClosingFrame)frame;
         CloseReason closeReason;
         try {
@@ -65,7 +64,6 @@ public class StreamCreatingWebSocketApplication<MessageType>
     protected boolean onError(WebSocket socket, Throwable t) {
         errors.onNext(new Pair<>(socket, t));
         return true; // close webSocket
-        // TODO verify: is onClose() invoked?
     }
 
     @Override
