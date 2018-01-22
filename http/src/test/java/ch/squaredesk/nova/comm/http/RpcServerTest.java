@@ -90,9 +90,7 @@ class RpcServerTest {
         sut.start();
         String path = "/fail";
         Flowable<RpcInvocation<String, String, HttpSpecificInfo>> requests = sut.requests(path);
-        requests.subscribe(rpcInvocation -> {
-            rpcInvocation.completeExceptionally(new Exception("no content"));
-        });
+        requests.subscribe(rpcInvocation -> rpcInvocation.completeExceptionally(new Exception("no content")));
 
         String urlAsString = "http://" + rsc.interfaceName + ":" + rsc.port + path + "?p=";
         MessageSendingInfo<URL, HttpSpecificInfo> msi = new MessageSendingInfo.Builder<URL, HttpSpecificInfo>()
@@ -100,9 +98,8 @@ class RpcServerTest {
                 .withTransportSpecificInfo(new HttpSpecificInfo(HttpRequestMethod.POST))
                 .build();
 
-        RuntimeException exception = Assertions.assertThrows(RuntimeException.class, () -> {
-            rpcClient.sendRequest("{}", msi, 15, TimeUnit.SECONDS).blockingGet();
-        });
+        RuntimeException exception = Assertions.assertThrows(RuntimeException.class, () ->
+                rpcClient.sendRequest("{}", msi, 15, TimeUnit.SECONDS).blockingGet());
         assertThat(exception.getMessage(), is("400 - Bad request"));
     }
 
