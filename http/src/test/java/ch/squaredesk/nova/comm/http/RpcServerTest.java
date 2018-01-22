@@ -35,6 +35,7 @@ class RpcServerTest {
     @AfterEach
     void tearDown() {
         if (sut!=null) sut.shutdown();
+        if (rpcClient!=null) rpcClient.shutdown();
     }
 
     @Test

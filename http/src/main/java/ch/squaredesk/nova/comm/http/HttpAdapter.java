@@ -136,7 +136,10 @@ public class HttpAdapter<MessageType> {
     }
 
     public void shutdown() {
-        rpcServer.shutdown();
+        if (rpcServer!=null) {
+            rpcServer.shutdown();
+        }
+        rpcClient.shutdown();
     }
 
     public static <MessageType> Builder<MessageType> builder(Class<MessageType> messageTypeClass) {

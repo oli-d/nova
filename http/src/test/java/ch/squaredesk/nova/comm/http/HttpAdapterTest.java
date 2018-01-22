@@ -13,10 +13,7 @@ package ch.squaredesk.nova.comm.http;
 
 import io.reactivex.observers.TestObserver;
 import org.glassfish.grizzly.http.server.HttpServer;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
 import java.math.BigDecimal;
 import java.util.concurrent.ExecutionException;
@@ -40,6 +37,11 @@ class HttpAdapterTest {
                 .setHttpServer(httpServer)
                 .build();
 
+    }
+
+    @AfterEach
+    void tearDown() {
+        sut.shutdown();
     }
 
     @Test
@@ -81,11 +83,15 @@ class HttpAdapterTest {
         HttpAdapter<String> commAdapter = HttpAdapter.builder(String.class)
                 .setHttpServer(httpServer)
                 .build();
-        TestObserver<String> observer = commAdapter
-                .sendPostRequest("http://httpbin.org/get", "{ myTest: \"value\"}")
-                .test();
-        observer.await(40, SECONDS);
-        observer.assertError(throwable -> throwable.getMessage().contains("METHOD NOT ALLOWED"));
+        try {
+            TestObserver<String> observer = commAdapter
+                    .sendPostRequest("http://httpbin.org/get", "{ myTest: \"value\"}")
+                    .test();
+            observer.await(40, SECONDS);
+            observer.assertError(throwable -> throwable.getMessage().contains("METHOD NOT ALLOWED"));
+        } finally {
+            commAdapter.shutdown();
+        }
     }
 
     @Test
@@ -94,9 +100,13 @@ class HttpAdapterTest {
         HttpAdapter<String> commAdapter = HttpAdapter.builder(String.class)
                 .setHttpServer(httpServer)
                 .build();
-        TestObserver<String> observer = commAdapter.sendGetRequest("http://httpbin.org/post").test();
-        observer.await(40, SECONDS);
-        observer.assertError(throwable -> throwable.getMessage().contains("METHOD NOT ALLOWED"));
+        try {
+            TestObserver<String> observer = commAdapter.sendGetRequest("http://httpbin.org/post").test();
+            observer.await(40, SECONDS);
+            observer.assertError(throwable -> throwable.getMessage().contains("METHOD NOT ALLOWED"));
+        } finally {
+            commAdapter.shutdown();
+        }
     }
 
     @Test
@@ -104,13 +114,17 @@ class HttpAdapterTest {
         HttpAdapter<String> xxx = HttpAdapter.builder(String.class)
                 .setHttpServer(httpServer)
                 .build();
-        TestObserver<String> observer = xxx
-                .sendRequest("http://httpbin.org/ip", "1", HttpRequestMethod.GET)
-                .test();
+        try {
+            TestObserver<String> observer = xxx
+                    .sendRequest("http://httpbin.org/ip", "1", HttpRequestMethod.GET)
+                    .test();
 
-        observer.await(40, SECONDS);
-        observer.assertComplete();
-        observer.assertValue(value -> value.contains("\"origin\":"));
+            observer.await(40, SECONDS);
+            observer.assertComplete();
+            observer.assertValue(value -> value.contains("\"origin\":"));
+        } finally {
+            xxx.shutdown();
+        }
     }
 
 }

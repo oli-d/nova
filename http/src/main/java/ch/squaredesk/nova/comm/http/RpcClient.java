@@ -99,4 +99,8 @@ class RpcClient<InternalMessageType> extends ch.squaredesk.nova.comm.rpc.RpcClie
 
         return timeoutSingle.ambWith(resultSingle);
     }
+
+    void shutdown() {
+        client.close();
+    }
 }
