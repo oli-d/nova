@@ -23,8 +23,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 
 public class ServerEndpointFactory {
-    private static final Scheduler housekeepingScheduler = Schedulers.io(); // TODO: proper name.
-                                                                            // TODO: do we want to let the user define this?
+    private static final Scheduler lifecycleEventScheduler = Schedulers.io();
     private final ConcurrentHashMap<org.glassfish.grizzly.websockets.WebSocket, WebSocket<?>> webSockets = new ConcurrentHashMap<>();
 
     private <MessageType> WebSocket<MessageType> instantiateNewWebSocket(
@@ -36,9 +35,7 @@ public class ServerEndpointFactory {
                         String messageAsString = marshal(message, messageMarshaller);
                         webSocket.send(messageAsString);
                     },
-                    () -> {
-                        webSocket.close();
-                    });
+                    webSocket::close);
     }
 
     private <MessageType> WebSocket<MessageType> createWebSocket(
@@ -66,8 +63,7 @@ public class ServerEndpointFactory {
             MessageUnmarshaller<String, MessageType> messageUnmarshaller,
             MetricsCollector metricsCollector) {
         try {
-            MessageType unmarshalledMessage = messageUnmarshaller.unmarshal(message);
-            return unmarshalledMessage;
+            return messageUnmarshaller.unmarshal(message);
         } catch (Exception e) {
             if (metricsCollector != null) {
                 metricsCollector.unparsableMessageReceived(destination);
@@ -97,14 +93,13 @@ public class ServerEndpointFactory {
 
         // register all connecting WebSockets
         Disposable subscriptionConnections = app.connectingSockets()
-                .subscribeOn(housekeepingScheduler).subscribe(socket -> webSocketCreator.apply(socket));
+                .subscribeOn(lifecycleEventScheduler).subscribe(webSocketCreator::apply);
         // unregister all disconnecting WebSockets
         Disposable subscriptionDisconnections = app.closingSockets()
-                .subscribeOn(housekeepingScheduler).subscribe(pair -> webSockets.remove(pair._1));
+                .subscribeOn(lifecycleEventScheduler).subscribe(pair -> webSockets.remove(pair._1));
         Consumer<MessageType> broadcastAction = message -> {
             String messageAsString = marshal(message, messageMarshaller);
 
-            // Optional<org.glassfish.grizzly.websockets.WebSocket> broadcastSocket =
             Set<org.glassfish.grizzly.websockets.WebSocket> allSockets = webSockets.keySet();
             allSockets.stream()
                 .filter(socket -> {

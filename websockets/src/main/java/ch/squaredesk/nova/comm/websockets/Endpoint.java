@@ -32,13 +32,11 @@ public class Endpoint<MessageType>  {
         this.closeAction = Optional.ofNullable(closeAction);
     }
 
-    // FIXME: backpressure
     public Flowable<WebSocket<MessageType>> connectedWebSockets() {
         return streamSource
                 .connectingSockets;
     }
 
-    // FIXME: backpressure
     public Flowable<IncomingMessage<MessageType, String, WebSocketSpecificDetails>> messages () {
         return streamSource
                 .messages
@@ -54,13 +52,11 @@ public class Endpoint<MessageType>  {
                 });
     }
 
-    // FIXME: backpressure
     public Flowable<Pair<WebSocket<MessageType>, Throwable>> errors () {
         return streamSource
             .errors;
     }
 
-    // FIXME: backpressure
     public Flowable<Pair<WebSocket<MessageType>, CloseReason>> closedWebSockets() {
         return streamSource
                 .closingSockets;
