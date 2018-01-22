@@ -11,10 +11,10 @@
 package ch.squaredesk.nova.filesystem;
 
 import io.reactivex.Completable;
+import io.reactivex.Flowable;
 import io.reactivex.Single;
 
-import java.io.File;
-import java.io.IOException;
+import java.io.*;
 import java.net.URL;
 import java.nio.ByteBuffer;
 import java.nio.channels.AsynchronousFileChannel;
@@ -31,7 +31,29 @@ import java.util.Set;
 
 public class Filesystem {
 
-    public Single<String> readFile(String pathToFile) {
+    public Flowable<String> readTextFile(String pathToFile) {
+        return Flowable.generate(
+                () -> new BufferedReader(new InputStreamReader(new FileInputStream(pathToFile))),
+                (reader, emitter) -> {
+                    if (reader.ready()) {
+                        emitter.onNext(reader.readLine());
+                    } else {
+                        emitter.onComplete();
+                    }
+                },
+                reader -> reader.close());
+    }
+
+    public Flowable<String> readTextFileFromClasspath(String resourcePath) {
+        URL resourceUri = getClass().getResource(resourcePath);
+        if (resourceUri == null) {
+            return Flowable.error(new NoSuchFileException(resourcePath));
+        } else {
+            return readTextFile(getClass().getResource(resourcePath).getFile());
+        }
+    }
+
+    public Single<String> readTextFileFully(String pathToFile) {
         String filePath = getWindowsPathUsableForNio(pathToFile);
         return Single.create(s -> {
             AsynchronousFileChannel channel = AsynchronousFileChannel.open(Paths.get(filePath), StandardOpenOption.READ);
@@ -57,12 +79,12 @@ public class Filesystem {
         });
     }
 
-    public Single<String> readFileFromClasspath(String resourcePath) {
+    public Single<String> readTextFileFullyFromClasspath(String resourcePath) {
         URL resourceUri = getClass().getResource(resourcePath);
         if (resourceUri == null) {
             return Single.error(new NoSuchFileException(resourcePath));
         } else {
-            return readFile(getClass().getResource(resourcePath).getFile());
+            return readTextFileFully(getClass().getResource(resourcePath).getFile());
         }
     }
 

@@ -4,8 +4,8 @@ import ch.squaredesk.nova.comm.rpc.RpcInvocation;
 import ch.squaredesk.nova.comm.sending.MessageSendingInfo;
 import ch.squaredesk.nova.metrics.Metrics;
 import com.ning.http.client.AsyncHttpClient;
-import io.reactivex.BackpressureStrategy;
 import io.reactivex.Flowable;
+import io.reactivex.schedulers.Schedulers;
 import org.glassfish.grizzly.http.server.HttpServer;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
@@ -56,25 +56,25 @@ class RpcServerTest {
     @Test
     void sutCannotBeCreatedWithoutUnmarshaller() {
         NullPointerException npe = assertThrows(NullPointerException.class,
-                () -> new RpcServer<String>(httpServer, s-> s, null, new Metrics()));
+                () -> new RpcServer<String>(httpServer, s->s, null, new Metrics()));
         assertThat(npe.getMessage(), is("messageUnmarshaller must not be null"));
     }
 
     @Test
     void subscriptionsCanBeMadeAfterServerStarted() throws Exception {
-        assertNotNull(sut.requests("/requests", BackpressureStrategy.BUFFER));
+        assertNotNull(sut.requests("/requests"));
         sut.start();
-        sut.requests("/failing", BackpressureStrategy.BUFFER);
+        sut.requests("/failing");
     }
 
     @Test
     void requestsProperlyDispatched() throws Exception {
         sut.start();
-        int numRequests = 5;
+        int numRequests = 15;
         String path = "/bla";
         CountDownLatch cdl = new CountDownLatch(numRequests);
-        Flowable<RpcInvocation<String, String, HttpSpecificInfo>> requests = sut.requests(path, BackpressureStrategy.BUFFER);
-        requests.subscribe(rpcInvocation -> {
+        Flowable<RpcInvocation<String, String, HttpSpecificInfo>> requests = sut.requests(path);
+        requests.subscribeOn(Schedulers.io()).subscribe(rpcInvocation -> {
             rpcInvocation.complete(" description " + rpcInvocation.transportSpecificInfo.parameters.get("p"));
             cdl.countDown();
         });
@@ -89,10 +89,8 @@ class RpcServerTest {
     void requestFailsAndErrorIsDispatched() throws Exception {
         sut.start();
         String path = "/fail";
-        Flowable<RpcInvocation<String, String, HttpSpecificInfo>> requests = sut.requests(path, BackpressureStrategy.BUFFER);
-        requests.subscribe(rpcInvocation -> {
-            rpcInvocation.completeExceptionally(new Exception("no content"));
-        });
+        Flowable<RpcInvocation<String, String, HttpSpecificInfo>> requests = sut.requests(path);
+        requests.subscribe(rpcInvocation -> rpcInvocation.completeExceptionally(new Exception("no content")));
 
         String urlAsString = "http://" + rsc.interfaceName + ":" + rsc.port + path + "?p=";
         MessageSendingInfo<URL, HttpSpecificInfo> msi = new MessageSendingInfo.Builder<URL, HttpSpecificInfo>()
@@ -100,10 +98,9 @@ class RpcServerTest {
                 .withTransportSpecificInfo(new HttpSpecificInfo(HttpRequestMethod.POST))
                 .build();
 
-        RuntimeException exception = Assertions.assertThrows(RuntimeException.class, () -> {
-            rpcClient.sendRequest("{}", msi, 15, TimeUnit.SECONDS).blockingGet();
-        });
-        assertThat(exception.getMessage(), is("400 - Bad Request"));
+        RuntimeException exception = Assertions.assertThrows(RuntimeException.class, () ->
+                rpcClient.sendRequest("{}", msi, 15, TimeUnit.SECONDS).blockingGet());
+        assertThat(exception.getMessage(), is("400 - Bad request"));
     }
 
     private void sendRestRequestInNewThread(String path, int i) {

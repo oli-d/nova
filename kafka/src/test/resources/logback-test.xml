@@ -1,0 +1,41 @@
+<!--
+  ~ Copyright (c) Squaredesk GmbH and Oliver Dotzauer.
+  ~
+  ~ This program is distributed under the squaredesk open source license. See the LICENSE file
+  ~ distributed with this work for additional information regarding copyright ownership. You may also
+  ~ obtain a copy of the license at
+  ~
+  ~   https://squaredesk.ch/license/oss/LICENSE
+  -->
+<configuration>
+
+    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <root level="debug">
+        <appender-ref ref="STDOUT"/>
+    </root>
+
+    <logger name="kafka.request" level="WARN"/>
+    <logger name="org.apache.zookeeper" level="WARN"/>
+    <logger name="org.I0Itec.zkclient" level="WARN"/>
+    <logger name="org.apache.kafka" level="WARN"/>
+    <logger name="kafka.log" level="WARN"/>
+    <logger name="kafka.admin" level="WARN"/>
+    <logger name="kafka.cluster" level="WARN"/>
+    <logger name="kafka.coordinator" level="WARN"/>
+    <logger name="kafka.network" level="WARN"/>
+    <logger name="kafka.server" level="WARN"/>
+    <logger name="kafka.utils" level="WARN"/>
+    <logger name="kafka.controller" level="WARN"/>
+    <logger name="kafka.server.BrokerMetadataCheckpoint" level="INFO"/>
+    <logger name="org.apache.kafka.clients.NetworkClient" level="INFO"/>
+    <logger name="org.apache.kafka.common.utils.AppInfoParser" level="ERROR"/>
+    <logger name="com.yammer.metrics.reporting.JmxReporter" level="ERROR"/>
+<!--
+    <logger name="ch.squaredesk.nova.comm.kafka.KafkaMessageReceiver" level="DEBUG"/>
+-->
+</configuration>

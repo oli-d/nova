@@ -24,6 +24,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
 public class RpcServer<InternalMessageType> extends ch.squaredesk.nova.comm.rpc.RpcServer<String, InternalMessageType, HttpSpecificInfo> {
@@ -31,6 +32,7 @@ public class RpcServer<InternalMessageType> extends ch.squaredesk.nova.comm.rpc.
 
     private final MessageMarshaller<InternalMessageType, String> messageMarshaller;
     private final MessageUnmarshaller<String, InternalMessageType> messageUnmarshaller;
+    private final Map<String, Flowable<RpcInvocation<? extends InternalMessageType, ? extends InternalMessageType, HttpSpecificInfo>>> mapDestinationToIncomingMessages = new ConcurrentHashMap<>();
 
     private final HttpServer httpServer;
 
@@ -41,7 +43,7 @@ public class RpcServer<InternalMessageType> extends ch.squaredesk.nova.comm.rpc.
         this(null, httpServer, messageMarshaller, messageUnmarshaller, metrics);
     }
 
-    public RpcServer(String identifier,
+    RpcServer(String identifier,
                         HttpServer httpServer,
                         MessageMarshaller<InternalMessageType, String> messageMarshaller,
                         MessageUnmarshaller<String, InternalMessageType> messageUnmarshaller,
@@ -57,14 +59,29 @@ public class RpcServer<InternalMessageType> extends ch.squaredesk.nova.comm.rpc.
 
     @Override
     public <RequestType extends InternalMessageType, ReplyType extends InternalMessageType>
-    Flowable<RpcInvocation<RequestType, ReplyType, HttpSpecificInfo>> requests(String destination, BackpressureStrategy backpressureStrategy) {
-        // FIXME: handle multiple "subscriptions" to same path
-        Subject<RpcInvocation<RequestType, ReplyType, HttpSpecificInfo>> rawSubject = PublishSubject.create();
-        Subject<RpcInvocation<RequestType, ReplyType, HttpSpecificInfo>> subject = rawSubject.toSerialized();
+    Flowable<RpcInvocation<RequestType, ReplyType, HttpSpecificInfo>> requests(String destination) {
+        Flowable retVal = mapDestinationToIncomingMessages
+                .computeIfAbsent(destination, key -> {
+                    logger.info("Listening to requests on " + destination);
 
-        httpServer.getServerConfiguration().addHttpHandler(new NonBlockingHttpHandler<>(subject), destination);
+                    Subject<RpcInvocation<
+                            ? extends InternalMessageType,
+                            ? extends InternalMessageType,
+                            HttpSpecificInfo>> stream = PublishSubject.create();
+                    stream = stream.toSerialized();
+                    NonBlockingHttpHandler httpHandler = new NonBlockingHttpHandler(stream);
 
-        return subject.toFlowable(backpressureStrategy);
+                    httpServer.getServerConfiguration().addHttpHandler(httpHandler, destination);
+
+                    return stream.toFlowable(BackpressureStrategy.BUFFER)
+                            .doFinally(() -> {
+                                mapDestinationToIncomingMessages.remove(destination);
+                                httpServer.getServerConfiguration().removeHttpHandler(httpHandler);
+                                logger.info("Stopped listening to requests on " + destination);
+                            })
+                            .share();
+                });
+        return (Flowable<RpcInvocation<RequestType,ReplyType, HttpSpecificInfo>>)retVal;
     }
 
     private static HttpSpecificInfo httpSpecificInfoFrom (Request request) throws Exception {
@@ -144,14 +161,22 @@ public class RpcServer<InternalMessageType> extends ch.squaredesk.nova.comm.rpc.
         }
     }
 
-    private class NonBlockingHttpHandler<RequestType extends InternalMessageType, ReplyType extends InternalMessageType> extends HttpHandler {
+    /**
+     * This class implements the non-blocking http handler. It takes the incoming requests and puts them into
+     * a blocking(!) queue to be processed by interested consumers.
+     *
+     * Blocking? Yes, because this way we apply backpressure and only read those messages from the wire that we are
+     * able to process. The size of the queue defines, how many requests we are willing to lose in the worst case
+     */
+    private class NonBlockingHttpHandler extends HttpHandler {
         private static final int READ_CHUNK_SIZE = 256;
-        private final Subject<RpcInvocation<RequestType, ReplyType, HttpSpecificInfo>> subject;
+        private final Subject<RpcInvocation<? extends InternalMessageType,? extends InternalMessageType,HttpSpecificInfo>> stream;
 
-        private NonBlockingHttpHandler(Subject<RpcInvocation<RequestType, ReplyType, HttpSpecificInfo>> subject) {
-            this.subject = subject;
+        private NonBlockingHttpHandler(
+                Subject<RpcInvocation<? extends InternalMessageType, ? extends InternalMessageType,
+                HttpSpecificInfo>> stream) {
+            this.stream = stream;
         }
-
 
         public void service(Request request, Response response) throws Exception {
             response.suspend();
@@ -169,7 +194,6 @@ public class RpcServer<InternalMessageType> extends ch.squaredesk.nova.comm.rpc.
 
                 @Override
                 public void onError(Throwable t) {
-                    // FIXME
                     logger.error("Error parsing request data", t);
                     response.resume();
                 }
@@ -178,43 +202,53 @@ public class RpcServer<InternalMessageType> extends ch.squaredesk.nova.comm.rpc.
                 public void onAllDataRead() throws Exception {
                     inputBuffer = appendAvailableDataToBuffer(in, READ_CHUNK_SIZE, inputBuffer);
                     String requestAsString = new String(inputBuffer);
-                    RpcInvocation<RequestType, ReplyType, HttpSpecificInfo> rpci = new RpcInvocation<>(
-                            (RequestType) convertRequestData(requestAsString, messageUnmarshaller),
-                            httpSpecificInfoFrom(request),
-                            reply -> {
-                                try {
-                                    String responseAsString = convertResponseData(reply, messageMarshaller);
-                                    response.setContentType("application/json");
-                                    response.setContentLength(responseAsString.length());
-                                    writeResponse(responseAsString, out);
-                                } catch (Exception e) {
-                                    // FIXME: write error or return Single.error()
-                                    logger.error("An error occurred trying to write HTTP response", e);
-                                } finally {
-                                    try {
-                                        in.close();
-                                    } catch (Exception ignored) {
-                                        // TODO - this is from the example. Do we want to do something here?
-                                    }
-                                    try {
-                                        out.close();
-                                    } catch (Exception ignored) {
-                                        // TODO - this is from the example. Do we want to do something here?
-                                    }
-                                    response.resume();
-                                }
-                            },
-                            error -> {
-                                logger.error("An error occurred trying to process HTTP request " + requestAsString, error);
-                                try {
-                                    response.sendError(400);
-                                } catch (Exception any) {
-                                    logger.error("Failed to respond with error", any);
-                                }
-                            }
-                    );
+                    try {
+                        in.close();
+                    } catch (Exception ignored) {
+                        // TODO - this is from the example. Do we want to do something here?
+                    }
 
-                    subject.onNext(rpci);
+                    InternalMessageType requestObject = convertRequestData(new String(inputBuffer), messageUnmarshaller);
+                    RpcInvocation<? extends InternalMessageType, ? extends InternalMessageType, HttpSpecificInfo> rpci =
+                            new RpcInvocation<>(
+                                requestObject,
+                                httpSpecificInfoFrom(request),
+                                reply -> {
+                                    try {
+                                        String responseAsString = convertResponseData(reply, messageMarshaller);
+                                        response.setContentType("application/json");
+                                        response.setContentLength(responseAsString.length());
+                                        writeResponse(responseAsString, out);
+                                        metricsCollector.requestCompleted(requestObject, responseAsString);
+                                    } catch (Exception e) {
+                                        metricsCollector.requestCompletedExceptionally(requestObject, e);
+                                        logger.error("An error occurred trying to send HTTP response " + reply, e);
+                                        try {
+                                            response.sendError(500, "Internal server error");
+                                        } catch (Exception any) {
+                                            logger.error("Failed to send error 500 back to client", any);
+                                        }
+                                    } finally {
+                                        try {
+                                            out.close();
+                                        } catch (Exception ignored) {
+                                            // TODO - this is from the example. Do we want to do something here?
+                                        }
+                                        response.resume();
+                                    }
+                                },
+                                error -> {
+                                    logger.error("An error occurred trying to process HTTP request " + requestAsString, error);
+                                    try {
+                                        response.sendError(400, "Bad request");
+                                    } catch (Exception any) {
+                                        logger.error("Failed to send error 400 back to client", any);
+                                    }
+                                }
+                            );
+
+                    metricsCollector.requestReceived(rpci.request);
+                    stream.onNext(rpci);
                 }
             });
         }

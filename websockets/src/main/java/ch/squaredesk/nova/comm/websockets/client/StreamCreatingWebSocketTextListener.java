@@ -14,7 +14,8 @@ import ch.squaredesk.nova.comm.websockets.StreamCreatingEndpointWrapper;
 import ch.squaredesk.nova.tuples.Pair;
 import com.ning.http.client.ws.WebSocket;
 import com.ning.http.client.ws.WebSocketTextListener;
-import io.reactivex.Observable;
+import io.reactivex.BackpressureStrategy;
+import io.reactivex.Flowable;
 import io.reactivex.subjects.BehaviorSubject;
 import io.reactivex.subjects.PublishSubject;
 import io.reactivex.subjects.Subject;
@@ -28,11 +29,10 @@ public class StreamCreatingWebSocketTextListener<MessageType>
 
     private static final Logger logger = LoggerFactory.getLogger(StreamCreatingEndpointWrapper.class);
 
-    // TODO: do we need toSerialized versions? grizzly is nio, though...
-    private final Subject<Pair<WebSocket, MessageType>> messageSubject = PublishSubject.create();
-    private final Subject<WebSocket> connectionSubject = BehaviorSubject.create();
-    private final Subject<Pair<WebSocket, CloseReason>> closeSubject = PublishSubject.create();
-    private final Subject<Pair<WebSocket, Throwable>> errorSubject = PublishSubject.create();
+    private final Subject<Pair<WebSocket, MessageType>> messages = PublishSubject.create();
+    private final Subject<WebSocket> connectedSockets = BehaviorSubject.create();
+    private final Subject<Pair<WebSocket, CloseReason>> closedSockets = PublishSubject.create();
+    private final Subject<Pair<WebSocket, Throwable>> errors = PublishSubject.create();
 
     private final Function<String, MessageType> messageUnmarshaller;
 
@@ -43,7 +43,7 @@ public class StreamCreatingWebSocketTextListener<MessageType>
     @Override
     public void onMessage(String messageText) {
         try {
-            messageSubject.onNext(new Pair<>(null, messageUnmarshaller.apply(messageText)));
+            messages.onNext(new Pair<>(null, messageUnmarshaller.apply(messageText)));
         } catch (Exception e) {
             // must be caught to keep the Observable functional
             logger.info("Unable to unmarshal incoming message " + messageText, e);
@@ -52,44 +52,44 @@ public class StreamCreatingWebSocketTextListener<MessageType>
 
     @Override
     public void onOpen(WebSocket websocket) {
-        connectionSubject.onNext(websocket);
+        connectedSockets.onNext(websocket);
     }
 
     @Override
     public void onClose(WebSocket websocket) {
         // FIXME: close reason
-        closeSubject.onNext(new Pair<>(websocket, CloseReason.NO_STATUS_CODE));
+        closedSockets.onNext(new Pair<>(websocket, CloseReason.NO_STATUS_CODE));
     }
 
     @Override
     public void onError(Throwable t) {
-        errorSubject.onNext(new Pair<>(null, t));
+        errors.onNext(new Pair<>(null, t));
     }
 
     @Override
-    public Observable<Pair<WebSocket, MessageType>> messages() {
-        return messageSubject;
+    public Flowable<Pair<WebSocket, MessageType>> messages() {
+        return messages.toFlowable(BackpressureStrategy.BUFFER);
     }
 
     @Override
-    public Observable<WebSocket> connectingSockets() {
-        return connectionSubject;
+    public Flowable<WebSocket> connectingSockets() {
+        return connectedSockets.toFlowable(BackpressureStrategy.BUFFER);
     }
 
     @Override
-    public Observable<Pair<WebSocket, CloseReason>> closingSockets() {
-        return closeSubject;
+    public Flowable<Pair<WebSocket, CloseReason>> closingSockets() {
+        return closedSockets.toFlowable(BackpressureStrategy.BUFFER);
     }
 
     @Override
-    public Observable<Pair<WebSocket, Throwable>> errors() {
-        return errorSubject;
+    public Flowable<Pair<WebSocket, Throwable>> errors() {
+        return errors.toFlowable(BackpressureStrategy.BUFFER);
     }
 
     void close() {
-        messageSubject.onComplete();
-        connectionSubject.onComplete();
-        errorSubject.onComplete();
-        // FIXME closeSubject.onComplete();
+        messages.onComplete();
+        connectedSockets.onComplete();
+        errors.onComplete();
+        // FIXME: if we call this, Flowable will be closed before we could inform eventual subscriber... closedSockets.onComplete();
     }
 }

@@ -8,7 +8,7 @@
  *   https://squaredesk.ch/license/oss/LICENSE
  */
 
-package ch.squaredesk.nova.comm.http.annotation;
+package ch.squaredesk.nova.comm.rest.annotation;
 
 import ch.squaredesk.nova.Nova;
 import ch.squaredesk.nova.comm.http.HttpServerConfiguration;
@@ -61,7 +61,7 @@ public class SpringWiringTest {
         setupContext(MyMixedConfig.class);
         ctx.getBean(HttpServer.class).start();
         RpcServer<String> rpcServer = ctx.getBean(RpcServer.class);
-        rpcServer.requests("/bar", BackpressureStrategy.BUFFER).subscribe(
+        rpcServer.requests("/bar").subscribe(
                 rpcInvocation -> {
                     rpcInvocation.complete("bar");
                 }

@@ -88,10 +88,7 @@ public class Metrics {
                 .getGauges()
                 .entrySet()
                 .stream()
-                .filter(entry -> {
-                    System.out.println(entry.getKey() + "==" + theMetricName + "? " + entry.getKey().equals(theMetricName));
-                    return entry.getKey().equals(theMetricName);
-                })
+                .filter(entry -> entry.getKey().equals(theMetricName))
                 .findFirst();
 
         if (gaugeEntry.isPresent()) {

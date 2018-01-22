@@ -18,7 +18,6 @@ import ch.squaredesk.nova.comm.websockets.client.ClientEndpoint;
 import ch.squaredesk.nova.metrics.Metrics;
 import ch.squaredesk.nova.spring.NovaProvidingConfiguration;
 import com.ning.http.client.AsyncHttpClient;
-import io.reactivex.BackpressureStrategy;
 import org.glassfish.grizzly.http.server.HttpServer;
 import org.hamcrest.MatcherAssert;
 import org.junit.jupiter.api.AfterEach;
@@ -49,7 +48,7 @@ public class SpringWiringTest {
     }
 
     @AfterEach
-    public void tearDown() throws Exception {
+    public void tearDown() {
         ctx.close();
     }
 
@@ -63,7 +62,7 @@ public class SpringWiringTest {
         ClientEndpoint<Integer> clientSideSocket = webSocketAdapter.connectTo(serverUrl+"/echo");
         CountDownLatch cdl = new CountDownLatch(1);
         Integer[] resultHolder = new Integer[1];
-        clientSideSocket.messages(BackpressureStrategy.BUFFER).subscribe(msg -> {
+        clientSideSocket.messages().subscribe(msg -> {
             resultHolder[0] = msg.message;
             cdl.countDown();
         });

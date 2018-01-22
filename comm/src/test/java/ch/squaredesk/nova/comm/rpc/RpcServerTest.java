@@ -11,7 +11,6 @@
 package ch.squaredesk.nova.comm.rpc;
 
 import ch.squaredesk.nova.metrics.Metrics;
-import io.reactivex.BackpressureStrategy;
 import io.reactivex.Flowable;
 import org.junit.jupiter.api.Test;
 
@@ -35,7 +34,7 @@ class RpcServerTest {
 
         @Override
         public <RequestType extends String, ReplyType extends String> Flowable<RpcInvocation<RequestType, ReplyType, Void>>
-            requests(String destination, BackpressureStrategy backpressureStrategy) {
+            requests(String destination) {
             return Flowable.empty();
         }
     }

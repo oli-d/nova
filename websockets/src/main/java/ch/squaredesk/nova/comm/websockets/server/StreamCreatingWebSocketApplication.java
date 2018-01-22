@@ -12,7 +12,8 @@ package ch.squaredesk.nova.comm.websockets.server;
 import ch.squaredesk.nova.comm.websockets.CloseReason;
 import ch.squaredesk.nova.comm.websockets.StreamCreatingEndpointWrapper;
 import ch.squaredesk.nova.tuples.Pair;
-import io.reactivex.Observable;
+import io.reactivex.BackpressureStrategy;
+import io.reactivex.Flowable;
 import io.reactivex.subjects.PublishSubject;
 import io.reactivex.subjects.Subject;
 import org.glassfish.grizzly.websockets.ClosingFrame;
@@ -30,11 +31,10 @@ public class StreamCreatingWebSocketApplication<MessageType>
 
     private static final Logger logger = LoggerFactory.getLogger(StreamCreatingWebSocketApplication.class);
 
-    // TODO: do we need toSerialized versions? grizzly is nio, though...
-    private final Subject<Pair<WebSocket, MessageType>> messageSubject = PublishSubject.create();
-    private final Subject<WebSocket> connectionSubject = PublishSubject.create();
-    private final Subject<Pair<WebSocket, CloseReason>> closeSubject = PublishSubject.create();
-    private final Subject<Pair<WebSocket, Throwable>> errorSubject = PublishSubject.create();
+    private final Subject<Pair<WebSocket, MessageType>> messages = PublishSubject.<Pair<WebSocket, MessageType>>create().toSerialized();
+    private final Subject<WebSocket> connectedSockets = PublishSubject.create();
+    private final Subject<Pair<WebSocket, CloseReason>> closedSockets = PublishSubject.create();
+    private final Subject<Pair<WebSocket, Throwable>> errors = PublishSubject.create();
 
     private final Function<String, MessageType> messageUnmarshaller;
 
@@ -44,7 +44,6 @@ public class StreamCreatingWebSocketApplication<MessageType>
 
     @Override
     public void onClose(WebSocket socket, DataFrame frame) {
-        // FIXME: convert dataFrame to something useful
         ClosingFrame closingFrame = (ClosingFrame)frame;
         CloseReason closeReason;
         try {
@@ -53,25 +52,33 @@ public class StreamCreatingWebSocketApplication<MessageType>
             logger.error("Unexpected close code " + closingFrame.getCode() + " in closing dataFrame " + frame);
             closeReason = CloseReason.UNEXPECTED_CONDITION;
         }
-        closeSubject.onNext(new Pair<>(socket, closeReason));
+        closedSockets.onNext(new Pair<>(socket, closeReason));
     }
 
     @Override
     public void onConnect(WebSocket socket) {
-        connectionSubject.onNext(socket);
+        connectedSockets.onNext(socket);
     }
 
     @Override
     protected boolean onError(WebSocket socket, Throwable t) {
-        errorSubject.onNext(new Pair<>(socket, t));
+        errors.onNext(new Pair<>(socket, t));
         return true; // close webSocket
-        // TODO verify: is onClose() invoked?
     }
 
     @Override
     public void onMessage(WebSocket socket, String text) {
         try {
-            messageSubject.onNext(new Pair<>(socket, messageUnmarshaller.apply(text)));
+            messages.onNext(new Pair<>(socket, messageUnmarshaller.apply(text)));
+            /**
+             * One comment regarding backpressure: if the stream subscribers are too slow,
+             * backpressure will be applied here. So if e.g. the subscriber need one hour
+             * to process a message, the next onNext() call will be blocked for that hour.
+             * But be aware that the next message has already been read from the wire into
+             * memory, so if the process is killed at this point in time the message that
+             * was not yet read from the wire is lost.
+             * TL;DR: backpressure is applied, but it does not prevent from loss of messages
+             */
         } catch (Exception e) {
             // must be caught to keep the Observable functional
             logger.info("", e);
@@ -79,30 +86,30 @@ public class StreamCreatingWebSocketApplication<MessageType>
     }
 
     @Override
-    public Observable<Pair<WebSocket, MessageType>> messages() {
-        return messageSubject;
+    public Flowable<Pair<WebSocket, MessageType>> messages() {
+        return messages.toFlowable(BackpressureStrategy.BUFFER);
     }
 
     @Override
-    public Observable<WebSocket> connectingSockets() {
-        return connectionSubject;
+    public Flowable<WebSocket> connectingSockets() {
+        return connectedSockets.toFlowable(BackpressureStrategy.BUFFER);
     }
 
     @Override
-    public Observable<Pair<WebSocket, CloseReason>> closingSockets() {
-        return closeSubject;
+    public Flowable<Pair<WebSocket, CloseReason>> closingSockets() {
+        return closedSockets.toFlowable(BackpressureStrategy.BUFFER);
     }
 
     @Override
-    public Observable<Pair<WebSocket, Throwable>> errors() {
-        return errorSubject;
+    public Flowable<Pair<WebSocket, Throwable>> errors() {
+        return errors.toFlowable(BackpressureStrategy.BUFFER);
     }
 
     void close() {
-        messageSubject.onComplete();
-        connectionSubject.onComplete();
-        closeSubject.onComplete();
-        errorSubject.onComplete();
+        messages.onComplete();
+        connectedSockets.onComplete();
+        closedSockets.onComplete();
+        errors.onComplete();
     }
 
 }

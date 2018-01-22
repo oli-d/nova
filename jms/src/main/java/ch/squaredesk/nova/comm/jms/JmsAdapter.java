@@ -13,7 +13,10 @@ package ch.squaredesk.nova.comm.jms;
 import ch.squaredesk.nova.comm.CommAdapterBuilder;
 import ch.squaredesk.nova.comm.rpc.RpcInvocation;
 import ch.squaredesk.nova.comm.sending.MessageSendingInfo;
-import io.reactivex.*;
+import io.reactivex.Completable;
+import io.reactivex.Flowable;
+import io.reactivex.Scheduler;
+import io.reactivex.Single;
 import io.reactivex.schedulers.Schedulers;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -45,7 +48,6 @@ public class JmsAdapter<InternalMessageType> {
     private final int defaultMessagePriority;
     private final long defaultMessageTimeToLive;
     private final int defaultMessageDeliveryMode;
-    private final BackpressureStrategy defaultBackpressureStrategy;
     private final ConcurrentLinkedDeque<Consumer<Destination>> destinationListeners = new ConcurrentLinkedDeque<>();
     private final Supplier<String> correlationIdGenerator;
     private final long defaultRpcTimeout;
@@ -62,7 +64,6 @@ public class JmsAdapter<InternalMessageType> {
         this.defaultMessageDeliveryMode = builder.defaultDeliveryMode;
         this.defaultMessagePriority = builder.defaultPriority;
         this.defaultMessageTimeToLive = builder.defaultTimeToLive;
-        this.defaultBackpressureStrategy = builder.defaultBackpressureStrategy;
         this.defaultRpcTimeout = builder.defaultRpcTimeout;
         this.defaultRpcTimeUnit = builder.defaultRpcTimeUnit;
     }
@@ -114,12 +115,7 @@ public class JmsAdapter<InternalMessageType> {
     //                              //
     //////////////////////////////////
     public Flowable<InternalMessageType> messages (Destination destination) {
-        return messages(destination, defaultBackpressureStrategy);
-    }
-
-    public Flowable<InternalMessageType> messages (
-            Destination destination, BackpressureStrategy backpressureStrategy) {
-        return this.messageReceiver.messages(destination, backpressureStrategy)
+        return this.messageReceiver.messages(destination)
                 .filter(incomingMessage -> !incomingMessage.details.transportSpecificDetails.isRpcReply())
                 .map(incomingMessage -> incomingMessage.message);
     }
@@ -130,16 +126,8 @@ public class JmsAdapter<InternalMessageType> {
     //                    //
     ////////////////////////
     public Flowable<RpcInvocation<InternalMessageType, InternalMessageType, JmsSpecificInfo>> requests(Destination destination) {
-        return requests(destination, defaultBackpressureStrategy);
-    }
-
-    public Flowable<RpcInvocation<InternalMessageType, InternalMessageType, JmsSpecificInfo>> requests(
-            Destination destination, BackpressureStrategy backpressureStrategy) {
         requireNonNull(destination, "destination must not be null");
-        if (backpressureStrategy==null) {
-            backpressureStrategy = defaultBackpressureStrategy;
-        }
-        return rpcServer.requests(destination, backpressureStrategy);
+        return rpcServer.requests(destination);
     }
 
     ////////////////////////
@@ -254,7 +242,7 @@ public class JmsAdapter<InternalMessageType> {
     }
 
     private static boolean exceptionSignalsDestinationDown(Throwable error) {
-        // TODO: is there a proper way to determine this???!?!?!?!
+        // TODO: is there a proper way to determine this???!?!?!?! Works for ActiveMQ, but how are other brokers behave?
         Function<Throwable, Boolean> testFunc = ex ->
                 (ex instanceof InvalidDestinationException) ||
                         (String.valueOf(ex).contains("does not exist"));
@@ -304,7 +292,6 @@ public class JmsAdapter<InternalMessageType> {
         private int defaultPriority = Message.DEFAULT_PRIORITY;
         private long defaultTimeToLive = Message.DEFAULT_TIME_TO_LIVE;
         private int defaultDeliveryMode = DeliveryMode.NON_PERSISTENT;
-        private BackpressureStrategy defaultBackpressureStrategy = BackpressureStrategy.BUFFER;
         private JmsObjectRepository jmsObjectRepository;
         private JmsMessageSender<InternalMessageType> messageSender;
         private JmsMessageReceiver<InternalMessageType> messageReceiver;
@@ -340,11 +327,6 @@ public class JmsAdapter<InternalMessageType> {
 
         public Builder<InternalMessageType> setDefaultMessageDeliveryMode(int deliveryMode) {
             this.defaultDeliveryMode = deliveryMode;
-            return this;
-        }
-
-        public Builder<InternalMessageType> setDefaultBackpressureStrategy(BackpressureStrategy defaultBackpressureStrategy) {
-            this.defaultBackpressureStrategy = defaultBackpressureStrategy;
             return this;
         }
 

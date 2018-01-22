@@ -14,7 +14,6 @@ import ch.squaredesk.nova.comm.rpc.RpcInvocation;
 import ch.squaredesk.nova.comm.sending.MessageMarshaller;
 import ch.squaredesk.nova.comm.sending.MessageSendingInfo;
 import ch.squaredesk.nova.metrics.Metrics;
-import io.reactivex.BackpressureStrategy;
 import io.reactivex.Completable;
 import io.reactivex.subscribers.TestSubscriber;
 import org.apache.activemq.ActiveMQConnectionFactory;
@@ -76,7 +75,7 @@ class JmsRpcServerTest {
     @Test
     void subribeToIncomingRequests() throws Exception {
         Destination queue = jmsHelper.createQueue("subscribeToRequests");
-        TestSubscriber<RpcInvocation<String, String, JmsSpecificInfo>> testSubscriber = sut.requests(queue, BackpressureStrategy.BUFFER).test();
+        TestSubscriber<RpcInvocation<String, String, JmsSpecificInfo>> testSubscriber = sut.requests(queue).test();
 
         jmsHelper.sendMessage(queue,"One");
         jmsHelper.sendRequest(queue,"Two");
@@ -95,7 +94,7 @@ class JmsRpcServerTest {
     void completingRpcInvocationProperlyTriggersReplySending() throws Exception {
         Destination queue = jmsHelper.createQueue("completeRpc");
         TestSubscriber<RpcInvocation<String, String, JmsSpecificInfo>> testSubscriber =
-                sut.requests(queue, BackpressureStrategy.BUFFER).test();
+                sut.requests(queue).test();
         Message requestMessage = jmsHelper.sendRequest(queue, "Two");
 
         int maxLoops = 10;
@@ -116,7 +115,7 @@ class JmsRpcServerTest {
     void completingRpcInvocationExceptionallyTriggersReplySending() throws Exception {
         Destination queue = jmsHelper.createQueue("completeRpcExceptionally");
         TestSubscriber<RpcInvocation<String, String, JmsSpecificInfo>> testSubscriber =
-                sut.requests(queue, BackpressureStrategy.BUFFER).test();
+                sut.requests(queue).test();
         Message requestMessage = jmsHelper.sendRequest(queue, "Boom");
 
         int maxLoops = 10;

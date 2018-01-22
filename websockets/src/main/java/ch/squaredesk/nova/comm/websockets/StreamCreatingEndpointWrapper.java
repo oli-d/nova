@@ -10,11 +10,12 @@
 package ch.squaredesk.nova.comm.websockets;
 
 import ch.squaredesk.nova.tuples.Pair;
-import io.reactivex.Observable;
+import io.reactivex.BackpressureStrategy;
+import io.reactivex.Flowable;
 
 public interface StreamCreatingEndpointWrapper<WebsocketType, MessageType>  {
-    Observable<Pair<WebsocketType, MessageType>> messages();
-    Observable<WebsocketType> connectingSockets();
-    Observable<Pair<WebsocketType, CloseReason>> closingSockets();
-    Observable<Pair<WebsocketType, Throwable>> errors();
+    Flowable<Pair<WebsocketType, MessageType>> messages();
+    Flowable<WebsocketType> connectingSockets();
+    Flowable<Pair<WebsocketType, CloseReason>> closingSockets();
+    Flowable<Pair<WebsocketType, Throwable>> errors();
 }

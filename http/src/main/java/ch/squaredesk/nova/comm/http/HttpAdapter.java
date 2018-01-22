@@ -15,7 +15,6 @@ import ch.squaredesk.nova.comm.CommAdapterBuilder;
 import ch.squaredesk.nova.comm.rpc.RpcInvocation;
 import ch.squaredesk.nova.comm.sending.MessageSendingInfo;
 import com.ning.http.client.AsyncHttpClient;
-import io.reactivex.BackpressureStrategy;
 import io.reactivex.Flowable;
 import io.reactivex.Single;
 import org.glassfish.grizzly.http.server.HttpServer;
@@ -25,7 +24,6 @@ import org.slf4j.LoggerFactory;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Function;
 
 import static java.util.Objects.requireNonNull;
 
@@ -129,8 +127,8 @@ public class HttpAdapter<MessageType> {
         return rpcClient.sendRequest(request, sendingInfo, timeout, timeUnit);
     }
 
-    public Flowable<RpcInvocation<MessageType, MessageType, HttpSpecificInfo>> requests(String destination, BackpressureStrategy backpressureStrategy) {
-        return rpcServer.requests(destination, backpressureStrategy);
+    public Flowable<RpcInvocation<MessageType, MessageType, HttpSpecificInfo>> requests(String destination) {
+        return rpcServer.requests(destination);
     }
 
     public void start() throws Exception {
@@ -150,12 +148,10 @@ public class HttpAdapter<MessageType> {
 
         private String identifier;
         private HttpServer httpServer;
-        private Function<Throwable, MessageType> errorReplyFactory;
         private RpcClient<MessageType> rpcClient;
         private RpcServer<MessageType> rpcServer;
         private Long defaultRequestTimeout;
         private TimeUnit defaultRequestTimeUnit;
-        private Integer serverPort;
 
         private Builder(Class<MessageType> messageTypeClass) {
             super(messageTypeClass);
@@ -175,31 +171,15 @@ public class HttpAdapter<MessageType> {
             return this;
         }
 
-        public Builder<MessageType> setServerPort(Integer port) {
-            this.serverPort = port;
-            return this;
-        }
-
         public Builder<MessageType> setIdentifier(String identifier) {
             this.identifier = identifier;
             return this;
         }
 
-        public Builder<MessageType> setErrorReplyFactory(Function<Throwable, MessageType> errorReplyFactory) {
-            this.errorReplyFactory = errorReplyFactory;
-            return this;
-        }
-
         protected void validate() {
-            requireNonNull(httpServer,"httpServer instance must not be null");
-            requireNonNull(errorReplyFactory," errorReplyFactory instance must not be null");
             if (defaultRequestTimeout==null) {
                 defaultRequestTimeout = 5L;
                 defaultRequestTimeUnit = TimeUnit.SECONDS;
-            }
-            if (serverPort==null) {
-                serverPort = 10000;
-                logger.warn("No HTTP server port specified, falling back to default " + serverPort);
             }
         }
 
@@ -207,7 +187,11 @@ public class HttpAdapter<MessageType> {
             validate();
             AsyncHttpClient httpClient = new AsyncHttpClient();
             rpcClient = new RpcClient<>(identifier, httpClient, messageMarshaller, messageUnmarshaller, metrics);
-            rpcServer = new RpcServer<>(identifier, httpServer, messageMarshaller, messageUnmarshaller, metrics);
+            if (httpServer == null) {
+                logger.info("No httpServer provided, HTTP Adapter will only be usable in client mode!!!");
+            } else {
+                rpcServer = new RpcServer<>(identifier, httpServer, messageMarshaller, messageUnmarshaller, metrics);
+            }
             return new HttpAdapter<>(this);
         }
     }

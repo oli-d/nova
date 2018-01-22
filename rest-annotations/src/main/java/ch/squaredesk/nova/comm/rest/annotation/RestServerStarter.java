@@ -7,7 +7,7 @@
  *
  *   https://squaredesk.ch/license/oss/LICENSE
  */
-package ch.squaredesk.nova.comm.http.annotation;
+package ch.squaredesk.nova.comm.rest.annotation;
 
 import ch.squaredesk.nova.comm.http.HttpServerConfiguration;
 import org.glassfish.grizzly.http.server.HttpServer;

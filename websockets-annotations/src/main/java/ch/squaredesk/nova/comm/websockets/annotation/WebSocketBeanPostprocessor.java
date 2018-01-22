@@ -16,6 +16,7 @@ import ch.squaredesk.nova.comm.sending.MessageMarshaller;
 import ch.squaredesk.nova.comm.websockets.MetricsCollector;
 import ch.squaredesk.nova.comm.websockets.server.ServerEndpoint;
 import ch.squaredesk.nova.comm.websockets.server.ServerEndpointFactory;
+import io.reactivex.Flowable;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.config.BeanPostProcessor;
 
@@ -48,7 +49,22 @@ public class WebSocketBeanPostprocessor implements BeanPostProcessor {
                         messageMarshaller,
                         messageUnmarshaller,
                         endpointDescriptor.captureTimings ? metricsCollector : null);
-            se.messages(endpointDescriptor.backpressureStrategy).subscribe(MethodInvoker.createFor(endpointDescriptor, metricsCollector));
+
+            Flowable messages = se.messages();
+            if (endpointDescriptor.backpressureStrategy!=null) {
+                switch (endpointDescriptor.backpressureStrategy) {
+                    case BUFFER:
+                        messages = messages.onBackpressureBuffer();
+                        break;
+                    case DROP:
+                        messages = messages.onBackpressureDrop();
+                        break;
+                    case LATEST:
+                        messages = messages.onBackpressureLatest();
+                        break;
+                }
+            }
+            messages.subscribe(MethodInvoker.createFor(endpointDescriptor, metricsCollector));
         }
         return bean;
     }

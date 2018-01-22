@@ -22,6 +22,8 @@
     <modules>
         <module>parentpom</module>
 
+        <module>test-utils</module>
+
         <module>core</module>
         <module>spring-support</module>
         <module>event-annotations</module>

@@ -2,6 +2,7 @@ package ch.squaredesk.nova.comm.http.spring;
 
 import ch.squaredesk.nova.comm.http.HttpServerConfiguration;
 import ch.squaredesk.nova.spring.NovaProvidingConfiguration;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.context.annotation.Bean;
@@ -17,6 +18,12 @@ class HttpServerConfigurationProvidingConfigurationTest {
     private void setupContext(Class configClass) {
         ctx.register(configClass);
         ctx.refresh();
+    }
+
+    @AfterEach
+    void cleanEnvironmentVariables() {
+        System.clearProperty("NOVA.HTTP.SERVER.PORT");
+        System.clearProperty("NOVA.HTTP.SERVER.INTERFACE_NAME");
     }
 
     @Test

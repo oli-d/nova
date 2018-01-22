@@ -33,7 +33,6 @@ public class ClientEndpointFactory {
                 .build();
         com.ning.http.client.ws.WebSocket underlyingWebSocket = openConnection(httpClient, destination, webSocketUpgradeHandler);
 
-        // FIXME: everything released when closed???
         WebSocket<MessageType> webSocket = createWebSocket(destination, underlyingWebSocket, messageMarshaller, metricsCollector);
         Function<com.ning.http.client.ws.WebSocket, WebSocket<MessageType>> webSocketFactory = rawSocket -> webSocket;
 
@@ -71,7 +70,6 @@ public class ClientEndpointFactory {
                     metricsCollector.messageSent(destination);
                 },
                 () -> {
-                    webSocket.close();
                     metricsCollector.subscriptionDestroyed(destination);
                 });
     }

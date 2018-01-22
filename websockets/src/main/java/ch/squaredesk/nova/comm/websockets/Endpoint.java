@@ -12,7 +12,6 @@ package ch.squaredesk.nova.comm.websockets;
 import ch.squaredesk.nova.comm.retrieving.IncomingMessage;
 import ch.squaredesk.nova.comm.retrieving.IncomingMessageDetails;
 import ch.squaredesk.nova.tuples.Pair;
-import io.reactivex.BackpressureStrategy;
 import io.reactivex.Flowable;
 
 import java.util.Objects;
@@ -33,16 +32,14 @@ public class Endpoint<MessageType>  {
         this.closeAction = Optional.ofNullable(closeAction);
     }
 
-    public Flowable<WebSocket<MessageType>> connectedWebSockets(BackpressureStrategy backpressureStrategy) {
+    public Flowable<WebSocket<MessageType>> connectedWebSockets() {
         return streamSource
-                .connectingSockets
-                .toFlowable(backpressureStrategy);
+                .connectingSockets;
     }
 
-    public Flowable<IncomingMessage<MessageType, String, WebSocketSpecificDetails>> messages (BackpressureStrategy backpressureStrategy) {
+    public Flowable<IncomingMessage<MessageType, String, WebSocketSpecificDetails>> messages () {
         return streamSource
                 .messages
-                .toFlowable(backpressureStrategy)
                 .map(tuple -> {
                     WebSocketSpecificDetails webSocketSpecificDetails =
                             new WebSocketSpecificDetails(tuple._3);
@@ -55,16 +52,14 @@ public class Endpoint<MessageType>  {
                 });
     }
 
-    public Flowable<Pair<WebSocket<MessageType>, Throwable>> errors (BackpressureStrategy backpressureStrategy) {
+    public Flowable<Pair<WebSocket<MessageType>, Throwable>> errors () {
         return streamSource
-            .errors
-            .toFlowable(backpressureStrategy);
+            .errors;
     }
 
-    public Flowable<Pair<WebSocket<MessageType>, CloseReason>> closedWebSockets(BackpressureStrategy backpressureStrategy) {
+    public Flowable<Pair<WebSocket<MessageType>, CloseReason>> closedWebSockets() {
         return streamSource
-                .closingSockets
-                .toFlowable(backpressureStrategy);
+                .closingSockets;
     }
 
     public void close () {

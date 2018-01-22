@@ -13,10 +13,8 @@ package ch.squaredesk.nova.metrics.kafka;
 import ch.qos.logback.classic.Level;
 import ch.squaredesk.nova.Nova;
 import ch.squaredesk.nova.comm.kafka.KafkaAdapter;
-import ch.squaredesk.nova.metrics.Metrics;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.charithe.kafka.EphemeralKafkaBroker;
-import io.reactivex.BackpressureStrategy;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.junit.jupiter.api.BeforeAll;
@@ -64,7 +62,6 @@ class KafkaMetricsReporterTest {
                 .addProducerProperty(ProducerConfig.BATCH_SIZE_CONFIG, "1")
                 .addConsumerProperty(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest")
                 .addConsumerProperty(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "true")
-                .setDefaultBackpressureStrategy(BackpressureStrategy.BUFFER)
                 .build();
 
         sut = new KafkaMetricsReporter(kafkaAdapter, "test.metrics");

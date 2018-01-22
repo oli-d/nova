@@ -13,7 +13,6 @@ package ch.squaredesk.nova.comm.jms;
 import ch.squaredesk.nova.comm.rpc.RpcClient;
 import ch.squaredesk.nova.comm.sending.MessageSendingInfo;
 import ch.squaredesk.nova.metrics.Metrics;
-import io.reactivex.BackpressureStrategy;
 import io.reactivex.Single;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -47,7 +46,7 @@ public class JmsRpcClient<InternalMessageType> extends RpcClient<Destination, In
 
         // listen to RPC reply. This must be done BEFORE sending the request, otherwise we could miss a very fast response
         // if the Observable is hot
-        Single replySingle = messageReceiver.messages(messageSendingInfo.transportSpecificInfo.replyDestination, BackpressureStrategy.BUFFER)
+        Single replySingle = messageReceiver.messages(messageSendingInfo.transportSpecificInfo.replyDestination)
                 .filter(incomingMessage ->
                         incomingMessage.details.transportSpecificDetails != null &&
                         messageSendingInfo.transportSpecificInfo.correlationId.equals(incomingMessage.details.transportSpecificDetails.correlationId))

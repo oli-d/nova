@@ -17,7 +17,6 @@ import com.codahale.metrics.Counter;
 import com.codahale.metrics.Meter;
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.AsyncHttpClientConfig;
-import io.reactivex.BackpressureStrategy;
 import io.reactivex.Flowable;
 import io.reactivex.subscribers.TestSubscriber;
 import org.glassfish.grizzly.http.server.HttpServer;
@@ -36,9 +35,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.hamcrest.Matchers.*;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.*;
 
 @Tag("integrationTest")
 class WebsocketAdapterTest {
@@ -103,10 +100,9 @@ class WebsocketAdapterTest {
         assertThat(totalSubscriptions.getCount(), is(0l));
         assertThat(specificSubscriptions.getCount(), is(0l));
 
-
         ClientEndpoint<Integer> endpoint = sut.connectTo(destinationUri);
-        endpoint.connectedWebSockets(BackpressureStrategy.BUFFER).subscribe( socket -> connectionLatch.countDown());
-        endpoint.closedWebSockets(BackpressureStrategy.BUFFER).subscribe( socket -> closeLatch.countDown());
+        endpoint.connectedWebSockets().subscribe( socket -> connectionLatch.countDown() );
+        endpoint.closedWebSockets().subscribe( socket -> closeLatch.countDown() );
         connectionLatch.await(2, TimeUnit.SECONDS);
         assertThat(connectionLatch.getCount(), is(0L));
         assertThat(totalSubscriptions.getCount(), is(1l));
@@ -139,9 +135,9 @@ class WebsocketAdapterTest {
         ClientEndpoint<Integer> endpointInitiating = null;
         try {
             endpointAccepting = sut.acceptConnections(serverDestination);
-            endpointAccepting.connectedWebSockets(BackpressureStrategy.BUFFER).subscribe(socket -> connectionLatch.countDown());
-            endpointAccepting.closedWebSockets(BackpressureStrategy.BUFFER).subscribe(socket -> closeLatch.countDown());
-            endpointAccepting.messages(BackpressureStrategy.BUFFER).subscribe(
+            endpointAccepting.connectedWebSockets().subscribe(socket -> connectionLatch.countDown());
+            endpointAccepting.closedWebSockets().subscribe(socket -> closeLatch.countDown());
+            endpointAccepting.messages().subscribe(
                     incomingMessage -> incomingMessage.details.transportSpecificDetails.webSocket.send(incomingMessage.message));
             endpointInitiating = sut.connectTo(clientDestination);
 
@@ -183,7 +179,7 @@ class WebsocketAdapterTest {
         ClientEndpoint<String> clientEndpoint = null;
         try {
             serverEndpoint = sutInteger.acceptConnections(serverDestination);
-            serverEndpoint.messages(BackpressureStrategy.BUFFER).subscribe(
+            serverEndpoint.messages().subscribe(
                     incomingMessage -> {
                         incomingMessage.details.transportSpecificDetails.webSocket.send(incomingMessage.message);
                     });
@@ -191,7 +187,7 @@ class WebsocketAdapterTest {
             WebSocket<String>[] sendSocketHolder = new WebSocket[1];
             CountDownLatch sendSocketLatch = new CountDownLatch(1);
             clientEndpoint = sutString.connectTo(clientDestination);
-            clientEndpoint.connectedWebSockets(BackpressureStrategy.BUFFER).subscribe(socket -> {
+            clientEndpoint.connectedWebSockets().subscribe(socket -> {
                 sendSocketHolder[0] = socket;
                 sendSocketLatch.countDown();
             });
@@ -228,7 +224,7 @@ class WebsocketAdapterTest {
             serverEndpoint = sutString.acceptConnections(serverDestination);
             CountDownLatch sendSocketLatch = new CountDownLatch(1);
             WebSocket<String>[] sendSocketHolder = new WebSocket[1];
-            serverEndpoint.connectedWebSockets(BackpressureStrategy.BUFFER).subscribe(socket -> {
+            serverEndpoint.connectedWebSockets().subscribe(socket -> {
                 sendSocketHolder[0] = socket;
                 sendSocketLatch.countDown();
             });
@@ -257,7 +253,7 @@ class WebsocketAdapterTest {
         assertThat(totalSent.getCount(), is(0l));
         assertThat(specificSent.getCount(), is(0l));
 
-        Flowable<IncomingMessage<Integer, String, WebSocketSpecificDetails>> messages = endpoint.messages(BackpressureStrategy.BUFFER);
+        Flowable<IncomingMessage<Integer, String, WebSocketSpecificDetails>> messages = endpoint.messages();
         TestSubscriber<IncomingMessage<Integer, String, WebSocketSpecificDetails>> testSubscriber = messages.test();
 
         endpoint.send(1);
@@ -291,7 +287,7 @@ class WebsocketAdapterTest {
         assertThat(totalUnparsable.getCount(), is(0l));
         assertThat(specificUnparsable.getCount(), is(0l));
 
-        Flowable<IncomingMessage<Integer, String, WebSocketSpecificDetails>> messages = receivingEndpoint.messages(BackpressureStrategy.BUFFER);
+        Flowable<IncomingMessage<Integer, String, WebSocketSpecificDetails>> messages = receivingEndpoint.messages();
         TestSubscriber<IncomingMessage<Integer, String, WebSocketSpecificDetails>> testSubscriber = messages.test();
 
         sendSocket.send("One");
@@ -323,16 +319,16 @@ class WebsocketAdapterTest {
         ServerEndpoint<Integer> serverEndpoint = null;
         try {
             serverEndpoint = sut.acceptConnections(serverDestination);
-            serverEndpoint.connectedWebSockets(BackpressureStrategy.BUFFER).subscribe(socket -> {
+            serverEndpoint.connectedWebSockets().subscribe(socket -> {
                 webSockets.add(socket);
                 connectionLatch.countDown();
             });
 
             TestSubscriber<IncomingMessage<Integer, String, WebSocketSpecificDetails>> testSubscriber1 =
-                    sut.connectTo(clientDestination).messages(BackpressureStrategy.BUFFER).test();
+                    sut.connectTo(clientDestination).messages().test();
             TestSubscriber<IncomingMessage<Integer, String, WebSocketSpecificDetails>> testSubscriber2 =
-                    sut.connectTo(clientDestination).messages(BackpressureStrategy.BUFFER).test();
-            sut.connectTo(clientDestination).messages(BackpressureStrategy.BUFFER).subscribe(message -> {
+                    sut.connectTo(clientDestination).messages().test();
+            sut.connectTo(clientDestination).messages().subscribe(message -> {
                 messageLatch1.countDown();
                 messageLatch2.countDown();
                 messageLatch3.countDown();
@@ -402,12 +398,12 @@ class WebsocketAdapterTest {
         ServerEndpoint<Integer> serverEndpoint = sut.acceptConnections(serverDestination);
 
         ClientEndpoint<Integer> clientEndpoint1 = sut.connectTo(clientDestination);
-        clientEndpoint1.closedWebSockets(BackpressureStrategy.BUFFER).subscribe(pair -> {
+        clientEndpoint1.closedWebSockets().subscribe(pair -> {
             closeReasons.add(pair._2);
             closeLatch.countDown();
         });
         ClientEndpoint<Integer> clientEndpoint2 = sut.connectTo(clientDestination);
-        clientEndpoint2.closedWebSockets(BackpressureStrategy.BUFFER).subscribe(pair -> {
+        clientEndpoint2.closedWebSockets().subscribe(pair -> {
             closeReasons.add(pair._2);
             closeLatch.countDown();
         });
@@ -430,7 +426,7 @@ class WebsocketAdapterTest {
         String clientDestination = "ws://127.0.0.1:7777/" + serverDestination;
 
         ServerEndpoint<Integer> serverEndpoint = sut.acceptConnections(serverDestination);
-        serverEndpoint.closedWebSockets(BackpressureStrategy.BUFFER).subscribe(pair -> {
+        serverEndpoint.closedWebSockets().subscribe(pair -> {
             closeReasons.add(pair._2);
             closeLatch.countDown();
         });
@@ -468,7 +464,7 @@ class WebsocketAdapterTest {
         // create echo endpoint
         ServerEndpoint<String> serverEndpoint = sut.acceptConnections(serverDestination);
         // echo all incoming message and append the clientID
-        serverEndpoint.messages(BackpressureStrategy.BUFFER).subscribe(incomingMessage -> {
+        serverEndpoint.messages().subscribe(incomingMessage -> {
             WebSocket<String> webSocket = incomingMessage.details.transportSpecificDetails.webSocket;
             if (incomingMessage.message.startsWith("ID=")) {
                 String id = incomingMessage.message.substring("ID=".length());
@@ -487,7 +483,7 @@ class WebsocketAdapterTest {
                 sut.connectTo(clientDestination)
         };
         Arrays.stream(clientEndpoints).forEach(endpoint -> {
-            endpoint.messages(BackpressureStrategy.BUFFER).subscribe(incomingMessage -> {
+            endpoint.messages().subscribe(incomingMessage -> {
                 if (incomingMessage.message.startsWith("ACK ")) {
                     String myId = endpoint.getUserProperty("myId");
                     String receivedId = incomingMessage.message.substring("ACK ".length());
@@ -505,7 +501,7 @@ class WebsocketAdapterTest {
 
         // wait till connected
         Arrays.stream(clientEndpoints).forEach(endpoint -> {
-            endpoint.connectedWebSockets(BackpressureStrategy.BUFFER).subscribe(incomingMessage -> {
+            endpoint.connectedWebSockets().subscribe(incomingMessage -> {
                 connectionLatch.countDown();
             });
         });

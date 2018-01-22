@@ -14,7 +14,6 @@ import ch.squaredesk.nova.comm.retrieving.IncomingMessage;
 import ch.squaredesk.nova.comm.rpc.RpcInvocation;
 import ch.squaredesk.nova.comm.rpc.RpcServer;
 import ch.squaredesk.nova.metrics.Metrics;
-import io.reactivex.BackpressureStrategy;
 import io.reactivex.Flowable;
 
 import javax.jms.Destination;
@@ -46,9 +45,8 @@ public class JmsRpcServer<InternalMessageType> extends RpcServer<Destination, In
 
     @Override
     public <RequestType extends InternalMessageType, ReplyType extends InternalMessageType>
-        Flowable<RpcInvocation<RequestType, ReplyType, JmsSpecificInfo>> requests(Destination destination,
-                                                                 BackpressureStrategy backpressureStrategy) {
-        return messageReceiver.messages(destination, backpressureStrategy)
+        Flowable<RpcInvocation<RequestType, ReplyType, JmsSpecificInfo>> requests(Destination destination) {
+        return messageReceiver.messages(destination)
                 .filter(this::isRpcRequest)
                 .map(incomingMessage -> {
                     metricsCollector.requestReceived(incomingMessage.message);
@@ -88,7 +86,7 @@ public class JmsRpcServer<InternalMessageType> extends RpcServer<Destination, In
         return reply -> messageSender.sendMessage(
                 request.details.transportSpecificDetails.replyDestination,
                 reply,
-                sendingInfo);
+                sendingInfo); // FIXME: bug: missing subscribe.
     }
 
     private Consumer<Throwable> createErrorReplyHandlerFor(IncomingMessage<InternalMessageType, Destination, JmsSpecificInfo> request) {

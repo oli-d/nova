@@ -11,7 +11,6 @@
 package ch.squaredesk.nova.events.annotation;
 
 import ch.squaredesk.nova.Nova;
-import ch.squaredesk.nova.events.EventBus;
 import ch.squaredesk.nova.metrics.Metrics;
 import com.codahale.metrics.Timer;
 import io.reactivex.Flowable;
@@ -20,9 +19,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.config.BeanPostProcessor;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.ApplicationContextAware;
-import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.event.ContextRefreshedEvent;
 

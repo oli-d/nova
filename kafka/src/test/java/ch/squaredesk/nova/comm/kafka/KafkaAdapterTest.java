@@ -10,54 +10,66 @@
 
 package ch.squaredesk.nova.comm.kafka;
 
-import ch.qos.logback.classic.Level;
-import com.github.charithe.kafka.EphemeralKafkaBroker;
-import io.reactivex.BackpressureStrategy;
+import com.github.charithe.kafka.*;
+import io.reactivex.Completable;
 import io.reactivex.disposables.Disposable;
+import io.reactivex.functions.Consumer;
+import io.reactivex.observers.TestObserver;
+import org.apache.kafka.clients.admin.AdminClient;
+import org.apache.kafka.clients.admin.CreateTopicsResult;
+import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
+import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerConfig;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.apache.kafka.clients.producer.ProducerRecord;
+import org.apache.kafka.common.serialization.StringDeserializer;
+import org.apache.kafka.common.utils.AppInfoParser;
+import org.apache.kafka.common.utils.Sanitizer;
+import org.hamcrest.Matchers;
+import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.List;
+import javax.management.InstanceNotFoundException;
+import javax.management.ObjectName;
+import java.lang.management.ManagementFactory;
+import java.net.ServerSocket;
+import java.util.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 
+@ExtendWith(KafkaJunitExtension.class)
+@KafkaJunitExtensionConfig(startupMode = StartupMode.WAIT_FOR_STARTUP)
 class KafkaAdapterTest {
-    private static final int KAFKA_PORT = 11_000;
-    private EphemeralKafkaBroker kafkaBroker;
-    private KafkaAdapter<String> sut;
+    private static Logger logger = LoggerFactory.getLogger(KafkaAdapterTest.class);
 
-    @BeforeAll
-    static void initLogging() {
-        Logger logger = LoggerFactory.getLogger("org.apache.kafka");
-        ch.qos.logback.classic.Logger l2 = (ch.qos.logback.classic.Logger) logger;
-        l2.setLevel(Level.WARN);
-        logger = LoggerFactory.getLogger("kafka");
-        l2 = (ch.qos.logback.classic.Logger) logger;
-        l2.setLevel(Level.WARN);
-        logger = LoggerFactory.getLogger("org.apache.zookeeper");
-        l2 = (ch.qos.logback.classic.Logger) logger;
-        l2.setLevel(Level.WARN);
-    }
+    private KafkaAdapter<String> sut;
+    private AdminClient adminClient;
+
 
     @BeforeEach
-    void setUp() throws Exception {
-        kafkaBroker = EphemeralKafkaBroker.create(KAFKA_PORT);
-        kafkaBroker.start().get();
+    void setUp(KafkaHelper kafkaHelper) throws Exception {
+        Properties adminClientProps = new Properties();
+        adminClientProps.put("bootstrap.servers", "127.0.0.1:" + kafkaHelper.kafkaPort());
+//        String clientId = "KafkaAdminClient-"+UUID.randomUUID();
+//        String groupId = identifier == null ? "KafkaAdapter-ReadGroup" : identifier + "ReadGroup";
+//        setPropertyIfNotPresent(consumerProperties, ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, serverAddress);
+//        setPropertyIfNotPresent(consumerProperties, ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
+//        setPropertyIfNotPresent(consumerProperties, ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
+//        setPropertyIfNotPresent(consumerProperties, ConsumerConfig.CLIENT_ID_CONFIG, clientId);
+//        setPropertyIfNotPresent(consumerProperties, ConsumerConfig.GROUP_ID_CONFIG, groupId);
+        adminClient = AdminClient.create(adminClientProps);
 
         sut = KafkaAdapter.builder(String.class)
-                .setServerAddress("127.0.0.1:" + KAFKA_PORT)
-                .setIdentifier("Test")
+                .setServerAddress("127.0.0.1:" + kafkaHelper.kafkaPort())
+                .setIdentifier("Test" + UUID.randomUUID())
                 .addProducerProperty(ProducerConfig.BATCH_SIZE_CONFIG, "1")
                 .addConsumerProperty(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest")
                 .addConsumerProperty(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "true")
@@ -67,16 +79,29 @@ class KafkaAdapterTest {
     @AfterEach
     void tearDown() throws Exception {
         sut.shutdown();
-        kafkaBroker.stop();
+    }
+
+    void ensureTopicsExists(String...topics) throws Exception {
+        CreateTopicsResult createResult = adminClient.createTopics(
+                Arrays.stream(topics)
+                        .map(topic -> new NewTopic(topic, 1, (short)1))
+                        .collect(Collectors.toList())
+        );
+        // wait until all topics were created
+        createResult.all().get();
     }
 
     @Test
-    void subscriptionWorks() throws Exception {
+    void resubscriptionWorks(KafkaHelper kafkaHelper) throws Exception {
         String topic = "topic4SubsTest";
+        ensureTopicsExists(topic);
+        // send two messages and assure they were received by the subscriber
+        kafkaHelper.produceStrings(topic, "One", "Two"); // note: order not guaranteed
+
         AtomicInteger counter = new AtomicInteger(0);
         CountDownLatch cdl = new CountDownLatch(2);
         List<String> messages = new ArrayList<>();
-        Disposable subscription1 = sut.messages(topic, BackpressureStrategy.BUFFER).subscribe(
+        Disposable subscription1 = sut.messages(topic).subscribe(
             x -> {
                 messages.add(x);
                 counter.incrementAndGet();
@@ -84,34 +109,34 @@ class KafkaAdapterTest {
             }
         );
 
-        // send two messages and assure they were received by the subscriber
-        sut.sendMessage(topic, "One").blockingAwait();
-        sut.sendMessage(topic, "Two").blockingAwait();
 
-        cdl.await(30, SECONDS);
+        cdl.await(60, SECONDS);
         assertThat(cdl.getCount(),is(0L));
         assertThat(counter.get(), is(2));
         assertThat(messages, containsInAnyOrder("One", "Two"));
 
         // dispose the subscription, resubscribe and send another message
+        logger.error("Disposing subscription");
         subscription1.dispose();
+        logger.error("subscription disposed :-)");
 
-        CountDownLatch cdl2 = new CountDownLatch(3);
+        CountDownLatch cdl2 = new CountDownLatch(1);
         List<String> messages2 = new ArrayList<>();
+        logger.error("Subscribing again");
         Disposable subscription2 = sut.messages(topic).subscribe(x -> {
             messages2.add(x);
             cdl2.countDown();
         });
+        logger.error("Subscribed again :-)");
 
         // ensure that only the second subscription was invoked
-        sut.sendMessage(topic, "Three").blockingAwait();
+        kafkaHelper.produceStrings(topic, "Three");
 
-        cdl2.await(30, SECONDS);
+        cdl2.await(10, SECONDS);
         assertThat(counter.get(), is(2));
         assertThat(cdl2.getCount(), is(0L));
-        assertThat(messages, contains("One", "Two"));
-        // assertThat(messages2, contains("Three"));
-        assertThat(messages2, contains("One", "Two", "Three")); // Since Kafka persists all messages, we also retrieve One and Two
+        assertThat(messages, containsInAnyOrder("One", "Two"));
+        assertThat(messages2, anyOf(contains("Three"), containsInAnyOrder("One", "Two", "Three")));
 
         subscription2.dispose();
     }
@@ -119,6 +144,7 @@ class KafkaAdapterTest {
     @Test
     void multipleSubscribersSupportedOnSingleQueue() throws Exception {
         String topic = "multipleSubscriberTopic";
+        ensureTopicsExists(topic);
         List<String> valuesSubscriber1, valuesSubscriber2, valuesSubscriber3;
         valuesSubscriber1 = new ArrayList<>();
         valuesSubscriber2 = new ArrayList<>();
@@ -162,61 +188,146 @@ class KafkaAdapterTest {
     }
 
     @Test
-    void errorInMessageHandlingKillsSubscription() throws InterruptedException {
+    void multipleTopicsProperlySupported(KafkaHelper kafkaHelper) throws Exception {
+        String topicEven = "even";
+        String topicOdd = "odd";
+        ensureTopicsExists(topicEven, topicOdd);
+
+        CountDownLatch cdlEven = new CountDownLatch(4);
+        CountDownLatch cdlOdd = new CountDownLatch(6);
+
+        Consumer<String> messageConsumerOdd = msg -> cdlOdd.countDown();
+        Consumer<String> messageConsumerEven = msg -> cdlEven.countDown();
+        sut.messages(topicEven).subscribe(messageConsumerEven);
+        sut.messages(topicEven).subscribe(messageConsumerEven);
+        sut.messages(topicOdd).subscribe(messageConsumerOdd);
+        sut.messages(topicOdd).subscribe(messageConsumerOdd);
+
+        kafkaHelper.produceStrings(topicOdd, "1", "3", "5");
+        kafkaHelper.produceStrings(topicEven, "2", "4");
+
+        cdlEven.await(20, SECONDS);
+        cdlOdd.await(20, SECONDS);
+
+        assertThat(cdlEven.getCount(), is (0L));
+        assertThat(cdlOdd.getCount(), is (0L));
+    }
+
+    @Test
+    void errorInMessageHandlingKillsSubscription(KafkaHelper kafkaHelper) throws Exception {
         String topic = "topic4SubsErrorTest";
-        CountDownLatch cdl = new CountDownLatch(3);
-        List<Integer> messages = new ArrayList<>();
+        ensureTopicsExists(topic);
+
+        // send two good and one bad message
+        KafkaProducer<String, String> stringProducer = kafkaHelper.createStringProducer();
+        stringProducer.send(new ProducerRecord<>(topic, "1")).get();
+        logger.error("Sent 1");
+        stringProducer.send(new ProducerRecord<>(topic, "Two")).get();
+        logger.error("Sent Two");
+        stringProducer.send(new ProducerRecord<>(topic, "3")).get();
+        logger.error("Sent 3");
+
+        AtomicInteger counter = new AtomicInteger();
+        List<Integer> messagesFromSut = new ArrayList<>();
+        sut.messages(topic).subscribe(
+                x -> {
+                    logger.error("Received " + x);
+                    try {
+                        messagesFromSut.add(Integer.parseInt(x));
+                    } finally {
+                        counter.incrementAndGet();
+                    }
+                }
+        );
+
+        List<String> messagesFromBroker = kafkaHelper.consumeStrings(topic, 3).get(20, SECONDS);
+        assertThat(messagesFromBroker, contains("1", "Two", "3"));
+        // sleep a few seconds more to make sure no more messages wil be consumed
+        SECONDS.sleep(10);
+        assertThat(counter.get(),is(2));
+        assertThat(messagesFromSut, containsInAnyOrder(1));
+    }
+
+    @Test
+    void errorInMessageHandlingForOneSubscriptionDoesNotAffectOtherSubscriptions(KafkaHelper kafkaHelper) throws Exception {
+        String topic = "topic4SubsErrorMultipleTest";
+        ensureTopicsExists(topic);
+
+        AtomicInteger counterBrokenSubscriprion = new AtomicInteger();
+        CountDownLatch cdlGood = new CountDownLatch(3);
+        List<Integer> messagesGood = new ArrayList<>();
+        List<Integer> messagesBroken = new ArrayList<>();
         sut.messages(topic).subscribe(
                 x -> {
                     try {
-                        messages.add(Integer.parseInt(x));
+                        messagesBroken.add(Integer.parseInt(x));
                     } finally {
-                        cdl.countDown();
+                        counterBrokenSubscriprion.incrementAndGet();
+                    }
+                }
+        );
+        sut.messages(topic).subscribe(
+                x -> {
+                    try {
+                        messagesGood.add(Integer.parseInt(x));
+                    } catch (Exception e) {
+                        // noop
+                    } finally {
+                        cdlGood.countDown();
                     }
                 }
         );
 
         // send two good and one bad message
-        sut.sendMessage(topic, "1").blockingAwait();
-        sut.sendMessage(topic, "Two").blockingAwait();
-        sut.sendMessage(topic, "3").blockingAwait();
+        KafkaProducer<String, String> stringProducer = kafkaHelper.createStringProducer();
+        stringProducer.send(new ProducerRecord<>(topic, "1")).get();
+        stringProducer.send(new ProducerRecord<>(topic, "Two")).get();
+        stringProducer.send(new ProducerRecord<>(topic, "3")).get();
 
-        cdl.await(10, SECONDS);
-        assertThat(cdl.getCount(),is(1L)); // should have NOT seen "3"
-        assertThat(messages, contains(1));
+        cdlGood.await(10, SECONDS);
+        assertThat(cdlGood.getCount(),is(0L));
+        assertThat(counterBrokenSubscriprion.get(),is(2));
+        assertThat(messagesGood, containsInAnyOrder(1, 3));
     }
 
     @Test
-    void sendMessage() throws Exception {
+    void messageMarshallingErrorOnSendForwardedToSubscriber(KafkaHelper kafkaHelper) throws Exception {
+        sut = KafkaAdapter.builder(String.class)
+                .setServerAddress("127.0.0.1:" + kafkaHelper.kafkaPort())
+                .setIdentifier("Test")
+                .addProducerProperty(ProducerConfig.BATCH_SIZE_CONFIG, "1")
+                .addConsumerProperty(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest")
+                .addConsumerProperty(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "true")
+                .setMessageMarshaller(s -> {
+                    throw new RuntimeException("for test");
+                })
+                .build();
+
+        Completable completable = sut.sendMessage("dest", "myMessage");
+        TestObserver<Void> observer = completable.test();
+        observer.await();
+        observer.assertError(RuntimeException.class);
+        observer.assertErrorMessage("for test");
+    }
+
+    @Test
+    void sendMessage(KafkaHelper kafkaHelper) throws Exception {
         String topic = "topicForSendTest";
-
-        List<String> messages = new ArrayList<>();
-        CountDownLatch cdl = new CountDownLatch(3);
-
-        sut.messages(topic, BackpressureStrategy.BUFFER).subscribe(msg -> {
-            messages.add(msg);
-            cdl.countDown();
-        });
+        ensureTopicsExists(topic);
 
         sut.sendMessage(topic, "One").blockingAwait();
         sut.sendMessage(topic, "Two").blockingAwait();
         sut.sendMessage(topic, "Three").blockingAwait();
 
-        try {
-            cdl.await();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-
+        List<String> messages = kafkaHelper.consumeStrings(topic, 3).get(10, SECONDS);
         assertThat(messages.size(), is(3));
-        assertThat(messages.get(0), is("One"));
-        assertThat(messages.get(1), is("Two"));
-        assertThat(messages.get(2), is("Three"));
+        assertThat(messages, contains("One", "Two", "Three"));
     }
 
     @Test
-    void sendingCanBeDoneFromMultipleThreads() throws Exception {
+    void sendingCanBeDoneFromMultipleThreads(KafkaHelper kafkaHelper) throws Exception {
         String topic = "topicForMultiThreadSendTest";
+        ensureTopicsExists(topic);
         class Sender extends Thread {
             private final String id;
 
@@ -227,7 +338,6 @@ class KafkaAdapterTest {
 
             @Override
             public void run() {
-                CountDownLatch cdl = new CountDownLatch(3);
                 sut.sendMessage(topic, "One-" + id).blockingAwait();
                 sut.sendMessage(topic, "Two-" + id).blockingAwait();
                 sut.sendMessage(topic, "Three-" + id).blockingAwait();
@@ -236,23 +346,13 @@ class KafkaAdapterTest {
         Sender sender1 = new Sender("1");
         Sender sender2 = new Sender("2");
 
-        List<String> messages = new ArrayList<>();
-        CountDownLatch cdl = new CountDownLatch(6);
-
-        sut.messages(topic, BackpressureStrategy.BUFFER).subscribe(msg -> {
-            messages.add(msg);
-            cdl.countDown();
-        });
-
         sender1.start();
         sender2.start();
         sender1.join();
         sender2.join();
 
-        cdl.await();
-        assertThat(cdl.getCount(), is(0L));
-
+        List<String> messages = kafkaHelper.consumeStrings(topic, 6).get(20, SECONDS);
+        assertThat(messages.size(), is(6));
         assertThat(messages, containsInAnyOrder("One-1", "Two-1", "Three-1", "One-2", "Two-2", "Three-2"));
     }
-
 }
