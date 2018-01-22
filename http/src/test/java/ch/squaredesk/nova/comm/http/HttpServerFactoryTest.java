@@ -3,10 +3,12 @@ package ch.squaredesk.nova.comm.http;
 import org.glassfish.grizzly.http.server.HttpServer;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+@Tag("medium")
 class HttpServerFactoryTest {
     @Test
     void serverCantBeCreatedWithoutConfig() {

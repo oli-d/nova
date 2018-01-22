@@ -47,6 +47,7 @@ import static org.hamcrest.Matchers.*;
 
 @ExtendWith(KafkaJunitExtension.class)
 @KafkaJunitExtensionConfig(startupMode = StartupMode.WAIT_FOR_STARTUP)
+@Tag("large")
 class KafkaAdapterTest {
     private static Logger logger = LoggerFactory.getLogger(KafkaAdapterTest.class);
 

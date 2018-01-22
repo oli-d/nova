@@ -13,6 +13,7 @@ package ch.squaredesk.nova.spring;
 import ch.squaredesk.nova.Nova;
 import io.reactivex.BackpressureStrategy;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.context.annotation.Configuration;
@@ -23,6 +24,7 @@ import static org.hamcrest.junit.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
+@Tag("medium")
 class NovaProvidingConfigurationTest {
     private Nova createSut() {
         AnnotationConfigApplicationContext ctx =

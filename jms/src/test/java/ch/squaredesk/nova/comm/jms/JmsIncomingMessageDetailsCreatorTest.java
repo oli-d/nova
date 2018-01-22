@@ -14,6 +14,7 @@ import ch.squaredesk.nova.comm.retrieving.IncomingMessageDetails;
 import org.apache.activemq.ActiveMQConnectionFactory;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import javax.jms.ConnectionFactory;
@@ -24,6 +25,7 @@ import javax.jms.Message;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
+@Tag("large")
 class JmsIncomingMessageDetailsCreatorTest {
     private TestJmsHelper jmsHelper;
     private JmsMessageDetailsCreator sut;

@@ -19,6 +19,7 @@ import io.reactivex.subscribers.TestSubscriber;
 import org.apache.activemq.ActiveMQConnectionFactory;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import javax.jms.*;
@@ -30,6 +31,7 @@ import static org.hamcrest.Matchers.sameInstance;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
+@Tag("large")
 class JmsRpcServerTest {
     private JmsRpcServer<String> sut;
     private TestJmsHelper jmsHelper;

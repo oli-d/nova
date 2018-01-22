@@ -10,6 +10,7 @@ import io.reactivex.schedulers.Schedulers;
 import org.glassfish.grizzly.http.server.HttpServer;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import javax.net.ssl.KeyManagerFactory;
@@ -25,6 +26,7 @@ import java.util.stream.IntStream;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
+@Tag("medium")
 class SslTest {
     private HttpServerConfiguration rsc = HttpServerConfiguration.builder()
             .interfaceName("127.0.0.1")

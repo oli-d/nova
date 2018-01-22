@@ -13,6 +13,7 @@ package ch.squaredesk.nova.comm.kafka;
 import io.reactivex.observers.TestObserver;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import java.util.concurrent.TimeUnit;
@@ -22,6 +23,7 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.startsWith;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+@Tag("medium")
 class KafkaAdapterErrorTest {
     private static final int KAFKA_PORT = 11_000;
     private KafkaAdapter<String> sut;

@@ -15,6 +15,7 @@ import ch.squaredesk.nova.service.annotation.OnServiceInit;
 import ch.squaredesk.nova.service.annotation.OnServiceShutdown;
 import ch.squaredesk.nova.service.annotation.OnServiceStartup;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.BeanCreationException;
 import org.springframework.beans.factory.BeanInitializationException;
@@ -33,6 +34,7 @@ import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.*;
 
+@Tag("medium")
 public class NovaServiceTest {
     @AfterEach
     void tearDown() {

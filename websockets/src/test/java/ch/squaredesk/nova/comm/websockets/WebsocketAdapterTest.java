@@ -37,7 +37,7 @@ import static org.hamcrest.Matchers.*;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 
-@Tag("integrationTest")
+@Tag("medium")
 class WebsocketAdapterTest {
     HttpServer httpServer = HttpServer.createSimpleServer("/", 7777);
     AsyncHttpClientConfig cf = new AsyncHttpClientConfig.Builder().build();
