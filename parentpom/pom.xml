@@ -144,14 +144,6 @@
             <build>
                 <plugins>
                     <plugin>
-                        <artifactId>maven-surefire-plugin</artifactId>
-                        <configuration>
-                            <properties>
-                                <includeTags>small,medium,large</includeTags>
-                            </properties>
-                        </configuration>
-                    </plugin>
-                    <plugin>
                         <groupId>org.jacoco</groupId>
                         <artifactId>jacoco-maven-plugin</artifactId>
                         <version>0.7.9</version>
@@ -186,7 +178,7 @@
                         <artifactId>maven-surefire-plugin</artifactId>
                         <configuration>
                             <properties>
-                                <includeTags>small,medium</includeTags>
+                                <excludeTags>large</excludeTags>
                             </properties>
                         </configuration>
                     </plugin>
