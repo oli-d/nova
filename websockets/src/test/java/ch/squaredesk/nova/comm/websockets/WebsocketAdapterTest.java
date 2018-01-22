@@ -63,6 +63,7 @@ class WebsocketAdapterTest {
     @AfterEach
     void tearDown() {
         httpServer.shutdownNow();
+        httpClient.close();
     }
 
     @Test
