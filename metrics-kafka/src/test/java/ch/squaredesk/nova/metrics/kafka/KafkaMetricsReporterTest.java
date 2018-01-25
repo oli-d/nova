@@ -13,7 +13,6 @@ package ch.squaredesk.nova.metrics.kafka;
 import ch.qos.logback.classic.Level;
 import ch.squaredesk.nova.Nova;
 import ch.squaredesk.nova.comm.kafka.KafkaAdapter;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.charithe.kafka.EphemeralKafkaBroker;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.ProducerConfig;

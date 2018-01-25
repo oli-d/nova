@@ -15,7 +15,6 @@ import ch.squaredesk.nova.metrics.MetricsDump;
 import ch.squaredesk.nova.metrics.MetricsDumpToMapConverter;
 import io.reactivex.functions.Consumer;
 
-import java.util.Collections;
 import java.util.Map;
 
 public class KafkaMetricsReporter implements Consumer<MetricsDump> {
