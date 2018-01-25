@@ -278,7 +278,7 @@ class JmsAdapterTest {
         MessageConsumer consumer = jmsHelper.createMessageConsumer(queue);
 
         TestObserver<Void> observer = sut.sendMessage(queue,"Hallo").test();
-        observer.await(1, TimeUnit.SECONDS);
+        observer.await(1, SECONDS);
         observer.assertComplete();
 
         Message message = consumer.receive(1000L);
@@ -347,8 +347,8 @@ class JmsAdapterTest {
         String request = String.valueOf(UUID.randomUUID());
         sut.sendRequest(queue, request, null, null, null);
 
-        assertThat(rpcClient.messageSendingInfo.destination, Matchers.sameInstance(queue));
-        assertThat(rpcClient.request, Matchers.sameInstance(request));
+        assertThat(rpcClient.messageSendingInfo.destination, sameInstance(queue));
+        assertThat(rpcClient.request, sameInstance(request));
     }
 
     private class MyException extends RuntimeException {

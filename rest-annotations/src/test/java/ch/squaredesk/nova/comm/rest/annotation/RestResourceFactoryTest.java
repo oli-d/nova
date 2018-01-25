@@ -72,7 +72,7 @@ class RestResourceFactoryTest {
         Method method = MyBean.class.getMethod("foo");
         Resource resource = RestResourceFactory.resourceFor(resourceDescriptor, myBean, method);
         assertNotNull(resource);
-        assertThat(resource.getPath(), Matchers.is(resourceDescriptor.path));
+        assertThat(resource.getPath(), is(resourceDescriptor.path));
         assertThat(resource.getHandlerInstances().size(), is(1));
         assertThat(resource.getHandlerInstances(), contains(myBean));
     }

@@ -23,8 +23,11 @@ public class HttpSpecificInfo {
 
     public HttpSpecificInfo(HttpRequestMethod requestMethod, Map<String, String> parameters) {
         this.requestMethod = requestMethod;
-        if (parameters == null) this.parameters = Collections.emptyMap();
-        else this.parameters = parameters;
+        if (parameters == null) {
+            this.parameters = Collections.emptyMap();
+        } else {
+            this.parameters = parameters;
+        }
     }
 
     @Override

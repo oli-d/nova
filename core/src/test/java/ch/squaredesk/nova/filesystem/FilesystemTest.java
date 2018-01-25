@@ -145,7 +145,7 @@ class FilesystemTest {
                     .blockingGet();
             Assertions.fail("Exception expected");
         } catch (Exception e) {
-            Assertions.assertTrue(e.getCause() instanceof NoSuchFileException);
+            assertTrue(e.getCause() instanceof NoSuchFileException);
         }
     }
 }

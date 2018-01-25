@@ -18,6 +18,14 @@ import java.util.Map;
 public class MetricsDump {
     private static InetAddress myInetAddress;
 
+    static {
+        try {
+            myInetAddress = InetAddress.getLocalHost();
+        } catch (Exception ex) {
+            // swallow
+        }
+    }
+
     public final long timestamp;
     public final String hostName;
     public final String hostAddress;
@@ -26,14 +34,6 @@ public class MetricsDump {
     public MetricsDump(Map<String, Metric> metrics) {
         this.metrics = metrics;
         this.timestamp = System.currentTimeMillis();
-
-        if (myInetAddress == null) {
-            try {
-                myInetAddress = InetAddress.getLocalHost();
-            } catch (Exception ex) {
-                // swallow
-            }
-        }
 
         if (myInetAddress == null) {
             this.hostName = "n/a";

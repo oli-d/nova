@@ -14,6 +14,9 @@ import java.util.function.Consumer;
 public class PortFinder {
     private static final Object portLock = new Object();
 
+    private PortFinder() {
+    }
+
     public static void withNextFreePort (Consumer<Integer> consumer) {
         synchronized (portLock) {
             int port = 0;

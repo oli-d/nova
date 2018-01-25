@@ -19,6 +19,9 @@ import java.net.URL;
 import java.util.concurrent.TimeUnit;
 
 public class HttpHelper {
+    private HttpHelper() {
+    }
+
     public static synchronized int nextFreePort() throws Exception {
         ServerSocket ss = new ServerSocket(0);
         ss.close();

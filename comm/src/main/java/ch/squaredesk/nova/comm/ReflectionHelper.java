@@ -16,6 +16,9 @@ import java.lang.reflect.Type;
 import java.util.Arrays;
 
 public class ReflectionHelper {
+    private ReflectionHelper() {
+    }
+
     /**
      * Since Lambdas do erase type information, the method only works if the passed instance to examine is
      * NOT a lambda!!!
@@ -62,12 +65,12 @@ public class ReflectionHelper {
         try {
             classObject = Class.forName(className);
         } catch (ClassNotFoundException e) {
-            throw new IllegalArgumentException("Unable to load class " + className);
+            throw new IllegalArgumentException("Unable to load class " + className, e);
         }
         try {
             return classObject.newInstance();
         } catch (Exception e) {
-            throw new IllegalArgumentException("Unable to instantiate class " + className);
+            throw new IllegalArgumentException("Unable to instantiate class " + className, e);
         }
     }
 

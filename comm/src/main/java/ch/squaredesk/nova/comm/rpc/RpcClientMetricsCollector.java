@@ -40,7 +40,9 @@ public class RpcClientMetricsCollector {
     }
 
     private void mark(Meter... meters) {
-        for (Meter m : meters) m.mark();
+        for (Meter m : meters) {
+            m.mark();
+        }
     }
 
 }

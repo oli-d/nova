@@ -16,6 +16,9 @@ import io.reactivex.Flowable;
 import java.util.function.Function;
 
 public class EndpointStreamSourceFactory {
+    private EndpointStreamSourceFactory() {
+    }
+
     public static <SomeMessageType, SomeWebSocketType> EndpointStreamSource<SomeMessageType> createStreamSourceFor(
             String destination,
             Function<SomeWebSocketType, WebSocket<SomeMessageType>> webSocketFactory,

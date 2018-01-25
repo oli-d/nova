@@ -8,6 +8,9 @@ import org.glassfish.grizzly.ssl.SSLEngineConfigurator;
 import java.util.Objects;
 
 public class HttpServerFactory {
+    private HttpServerFactory() {
+    }
+
     public static HttpServer serverFor (HttpServerConfiguration serverConfig) {
         Objects.requireNonNull(serverConfig, "server config must not be null");
 

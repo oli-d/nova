@@ -18,6 +18,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 class JmsSpecificInfoExtractor {
+    private JmsSpecificInfoExtractor() {
+    }
 
     static JmsSpecificInfo extractFrom (Message message) throws JMSException {
         Destination replyTo = message.getJMSReplyTo();

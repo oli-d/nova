@@ -19,6 +19,9 @@ import java.util.Arrays;
 import static java.util.Objects.requireNonNull;
 
 public class RestResourceFactory {
+    private RestResourceFactory() {
+    }
+
     public static Resource resourceFor(RestResourceDescriptor resourceDescriptor, Object handlerBean, Method handlerMethod) {
         requireNonNull(resourceDescriptor, "resourceDescriptor must not be null");
         requireNonNull(handlerBean, "handlerBean must not be null");

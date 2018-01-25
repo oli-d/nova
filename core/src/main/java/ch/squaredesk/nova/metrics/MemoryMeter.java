@@ -41,8 +41,8 @@ public class MemoryMeter implements CompoundMetric {
 
     @Override
     public Map<String, Object> getValues() {
-        java.lang.management.MemoryUsage nonHeapUsage = mxBean.getNonHeapMemoryUsage();
-        java.lang.management.MemoryUsage heapUsage = mxBean.getHeapMemoryUsage();
+        MemoryUsage nonHeapUsage = mxBean.getNonHeapMemoryUsage();
+        MemoryUsage heapUsage = mxBean.getHeapMemoryUsage();
         Map<String, Object> values = new HashMap<>();
 
         values.put("heapInitial", heapUsage.getInit());

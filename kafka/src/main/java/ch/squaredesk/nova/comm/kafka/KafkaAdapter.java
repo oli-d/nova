@@ -110,8 +110,8 @@ public class KafkaAdapter<InternalMessageType> {
         }
 
         private Builder<InternalMessageType> addProperty(Properties target, String key, String value) {
-            Objects.requireNonNull(key, "property key must not be null");
-            Objects.requireNonNull(value, "value for property " + key + " must not be null");
+            requireNonNull(key, "property key must not be null");
+            requireNonNull(value, "value for property " + key + " must not be null");
             target.setProperty(key, value);
             return this;
         }

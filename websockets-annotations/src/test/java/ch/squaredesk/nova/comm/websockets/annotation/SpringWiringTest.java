@@ -58,7 +58,7 @@ public class SpringWiringTest {
     public void webSocketEndpointCanProperlyBeInvoked() throws Exception {
         setupContext(MyConfig.class);
         Metrics metrics = ctx.getBean(Nova.class).metrics;
-        MatcherAssert.assertThat(metrics.getMeter("websocket", "received", "echo").getCount(), is(0L));
+        assertThat(metrics.getMeter("websocket", "received", "echo").getCount(), is(0L));
 
         WebSocketAdapter<Integer> webSocketAdapter = ctx.getBean(WebSocketAdapter.class);
         ClientEndpoint<Integer> clientSideSocket = webSocketAdapter.connectTo(serverUrl+"/echo");
@@ -75,7 +75,7 @@ public class SpringWiringTest {
         assertThat(cdl.getCount(), is (0L));
         assertThat(resultHolder[0], is(dataToSend));
 
-        MatcherAssert.assertThat(metrics.getMeter("websocket", "received", "echo").getCount(), is(1L));
+        assertThat(metrics.getMeter("websocket", "received", "echo").getCount(), is(1L));
     }
 
     @Configuration

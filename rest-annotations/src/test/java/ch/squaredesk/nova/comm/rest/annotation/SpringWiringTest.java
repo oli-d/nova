@@ -52,7 +52,7 @@ public class SpringWiringTest {
 
         String replyAsString = HttpHelper.getResponseBody(serverUrl + "/foo", null);
         assertThat(replyAsString, is("MyBean"));
-        MatcherAssert.assertThat(metrics.getTimer("rest", "foo").getCount(), is(1L));
+        assertThat(metrics.getTimer("rest", "foo").getCount(), is(1L));
     }
 
     @Test

@@ -197,8 +197,11 @@ public class ElasticMetricsReporter implements Consumer<MetricsDump> {
     }
 
     private Map<String, Object> toMap(Metric metric) {
-        if (metric instanceof CompoundMetric) return ((CompoundMetric) metric).getValues();
-        else return objectMapper.convertValue(metric, Map.class);
+        if (metric instanceof CompoundMetric) {
+            return ((CompoundMetric) metric).getValues();
+        } else {
+            return objectMapper.convertValue(metric, Map.class);
+        }
     }
 
 }

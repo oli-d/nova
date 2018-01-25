@@ -23,6 +23,9 @@ import static java.util.Objects.requireNonNull;
 class BeanExaminer {
     private static final Predicate<Annotation> interestingAnnotation = anno -> anno instanceof OnRestRequest;
 
+    private BeanExaminer() {
+    }
+
     static RestEndpoint[] restEndpointsIn (Object bean) {
         requireNonNull(bean, "bean to examine must not be null");
 
@@ -55,7 +58,7 @@ class BeanExaminer {
             .append('.')
             .append(method.getName())
             .append('(')
-            .append(Arrays.stream(method.getParameterTypes())
+            .append(stream(method.getParameterTypes())
                     .map(paramterClass -> paramterClass.getSimpleName())
                     .collect(Collectors.joining(", ")))
             .append(')');

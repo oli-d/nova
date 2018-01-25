@@ -18,6 +18,9 @@ import java.lang.reflect.Method;
 import java.math.BigDecimal;
 
 public class DefaultMarshallerFactory {
+    private DefaultMarshallerFactory() {
+    }
+
     public static MessageMarshaller<?, String> getMarshallerForMessageType(Class<?> messageType) {
         if (messageType.equals(Object.class)) {
             // Jackson obviously can transfer arbitrary objects into a String, so we would not need to

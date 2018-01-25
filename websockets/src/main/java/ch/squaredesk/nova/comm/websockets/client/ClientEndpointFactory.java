@@ -19,6 +19,8 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 
 public class ClientEndpointFactory {
+    private ClientEndpointFactory() {
+    }
 
     public static <MessageType> ClientEndpoint<MessageType> createFor (
             AsyncHttpClient httpClient,

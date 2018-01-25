@@ -18,6 +18,7 @@ import io.reactivex.Flowable;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.functions.Consumer;
 import io.reactivex.subscribers.TestSubscriber;
+import org.hamcrest.Matchers;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -30,6 +31,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.sameInstance;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class EventBusTest {
@@ -103,7 +105,7 @@ public class EventBusTest {
     void eachSubscriptionFedByDifferentFlowable() {
         Object f1 = eventBus.on("x");
         Object f2 = eventBus.on("x");
-        assertTrue(f1!=f2);
+        assertThat(f1, Matchers.not(sameInstance(f2)));
     }
 
     @Test

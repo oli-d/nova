@@ -54,11 +54,7 @@ public abstract class NovaService {
         if (registerShutdownHook) {
             Runtime.getRuntime().addShutdownHook(new Thread(()->shutdown()));
         }
-        try {
-            lifecycleBeanProcessor.invokeInitHandlers();
-        } catch (Throwable t) {
-            throw t;
-        }
+        lifecycleBeanProcessor.invokeInitHandlers();
     }
 
     public void start() {

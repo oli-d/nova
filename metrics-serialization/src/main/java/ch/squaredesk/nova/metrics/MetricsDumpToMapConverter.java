@@ -25,6 +25,9 @@ import java.util.Map;
 public class MetricsDumpToMapConverter {
     private static final ObjectMapper objectMapper = new ObjectMapper();
 
+    private MetricsDumpToMapConverter() {
+    }
+
     public static Map<String, Object> convert(MetricsDump dump) {
         return convert(dump,null);
     }
@@ -59,8 +62,11 @@ public class MetricsDumpToMapConverter {
     }
 
     private static Map<String, Object> toMap(Metric metric) {
-        if (metric instanceof CompoundMetric) return ((CompoundMetric) metric).getValues();
-        else return objectMapper.convertValue(metric, Map.class);
+        if (metric instanceof CompoundMetric) {
+            return ((CompoundMetric) metric).getValues();
+        } else {
+            return objectMapper.convertValue(metric, Map.class);
+        }
     }
 
 }
