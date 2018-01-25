@@ -152,14 +152,14 @@ public class JmsAdapter<InternalMessageType> {
             timeout = defaultRpcTimeout;
             timeUnit = defaultRpcTimeUnit;
         }
-        deliveryMode = deliveryMode == null ? defaultMessageDeliveryMode : deliveryMode;
-        priority = priority == null ? defaultMessagePriority : priority;
-        timeToLive = timeToLive == null ? defaultMessageTimeToLive : timeToLive;
+        int deliveryModeToUse = deliveryMode == null ? defaultMessageDeliveryMode : deliveryMode;
+        int priorityToUse = priority == null ? defaultMessagePriority : priority;
+        long timeToLiveToUse = timeToLive == null ? defaultMessageTimeToLive : timeToLive;
         // it doesn't make sense to let request messages live longer than timeout:
-        timeToLive = Math.min(timeToLive, timeUnit.toMillis(timeout));
+        timeToLiveToUse = Math.min(timeToLiveToUse, timeUnit.toMillis(timeout));
         String correlationId = correlationIdGenerator.get();
         JmsSpecificInfo jmsSpecificInfo = new JmsSpecificInfo(
-                correlationId, replyDestination, customHeaders, deliveryMode, priority, timeToLive);
+                correlationId, replyDestination, customHeaders, deliveryModeToUse, priorityToUse, timeToLiveToUse);
         MessageSendingInfo<Destination, JmsSpecificInfo> sendingInfo = new MessageSendingInfo.Builder<Destination, JmsSpecificInfo>()
                 .withDestination(destination)
                 .withTransportSpecificInfo(jmsSpecificInfo)
@@ -241,12 +241,13 @@ public class JmsAdapter<InternalMessageType> {
         }
     }
 
-    private static boolean exceptionSignalsDestinationDown(Throwable error) {
+    private static boolean exceptionSignalsDestinationDown(Throwable errorToExamine) {
         // TODO: is there a proper way to determine this???!?!?!?! Works for ActiveMQ, but how are other brokers behave?
         Function<Throwable, Boolean> testFunc = ex ->
                 (ex instanceof InvalidDestinationException) ||
                         (String.valueOf(ex).contains("does not exist"));
 
+        Throwable error = errorToExamine;
         boolean down = testFunc.apply(error);
         while (!down && error != null && error.getCause() != null && error.getCause() != error) {
             error = error.getCause();

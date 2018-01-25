@@ -189,10 +189,9 @@ class JmsAdapterTest {
     @Test
     void multipleSubscribersSupportedOnSingleQueue() throws Exception {
         Destination queue = jmsHelper.createQueue("multipleQueue");
-        List<String> valuesSubscriber1, valuesSubscriber2, valuesSubscriber3;
-        valuesSubscriber1 = new ArrayList<>();
-        valuesSubscriber2 = new ArrayList<>();
-        valuesSubscriber3 = new ArrayList<>();
+        List<String> valuesSubscriber1 = new ArrayList<>();
+        List<String> valuesSubscriber2 = new ArrayList<>();
+        List<String> valuesSubscriber3 = new ArrayList<>();
         CountDownLatch[] cdlHolder = new CountDownLatch[3];
         cdlHolder[0] = new CountDownLatch(1);
         cdlHolder[1] = new CountDownLatch(1);

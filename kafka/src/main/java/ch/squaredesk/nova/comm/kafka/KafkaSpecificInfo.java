@@ -12,7 +12,4 @@ package ch.squaredesk.nova.comm.kafka;
 
 public class KafkaSpecificInfo {
 
-    public KafkaSpecificInfo() {
-    }
-
 }

@@ -16,6 +16,7 @@ import ch.squaredesk.nova.comm.kafka.KafkaAdapter;
 import com.github.charithe.kafka.EphemeralKafkaBroker;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.ProducerConfig;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -63,6 +64,12 @@ class KafkaMetricsReporterTest {
                 .build();
 
         sut = new KafkaMetricsReporter(kafkaAdapter, "test.metrics");
+    }
+
+    @AfterEach
+    void tearDown() throws Exception {
+        kafkaAdapter.shutdown();
+        kafkaBroker.stop();
     }
 
     @Test

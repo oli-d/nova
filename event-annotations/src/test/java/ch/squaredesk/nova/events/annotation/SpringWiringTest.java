@@ -145,9 +145,6 @@ public class SpringWiringTest {
         private Double event3_2P2 = null;
         private String event3_2P3 = null;
 
-        public MyAnnotatedBean() {
-        }
-
         @OnEvent("e1")
         public void handleEventOneWithString(String s) {
             invokedEvent1 ++;

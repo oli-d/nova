@@ -143,10 +143,9 @@ class KafkaAdapterTest {
     void multipleSubscribersSupportedOnSingleQueue() throws Exception {
         String topic = "multipleSubscriberTopic";
         ensureTopicsExists(topic);
-        List<String> valuesSubscriber1, valuesSubscriber2, valuesSubscriber3;
-        valuesSubscriber1 = new ArrayList<>();
-        valuesSubscriber2 = new ArrayList<>();
-        valuesSubscriber3 = new ArrayList<>();
+        List<String> valuesSubscriber1 = new ArrayList<>();
+        List<String> valuesSubscriber2 = new ArrayList<>();
+        List<String> valuesSubscriber3 = new ArrayList<>();
         CountDownLatch cdl1 = new CountDownLatch(1);
         CountDownLatch cdl2 = new CountDownLatch(1);
         sut.messages(topic).subscribe(x -> {
