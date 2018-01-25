@@ -12,14 +12,10 @@ package ch.squaredesk.nova.comm.retrieving;
 
 import ch.squaredesk.nova.metrics.Metrics;
 import io.reactivex.Flowable;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import static java.util.Objects.requireNonNull;
 
 public abstract class MessageReceiver<DestinationType, InternalMessageType, TransportMessageType, TransportSpecificInfoType> {
-    private static final Logger logger = LoggerFactory.getLogger(MessageReceiver.class);
-
     protected final MessageUnmarshaller<TransportMessageType, InternalMessageType> messageUnmarshaller;
     protected final MetricsCollector metricsCollector;
 

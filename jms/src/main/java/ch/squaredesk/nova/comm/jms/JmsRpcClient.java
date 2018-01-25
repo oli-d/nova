@@ -23,8 +23,6 @@ import java.util.concurrent.TimeUnit;
 import static java.util.Objects.requireNonNull;
 
 public class JmsRpcClient<InternalMessageType> extends RpcClient<Destination, InternalMessageType, JmsSpecificInfo> {
-    private static final Logger logger = LoggerFactory.getLogger(JmsRpcClient.class);
-
     private final JmsMessageSender<InternalMessageType> messageSender;
     private final JmsMessageReceiver<InternalMessageType> messageReceiver;
 

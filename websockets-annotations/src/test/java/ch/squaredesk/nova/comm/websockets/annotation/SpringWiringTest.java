@@ -19,7 +19,6 @@ import ch.squaredesk.nova.metrics.Metrics;
 import ch.squaredesk.nova.spring.NovaProvidingConfiguration;
 import com.ning.http.client.AsyncHttpClient;
 import org.glassfish.grizzly.http.server.HttpServer;
-import org.hamcrest.MatcherAssert;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;

@@ -17,7 +17,6 @@ import io.reactivex.disposables.Disposable;
 import io.reactivex.observers.TestObserver;
 import io.reactivex.subscribers.TestSubscriber;
 import org.apache.activemq.ActiveMQConnectionFactory;
-import org.hamcrest.Matchers;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
@@ -301,7 +300,7 @@ class JmsAdapterTest {
         Destination queue = jmsHelper.createQueue("sendTest");
 
         TestObserver<Void> observer = sut.sendMessage(queue,"Hallo").test();
-        observer.await(1, TimeUnit.SECONDS);
+        observer.await(1, SECONDS);
         observer.assertError(MyException.class);
     }
 

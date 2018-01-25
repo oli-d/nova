@@ -57,7 +57,7 @@ class BeanExaminer {
             .append('.')
             .append(method.getName())
             .append('(')
-            .append(Arrays.stream(method.getParameterTypes())
+            .append(stream(method.getParameterTypes())
                     .map(paramterClass -> paramterClass.getSimpleName())
                     .collect(Collectors.joining(", ")))
             .append(')');

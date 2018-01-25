@@ -13,7 +13,6 @@ package ch.squaredesk.nova.comm.rest.annotation;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.util.Arrays;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 

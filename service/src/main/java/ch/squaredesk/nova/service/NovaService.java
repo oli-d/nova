@@ -62,11 +62,7 @@ public abstract class NovaService {
             throw new IllegalStateException("service " + serviceName + "/" + instanceId + " already started");
         }
 
-        try {
-            lifecycleBeanProcessor.invokeStartupHandlers();
-        } catch (Throwable t) {
-            throw t;
-        }
+        lifecycleBeanProcessor.invokeStartupHandlers();
 
         lifeline.start();
         started = true;

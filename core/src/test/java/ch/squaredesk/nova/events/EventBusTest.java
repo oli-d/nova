@@ -312,8 +312,8 @@ public class EventBusTest {
         NastyConsumer consumer1 = new NastyConsumer();
         NiceConsumer consumer2 = new NiceConsumer();
 
-        Disposable d1 = eventBus.on("xxx").subscribe(consumer1);
-        Disposable d2 = eventBus.on("xxx").subscribe(consumer2);
+        eventBus.on("xxx").subscribe(consumer1);
+        eventBus.on("xxx").subscribe(consumer2);
 
         eventBus.emit("xxx", "count");
         eventBus.emit("xxx", "count");

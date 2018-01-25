@@ -10,7 +10,6 @@
 package ch.squaredesk.nova.comm.rest.annotation;
 
 import org.glassfish.jersey.server.model.Resource;
-import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Method;

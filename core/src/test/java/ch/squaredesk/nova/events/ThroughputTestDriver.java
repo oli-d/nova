@@ -51,7 +51,6 @@ public class ThroughputTestDriver {
         for (int i = 0; i < numSubscribersPerTopic; i++) {
             for (int topicId = 0; topicId < numTopics; topicId++) {
                 eventBus.on(topicId).subscribe(data -> {
-                   //System.out.println(Thread.currentThread().getName() + "/" + data[0] );
                     cdl.countDown();
                 });
             }
@@ -60,12 +59,10 @@ public class ThroughputTestDriver {
         long now = System.currentTimeMillis();
         Thread[] threads = new Thread[numDispatcherThreads];
         for (int x=0; x<numDispatcherThreads; x++) {
-            int idx = x;
             threads[x] = new Thread(() -> {
                 for (int i=0; i<numEventsPerThread; i++) {
                     eventBus.emit(i%numTopics, i);
                 }
-                // System.err.println("Thread " + idx + " done emitting!");
             });
         }
         for (int x=0; x<numDispatcherThreads; x++) {

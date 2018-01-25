@@ -97,7 +97,7 @@ class RpcServerTest {
                 .withTransportSpecificInfo(new HttpSpecificInfo(HttpRequestMethod.POST))
                 .build();
 
-        RuntimeException exception = Assertions.assertThrows(RuntimeException.class, () ->
+        RuntimeException exception = assertThrows(RuntimeException.class, () ->
                 rpcClient.sendRequest("{}", msi, 15, TimeUnit.SECONDS).blockingGet());
         assertThat(exception.getMessage(), is("400 - Bad request"));
     }

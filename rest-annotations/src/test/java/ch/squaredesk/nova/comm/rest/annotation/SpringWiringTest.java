@@ -48,7 +48,7 @@ public class SpringWiringTest {
     public void restEndpointCanProperlyBeInvoked() throws Exception {
         setupContext(MyConfig.class);
         Metrics metrics = ctx.getBean(Nova.class).metrics;
-        MatcherAssert.assertThat(metrics.getTimer("rest", "foo").getCount(), is(0L));
+        assertThat(metrics.getTimer("rest", "foo").getCount(), is(0L));
 
         String replyAsString = HttpHelper.getResponseBody(serverUrl + "/foo", null);
         assertThat(replyAsString, is("MyBean"));

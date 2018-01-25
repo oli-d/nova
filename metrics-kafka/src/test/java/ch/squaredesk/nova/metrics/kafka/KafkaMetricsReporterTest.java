@@ -32,7 +32,6 @@ import static org.hamcrest.Matchers.is;
 
 class KafkaMetricsReporterTest {
     private static final int KAFKA_PORT = 11_000;
-    private static final ObjectMapper objectMapper = new ObjectMapper();
 
     private EphemeralKafkaBroker kafkaBroker;
     private KafkaAdapter<Map> kafkaAdapter;

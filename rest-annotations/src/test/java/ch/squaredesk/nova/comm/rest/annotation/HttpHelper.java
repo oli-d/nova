@@ -34,7 +34,7 @@ public class HttpHelper {
         long maxTime = System.currentTimeMillis() + timeUnit.toMillis(timeout);
         while (!connected && System.currentTimeMillis() < maxTime) {
             try {
-                Socket socket = new Socket("localhost", port);
+                new Socket("localhost", port);
                 return;
             } catch (Exception e) {
                 TimeUnit.MILLISECONDS.sleep(50);

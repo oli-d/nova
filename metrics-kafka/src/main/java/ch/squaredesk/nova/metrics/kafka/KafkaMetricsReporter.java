@@ -21,20 +21,14 @@ import java.util.Map;
 public class KafkaMetricsReporter implements Consumer<MetricsDump> {
     private final KafkaAdapter<Map> kafkaAdapter;
     private final String topicName;
-    private final Map<String, Object> additionalMetricAttributes;
 
     public KafkaMetricsReporter(KafkaAdapter<Map> kafkaAdapter, String topicName) {
-        this(kafkaAdapter, topicName, Collections.EMPTY_MAP);
-    }
-
-    public KafkaMetricsReporter(KafkaAdapter<Map> kafkaAdapter, String topicName, Map<String, Object> additionalMetricAttributes) {
         this.kafkaAdapter = kafkaAdapter;
         this.topicName = topicName;
-        this.additionalMetricAttributes = additionalMetricAttributes;
     }
 
     @Override
-    public void accept(MetricsDump metricsDump) throws Exception {
+    public void accept(MetricsDump metricsDump) {
         Map<String, Object> dumpAsMap = MetricsDumpToMapConverter.convert(metricsDump);
         kafkaAdapter.sendMessage(topicName, dumpAsMap).subscribe();
     }
