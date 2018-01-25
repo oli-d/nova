@@ -10,20 +10,9 @@
 
 package ch.squaredesk.nova.comm.rest.annotation;
 
-import ch.squaredesk.nova.comm.http.HttpServerConfiguration;
-import org.glassfish.grizzly.http.server.HttpServer;
 import org.glassfish.jersey.server.ResourceConfig;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.config.BeanPostProcessor;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.ApplicationEvent;
-import org.springframework.context.ApplicationListener;
-import org.springframework.context.event.ContextRefreshedEvent;
-
-import javax.annotation.PreDestroy;
-import java.io.IOException;
 
 
 /**

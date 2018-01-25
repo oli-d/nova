@@ -9,7 +9,6 @@
  */
 package ch.squaredesk.nova.comm.rest.annotation;
 
-import ch.squaredesk.nova.comm.http.HttpServerConfiguration;
 import org.glassfish.grizzly.http.server.HttpServer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
