@@ -20,6 +20,7 @@ import org.junit.jupiter.api.Test;
 
 import static ch.squaredesk.nova.comm.websockets.annotation.BeanExaminer.websocketEndpointsIn;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.isA;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -105,6 +106,7 @@ class BeanExaminerTest {
         assertThat(endpoints[0].destination, is("x"));
         assertThat(endpoints[0].backpressureStrategy, is(BackpressureStrategy.BUFFER));
         assertThat(endpoints[0].captureTimings, is(true));
+        assertThat(endpoints[0].marshaller.getClass(), is(StringMarshaller.class));
     }
 
     @Test
@@ -119,6 +121,7 @@ class BeanExaminerTest {
         assertThat(endpoints[0].destination, is("x"));
         assertThat(endpoints[0].backpressureStrategy, is(BackpressureStrategy.BUFFER));
         assertThat(endpoints[0].captureTimings, is(true));
+        assertThat(endpoints[0].unmarshaller.getClass(), is(StringUnmarshaller.class));
     }
 
     @Test
