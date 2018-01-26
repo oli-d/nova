@@ -103,7 +103,7 @@ public class EventBusTest {
     void eachSubscriptionFedByDifferentFlowable() {
         Object f1 = eventBus.on("x");
         Object f2 = eventBus.on("x");
-        assertThat(f1, Matchers.not(sameInstance(f2)));
+        assertThat(f1, not(sameInstance(f2)));
     }
 
     @Test

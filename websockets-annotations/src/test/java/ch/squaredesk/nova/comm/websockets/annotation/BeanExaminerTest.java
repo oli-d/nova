@@ -20,7 +20,6 @@ import org.junit.jupiter.api.Test;
 
 import static ch.squaredesk.nova.comm.websockets.annotation.BeanExaminer.websocketEndpointsIn;
 import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.isA;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
