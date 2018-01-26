@@ -19,7 +19,6 @@ import ch.squaredesk.nova.comm.websockets.WebSocket;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
-import java.util.Arrays;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
