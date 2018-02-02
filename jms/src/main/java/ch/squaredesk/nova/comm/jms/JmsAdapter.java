@@ -125,7 +125,7 @@ public class JmsAdapter<InternalMessageType> {
     // RPC server methods //
     //                    //
     ////////////////////////
-    public Flowable<RpcInvocation<InternalMessageType, InternalMessageType, JmsSpecificInfo>> requests(Destination destination) {
+    public Flowable<JmsRpcInvocation<InternalMessageType>> requests(Destination destination) {
         requireNonNull(destination, "destination must not be null");
         return rpcServer.requests(destination);
     }

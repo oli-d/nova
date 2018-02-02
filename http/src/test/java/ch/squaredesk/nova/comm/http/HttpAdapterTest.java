@@ -36,7 +36,6 @@ class HttpAdapterTest {
         sut = HttpAdapter.builder(BigDecimal.class)
                 .setHttpServer(httpServer)
                 .build();
-
     }
 
     @AfterEach

@@ -10,16 +10,20 @@
 
 package ch.squaredesk.nova.comm.rpc;
 
+import ch.squaredesk.nova.tuples.Pair;
+
 import java.util.function.Consumer;
 
-public class RpcInvocation<RequestType, ReplyType, TransportSpecificInfoType> {
+public class RpcInvocation<RequestType, TransportSpecificInfoType, ReplyType, ReplySpecificInfoType> {
     public final RequestType request;
     public final TransportSpecificInfoType transportSpecificInfo;
-    private final Consumer<ReplyType> replyConsumer;
+    private final Consumer<Pair<ReplyType, ReplySpecificInfoType>> replyConsumer;
     private final Consumer<Throwable> errorConsumer;
 
-    public RpcInvocation(RequestType request, TransportSpecificInfoType transportSpecificInfo,
-                         Consumer<ReplyType> replyConsumer, Consumer<Throwable> errorConsumer) {
+    public RpcInvocation(RequestType request,
+                         TransportSpecificInfoType transportSpecificInfo,
+                         Consumer<Pair<ReplyType, ReplySpecificInfoType>> replyConsumer,
+                         Consumer<Throwable> errorConsumer) {
         this.request = request;
         this.transportSpecificInfo = transportSpecificInfo;
         this.replyConsumer = replyConsumer;
@@ -27,7 +31,11 @@ public class RpcInvocation<RequestType, ReplyType, TransportSpecificInfoType> {
     }
 
     public void complete(ReplyType reply) {
-        replyConsumer.accept(reply);
+        complete(reply, null);
+    }
+
+    public void complete(ReplyType reply, ReplySpecificInfoType replySpecificInfo) {
+        replyConsumer.accept(new Pair<>(reply, replySpecificInfo));
     }
 
     public void completeExceptionally(Throwable error) {

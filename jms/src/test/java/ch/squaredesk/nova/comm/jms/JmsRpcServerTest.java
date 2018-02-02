@@ -77,7 +77,7 @@ class JmsRpcServerTest {
     @Test
     void subribeToIncomingRequests() throws Exception {
         Destination queue = jmsHelper.createQueue("subscribeToRequests");
-        TestSubscriber<RpcInvocation<String, String, JmsSpecificInfo>> testSubscriber = sut.requests(queue).test();
+        TestSubscriber<JmsRpcInvocation<String>> testSubscriber = sut.requests(queue).test();
 
         jmsHelper.sendMessage(queue,"One");
         jmsHelper.sendRequest(queue,"Two");
@@ -95,8 +95,7 @@ class JmsRpcServerTest {
     @Test
     void completingRpcInvocationProperlyTriggersReplySending() throws Exception {
         Destination queue = jmsHelper.createQueue("completeRpc");
-        TestSubscriber<RpcInvocation<String, String, JmsSpecificInfo>> testSubscriber =
-                sut.requests(queue).test();
+        TestSubscriber<JmsRpcInvocation<String>> testSubscriber = sut.requests(queue).test();
         Message requestMessage = jmsHelper.sendRequest(queue, "Two");
 
         int maxLoops = 10;
@@ -116,8 +115,7 @@ class JmsRpcServerTest {
     @Test
     void completingRpcInvocationExceptionallyTriggersReplySending() throws Exception {
         Destination queue = jmsHelper.createQueue("completeRpcExceptionally");
-        TestSubscriber<RpcInvocation<String, String, JmsSpecificInfo>> testSubscriber =
-                sut.requests(queue).test();
+        TestSubscriber<JmsRpcInvocation<String>> testSubscriber = sut.requests(queue).test();
         Message requestMessage = jmsHelper.sendRequest(queue, "Boom");
 
         int maxLoops = 10;

@@ -26,15 +26,14 @@ class RpcServerTest {
         assertThat(t.getMessage(), containsString("metrics"));
     }
 
-    private class MyRpcServer extends RpcServer<String,String, Void> {
+    private class MyRpcServer extends RpcServer<String, RpcInvocation<String, Void, String, Void>> {
 
         protected MyRpcServer(Metrics metrics) {
             super(metrics);
         }
 
         @Override
-        public <RequestType extends String, ReplyType extends String> Flowable<RpcInvocation<RequestType, ReplyType, Void>>
-            requests(String destination) {
+        public Flowable<RpcInvocation<String, Void, String, Void>> requests(String destination) {
             return Flowable.empty();
         }
     }

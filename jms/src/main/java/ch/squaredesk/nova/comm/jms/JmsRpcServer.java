@@ -22,7 +22,7 @@ import java.util.function.Function;
 
 import static java.util.Objects.requireNonNull;
 
-public class JmsRpcServer<InternalMessageType> extends RpcServer<Destination, InternalMessageType, JmsSpecificInfo> {
+public class JmsRpcServer<InternalMessageType> extends RpcServer<Destination, JmsRpcInvocation<InternalMessageType>> {
 
     private final JmsMessageSender<InternalMessageType> messageSender;
     private final JmsMessageReceiver<InternalMessageType> messageReceiver;
@@ -44,20 +44,19 @@ public class JmsRpcServer<InternalMessageType> extends RpcServer<Destination, In
     }
 
     @Override
-    public <RequestType extends InternalMessageType, ReplyType extends InternalMessageType>
-        Flowable<RpcInvocation<RequestType, ReplyType, JmsSpecificInfo>> requests(Destination destination) {
+    public Flowable<JmsRpcInvocation<InternalMessageType>> requests(Destination destination) {
         return messageReceiver.messages(destination)
                 .filter(this::isRpcRequest)
                 .map(incomingMessage -> {
                     metricsCollector.requestReceived(incomingMessage.message);
-                    RequestType request = (RequestType) incomingMessage.message;
-                    Consumer<ReplyType> replyConsumer = createReplyHandlerFor(incomingMessage);
+                    InternalMessageType request = incomingMessage.message;
+                    Consumer<InternalMessageType> replyConsumer = createReplyHandlerFor(incomingMessage);
                     Consumer<Throwable> errorConsumer = createErrorReplyHandlerFor(incomingMessage);
-                    return new RpcInvocation<>(
+                    return new JmsRpcInvocation<>(
                             request,
                             incomingMessage.details.transportSpecificDetails,
                             reply -> {
-                                replyConsumer.accept(reply);
+                                replyConsumer.accept(reply._1);
                                 metricsCollector.requestCompleted(incomingMessage.message, reply);
                             },
                             error -> {

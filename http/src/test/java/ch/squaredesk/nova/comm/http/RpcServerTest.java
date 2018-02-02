@@ -1,6 +1,5 @@
 package ch.squaredesk.nova.comm.http;
 
-import ch.squaredesk.nova.comm.rpc.RpcInvocation;
 import ch.squaredesk.nova.comm.sending.MessageSendingInfo;
 import ch.squaredesk.nova.metrics.Metrics;
 import com.ning.http.client.AsyncHttpClient;
@@ -12,6 +11,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
+import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -75,7 +75,7 @@ class RpcServerTest {
         int numRequests = 15;
         String path = "/bla";
         CountDownLatch cdl = new CountDownLatch(numRequests);
-        Flowable<RpcInvocation<String, String, HttpSpecificInfo>> requests = sut.requests(path);
+        Flowable<HttpRpcInvocation<String>> requests = sut.requests(path);
         requests.subscribeOn(Schedulers.io()).subscribe(rpcInvocation -> {
             rpcInvocation.complete(" description " + rpcInvocation.transportSpecificInfo.parameters.get("p"));
             cdl.countDown();
@@ -88,10 +88,28 @@ class RpcServerTest {
     }
 
     @Test
+    void httpReturnCodeCanBeSetWhenCompletingRpc() throws Exception {
+        sut.start();
+        String path = "/returnCodeTest";
+        String urlAsString = "http://" + rsc.interfaceName + ":" + rsc.port + path;
+        URL url = new URL(urlAsString);
+        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+
+        Flowable<HttpRpcInvocation<String>> requests = sut.requests(path);
+        requests.subscribeOn(Schedulers.io()).subscribe(rpcInvocation -> {
+            HttpReplyInfo replyInfo = new HttpReplyInfo(555);
+            rpcInvocation.complete("someReply", replyInfo);
+        });
+
+        connection.connect();
+        assertThat(connection.getResponseCode(), is(555));
+    }
+
+    @Test
     void requestFailsAndErrorIsDispatched() throws Exception {
         sut.start();
         String path = "/fail";
-        Flowable<RpcInvocation<String, String, HttpSpecificInfo>> requests = sut.requests(path);
+        Flowable<HttpRpcInvocation<String>> requests = sut.requests(path);
         requests.subscribe(rpcInvocation -> rpcInvocation.completeExceptionally(new Exception("no content")));
 
         String urlAsString = "http://" + rsc.interfaceName + ":" + rsc.port + path + "?p=";

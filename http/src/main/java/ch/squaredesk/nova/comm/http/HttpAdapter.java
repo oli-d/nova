@@ -127,7 +127,7 @@ public class HttpAdapter<MessageType> {
         return rpcClient.sendRequest(request, sendingInfo, timeout, timeUnit);
     }
 
-    public Flowable<RpcInvocation<MessageType, MessageType, HttpSpecificInfo>> requests(String destination) {
+    public Flowable<HttpRpcInvocation<MessageType>> requests(String destination) {
         return rpcServer.requests(destination);
     }
 
