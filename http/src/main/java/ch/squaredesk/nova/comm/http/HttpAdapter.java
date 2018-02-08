@@ -12,7 +12,6 @@
 package ch.squaredesk.nova.comm.http;
 
 import ch.squaredesk.nova.comm.CommAdapterBuilder;
-import ch.squaredesk.nova.comm.rpc.RpcInvocation;
 import ch.squaredesk.nova.comm.sending.MessageSendingInfo;
 import com.ning.http.client.AsyncHttpClient;
 import io.reactivex.Flowable;

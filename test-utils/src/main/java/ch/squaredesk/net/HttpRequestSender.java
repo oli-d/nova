@@ -19,6 +19,9 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 
 public class HttpRequestSender {
+    private HttpRequestSender() {
+    }
+
     public static HttpResponse sendPostRequest (URL url, String request) throws IOException {
         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
 

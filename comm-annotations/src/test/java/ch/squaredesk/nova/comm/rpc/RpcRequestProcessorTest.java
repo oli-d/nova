@@ -16,11 +16,8 @@ import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-import java.util.concurrent.atomic.AtomicInteger;
-
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.sameInstance;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 class RpcRequestProcessorTest {
@@ -83,9 +80,6 @@ class RpcRequestProcessorTest {
 
 
     private class MyRpcInvocation extends RpcInvocation<Object, Void, String, Void> {
-        private String reply;
-        private Throwable error;
-
         public MyRpcInvocation(Object request) {
             super(request, null, null, null);
         }

@@ -11,9 +11,6 @@
 
 package ch.squaredesk.nova.comm.rpc;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.Arrays;
@@ -21,8 +18,6 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 class BeanExaminer {
-    private final Logger logger = LoggerFactory.getLogger(BeanExaminer.class);
-
     RpcRequestHandlerDescription[] examine(Object bean) {
         Objects.requireNonNull(bean, "bean to examine must not be null");
 

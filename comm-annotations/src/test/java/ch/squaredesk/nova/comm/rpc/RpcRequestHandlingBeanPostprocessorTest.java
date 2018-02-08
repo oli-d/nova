@@ -26,7 +26,6 @@ import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 class RpcRequestHandlingBeanPostprocessorTest {
     private ApplicationContext appContext;
-    private RpcRequestProcessor rpcRequestProcessor;
 
     @BeforeEach
     void setUp() {
@@ -38,7 +37,7 @@ class RpcRequestHandlingBeanPostprocessorTest {
 
     @Test
     void rpcRequestProcessorAutomaticallyWiredUpDuringSpringContextInitialization() throws Exception {
-        rpcRequestProcessor = appContext.getBean(RpcRequestProcessor.class);
+        RpcRequestProcessor rpcRequestProcessor = appContext.getBean(RpcRequestProcessor.class);
         StringRequestRpcInvocation stringInvocation = new StringRequestRpcInvocation("request");
         IntegerRequestRpcInvocation integerInvocation = new IntegerRequestRpcInvocation(5);
 
