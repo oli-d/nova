@@ -44,10 +44,11 @@ public class DefaultMarshallerFactory {
                 throw new IllegalArgumentException("Unable to create default marshaller for message type " + messageType);
             } else {
                 Method marshallingMethod = getMarshallingMethod(objectMapper);
-                return new MessageMarshaller<Object, String>() {
-                    @Override
-                    public String marshal(Object o) throws Exception {
-                        return (String)marshallingMethod.invoke(objectMapper, o);
+                return (MessageMarshaller<Object, String>) o -> {
+                    try {
+                        return (String) marshallingMethod.invoke(objectMapper, o);
+                    } catch (Exception e) {
+                        throw new RuntimeException("Unable to marshal outgoing message " + o, e);
                     }
                 };
             }
@@ -74,10 +75,11 @@ public class DefaultMarshallerFactory {
                 throw new IllegalArgumentException("Unable to create default unmarshaller for message type " + messageType);
             } else {
                 Method unmarshallingMethod = getUnmarshallingMethod(objectMapper);
-                return new MessageUnmarshaller<String, Object>() {
-                    @Override
-                    public Object unmarshal(String s) throws Exception {
+                return (MessageUnmarshaller<String, Object>) s -> {
+                    try {
                         return unmarshallingMethod.invoke(objectMapper, s, messageType);
+                    } catch (Exception e) {
+                        throw new RuntimeException("Unable to unmarshal incoming message '" + s + "'", e);
                     }
                 };
             }

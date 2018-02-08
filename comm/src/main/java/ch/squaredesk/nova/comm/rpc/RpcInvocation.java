@@ -41,4 +41,12 @@ public class RpcInvocation<RequestType, TransportSpecificInfoType, ReplyType, Re
     public void completeExceptionally(Throwable error) {
         errorConsumer.accept(error);
     }
+
+    @Override
+    public String toString() {
+        return "{" +
+                "request=" + request +
+                ", transportSpecificInfo=" + transportSpecificInfo +
+                '}';
+    }
 }

@@ -191,6 +191,7 @@ public class RpcServer<InternalMessageType> extends ch.squaredesk.nova.comm.rpc.
                 @Override
                 public void onError(Throwable t) {
                     logger.error("Error parsing request data", t);
+                    response.setStatus(400, "Bad request");
                     response.resume();
                 }
 
@@ -238,9 +239,9 @@ public class RpcServer<InternalMessageType> extends ch.squaredesk.nova.comm.rpc.
                                 error -> {
                                     logger.error("An error occurred trying to process HTTP request " + requestAsString, error);
                                     try {
-                                        response.sendError(400, "Bad request");
+                                        response.sendError(500, "Internal server error");
                                     } catch (Exception any) {
-                                        logger.error("Failed to send error 400 back to client", any);
+                                        logger.error("Failed to send error 500 back to client", any);
                                     }
                                 }
                             );

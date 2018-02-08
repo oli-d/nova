@@ -97,8 +97,7 @@ class RpcServerTest {
 
         Flowable<HttpRpcInvocation<String>> requests = sut.requests(path);
         requests.subscribeOn(Schedulers.io()).subscribe(rpcInvocation -> {
-            HttpReplyInfo replyInfo = new HttpReplyInfo(555);
-            rpcInvocation.complete("someReply", replyInfo);
+            rpcInvocation.complete(555, "someReply");
         });
 
         connection.connect();
@@ -106,7 +105,7 @@ class RpcServerTest {
     }
 
     @Test
-    void requestFailsAndErrorIsDispatched() throws Exception {
+    void requestProcessingFailsOnServerSideAndErrorIsDispatched() throws Exception {
         sut.start();
         String path = "/fail";
         Flowable<HttpRpcInvocation<String>> requests = sut.requests(path);
@@ -120,7 +119,7 @@ class RpcServerTest {
 
         RuntimeException exception = assertThrows(RuntimeException.class, () ->
                 rpcClient.sendRequest("{}", msi, 15, TimeUnit.SECONDS).blockingGet());
-        assertThat(exception.getMessage(), is("400 - Bad request"));
+        assertThat(exception.getMessage(), is("500 - Internal server error"));
     }
 
     private void sendRestRequestInNewThread(String path, int i) {

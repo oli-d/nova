@@ -22,4 +22,9 @@ public class HttpRpcInvocation<InternalMessageType>
     public HttpRpcInvocation(InternalMessageType request, HttpSpecificInfo transportSpecificInfo, Consumer<Pair<InternalMessageType, HttpReplyInfo>> replyConsumer, Consumer<Throwable> errorConsumer) {
         super(request, transportSpecificInfo, replyConsumer, errorConsumer);
     }
+
+    public void complete(int statusCode, InternalMessageType reply) {
+        HttpReplyInfo replyInfo = new HttpReplyInfo(statusCode);
+        complete(reply, replyInfo);
+    }
 }
