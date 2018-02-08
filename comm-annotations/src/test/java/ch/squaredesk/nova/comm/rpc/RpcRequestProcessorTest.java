@@ -57,7 +57,7 @@ class RpcRequestProcessorTest {
         sut.register(String.class, s -> null);
         IllegalArgumentException iae = Assertions.assertThrows(IllegalArgumentException.class,
                 () -> sut.register(String.class, s -> null));
-        assertThat(iae.getMessage(), Matchers.containsString("already registered"));
+        assertThat(iae.getMessage(), containsString("already registered"));
     }
 
     @Test
