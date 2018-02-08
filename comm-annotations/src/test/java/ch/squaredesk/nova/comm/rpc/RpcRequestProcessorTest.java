@@ -12,7 +12,6 @@
 package ch.squaredesk.nova.comm.rpc;
 
 import ch.squaredesk.nova.tuples.Pair;
-import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
