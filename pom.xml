@@ -19,6 +19,33 @@
     <version>4.0.0-beta-1</version>
     <packaging>pom</packaging>
 
+    <name>Nova</name>
+    <description>Java libraries for rapid (micro) service development</description>
+    <url>https://squaredesk.ch</url>
+
+    <licenses>
+        <license>
+            <name>Squaredesk Open Source License</name>
+            <url>https://squaredesk.ch/license/oss/LICENSEt</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
+
+    <developers>
+        <developer>
+            <name>Oliver Dotzauer</name>
+            <email>oliver@squaredesk.ch</email>
+            <organization>squaredesk GmbH</organization>
+            <organizationUrl>https://squaredesk.ch</organizationUrl>
+        </developer>
+    </developers>
+
+    <scm>
+        <connection>scm:git:git://github.com/oli-d/nova.git</connection>
+        <developerConnection>scm:git:ssh://github.com:oli-d/nova.git</developerConnection>
+        <url>https://github.com/oli-d/nova/tree/master</url>
+    </scm>
+
     <modules>
         <module>parentpom</module>
 
@@ -45,8 +72,19 @@
         <module>metrics-kafka</module>
     </modules>
 
+    <distributionManagement>
+        <snapshotRepository>
+            <id>ossrh</id>
+            <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+        </snapshotRepository>
+        <repository>
+            <id>ossrh</id>
+            <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+        </repository>
+    </distributionManagement>
 
-<!--
+
+    <!--
     <profiles>
         <profile>
             <id>backend</id>

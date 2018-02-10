@@ -16,7 +16,7 @@
         <groupId>ch.squaredesk.nova</groupId>
         <artifactId>parentpom</artifactId>
 		<relativePath>../parentpom</relativePath>
-        <version>4.0.0-SNAPSHOT</version>
+        <version>4.0.0-beta-1</version>
 	</parent>
 
 	<artifactId>core</artifactId>
