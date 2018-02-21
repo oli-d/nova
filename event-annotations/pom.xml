@@ -14,20 +14,20 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>event-annotations</artifactId>
-
     <parent>
         <groupId>ch.squaredesk.nova</groupId>
         <artifactId>parentpom</artifactId>
-        <version>4.0.0-beta-1</version>
+        <version>4.0.0-beta-2</version>
         <relativePath>../parentpom</relativePath>
     </parent>
+
+    <artifactId>event-annotations</artifactId>
+    <version>${version.event-annotations}</version>
 
     <dependencies>
         <dependency>
             <groupId>ch.squaredesk.nova</groupId>
             <artifactId>spring-support</artifactId>
-            <version>${project.version}</version>
         </dependency>
     </dependencies>
 </project>
