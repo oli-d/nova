@@ -20,11 +20,12 @@
 	</parent>
 
 	<artifactId>metrics-serialization</artifactId>
-	<version>${version.metrics-serialization}</version>
+	<version>4.0.0-beta-2</version>
 	<dependencies>
 		<dependency>
 			<groupId>ch.squaredesk.nova</groupId>
 			<artifactId>core</artifactId>
+			<version>4.0.0-beta-2</version>
 		</dependency>
 		<dependency>
 			<groupId>com.fasterxml.jackson.core</groupId>

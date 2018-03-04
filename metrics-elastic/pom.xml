@@ -20,12 +20,13 @@
 	</parent>
 
 	<artifactId>metrics-elastic</artifactId>
-	<version>${version.metrics-elastic}</version>
+	<version>4.0.0-beta-2</version>
 
 	<dependencies>
 		<dependency>
 			<groupId>ch.squaredesk.nova</groupId>
 			<artifactId>metrics-serialization</artifactId>
+			<version>4.0.0-beta-2</version>
 		</dependency>
 
 		<dependency>

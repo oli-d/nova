@@ -22,12 +22,13 @@
     </parent>
 
     <artifactId>event-annotations</artifactId>
-    <version>${version.event-annotations}</version>
+    <version>4.0.0-beta-2</version>
 
     <dependencies>
         <dependency>
             <groupId>ch.squaredesk.nova</groupId>
             <artifactId>spring-support</artifactId>
+            <version>4.0.0-beta-2</version>
         </dependency>
     </dependencies>
 </project>

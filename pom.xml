@@ -57,120 +57,96 @@
         </repository>
     </distributionManagement>
 
-    <properties>
-        <version.test-utils>4.0.0-beta2</version.test-utils>
-
-        <version.core>4.0.0-beta2</version.core>
-        <version.spring-support>4.0.0-beta2</version.spring-support>
-        <version.event-annotations>4.0.0-beta2</version.event-annotations>
-
-        <version.service>4.0.0-beta2</version.service>
-
-        <version.comm>4.0.0-beta2</version.comm>
-        <version.comm-annotations>4.0.0-beta2</version.comm-annotations>
-        <version.jms>4.0.0-beta2</version.jms>
-        <version.http>4.0.0-beta2</version.http>
-        <version.http-spring>4.0.0-beta2</version.http-spring>
-        <version.rest-annotations>4.0.0-beta2</version.rest-annotations>
-        <version.websockets>4.0.0-beta2</version.websockets>
-        <version.websockets-annotations>4.0.0-beta2</version.websockets-annotations>
-        <version.kafka>4.0.0-beta2</version.kafka>
-
-        <version.metrics-serialization>4.0.0-beta2</version.metrics-serialization>
-        <version.metrics-elastic>4.0.0-beta2</version.metrics-elastic>
-        <version.metrics-kafka>4.0.0-beta2</version.metrics-kafka>
-    </properties>
-
     <dependencyManagement>
         <dependencies>
             <dependency>
                 <groupId>ch.squaredesk.nova</groupId>
                 <artifactId>test-utils</artifactId>
-                <version>${version.test-utils}</version>
+                <version>4.0.0-beta-2</version>
             </dependency>
 
             <dependency>
                 <groupId>ch.squaredesk.nova</groupId>
                 <artifactId>core</artifactId>
-                <version>${version.core}</version>
+                <version>4.0.0-beta-2</version>
             </dependency>
             <dependency>
                 <groupId>ch.squaredesk.nova</groupId>
                 <artifactId>spring-support</artifactId>
-                <version>${version.spring-support}</version>
+                <version>4.0.0-beta-2</version>
             </dependency>
             <dependency>
                 <groupId>ch.squaredesk.nova</groupId>
                 <artifactId>event-annotations</artifactId>
-                <version>${version.event-annotations}</version>
+                <version>4.0.0-beta-2</version>
             </dependency>
 
             <dependency>
                 <groupId>ch.squaredesk.nova</groupId>
                 <artifactId>service</artifactId>
-                <version>${version.service}</version>
+                <version>4.0.0-beta-2</version>
             </dependency>
 
             <dependency>
                 <groupId>ch.squaredesk.nova</groupId>
                 <artifactId>comm</artifactId>
-                <version>${version.comm}</version>
+                <version>4.0.0-beta-2</version>
             </dependency>
             <dependency>
                 <groupId>ch.squaredesk.nova</groupId>
                 <artifactId>comm-annotations</artifactId>
-                <version>${version.comm-annotations}</version>
+                <version>4.0.0-beta-2</version>
             </dependency>
             <dependency>
                 <groupId>ch.squaredesk.nova</groupId>
                 <artifactId>jms</artifactId>
-                <version>${version.jms}</version>
+                <version>4.0.0-beta-2</version>
             </dependency>
             <dependency>
                 <groupId>ch.squaredesk.nova</groupId>
                 <artifactId>http</artifactId>
-                <version>${version.http}</version>
+                <version>4.0.0-beta-2</version>
             </dependency>
             <dependency>
                 <groupId>ch.squaredesk.nova</groupId>
                 <artifactId>http-spring</artifactId>
-                <version>${version.http-spring}</version>
+                <version>4.0.0-beta-2</version>
             </dependency>
             <dependency>
                 <groupId>ch.squaredesk.nova</groupId>
                 <artifactId>rest-annotations</artifactId>
-                <version>${version.rest-annotations}</version>
+                <version>4.0.0-beta-2</version>
             </dependency>
             <dependency>
                 <groupId>ch.squaredesk.nova</groupId>
                 <artifactId>websockets</artifactId>
-                <version>${version.websockets}</version>
+                <version>4.0.0-beta-2</version>
             </dependency>
             <dependency>
                 <groupId>ch.squaredesk.nova</groupId>
                 <artifactId>websockets-annotations</artifactId>
-                <version>${version.websockets-annotations}</version>
+                <version>4.0.0-beta-2</version>
             </dependency>
             <dependency>
                 <groupId>ch.squaredesk.nova</groupId>
                 <artifactId>kafka</artifactId>
-                <version>${version.kafka}</version>
+                <version>4.0.0-beta-2</version>
             </dependency>
 
             <dependency>
                 <groupId>ch.squaredesk.nova</groupId>
                 <artifactId>metrics-serialization</artifactId>
-                <version>${version.metrics-serialization}</version>
+                <version>4.0.0-beta-2</version>
             </dependency>
             <dependency>
                 <groupId>ch.squaredesk.nova</groupId>
                 <artifactId>metrics-elastic</artifactId>
-                <version>${version.metrics-elastic}</version>
+                <version>4.0.0-beta-2</version>
             </dependency>
             <dependency>
                 <groupId>ch.squaredesk.nova</groupId>
                 <artifactId>metrics-kafka</artifactId>
-                <version>${version.metrics-kafka}</version>
+                <version>4.0.0-beta-2</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

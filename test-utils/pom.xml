@@ -21,6 +21,6 @@
     </parent>
 
     <artifactId>test-utils</artifactId>
-    <version>${version.test-utils}</version>
+    <version>4.0.0-beta-2</version>
 
 </project>
