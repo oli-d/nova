@@ -11,31 +11,31 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
-	<artifactId>comm</artifactId>
 
 	<parent>
 		<groupId>ch.squaredesk.nova</groupId>
 		<artifactId>parentpom</artifactId>
-		<version>4.0.0-beta-1</version>
+		<version>4.0.0-beta-2</version>
 		<relativePath>../parentpom</relativePath>
 	</parent>
+
+	<artifactId>comm</artifactId>
+	<version>4.0.0-beta-2</version>
 
 	<dependencies>
 		<dependency>
 			<groupId>ch.squaredesk.nova</groupId>
 			<artifactId>core</artifactId>
-			<version>${project.version}</version>
+			<version>4.0.0-beta-2</version>
 		</dependency>
 		<dependency>
 			<groupId>com.fasterxml.jackson.core</groupId>
 			<artifactId>jackson-databind</artifactId>
-			<version>${jackson.version}</version>
 			<scope>test</scope>
 		</dependency>
 		<dependency>
 			<groupId>com.fasterxml.jackson.core</groupId>
 			<artifactId>jackson-annotations</artifactId>
-			<version>${jackson.version}</version>
 			<scope>test</scope>
 		</dependency>
 		<dependency>
@@ -44,5 +44,4 @@
 			<version>1.2.11</version>
 		</dependency>
 	</dependencies>
-
 </project>
