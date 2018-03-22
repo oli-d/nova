@@ -15,9 +15,141 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>ch.squaredesk.nova</groupId>
-    <artifactId>nova-all</artifactId>
-    <version>4.0.0-SNAPSHOT</version>
+    <artifactId>bom</artifactId>
+    <version>4.0.0-beta-2</version>
     <packaging>pom</packaging>
+
+    <name>Nova BOM</name>
+    <description>Java libraries for rapid (micro) service development</description>
+    <url>https://squaredesk.ch</url>
+
+    <licenses>
+        <license>
+            <name>Squaredesk Open Source License</name>
+            <url>https://squaredesk.ch/license/oss/LICENSEt</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
+
+    <developers>
+        <developer>
+            <name>Oliver Dotzauer</name>
+            <email>oliver@squaredesk.ch</email>
+            <organization>squaredesk GmbH</organization>
+            <organizationUrl>https://squaredesk.ch</organizationUrl>
+        </developer>
+    </developers>
+
+    <scm>
+        <connection>scm:git:git://github.com/oli-d/nova.git</connection>
+        <developerConnection>scm:git:ssh://github.com:oli-d/nova.git</developerConnection>
+        <url>https://github.com/oli-d/nova/tree/master</url>
+    </scm>
+
+    <distributionManagement>
+        <snapshotRepository>
+            <id>ossrh</id>
+            <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+        </snapshotRepository>
+        <repository>
+            <id>ossrh</id>
+            <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+        </repository>
+    </distributionManagement>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>ch.squaredesk.nova</groupId>
+                <artifactId>test-utils</artifactId>
+                <version>4.0.0-beta-2</version>
+            </dependency>
+
+            <dependency>
+                <groupId>ch.squaredesk.nova</groupId>
+                <artifactId>core</artifactId>
+                <version>4.0.0-beta-2</version>
+            </dependency>
+            <dependency>
+                <groupId>ch.squaredesk.nova</groupId>
+                <artifactId>spring-support</artifactId>
+                <version>4.0.0-beta-2</version>
+            </dependency>
+            <dependency>
+                <groupId>ch.squaredesk.nova</groupId>
+                <artifactId>event-annotations</artifactId>
+                <version>4.0.0-beta-2</version>
+            </dependency>
+
+            <dependency>
+                <groupId>ch.squaredesk.nova</groupId>
+                <artifactId>service</artifactId>
+                <version>4.0.0-beta-2</version>
+            </dependency>
+
+            <dependency>
+                <groupId>ch.squaredesk.nova</groupId>
+                <artifactId>comm</artifactId>
+                <version>4.0.0-beta-2</version>
+            </dependency>
+            <dependency>
+                <groupId>ch.squaredesk.nova</groupId>
+                <artifactId>comm-annotations</artifactId>
+                <version>4.0.0-beta-2</version>
+            </dependency>
+            <dependency>
+                <groupId>ch.squaredesk.nova</groupId>
+                <artifactId>jms</artifactId>
+                <version>4.0.0-beta-2</version>
+            </dependency>
+            <dependency>
+                <groupId>ch.squaredesk.nova</groupId>
+                <artifactId>http</artifactId>
+                <version>4.0.0-beta-2</version>
+            </dependency>
+            <dependency>
+                <groupId>ch.squaredesk.nova</groupId>
+                <artifactId>http-spring</artifactId>
+                <version>4.0.0-beta-2</version>
+            </dependency>
+            <dependency>
+                <groupId>ch.squaredesk.nova</groupId>
+                <artifactId>rest-annotations</artifactId>
+                <version>4.0.0-beta-2</version>
+            </dependency>
+            <dependency>
+                <groupId>ch.squaredesk.nova</groupId>
+                <artifactId>websockets</artifactId>
+                <version>4.0.0-beta-2</version>
+            </dependency>
+            <dependency>
+                <groupId>ch.squaredesk.nova</groupId>
+                <artifactId>websockets-annotations</artifactId>
+                <version>4.0.0-beta-2</version>
+            </dependency>
+            <dependency>
+                <groupId>ch.squaredesk.nova</groupId>
+                <artifactId>kafka</artifactId>
+                <version>4.0.0-beta-2</version>
+            </dependency>
+
+            <dependency>
+                <groupId>ch.squaredesk.nova</groupId>
+                <artifactId>metrics-serialization</artifactId>
+                <version>4.0.0-beta-2</version>
+            </dependency>
+            <dependency>
+                <groupId>ch.squaredesk.nova</groupId>
+                <artifactId>metrics-elastic</artifactId>
+                <version>4.0.0-beta-2</version>
+            </dependency>
+            <dependency>
+                <groupId>ch.squaredesk.nova</groupId>
+                <artifactId>metrics-kafka</artifactId>
+                <version>4.0.0-beta-2</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
 
     <modules>
         <module>parentpom</module>
@@ -35,7 +167,7 @@
         <module>jms</module>
         <module>http</module>
         <module>http-spring</module>
-	    <module>rest-annotations</module>
+        <module>rest-annotations</module>
         <module>websockets</module>
         <module>websockets-annotations</module>
         <module>kafka</module>
@@ -45,8 +177,7 @@
         <module>metrics-kafka</module>
     </modules>
 
-
-<!--
+    <!--
     <profiles>
         <profile>
             <id>backend</id>

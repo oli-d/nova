@@ -16,8 +16,46 @@
 
     <groupId>ch.squaredesk.nova</groupId>
     <artifactId>parentpom</artifactId>
-    <version>4.0.0-SNAPSHOT</version>
+    <version>4.0.0-beta-2</version>
     <packaging>pom</packaging>
+
+    <name>Nova</name>
+    <description>Java libraries for rapid (micro) service development</description>
+    <url>https://squaredesk.ch</url>
+
+    <licenses>
+        <license>
+            <name>Squaredesk Open Source License</name>
+            <url>https://squaredesk.ch/license/oss/LICENSEt</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
+
+    <developers>
+        <developer>
+            <name>Oliver Dotzauer</name>
+            <email>oliver@squaredesk.ch</email>
+            <organization>squaredesk GmbH</organization>
+            <organizationUrl>https://squaredesk.ch</organizationUrl>
+        </developer>
+    </developers>
+
+    <scm>
+        <connection>scm:git:git://github.com/oli-d/nova.git</connection>
+        <developerConnection>scm:git:ssh://github.com:oli-d/nova.git</developerConnection>
+        <url>https://github.com/oli-d/nova/tree/master</url>
+    </scm>
+
+    <distributionManagement>
+        <snapshotRepository>
+            <id>ossrh</id>
+            <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+        </snapshotRepository>
+        <repository>
+            <id>ossrh</id>
+            <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+        </repository>
+    </distributionManagement>
 
     <properties>
         <java.version>1.8</java.version>
@@ -33,6 +71,31 @@
 
         <grizzly.version>2.4.2</grizzly.version>
     </properties>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>org.glassfish.grizzly</groupId>
+                <artifactId>grizzly-http-server-core</artifactId>
+                <version>${grizzly.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.core</groupId>
+                <artifactId>jackson-core</artifactId>
+                <version>${jackson.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.core</groupId>
+                <artifactId>jackson-databind</artifactId>
+                <version>${jackson.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.core</groupId>
+                <artifactId>jackson-annotations</artifactId>
+                <version>${jackson.version}</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
 
     <dependencies>
         <!-- testing -->
@@ -148,8 +211,9 @@
                         <artifactId>jacoco-maven-plugin</artifactId>
                         <version>0.7.9</version>
                         <configuration>
-                            <destFile>${basedir}/target/coverage-reports/jacoco-unit.exec</destFile>
-                            <dataFile>${basedir}/target/coverage-reports/jacoco-unit.exec</dataFile>
+                            <destFile>${basedir}/../target/coverage-reports/jacoco-unit.exec</destFile>
+                            <dataFile>${basedir}/../target/coverage-reports/jacoco-unit.exec</dataFile>
+                            <append>true</append>
                         </configuration>
                         <executions>
                             <execution>
@@ -187,8 +251,9 @@
                         <artifactId>jacoco-maven-plugin</artifactId>
                         <version>0.7.9</version>
                         <configuration>
-                            <destFile>${basedir}/target/coverage-reports/jacoco-unit.exec</destFile>
-                            <dataFile>${basedir}/target/coverage-reports/jacoco-unit.exec</dataFile>
+                            <destFile>${basedir}/../target/coverage-reports/jacoco-unit.exec</destFile>
+                            <dataFile>${basedir}/../target/coverage-reports/jacoco-unit.exec</dataFile>
+                            <append>true</append>
                         </configuration>
                         <executions>
                             <execution>
@@ -226,8 +291,9 @@
                         <artifactId>jacoco-maven-plugin</artifactId>
                         <version>0.7.9</version>
                         <configuration>
-                            <destFile>${basedir}/target/coverage-reports/jacoco-unit.exec</destFile>
-                            <dataFile>${basedir}/target/coverage-reports/jacoco-unit.exec</dataFile>
+                            <destFile>${basedir}/../target/coverage-reports/jacoco-unit.exec</destFile>
+                            <dataFile>${basedir}/../target/coverage-reports/jacoco-unit.exec</dataFile>
+                            <append>true</append>
                         </configuration>
                         <executions>
                             <execution>
@@ -261,6 +327,61 @@
                             <properties>
                                 <excludeTags>none</excludeTags>
                             </properties>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
+
+        <profile>
+            <id>release</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-javadoc-plugin</artifactId>
+                        <version>2.9.1</version>
+                        <executions>
+                            <execution>
+                                <id>attach-javadocs</id>
+                                <goals>
+                                    <goal>jar</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <configuration>
+                            <properties>
+                                <includeTags>none</includeTags>
+                            </properties>
+                        </configuration>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-gpg-plugin</artifactId>
+                        <version>1.5</version>
+                        <executions>
+                            <execution>
+                                <id>sign-artifacts</id>
+                                <phase>verify</phase>
+                                <goals>
+                                    <goal>sign</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.sonatype.plugins</groupId>
+                        <artifactId>nexus-staging-maven-plugin</artifactId>
+                        <version>1.6.7</version>
+                        <extensions>true</extensions>
+                        <configuration>
+                            <serverId>ossrh</serverId>
+                            <nexusUrl>https://oss.sonatype.org/</nexusUrl>
+                            <autoReleaseAfterClose>true</autoReleaseAfterClose>
                         </configuration>
                     </plugin>
                 </plugins>
