@@ -31,7 +31,7 @@ function map_keys
 }
 
 function determineReactorArtifactId() {
-  REACTOR_ARTIFACT_ID=`mvn -o --non-recursive -q -Dexec.executable="echo" -Dexec.args='${project.artifactId}' org.codehaus.mojo:exec-maven-plugin:1.3.1:exec`
+  REACTOR_ARTIFACT_ID=`mvn --non-recursive -q -Dexec.executable="echo" -Dexec.args='${project.artifactId}' org.codehaus.mojo:exec-maven-plugin:1.3.1:exec`
   echo "  reactor artifactId = $REACTOR_ARTIFACT_ID"
 }
 

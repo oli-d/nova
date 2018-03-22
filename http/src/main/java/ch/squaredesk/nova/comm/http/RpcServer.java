@@ -120,19 +120,18 @@ public class RpcServer<InternalMessageType> extends ch.squaredesk.nova.comm.rpc.
      * representation of the reply object
      */
     private static void writeResponse (String reply, NIOWriter out) throws Exception {
-        BufferedWriter bw = new BufferedWriter(out);
-        bw.write(reply);
-        bw.flush();
-        bw.close();
+        out.write(reply);
+        out.flush();
+        out.close();
     }
 
     /**
-     * Non-blockingly reads a maximum of <chunkSize> characters from the available data of passed InputReader and
+     * Non-blockingly reads all (non blockingly) available characters of the passed InputReader and
      * concats those characters to the passed <currentBuffer>, returning a new character array
      */
-    private static char[] appendAvailableDataToBuffer(NIOReader in, int chunkSize, char currentBuffer[]) throws IOException {
+    private static char[] appendAvailableDataToBuffer(NIOReader in,  char currentBuffer[]) throws IOException {
         // we are not synchronizing here, since we assume that onDataAvailable() is called sequentially
-        char[] readBuffer = new char[chunkSize];
+        char[] readBuffer = new char[in.readyData()];
         int numRead = in.read(readBuffer);
         if (numRead<=0) {
             return currentBuffer;
@@ -165,7 +164,6 @@ public class RpcServer<InternalMessageType> extends ch.squaredesk.nova.comm.rpc.
      * able to process. The size of the queue defines, how many requests we are willing to lose in the worst case
      */
     private class NonBlockingHttpHandler extends HttpHandler {
-        private static final int READ_CHUNK_SIZE = 256;
         private final Subject<HttpRpcInvocation<? extends InternalMessageType>> stream;
 
         private NonBlockingHttpHandler(
@@ -183,7 +181,7 @@ public class RpcServer<InternalMessageType> extends ch.squaredesk.nova.comm.rpc.
 
                 @Override
                 public void onDataAvailable() throws Exception {
-                    inputBuffer = appendAvailableDataToBuffer(in, READ_CHUNK_SIZE, inputBuffer);
+                    inputBuffer = appendAvailableDataToBuffer(in, inputBuffer);
                     in.notifyAvailable(this);
                 }
 
@@ -196,7 +194,7 @@ public class RpcServer<InternalMessageType> extends ch.squaredesk.nova.comm.rpc.
 
                 @Override
                 public void onAllDataRead() throws Exception {
-                    inputBuffer = appendAvailableDataToBuffer(in, READ_CHUNK_SIZE, inputBuffer);
+                    inputBuffer = appendAvailableDataToBuffer(in, inputBuffer);
                     String requestAsString = new String(inputBuffer);
                     try {
                         in.close();

@@ -20,7 +20,7 @@
 	</parent>
 
 	<artifactId>http</artifactId>
-    <version>4.0.0-beta-2</version>
+    <version>4.0.1</version>
 
     <dependencies>
 		<dependency>

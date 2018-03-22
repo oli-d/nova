@@ -1,5 +1,6 @@
 package ch.squaredesk.nova.comm.http;
 
+import ch.squaredesk.net.HttpRequestSender;
 import ch.squaredesk.nova.comm.sending.MessageSendingInfo;
 import ch.squaredesk.nova.metrics.Metrics;
 import com.ning.http.client.AsyncHttpClient;
@@ -85,6 +86,41 @@ class RpcServerTest {
 
         cdl.await(20, TimeUnit.SECONDS);
         assertThat(cdl.getCount(), is (0L));
+    }
+
+    private String createStringOfLength (int length) {
+        switch (length) {
+            case 0: return "";
+            case 1: return "X";
+            case 2: return "XX";
+            default:
+                char[] charArray = new char[Math.abs(length)];
+                for (int i = 0; i < charArray.length; i++) {
+                    charArray[i] = (i == 0 || i == charArray.length-1 ? 'X' : '-');
+                }
+                return new String(charArray);
+        }
+    }
+
+    @Test
+    void largeRquestsProperlyDispatched() throws Exception {
+        sut.start();
+        String path = "/biiig";
+        String urlAsString = "http://" + rsc.interfaceName + ":" + rsc.port + path;
+        URL url = new URL(urlAsString);
+        String hugeRequest = createStringOfLength(5 * 1024 * 1024);
+        Flowable<HttpRpcInvocation<String>> requests = sut.requests(path);
+        requests.subscribeOn(Schedulers.io()).subscribe(rpcInvocation -> {
+            rpcInvocation.complete(rpcInvocation.request);
+        });
+
+        MessageSendingInfo<String, HttpSpecificInfo> msi =
+                new MessageSendingInfo.Builder<String, HttpSpecificInfo>()
+                        .withDestination(urlAsString)
+                        .withTransportSpecificInfo(new HttpSpecificInfo(HttpRequestMethod.POST))
+                        .build();
+        HttpRequestSender.HttpResponse response = HttpRequestSender.sendPostRequest(url, hugeRequest);
+        assertThat(response.replyMessage, is(hugeRequest));
     }
 
     @Test

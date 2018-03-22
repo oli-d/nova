@@ -84,7 +84,7 @@
             <dependency>
                 <groupId>ch.squaredesk.nova</groupId>
                 <artifactId>service</artifactId>
-                <version>4.0.0-beta-2</version>
+                <version>4.0.1</version>
             </dependency>
 
             <dependency>
@@ -105,17 +105,17 @@
             <dependency>
                 <groupId>ch.squaredesk.nova</groupId>
                 <artifactId>http</artifactId>
-                <version>4.0.0-beta-2</version>
+                <version>4.0.1</version>
             </dependency>
             <dependency>
                 <groupId>ch.squaredesk.nova</groupId>
                 <artifactId>http-spring</artifactId>
-                <version>4.0.0-beta-2</version>
+                <version>4.0.1</version>
             </dependency>
             <dependency>
                 <groupId>ch.squaredesk.nova</groupId>
                 <artifactId>rest-annotations</artifactId>
-                <version>4.0.0-beta-2</version>
+                <version>4.0.1</version>
             </dependency>
             <dependency>
                 <groupId>ch.squaredesk.nova</groupId>
@@ -125,7 +125,7 @@
             <dependency>
                 <groupId>ch.squaredesk.nova</groupId>
                 <artifactId>websockets-annotations</artifactId>
-                <version>4.0.0-beta-2</version>
+                <version>4.0.1</version>
             </dependency>
             <dependency>
                 <groupId>ch.squaredesk.nova</groupId>
