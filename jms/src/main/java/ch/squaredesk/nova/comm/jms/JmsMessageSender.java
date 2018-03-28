@@ -22,7 +22,7 @@ import javax.jms.TextMessage;
 
 import static java.util.Objects.requireNonNull;
 
-class JmsMessageSender<InternalMessageType> extends MessageSender<Destination, InternalMessageType, String, JmsSpecificInfo> {
+public class JmsMessageSender<InternalMessageType> extends MessageSender<Destination, InternalMessageType, String, JmsSpecificInfo> {
     private final JmsObjectRepository jmsObjectRepository;
 
     JmsMessageSender(String identifier,

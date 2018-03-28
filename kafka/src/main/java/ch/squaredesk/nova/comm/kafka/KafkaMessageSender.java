@@ -23,7 +23,7 @@ import java.util.Properties;
 
 import static java.util.Objects.requireNonNull;
 
-class KafkaMessageSender<InternalMessageType> extends MessageSender<String, InternalMessageType, String, KafkaSpecificInfo> {
+public class KafkaMessageSender<InternalMessageType> extends MessageSender<String, InternalMessageType, String, KafkaSpecificInfo> {
     private final Producer<String, String> producer;
 
     KafkaMessageSender(String identifier,
