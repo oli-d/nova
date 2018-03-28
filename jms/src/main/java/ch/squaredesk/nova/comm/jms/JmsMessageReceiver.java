@@ -38,10 +38,10 @@ public class JmsMessageReceiver<InternalMessageType>
             mapDestinationIdToMessageStream = new ConcurrentHashMap<>();
     private final JmsMessageDetailsCreator messageDetailsCreator = new JmsMessageDetailsCreator();
 
-    JmsMessageReceiver(String identifier,
-                       JmsObjectRepository jmsObjectRepository,
-                       MessageUnmarshaller<String, InternalMessageType> messageUnmarshaller,
-                       Metrics metrics) {
+    protected JmsMessageReceiver(String identifier,
+                                 JmsObjectRepository jmsObjectRepository,
+                                 MessageUnmarshaller<String, InternalMessageType> messageUnmarshaller,
+                                 Metrics metrics) {
         super(identifier, messageUnmarshaller, metrics);
         this.jmsObjectRepository = jmsObjectRepository;
     }
@@ -103,7 +103,7 @@ public class JmsMessageReceiver<InternalMessageType>
                             incomingMessage = new IncomingMessage<>(internalMessage, messageDetails);
                             metricsCollector.messageReceived(destinationId);
                         }
-                            emitter.onNext(incomingMessage);
+                        emitter.onNext(incomingMessage);
                     },
                     consumer -> {
                         metricsCollector.subscriptionDestroyed(destinationId);

@@ -25,10 +25,10 @@ import static java.util.Objects.requireNonNull;
 public class JmsMessageSender<InternalMessageType> extends MessageSender<Destination, InternalMessageType, String, JmsSpecificInfo> {
     private final JmsObjectRepository jmsObjectRepository;
 
-    JmsMessageSender(String identifier,
-                     JmsObjectRepository jmsObjectRepository,
-                     MessageMarshaller<InternalMessageType,String> messageMarshaller,
-                     Metrics metrics) {
+    protected JmsMessageSender(String identifier,
+                               JmsObjectRepository jmsObjectRepository,
+                               MessageMarshaller<InternalMessageType, String> messageMarshaller,
+                               Metrics metrics) {
         super(identifier, messageMarshaller, metrics);
         this.jmsObjectRepository = jmsObjectRepository;
     }

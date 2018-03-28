@@ -31,11 +31,11 @@ public class RpcClient<InternalMessageType> extends ch.squaredesk.nova.comm.rpc.
     private final MessageMarshaller<InternalMessageType, String> messageMarshaller;
     private final MessageUnmarshaller<String, InternalMessageType> messageUnmarshaller;
 
-    RpcClient(String identifier,
-              AsyncHttpClient client,
-              MessageMarshaller<InternalMessageType, String> messageMarshaller,
-              MessageUnmarshaller<String, InternalMessageType> messageUnmarshaller,
-              Metrics metrics) {
+    protected RpcClient(String identifier,
+                        AsyncHttpClient client,
+                        MessageMarshaller<InternalMessageType, String> messageMarshaller,
+                        MessageUnmarshaller<String, InternalMessageType> messageUnmarshaller,
+                        Metrics metrics) {
         super(identifier, metrics);
         this.client = client;
         this.messageUnmarshaller = messageUnmarshaller;
@@ -44,9 +44,9 @@ public class RpcClient<InternalMessageType> extends ch.squaredesk.nova.comm.rpc.
 
 
     public <RequestType extends InternalMessageType, ReplyType extends InternalMessageType>
-        Single<ReplyType> sendRequest(RequestType request,
-                                      MessageSendingInfo<URL, HttpSpecificInfo> messageSendingInfo,
-                                      long timeout, TimeUnit timeUnit) {
+    Single<ReplyType> sendRequest(RequestType request,
+                                  MessageSendingInfo<URL, HttpSpecificInfo> messageSendingInfo,
+                                  long timeout, TimeUnit timeUnit) {
         requireNonNull(timeUnit, "timeUnit must not be null");
 
         String requestAsString;
@@ -68,18 +68,18 @@ public class RpcClient<InternalMessageType> extends ch.squaredesk.nova.comm.rpc.
         }
 
         ListenableFuture<Response> resultFuture = requestBuilder
-                .addHeader("Content-Type","application/json; charset=utf-8")
+                .addHeader("Content-Type", "application/json; charset=utf-8")
                 .execute();
 
         Single timeoutSingle = Single
                 .timer(timeout, timeUnit)
                 .map(zero -> {
                     TimeoutException te = new TimeoutException(
-                        "Request"
-                        + (request == null ? "" : "" + String.valueOf(request))
-                        + " to " + messageSendingInfo.destination
-                        + " ran into timeout after "
-                        + timeout + " " + String.valueOf(timeUnit).toLowerCase());
+                            "Request"
+                                    + (request == null ? "" : "" + String.valueOf(request))
+                                    + " to " + messageSendingInfo.destination
+                                    + " ran into timeout after "
+                                    + timeout + " " + String.valueOf(timeUnit).toLowerCase());
                     metricsCollector.rpcTimedOut(messageSendingInfo.destination.toExternalForm());
                     resultFuture.abort(te);
                     Exceptions.propagate(te);
@@ -88,7 +88,7 @@ public class RpcClient<InternalMessageType> extends ch.squaredesk.nova.comm.rpc.
 
         Single<ReplyType> resultSingle = Single.fromFuture(resultFuture).map(response -> {
             int statusCode = response.getStatusCode();
-            if (statusCode<200 || statusCode >= 300) {
+            if (statusCode < 200 || statusCode >= 300) {
                 // TODO: we need to think about a better concept
                 throw new RuntimeException("" + statusCode + " - " + response.getStatusText());
             }

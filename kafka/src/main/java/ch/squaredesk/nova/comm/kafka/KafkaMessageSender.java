@@ -26,10 +26,10 @@ import static java.util.Objects.requireNonNull;
 public class KafkaMessageSender<InternalMessageType> extends MessageSender<String, InternalMessageType, String, KafkaSpecificInfo> {
     private final Producer<String, String> producer;
 
-    KafkaMessageSender(String identifier,
-                       Properties producerProperties,
-                       MessageMarshaller<InternalMessageType,String> messageMarshaller,
-                       Metrics metrics) {
+    protected KafkaMessageSender(String identifier,
+                                 Properties producerProperties,
+                                 MessageMarshaller<InternalMessageType, String> messageMarshaller,
+                                 Metrics metrics) {
         super(identifier, messageMarshaller, metrics);
         this.producer = new KafkaProducer<>(producerProperties);
     }
@@ -37,7 +37,7 @@ public class KafkaMessageSender<InternalMessageType> extends MessageSender<Strin
     @Override
     public Completable doSend(String message, MessageSendingInfo<String, KafkaSpecificInfo> sendingInfo) {
         requireNonNull(message, "message must not be null");
-        ProducerRecord<String,String> record = new ProducerRecord<String, String>(sendingInfo.destination,message);
+        ProducerRecord<String, String> record = new ProducerRecord<String, String>(sendingInfo.destination, message);
         return Completable.fromFuture(producer.send(record));
     }
 
