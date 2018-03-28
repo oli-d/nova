@@ -145,6 +145,16 @@ public class KafkaAdapter<InternalMessageType> {
             return this;
         }
 
+        public Builder<InternalMessageType> setMessageSender(KafkaMessageSender<InternalMessageType> messageSender) {
+            this.messageSender = messageSender;
+            return this;
+        }
+
+        public Builder<InternalMessageType> setMessageReceiver(KafkaMessageReceiver<InternalMessageType> messageReceiver) {
+            this.messageReceiver = messageReceiver;
+            return this;
+        }
+
         public void validate() {
             requireNonNull(serverAddress,"serverAddress must be provided");
             requireNonNull(messageUnmarshaller,"messageUnmarshaller must be provided");
@@ -176,8 +186,12 @@ public class KafkaAdapter<InternalMessageType> {
             setPropertyIfNotPresent(producerProperties, ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
             setPropertyIfNotPresent(producerProperties, ProducerConfig.CLIENT_ID_CONFIG, clientId);
 
-            messageReceiver = new KafkaMessageReceiver<>(identifier, consumerProperties, messageUnmarshaller, metrics);
-            messageSender = new KafkaMessageSender<>(identifier, producerProperties, messageMarshaller, metrics);
+            if (messageReceiver == null) {
+                messageReceiver = new KafkaMessageReceiver<>(identifier, consumerProperties, messageUnmarshaller, metrics);
+            }
+            if (messageSender == null) {
+                messageSender = new KafkaMessageSender<>(identifier, producerProperties, messageMarshaller, metrics);
+            }
             return new KafkaAdapter<>(this.messageSender, this.messageReceiver);
         }
 

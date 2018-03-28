@@ -100,22 +100,22 @@
             <dependency>
                 <groupId>ch.squaredesk.nova</groupId>
                 <artifactId>jms</artifactId>
-                <version>4.0.0-beta-2</version>
+                <version>4.1.0</version>
             </dependency>
             <dependency>
                 <groupId>ch.squaredesk.nova</groupId>
                 <artifactId>http</artifactId>
-                <version>4.0.1</version>
+                <version>4.1.0</version>
             </dependency>
             <dependency>
                 <groupId>ch.squaredesk.nova</groupId>
                 <artifactId>http-spring</artifactId>
-                <version>4.0.1</version>
+                <version>4.0.2</version>
             </dependency>
             <dependency>
                 <groupId>ch.squaredesk.nova</groupId>
                 <artifactId>rest-annotations</artifactId>
-                <version>4.0.1</version>
+                <version>4.0.2</version>
             </dependency>
             <dependency>
                 <groupId>ch.squaredesk.nova</groupId>
@@ -130,7 +130,7 @@
             <dependency>
                 <groupId>ch.squaredesk.nova</groupId>
                 <artifactId>kafka</artifactId>
-                <version>4.0.0-beta-2</version>
+                <version>4.1.0</version>
             </dependency>
 
             <dependency>
@@ -146,7 +146,7 @@
             <dependency>
                 <groupId>ch.squaredesk.nova</groupId>
                 <artifactId>metrics-kafka</artifactId>
-                <version>4.0.0-beta-2</version>
+                <version>4.0.1</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

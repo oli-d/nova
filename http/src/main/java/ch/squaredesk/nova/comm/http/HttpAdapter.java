@@ -173,6 +173,16 @@ public class HttpAdapter<MessageType> {
             return this;
         }
 
+        public Builder<MessageType> setRpcServer(RpcServer<MessageType> rpcServer) {
+            this.rpcServer = rpcServer;
+            return this;
+        }
+
+        public Builder<MessageType> setRpcClient(RpcClient<MessageType> rpcClient) {
+            this.rpcClient = rpcClient;
+            return this;
+        }
+
         public Builder<MessageType> setIdentifier(String identifier) {
             this.identifier = identifier;
             return this;
@@ -185,14 +195,18 @@ public class HttpAdapter<MessageType> {
             }
         }
 
-        public HttpAdapter<MessageType> createInstance() {
+        protected HttpAdapter<MessageType> createInstance() {
             validate();
-            AsyncHttpClient httpClient = new AsyncHttpClient();
-            rpcClient = new RpcClient<>(identifier, httpClient, messageMarshaller, messageUnmarshaller, metrics);
-            if (httpServer == null) {
-                logger.info("No httpServer provided, HTTP Adapter will only be usable in client mode!!!");
-            } else {
-                rpcServer = new RpcServer<>(identifier, httpServer, messageMarshaller, messageUnmarshaller, metrics);
+            if (rpcClient == null) {
+                AsyncHttpClient httpClient = new AsyncHttpClient();
+                rpcClient = new RpcClient<>(identifier, httpClient, messageMarshaller, messageUnmarshaller, metrics);
+            }
+            if (rpcServer == null) {
+                if (httpServer == null) {
+                    logger.info("No httpServer provided, HTTP Adapter will only be usable in client mode!!!");
+                } else {
+                    rpcServer = new RpcServer<>(identifier, httpServer, messageMarshaller, messageUnmarshaller, metrics);
+                }
             }
             return new HttpAdapter<>(this);
         }

@@ -377,6 +377,21 @@ public class JmsAdapter<InternalMessageType> {
             return this;
         }
 
+        public Builder<InternalMessageType> setRpcServer(JmsRpcServer<InternalMessageType> rpcServer) {
+            this.rpcServer = rpcServer;
+            return this;
+        }
+
+        public Builder<InternalMessageType> setRpcServer(JmsMessageReceiver<InternalMessageType> messageReceiver) {
+            this.messageReceiver = messageReceiver;
+            return this;
+        }
+
+        public Builder<InternalMessageType> setRpcServer(JmsMessageSender<InternalMessageType> messageSender) {
+            this.messageSender = messageSender;
+            return this;
+        }
+
         protected void validate() {
             requireNonNull(metrics,"metrics must be provided");
             requireNonNull(messageUnmarshaller,"messageUnmarshaller must be provided");
@@ -410,10 +425,16 @@ public class JmsAdapter<InternalMessageType> {
             JmsSessionDescriptor consumerSessionDescriptor = new JmsSessionDescriptor(consumerSessionTransacted, consumerSessionAckMode);
             jmsObjectRepository = new JmsObjectRepository(connection, producerSessionDescriptor, consumerSessionDescriptor, destinationIdGenerator);
 
-            messageReceiver = new JmsMessageReceiver<>(identifier, jmsObjectRepository, messageUnmarshaller, metrics);
-            messageSender = new JmsMessageSender<>(identifier, jmsObjectRepository, messageMarshaller, metrics);
-            rpcServer = new JmsRpcServer<>(identifier, messageReceiver, messageSender, errorReplyFactory, metrics);
-            if (rpcClient==null) { // only false for testing
+            if (messageSender == null) {
+                messageSender = new JmsMessageSender<>(identifier, jmsObjectRepository, messageMarshaller, metrics);
+            }
+            if (messageReceiver == null) {
+                messageReceiver = new JmsMessageReceiver<>(identifier, jmsObjectRepository, messageUnmarshaller, metrics);
+            }
+            if (rpcServer == null) {
+                rpcServer = new JmsRpcServer<>(identifier, messageReceiver, messageSender, errorReplyFactory, metrics);
+            }
+            if (rpcClient==null) {
                 rpcClient = new JmsRpcClient<>(identifier, messageReceiver, messageSender, metrics);
             }
             return new JmsAdapter<>(this);
