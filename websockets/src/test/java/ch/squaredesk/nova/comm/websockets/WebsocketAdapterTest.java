@@ -139,7 +139,7 @@ class WebsocketAdapterTest {
             endpointAccepting.connectedWebSockets().subscribe(socket -> connectionLatch.countDown());
             endpointAccepting.closedWebSockets().subscribe(socket -> closeLatch.countDown());
             endpointAccepting.messages().subscribe(
-                    incomingMessage -> incomingMessage.details.transportSpecificDetails.webSocket.send(incomingMessage.message));
+                    incomingMessage -> incomingMessage.metaData.transportSpecificDetails.webSocket.send(incomingMessage.message));
             endpointInitiating = sut.connectTo(clientDestination);
 
             connectionLatch.await(2, TimeUnit.SECONDS);
@@ -182,7 +182,7 @@ class WebsocketAdapterTest {
             serverEndpoint = sutInteger.acceptConnections(serverDestination);
             serverEndpoint.messages().subscribe(
                     incomingMessage -> {
-                        incomingMessage.details.transportSpecificDetails.webSocket.send(incomingMessage.message);
+                        incomingMessage.metaData.transportSpecificDetails.webSocket.send(incomingMessage.message);
                     });
 
             WebSocket<String>[] sendSocketHolder = new WebSocket[1];
@@ -272,10 +272,10 @@ class WebsocketAdapterTest {
         assertThat(testSubscriber.values().get(1).message, is(2));
         assertThat(testSubscriber.values().get(2).message, is(33));
         for (int i = 0; i < 3; i++) {
-            assertNotNull(testSubscriber.values().get(i).details);
-            assertThat(testSubscriber.values().get(i).details.origin, is(destination));
-            assertNotNull(testSubscriber.values().get(i).details.transportSpecificDetails);
-            assertNotNull(testSubscriber.values().get(i).details.transportSpecificDetails.webSocket);
+            assertNotNull(testSubscriber.values().get(i).metaData);
+            assertThat(testSubscriber.values().get(i).metaData.origin, is(destination));
+            assertNotNull(testSubscriber.values().get(i).metaData.transportSpecificDetails);
+            assertNotNull(testSubscriber.values().get(i).metaData.transportSpecificDetails.webSocket);
         }
         assertThat(specificReceived.getCount(), is(3l));
         assertThat(totalReceived.getCount(), greaterThanOrEqualTo(3l));
@@ -466,7 +466,7 @@ class WebsocketAdapterTest {
         ServerEndpoint<String> serverEndpoint = sut.acceptConnections(serverDestination);
         // echo all incoming message and append the clientID
         serverEndpoint.messages().subscribe(incomingMessage -> {
-            WebSocket<String> webSocket = incomingMessage.details.transportSpecificDetails.webSocket;
+            WebSocket<String> webSocket = incomingMessage.metaData.transportSpecificDetails.webSocket;
             if (incomingMessage.message.startsWith("ID=")) {
                 String id = incomingMessage.message.substring("ID=".length());
                 webSocket.setUserProperty("clientId", id);

@@ -11,7 +11,6 @@
 package ch.squaredesk.nova.comm.jms;
 
 import ch.squaredesk.nova.comm.retrieving.IncomingMessage;
-import ch.squaredesk.nova.comm.rpc.RpcServer;
 import ch.squaredesk.nova.metrics.Metrics;
 import io.reactivex.Flowable;
 
@@ -21,17 +20,17 @@ import java.util.function.Function;
 
 import static java.util.Objects.requireNonNull;
 
-public class JmsRpcServer<InternalMessageType> extends RpcServer<Destination, JmsRpcInvocation<InternalMessageType>> {
+public class RpcServer<InternalMessageType> extends ch.squaredesk.nova.comm.rpc.RpcServer<Destination, RpcInvocation<InternalMessageType>> {
 
-    private final JmsMessageSender<InternalMessageType> messageSender;
-    private final JmsMessageReceiver<InternalMessageType> messageReceiver;
+    private final MessageSender<InternalMessageType> messageSender;
+    private final MessageReceiver<InternalMessageType> messageReceiver;
     private final Function<Throwable, InternalMessageType> errorReplyFactory;
 
-    JmsRpcServer(String identifier,
-                        JmsMessageReceiver<InternalMessageType> messageReceiver,
-                        JmsMessageSender<InternalMessageType> messageSender,
-                        Function<Throwable, InternalMessageType> errorReplyFactory,
-                        Metrics metrics) {
+    RpcServer(String identifier,
+              MessageReceiver<InternalMessageType> messageReceiver,
+              MessageSender<InternalMessageType> messageSender,
+              Function<Throwable, InternalMessageType> errorReplyFactory,
+              Metrics metrics) {
         super(identifier, metrics);
 
         requireNonNull(messageSender, "messageSender must not be null");
@@ -43,7 +42,7 @@ public class JmsRpcServer<InternalMessageType> extends RpcServer<Destination, Jm
     }
 
     @Override
-    public Flowable<JmsRpcInvocation<InternalMessageType>> requests(Destination destination) {
+    public Flowable<RpcInvocation<InternalMessageType>> requests(Destination destination) {
         return messageReceiver.messages(destination)
                 .filter(this::isRpcRequest)
                 .map(incomingMessage -> {
@@ -51,9 +50,9 @@ public class JmsRpcServer<InternalMessageType> extends RpcServer<Destination, Jm
                     InternalMessageType request = incomingMessage.message;
                     Consumer<InternalMessageType> replyConsumer = createReplyHandlerFor(incomingMessage);
                     Consumer<Throwable> errorConsumer = createErrorReplyHandlerFor(incomingMessage);
-                    return new JmsRpcInvocation<>(
+                    return new RpcInvocation<>(
                             request,
-                            incomingMessage.details.transportSpecificDetails,
+                            incomingMessage.metaData.details,
                             reply -> {
                                 replyConsumer.accept(reply._1);
                                 metricsCollector.requestCompleted(incomingMessage.message, reply);
@@ -65,40 +64,36 @@ public class JmsRpcServer<InternalMessageType> extends RpcServer<Destination, Jm
                 });
     }
 
-    private boolean isRpcRequest(IncomingMessage<InternalMessageType, Destination, JmsSpecificInfo> incomingMessage) {
-        return incomingMessage.details != null &&
-                incomingMessage.details.transportSpecificDetails != null &&
-                incomingMessage.details.transportSpecificDetails.replyDestination != null &&
-                incomingMessage.details.transportSpecificDetails.correlationId != null;
+    private boolean isRpcRequest(IncomingMessage<InternalMessageType, IncomingMessageMetaData> incomingMessage) {
+        return incomingMessage.metaData != null &&
+                incomingMessage.metaData.details != null &&
+                incomingMessage.metaData.details.replyDestination != null &&
+                incomingMessage.metaData.details.correlationId != null;
     }
 
     private <RequestType extends InternalMessageType, ReplyType extends InternalMessageType>
-        Consumer<ReplyType> createReplyHandlerFor(IncomingMessage<RequestType, Destination, JmsSpecificInfo> request) {
+        Consumer<ReplyType> createReplyHandlerFor(IncomingMessage<RequestType, IncomingMessageMetaData> request) {
         JmsSpecificInfo sendingInfo = new JmsSpecificInfo(
-                request.details.transportSpecificDetails.correlationId,
+                request.metaData.details.correlationId,
                 null,
                 null,
                 null,
                 null,
                 null);
-        return reply -> messageSender.sendMessage(
-                request.details.transportSpecificDetails.replyDestination,
-                reply,
-                sendingInfo); // FIXME: bug: missing subscribe.
+        OutgoingMessageMetaData meta = new OutgoingMessageMetaData(request.metaData.details.replyDestination, sendingInfo);
+        return reply -> messageSender.doSend(reply, meta); // FIXME: bug: missing subscribe.
     }
 
-    private Consumer<Throwable> createErrorReplyHandlerFor(IncomingMessage<InternalMessageType, Destination, JmsSpecificInfo> request) {
+    private Consumer<Throwable> createErrorReplyHandlerFor(IncomingMessage<InternalMessageType, IncomingMessageMetaData> request) {
         JmsSpecificInfo sendingInfo = new JmsSpecificInfo(
-                request.details.transportSpecificDetails.correlationId,
+                request.metaData.details.correlationId,
                 null,
                 null,
                 null,
                 null,
                 null);
-        return error -> messageSender.sendMessage(
-                request.details.transportSpecificDetails.replyDestination,
-                errorReplyFactory.apply(error),
-                sendingInfo);
+        OutgoingMessageMetaData meta = new OutgoingMessageMetaData(request.metaData.details.replyDestination, sendingInfo);
+        return error -> messageSender.doSend(errorReplyFactory.apply(error), meta);
     }
 
 

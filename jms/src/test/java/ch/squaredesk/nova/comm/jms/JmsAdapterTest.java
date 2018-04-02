@@ -10,8 +10,6 @@
 
 package ch.squaredesk.nova.comm.jms;
 
-import ch.squaredesk.nova.comm.rpc.RpcReply;
-import ch.squaredesk.nova.comm.sending.OutgoingMessageMetaData;
 import ch.squaredesk.nova.metrics.Metrics;
 import io.reactivex.Single;
 import io.reactivex.disposables.Disposable;
@@ -55,7 +53,7 @@ class JmsAdapterTest {
     private void initializSut() throws Exception {
         initializSut(null);
     }
-    private void initializSut(JmsRpcClient<String> rpcClient) throws Exception {
+    private void initializSut(RpcClient<String> rpcClient) throws Exception {
         connectionFactory = new ActiveMQConnectionFactory("vm://embedded-broker?create=false");
         sut = JmsAdapter.builder(String.class)
                 .setConnectionFactory(connectionFactory)
@@ -117,15 +115,15 @@ class JmsAdapterTest {
     void rpcWorks() throws Exception {
         Destination queue = jmsHelper.echoOnQueue("myQueue1");
 
-        TestObserver<JmsRpcReply<String>> replyObserver = sut.sendRequest(queue, "aRequest", 500, MILLISECONDS).test().await();
-        RpcReply<String, Destination, JmsSpecificInfo> reply = replyObserver.values().get(0);
+        TestObserver<RpcReply<String>> replyObserver = sut.sendRequest(queue, "aRequest", 500, MILLISECONDS).test().await();
+        ch.squaredesk.nova.comm.rpc.RpcReply reply = replyObserver.values().get(0);
         assertThat(reply.result, is("aRequest"));
     }
 
     @Test
     void noReplyWithinTimeoutReturnsTimeoutException() throws Exception {
         Destination queue = jmsHelper.createQueue("myQueue2");
-        TestObserver<JmsRpcReply<String>> replyObserver = sut.sendRequest(queue, "aRequest", 250, MILLISECONDS).test().await();
+        TestObserver<RpcReply<String>> replyObserver = sut.sendRequest(queue, "aRequest", 250, MILLISECONDS).test().await();
         replyObserver.assertError(TimeoutException.class);
     }
 
@@ -250,7 +248,7 @@ class JmsAdapterTest {
                         .take(1)
                         .test();
 
-        RpcReply<String, Destination, JmsSpecificInfo> reply = sut
+        ch.squaredesk.nova.comm.rpc.RpcReply reply = sut
                 .sendRequest(queue,replyQueue,"request",null,50, SECONDS)
                 .blockingGet();
         assertThat(reply.result,is("request"));
@@ -336,7 +334,7 @@ class JmsAdapterTest {
 
         sut.sendRequest(jmsHelper.createTempQueue(), "message", null, null, null);
 
-        assertNotNull(rpcClient.outgoingMessageMetaData.transportSpecificInfo.correlationId);
+        assertNotNull(rpcClient.outgoingMessageMetaData.details.correlationId);
     }
 
     @Test
@@ -353,26 +351,26 @@ class JmsAdapterTest {
     }
 
     private class MyException extends RuntimeException {
-        public MyException(String message) {
+        private MyException(String message) {
             super(message);
         }
 
     }
 
-    private class MyRpcClient extends JmsRpcClient<String> {
+    private class MyRpcClient extends RpcClient<String> {
         private String request;
         private long timeout;
         private TimeUnit timeUnit;
-        private OutgoingMessageMetaData<Destination, JmsSpecificInfo> outgoingMessageMetaData;
+        private OutgoingMessageMetaData outgoingMessageMetaData;
 
-        public MyRpcClient() {
+        private MyRpcClient() {
             super("TestRpcClient", null, null, new Metrics());
         }
 
         @Override
-        public <ReplyType extends String> Single<JmsRpcReply<ReplyType>> sendRequest(
+        public <ReplyType extends String> Single<RpcReply<ReplyType>> sendRequest(
                 String request,
-                OutgoingMessageMetaData<Destination, JmsSpecificInfo> outgoingMessageMetaData,
+                OutgoingMessageMetaData outgoingMessageMetaData,
                 long timeout, TimeUnit timeUnit) {
             this.request = request;
             this.timeout = timeout;

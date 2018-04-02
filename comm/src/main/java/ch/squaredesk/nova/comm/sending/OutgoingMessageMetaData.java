@@ -14,42 +14,16 @@ import static java.util.Objects.requireNonNull;
 
 public class OutgoingMessageMetaData<DestinationType, TransportSpecificInfoType> {
     public final DestinationType destination;
-    public final TransportSpecificInfoType transportSpecificInfo;
+    public final TransportSpecificInfoType details;
 
-    protected OutgoingMessageMetaData(Builder<DestinationType, TransportSpecificInfoType> builder) {
-        this.destination = builder.destination;
-        this.transportSpecificInfo = builder.transportSpecificInfo;
-    }
-
-    public static class Builder<DestinationType, TransportSpecificInfoType> {
-        private DestinationType destination;
-        private TransportSpecificInfoType transportSpecificInfo;
-
-        public Builder<DestinationType, TransportSpecificInfoType> withDestination(DestinationType destination) {
-            this.destination = destination;
-            return this;
-        }
-
-        public Builder<DestinationType, TransportSpecificInfoType> withTransportSpecificInfo(TransportSpecificInfoType transportSpecificInfo) {
-            this.transportSpecificInfo = transportSpecificInfo;
-            return this;
-        }
-
-        public OutgoingMessageMetaData<DestinationType, TransportSpecificInfoType> build() {
-            validate();
-            return new OutgoingMessageMetaData<>(this);
-        }
-
-        private void validate() {
-            requireNonNull(destination, "origin must not be null");
-        }
+    public OutgoingMessageMetaData(DestinationType destination, TransportSpecificInfoType details) {
+        requireNonNull(destination, "destination must not be null");
+        this.destination = destination;
+        this.details = details;
     }
 
     @Override
     public String toString() {
-        return "{" +
-                "origin=" + destination +
-                ", transportSpecificInfo=" + transportSpecificInfo +
-                '}';
+        return "{destination=" + destination + ", details=" + details + '}';
     }
 }

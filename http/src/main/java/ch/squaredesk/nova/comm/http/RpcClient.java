@@ -10,11 +10,8 @@
 
 package ch.squaredesk.nova.comm.http;
 
-import ch.squaredesk.nova.comm.retrieving.IncomingMessageMetaData;
 import ch.squaredesk.nova.comm.retrieving.MessageUnmarshaller;
-import ch.squaredesk.nova.comm.rpc.RpcReply;
 import ch.squaredesk.nova.comm.sending.MessageMarshaller;
-import ch.squaredesk.nova.comm.sending.OutgoingMessageMetaData;
 import ch.squaredesk.nova.metrics.Metrics;
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.ListenableFuture;
@@ -26,7 +23,7 @@ import java.util.concurrent.TimeUnit;
 
 import static java.util.Objects.requireNonNull;
 
-public class RpcClient<InternalMessageType> extends ch.squaredesk.nova.comm.rpc.RpcClient<URL, InternalMessageType, HttpSpecificSendingInfo, HttpSpecificRetrievalInfo> {
+public class RpcClient<InternalMessageType> extends ch.squaredesk.nova.comm.rpc.RpcClient<URL, InternalMessageType, OutgoingMessageMetaData, IncomingMessageMetaData> {
     private final AsyncHttpClient client;
     private final MessageMarshaller<InternalMessageType, String> messageMarshaller;
     private final MessageUnmarshaller<String, InternalMessageType> messageUnmarshaller;
@@ -43,9 +40,9 @@ public class RpcClient<InternalMessageType> extends ch.squaredesk.nova.comm.rpc.
     }
 
 
-    public <ReplyType extends InternalMessageType> Single<HttpRpcReply<ReplyType>> sendRequest(
+    public <ReplyType extends InternalMessageType> Single<RpcReply<ReplyType>> sendRequest(
             InternalMessageType request,
-            OutgoingMessageMetaData<URL, HttpSpecificSendingInfo> outgoingMessageMetaData,
+            OutgoingMessageMetaData outgoingMessageMetaData,
             long timeout, TimeUnit timeUnit) {
         requireNonNull(timeUnit, "timeUnit must not be null");
 
@@ -57,11 +54,11 @@ public class RpcClient<InternalMessageType> extends ch.squaredesk.nova.comm.rpc.
         }
 
         AsyncHttpClient.BoundRequestBuilder requestBuilder;
-        if (outgoingMessageMetaData.transportSpecificInfo.requestMethod == HttpRequestMethod.POST) {
+        if (outgoingMessageMetaData.details.requestMethod == HttpRequestMethod.POST) {
             requestBuilder = client.preparePost(outgoingMessageMetaData.destination.toString()).setBody(requestAsString);
-        } else if (outgoingMessageMetaData.transportSpecificInfo.requestMethod == HttpRequestMethod.PUT) {
+        } else if (outgoingMessageMetaData.details.requestMethod == HttpRequestMethod.PUT) {
             requestBuilder = client.preparePut(outgoingMessageMetaData.destination.toString()).setBody(requestAsString);
-        } else if (outgoingMessageMetaData.transportSpecificInfo.requestMethod == HttpRequestMethod.DELETE) {
+        } else if (outgoingMessageMetaData.details.requestMethod == HttpRequestMethod.DELETE) {
             requestBuilder = client.prepareDelete(outgoingMessageMetaData.destination.toString()).setBody(requestAsString);
         } else {
             requestBuilder = client.prepareGet(outgoingMessageMetaData.destination.toString());
@@ -71,15 +68,14 @@ public class RpcClient<InternalMessageType> extends ch.squaredesk.nova.comm.rpc.
                 .addHeader("Content-Type", "application/json; charset=utf-8")
                 .execute();
 
-        Single<HttpRpcReply<ReplyType>> resultSingle = Single.fromFuture(resultFuture).map(response -> {
+        Single<RpcReply<ReplyType>> resultSingle = Single.fromFuture(resultFuture).map(response -> {
             int statusCode = response.getStatusCode();
-            IncomingMessageMetaData<URL, HttpSpecificRetrievalInfo> metaData = new IncomingMessageMetaData.Builder<URL, HttpSpecificRetrievalInfo>()
-                    .withDestination(outgoingMessageMetaData.destination)
-                    .withTransportSpecificDetails(new HttpSpecificRetrievalInfo(statusCode))
-                    .build();
+            IncomingMessageMetaData metaData = new IncomingMessageMetaData(
+                    outgoingMessageMetaData.destination,
+                    new RetrievalInfo(statusCode));
             String responseBody = response.getResponseBody();
             metricsCollector.rpcCompleted(outgoingMessageMetaData.destination, responseBody);
-            return new HttpRpcReply<>((ReplyType) messageUnmarshaller.unmarshal(responseBody), metaData);
+            return new RpcReply<>((ReplyType) messageUnmarshaller.unmarshal(responseBody), metaData);
         });
 
         return resultSingle.timeout(timeout, timeUnit);

@@ -11,7 +11,6 @@
 package ch.squaredesk.nova.comm.kafka;
 
 import ch.squaredesk.nova.comm.retrieving.IncomingMessage;
-import ch.squaredesk.nova.comm.retrieving.IncomingMessageMetaData;
 import ch.squaredesk.nova.comm.retrieving.MessageReceiver;
 import ch.squaredesk.nova.comm.retrieving.MessageUnmarshaller;
 import ch.squaredesk.nova.metrics.Metrics;
@@ -34,10 +33,10 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 
 public class KafkaMessageReceiver<InternalMessageType>
-        extends MessageReceiver<String, InternalMessageType, String, KafkaSpecificInfo> {
+        extends MessageReceiver<String, InternalMessageType, String, IncomingMessageMetaData> {
 
     private final Logger logger = LoggerFactory.getLogger(KafkaMessageReceiver.class);
-    private final Flowable<IncomingMessage<InternalMessageType, String, KafkaSpecificInfo>> allMessagesStream;
+    private final Flowable<IncomingMessage<InternalMessageType, IncomingMessageMetaData>> allMessagesStream;
     private final Scheduler scheduler = Schedulers.io();
     private final Map<String, AtomicInteger> topicToSubscriptionCount = new ConcurrentHashMap<>();
 
@@ -121,12 +120,8 @@ public class KafkaMessageReceiver<InternalMessageType>
                 .map(topicAndMessage -> {
                     // TODO: what kind of data is interesting for consumers?
                     KafkaSpecificInfo kafkaSpecificInfo = new KafkaSpecificInfo();
-                    IncomingMessageMetaData<String, KafkaSpecificInfo> messageDetails = new IncomingMessageMetaData.Builder<String, KafkaSpecificInfo>()
-                            .withDestination(topicAndMessage._1)
-                            .withTransportSpecificDetails(kafkaSpecificInfo)
-                            .build();
-
-                    return new IncomingMessage<>(topicAndMessage._2, messageDetails);
+                    IncomingMessageMetaData metaData = new IncomingMessageMetaData(topicAndMessage._1, kafkaSpecificInfo);
+                    return new IncomingMessage<>(topicAndMessage._2, metaData);
                 })
                 .share();
     }
@@ -147,12 +142,12 @@ public class KafkaMessageReceiver<InternalMessageType>
     }
 
     @Override
-    public Flowable<IncomingMessage<InternalMessageType, String, KafkaSpecificInfo>> messages(String destination) {
+    public Flowable<IncomingMessage<InternalMessageType, IncomingMessageMetaData>> messages(String destination) {
         Objects.requireNonNull(destination, "origin must not be null");
         Objects.requireNonNull(messageUnmarshaller, "unmarshaller must not be null");
 
         return allMessagesStream
-                .filter(incomingMessage -> destination.equals(incomingMessage.details.origin))
+                .filter(incomingMessage -> destination.equals(incomingMessage.metaData.origin))
                 .doOnSubscribe(s -> {
                     scheduler.scheduleDirect(() -> {
                         AtomicInteger subsCounter = topicToSubscriptionCount.computeIfAbsent(

@@ -10,38 +10,20 @@
 
 package ch.squaredesk.nova.comm.retrieving;
 
+import static java.util.Objects.requireNonNull;
+
 public class IncomingMessageMetaData<DestinationType, TransportSpecificDetailsType> {
     public final DestinationType origin;
-    public final TransportSpecificDetailsType transportSpecificDetails;
+    public final TransportSpecificDetailsType details;
+
+    public IncomingMessageMetaData(DestinationType origin, TransportSpecificDetailsType details) {
+        requireNonNull(origin, "origin must not be null");
+        this.origin = origin;
+        this.details = details;
+    }
 
     @Override
     public String toString() {
-        return "IncomingMessageMetaData [origin=" + origin +
-                ", transportSpecificDetails=" + transportSpecificDetails + "]";
+        return "{origin=" + origin + ", details=" + details + '}';
     }
-
-    private IncomingMessageMetaData(Builder<DestinationType, TransportSpecificDetailsType> builder) {
-        this.origin = builder.destination;
-        this.transportSpecificDetails = builder.transportSpecificDetails;
-    }
-
-    public static class Builder<DestinationType, TransportSpecificDetailsType> {
-        private DestinationType destination;
-        private TransportSpecificDetailsType transportSpecificDetails;
-
-        public Builder<DestinationType, TransportSpecificDetailsType> withDestination(DestinationType destination) {
-            this.destination = destination;
-            return this;
-        }
-
-        public Builder<DestinationType, TransportSpecificDetailsType> withTransportSpecificDetails(TransportSpecificDetailsType transportSpecificDetailsType) {
-            this.transportSpecificDetails = transportSpecificDetailsType;
-            return this;
-        }
-
-        public IncomingMessageMetaData<DestinationType, TransportSpecificDetailsType> build() {
-            return new IncomingMessageMetaData<>(this);
-        }
-    }
-
 }

@@ -11,14 +11,14 @@
 
 package ch.squaredesk.nova.comm.http;
 
-import ch.squaredesk.nova.comm.rpc.RpcReply;
 import io.reactivex.observers.TestObserver;
 import org.glassfish.grizzly.http.server.HttpServer;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
-import java.net.URL;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 
 import static java.util.concurrent.TimeUnit.MICROSECONDS;
@@ -63,7 +63,7 @@ class HttpAdapterTest {
 
     @Test
     void notExistingDestinationThrows() throws Exception {
-        TestObserver<HttpRpcReply<BigDecimal>> observer = sut
+        TestObserver<RpcReply<BigDecimal>> observer = sut
                 .sendGetRequest("http://cvf.bn.c")
                 .test();
         observer.await(5, SECONDS);
@@ -72,7 +72,7 @@ class HttpAdapterTest {
 
     @Test
     void noReplyWithinTimeoutThrows() throws Exception {
-        TestObserver<HttpRpcReply<BigDecimal>> observer = sut
+        TestObserver<RpcReply<BigDecimal>> observer = sut
                 .sendGetRequest("https://www.nytimes.com", 10L, MICROSECONDS)
                 .test();
         observer.await(1, SECONDS);
@@ -86,14 +86,14 @@ class HttpAdapterTest {
                 .setHttpServer(httpServer)
                 .build();
         try {
-            TestObserver<HttpRpcReply<String>> observer = commAdapter
+            TestObserver<RpcReply<String>> observer = commAdapter
                     .sendPostRequest("http://httpbin.org/get", "{ myTest: \"value\"}")
                     .test();
             observer.await(40, SECONDS);
             observer.assertValueCount(1);
-            HttpRpcReply<String> reply = observer.values().get(0);
+            RpcReply<String> reply = observer.values().get(0);
             assertNotNull(reply);
-            assertThat(reply.metaData.transportSpecificDetails.statusCode, is(405));
+            assertThat(reply.metaData.details.statusCode, is(405));
             assertThat(reply.result, containsString("Method Not Allowed"));
         } finally {
             commAdapter.shutdown();
@@ -107,12 +107,12 @@ class HttpAdapterTest {
                 .setHttpServer(httpServer)
                 .build();
         try {
-            TestObserver<HttpRpcReply<String>> observer = commAdapter.sendGetRequest("http://httpbin.org/post").test();
+            TestObserver<RpcReply<String>> observer = commAdapter.sendGetRequest("http://httpbin.org/post").test();
             observer.await(40, SECONDS);
             observer.assertValueCount(1);
-            HttpRpcReply<String> reply = observer.values().get(0);
+            RpcReply<String> reply = observer.values().get(0);
             assertNotNull(reply);
-            assertThat(reply.metaData.transportSpecificDetails.statusCode, is(405));
+            assertThat(reply.metaData.details.statusCode, is(405));
             assertThat(reply.result, containsString("Method Not Allowed"));
         } finally {
             commAdapter.shutdown();
@@ -125,7 +125,7 @@ class HttpAdapterTest {
                 .setHttpServer(httpServer)
                 .build();
         try {
-            TestObserver<HttpRpcReply<String>> observer = xxx
+            TestObserver<RpcReply<String>> observer = xxx
                     .sendRequest("http://httpbin.org/ip", "1", HttpRequestMethod.GET)
                     .test();
 

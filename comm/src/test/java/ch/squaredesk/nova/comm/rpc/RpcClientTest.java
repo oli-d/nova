@@ -10,6 +10,7 @@
 
 package ch.squaredesk.nova.comm.rpc;
 
+import ch.squaredesk.nova.comm.retrieving.IncomingMessageMetaData;
 import ch.squaredesk.nova.comm.sending.OutgoingMessageMetaData;
 import ch.squaredesk.nova.metrics.Metrics;
 import io.reactivex.Single;
@@ -28,13 +29,15 @@ class RpcClientTest {
         assertThat(t.getMessage(), containsString("metrics"));
     }
 
-    private class MyRpcClient extends RpcClient<String, String, Void, Void> {
+    private class MyRpcClient extends RpcClient<String, String,
+            OutgoingMessageMetaData<String, Void>,
+            IncomingMessageMetaData<String, Void>> {
         protected MyRpcClient(Metrics metrics) {
             super(metrics);
         }
 
         @Override
-        public <ReplyType extends String> Single<RpcReply<ReplyType, String, Void>> sendRequest(String request, OutgoingMessageMetaData<String, Void> outgoingMessageMetaData, long timeout, TimeUnit timeUnit) {
+        public <ReplyType extends String> Single<? extends RpcReply<ReplyType, IncomingMessageMetaData<String, Void>>> sendRequest(String request, OutgoingMessageMetaData<String, Void> outgoingMessageMetaData, long timeout, TimeUnit timeUnit) {
             return Single.just(new RpcReply<>((ReplyType) request, null));
         }
     }

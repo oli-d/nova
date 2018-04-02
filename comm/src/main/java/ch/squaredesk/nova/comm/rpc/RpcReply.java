@@ -13,11 +13,11 @@ package ch.squaredesk.nova.comm.rpc;
 
 import ch.squaredesk.nova.comm.retrieving.IncomingMessageMetaData;
 
-public class RpcReply<ReplyType, DestinationType, TransportSpecificInfo> {
+public class RpcReply<ReplyType, MetaDataType extends IncomingMessageMetaData<?, ?>> {
     public final ReplyType result;
-    public final IncomingMessageMetaData<DestinationType, TransportSpecificInfo> metaData;
+    public final MetaDataType metaData;
 
-    public RpcReply(ReplyType result, IncomingMessageMetaData<DestinationType, TransportSpecificInfo> metaData) {
+    public RpcReply(ReplyType result, MetaDataType metaData) {
         this.result = result;
         this.metaData = metaData;
     }

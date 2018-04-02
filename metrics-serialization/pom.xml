@@ -20,7 +20,7 @@
 	</parent>
 
 	<artifactId>metrics-serialization</artifactId>
-	<version>4.0.0-beta-2</version>
+	<version>5.0.0</version>
 	<dependencies>
 		<dependency>
 			<groupId>ch.squaredesk.nova</groupId>

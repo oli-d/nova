@@ -10,19 +10,16 @@
 
 package ch.squaredesk.nova.comm.jms;
 
-import ch.squaredesk.nova.comm.retrieving.IncomingMessageMetaData;
-
-import javax.jms.Destination;
 import javax.jms.JMSException;
 import javax.jms.Message;
 
-class JmsMessageDetailsCreator {
+class JmsMessageMetaDataCreator {
 
-    IncomingMessageMetaData<Destination,JmsSpecificInfo> createMessageDetailsFor(Message message) {
+    IncomingMessageMetaData createIncomingMessageMetaData(Message message) {
         try {
-            return new IncomingMessageMetaData.Builder<Destination,JmsSpecificInfo>()
-                    .withDestination(message.getJMSDestination())
-                    .withTransportSpecificDetails(JmsSpecificInfoExtractor.extractFrom(message)).build();
+            return new IncomingMessageMetaData(
+                    message.getJMSDestination(),
+                    JmsSpecificInfoExtractor.extractFrom(message));
         } catch (JMSException e) {
             throw new RuntimeException("Unable to parse incoming message", e);
         }

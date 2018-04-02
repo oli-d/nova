@@ -1,6 +1,5 @@
 package ch.squaredesk.nova.comm.http;
 
-import ch.squaredesk.nova.comm.sending.OutgoingMessageMetaData;
 import ch.squaredesk.nova.metrics.Metrics;
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.AsyncHttpClientConfig;
@@ -80,7 +79,7 @@ class SslTest {
         int numRequests = 5;
         String path = "/bla";
         CountDownLatch cdl = new CountDownLatch(numRequests);
-        Flowable<HttpRpcInvocation<String>> requests = sut.requests(path);
+        Flowable<RpcInvocation<String>> requests = sut.requests(path);
         requests.subscribeOn(Schedulers.io()).subscribe(rpcInvocation -> {
             rpcInvocation.complete(" description " + rpcInvocation.transportSpecificInfo.parameters.get("p"));
             cdl.countDown();
@@ -97,12 +96,11 @@ class SslTest {
             try {
                 String urlAsString = "https://" + rsc.interfaceName + ":" + rsc.port + path + "?p=" + i;
 
-                OutgoingMessageMetaData<URL, HttpSpecificSendingInfo> msi = new OutgoingMessageMetaData.Builder<URL, HttpSpecificSendingInfo>()
-                        .withDestination(new URL(urlAsString))
-                        .withTransportSpecificInfo(new HttpSpecificSendingInfo(HttpRequestMethod.POST))
-                        .build();
+                OutgoingMessageMetaData meta = new OutgoingMessageMetaData(
+                        new URL(urlAsString),
+                        new SendingInfo(HttpRequestMethod.POST));
 
-                rpcClient.sendRequest("{}", msi, 15, TimeUnit.SECONDS).blockingGet();
+                rpcClient.sendRequest("{}", meta, 15, TimeUnit.SECONDS).blockingGet();
             } catch (Exception e) {
                 e.printStackTrace();
             }

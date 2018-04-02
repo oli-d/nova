@@ -11,16 +11,14 @@
 
 package ch.squaredesk.nova.comm.jms;
 
-import ch.squaredesk.nova.comm.sending.OutgoingMessageMetaData;
-
 import javax.jms.Destination;
 
-public class OutgoingJmsMessageMetaData extends OutgoingMessageMetaData<Destination, JmsSpecificInfo> {
-    protected OutgoingJmsMessageMetaData(Builder builder) {
-        super(builder);
+public class IncomingMessageMetaData extends ch.squaredesk.nova.comm.retrieving.IncomingMessageMetaData<Destination, JmsSpecificInfo> {
+    public IncomingMessageMetaData(Destination destination) {
+        this(destination, null);
     }
 
-    public static class Builder extends OutgoingMessageMetaData.Builder<Destination, JmsSpecificInfo> {
+    public IncomingMessageMetaData(Destination destination, JmsSpecificInfo sendDetails) {
+        super(destination, sendDetails);
     }
-
 }

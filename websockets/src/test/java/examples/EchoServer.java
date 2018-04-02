@@ -61,7 +61,7 @@ public class EchoServer {
                 .subscribe(
                     incomingMessage -> {
                         // Get the WebSocket that represents the connection to the sender
-                        WebSocket<String> webSocket = incomingMessage.details.transportSpecificDetails.webSocket;
+                        WebSocket<String> webSocket = incomingMessage.metaData.transportSpecificDetails.webSocket;
                         // and just send the message back to the sender
                         webSocket.send(incomingMessage.message);
                     }

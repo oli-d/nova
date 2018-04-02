@@ -11,10 +11,19 @@
 
 package ch.squaredesk.nova.comm.http;
 
-public class HttpReplyInfo {
+public class RetrievalInfo {
     public final int statusCode;
 
-    public HttpReplyInfo(int i) {
-        statusCode = i;
+    public RetrievalInfo(int statusCode) {
+        this.statusCode = statusCode;
+    }
+
+    @Override
+    public String toString() {
+        return new StringBuilder()
+            .append("{\n")
+            .append("\tstatusCode: ").append(statusCode).append('\n')
+            .append("}")
+            .toString();
     }
 }

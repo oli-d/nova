@@ -25,12 +25,12 @@ import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
-public class RpcServer<InternalMessageType> extends ch.squaredesk.nova.comm.rpc.RpcServer<String, HttpRpcInvocation<InternalMessageType>> {
+public class RpcServer<InternalMessageType> extends ch.squaredesk.nova.comm.rpc.RpcServer<String, RpcInvocation<InternalMessageType>> {
     private static final Logger logger = LoggerFactory.getLogger(RpcServer.class);
 
     private final MessageMarshaller<InternalMessageType, String> messageMarshaller;
     private final MessageUnmarshaller<String, InternalMessageType> messageUnmarshaller;
-    private final Map<String, Flowable<HttpRpcInvocation<? extends InternalMessageType>>> mapDestinationToIncomingMessages = new ConcurrentHashMap<>();
+    private final Map<String, Flowable<RpcInvocation<? extends InternalMessageType>>> mapDestinationToIncomingMessages = new ConcurrentHashMap<>();
 
     private final HttpServer httpServer;
 
@@ -56,12 +56,12 @@ public class RpcServer<InternalMessageType> extends ch.squaredesk.nova.comm.rpc.
     }
 
     @Override
-    public Flowable<HttpRpcInvocation<InternalMessageType>> requests(String destination) {
+    public Flowable<RpcInvocation<InternalMessageType>> requests(String destination) {
         Flowable retVal = mapDestinationToIncomingMessages
                 .computeIfAbsent(destination, key -> {
                     logger.info("Listening to requests on " + destination);
 
-                    Subject<HttpRpcInvocation<? extends InternalMessageType>> stream = PublishSubject.create();
+                    Subject<RpcInvocation<? extends InternalMessageType>> stream = PublishSubject.create();
                     stream = stream.toSerialized();
                     NonBlockingHttpHandler httpHandler = new NonBlockingHttpHandler(stream);
 
@@ -78,7 +78,7 @@ public class RpcServer<InternalMessageType> extends ch.squaredesk.nova.comm.rpc.
         return retVal;
     }
 
-    private static HttpSpecificSendingInfo httpSpecificInfoFrom(Request request) throws Exception {
+    private static SendingInfo httpSpecificInfoFrom(Request request) throws Exception {
         Map<String, String> parameters = new HashMap<>();
         for (Map.Entry<String, String[]> entry : request.getParameterMap().entrySet()) {
             String[] valueList = entry.getValue();
@@ -89,7 +89,7 @@ public class RpcServer<InternalMessageType> extends ch.squaredesk.nova.comm.rpc.
             parameters.put(entry.getKey(), valueToPass);
         }
 
-        return new HttpSpecificSendingInfo(
+        return new SendingInfo(
                 convert(request.getMethod()), parameters);
     }
 
@@ -163,10 +163,10 @@ public class RpcServer<InternalMessageType> extends ch.squaredesk.nova.comm.rpc.
      * able to process. The size of the queue defines, how many requests we are willing to lose in the worst case
      */
     private class NonBlockingHttpHandler extends HttpHandler {
-        private final Subject<HttpRpcInvocation<? extends InternalMessageType>> stream;
+        private final Subject<RpcInvocation<? extends InternalMessageType>> stream;
 
         private NonBlockingHttpHandler(
-                Subject<HttpRpcInvocation<? extends InternalMessageType>> stream) {
+                Subject<RpcInvocation<? extends InternalMessageType>> stream) {
             this.stream = stream;
         }
 
@@ -202,8 +202,8 @@ public class RpcServer<InternalMessageType> extends ch.squaredesk.nova.comm.rpc.
                     }
 
                     InternalMessageType requestObject = convertRequestData(new String(inputBuffer), messageUnmarshaller);
-                    HttpRpcInvocation<? extends InternalMessageType> rpci =
-                            new HttpRpcInvocation<>(
+                    RpcInvocation<? extends InternalMessageType> rpci =
+                            new RpcInvocation<>(
                                     requestObject,
                                     httpSpecificInfoFrom(request),
                                     replyInfo -> {

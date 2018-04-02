@@ -1,8 +1,6 @@
 package ch.squaredesk.nova.comm.http;
 
 import ch.squaredesk.net.HttpRequestSender;
-import ch.squaredesk.nova.comm.rpc.RpcReply;
-import ch.squaredesk.nova.comm.sending.OutgoingMessageMetaData;
 import ch.squaredesk.nova.metrics.Metrics;
 import com.ning.http.client.AsyncHttpClient;
 import io.reactivex.Flowable;
@@ -78,7 +76,7 @@ class RpcServerTest {
         int numRequests = 15;
         String path = "/bla";
         CountDownLatch cdl = new CountDownLatch(numRequests);
-        Flowable<HttpRpcInvocation<String>> requests = sut.requests(path);
+        Flowable<RpcInvocation<String>> requests = sut.requests(path);
         requests.subscribeOn(Schedulers.io()).subscribe(rpcInvocation -> {
             rpcInvocation.complete(" description " + rpcInvocation.transportSpecificInfo.parameters.get("p"));
             cdl.countDown();
@@ -114,16 +112,11 @@ class RpcServerTest {
         String urlAsString = "http://" + rsc.interfaceName + ":" + rsc.port + path;
         URL url = new URL(urlAsString);
         String hugeRequest = createStringOfLength(5 * 1024 * 1024);
-        Flowable<HttpRpcInvocation<String>> requests = sut.requests(path);
+        Flowable<RpcInvocation<String>> requests = sut.requests(path);
         requests.subscribeOn(Schedulers.io()).subscribe(rpcInvocation -> {
             rpcInvocation.complete(rpcInvocation.request);
         });
 
-        OutgoingMessageMetaData<String, HttpSpecificSendingInfo> msi =
-                new OutgoingMessageMetaData.Builder<String, HttpSpecificSendingInfo>()
-                        .withDestination(urlAsString)
-                        .withTransportSpecificInfo(new HttpSpecificSendingInfo(HttpRequestMethod.POST))
-                        .build();
         HttpRequestSender.HttpResponse response = HttpRequestSender.sendPostRequest(url, hugeRequest);
         assertThat(response.replyMessage, is(hugeRequest));
     }
@@ -136,7 +129,7 @@ class RpcServerTest {
         URL url = new URL(urlAsString);
         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
 
-        Flowable<HttpRpcInvocation<String>> requests = sut.requests(path);
+        Flowable<RpcInvocation<String>> requests = sut.requests(path);
         requests.subscribeOn(Schedulers.io()).subscribe(rpcInvocation -> {
             rpcInvocation.complete(555, "someReply");
         });
@@ -149,18 +142,17 @@ class RpcServerTest {
     void requestProcessingFailsOnServerSideAndErrorIsDispatched() throws Exception {
         sut.start();
         String path = "/fail";
-        Flowable<HttpRpcInvocation<String>> requests = sut.requests(path);
+        Flowable<RpcInvocation<String>> requests = sut.requests(path);
         requests.subscribe(rpcInvocation -> rpcInvocation.completeExceptionally(new Exception("no content")));
 
         String urlAsString = "http://" + rsc.interfaceName + ":" + rsc.port + path + "?p=";
-        OutgoingMessageMetaData<URL, HttpSpecificSendingInfo> msi = new OutgoingMessageMetaData.Builder<URL, HttpSpecificSendingInfo>()
-                .withDestination(new URL(urlAsString))
-                .withTransportSpecificInfo(new HttpSpecificSendingInfo(HttpRequestMethod.POST))
-                .build();
+        OutgoingMessageMetaData meta = new OutgoingMessageMetaData(
+                new URL(urlAsString),
+                new SendingInfo(HttpRequestMethod.POST));
 
-        RpcReply<String, URL, HttpSpecificRetrievalInfo> reply = rpcClient.sendRequest("{}", msi, 15, TimeUnit.SECONDS).blockingGet();
+        RpcReply<String> reply = rpcClient.sendRequest("{}", meta, 15, TimeUnit.SECONDS).blockingGet();
         assertThat(reply.result, containsString("Internal server error"));
-        assertThat(reply.metaData.transportSpecificDetails.statusCode, is(500));
+        assertThat(reply.metaData.details.statusCode, is(500));
     }
 
     private void sendRestRequestInNewThread(String path, int i) {
@@ -168,12 +160,11 @@ class RpcServerTest {
             try {
                 String urlAsString = "http://" + rsc.interfaceName + ":" + rsc.port + path + "?p=" + i;
 
-                OutgoingMessageMetaData<URL, HttpSpecificSendingInfo> msi = new OutgoingMessageMetaData.Builder<URL, HttpSpecificSendingInfo>()
-                        .withDestination(new URL(urlAsString))
-                        .withTransportSpecificInfo(new HttpSpecificSendingInfo(HttpRequestMethod.POST))
-                        .build();
+                OutgoingMessageMetaData meta = new OutgoingMessageMetaData(
+                        new URL(urlAsString),
+                        new SendingInfo(HttpRequestMethod.POST));
 
-                rpcClient.sendRequest("{}", msi, 15, TimeUnit.SECONDS).blockingGet();
+                rpcClient.sendRequest("{}", meta, 15, TimeUnit.SECONDS).blockingGet();
             } catch (Exception e) {
                 e.printStackTrace();
             }

@@ -49,13 +49,10 @@ public class KafkaAdapter<InternalMessageType> {
     public <ConcreteMessageType extends InternalMessageType> Completable sendMessage(
             String destination, ConcreteMessageType message) {
         requireNonNull(message, "message must not be null");
-        KafkaSpecificInfo jmsSpecificSendingInfo = new KafkaSpecificInfo();
-
-        return this.messageSender.sendMessage(
-                destination,
-                message,
-                jmsSpecificSendingInfo
-        )/*.doOnError(t -> examineSendExceptionForDeadDestinationAndInformListener(t, origin))*/;
+        KafkaSpecificInfo sendInfo = new KafkaSpecificInfo();
+        OutgoingMessageMetaData meta = new OutgoingMessageMetaData(destination, sendInfo);
+        return this.messageSender.doSend(message, meta)
+        /*.doOnError(t -> examineSendExceptionForDeadDestinationAndInformListener(t, origin))*/;
     }
 
     //////////////////////////////////

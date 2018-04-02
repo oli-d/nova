@@ -28,7 +28,7 @@ import static org.hamcrest.Matchers.is;
 @Tag("large")
 class JmsIncomingMessageMetaDataCreatorTest {
     private TestJmsHelper jmsHelper;
-    private JmsMessageDetailsCreator sut;
+    private JmsMessageMetaDataCreator sut;
 
     private EmbeddedActiveMQBroker broker;
 
@@ -40,7 +40,7 @@ class JmsIncomingMessageMetaDataCreatorTest {
         ConnectionFactory connectionFactory = new ActiveMQConnectionFactory("vm://embedded-broker?create=false");
         jmsHelper = new TestJmsHelper(connectionFactory);
         jmsHelper.start();
-        sut = new JmsMessageDetailsCreator();
+        sut = new JmsMessageMetaDataCreator();
     }
 
     @AfterEach
@@ -54,7 +54,7 @@ class JmsIncomingMessageMetaDataCreatorTest {
         Message message = jmsHelper.createMessage("payload");
         message.setJMSDestination(incomingDestination);
 
-        IncomingMessageMetaData<Destination, JmsSpecificInfo> details = sut.createMessageDetailsFor(message);
+        IncomingMessageMetaData<Destination, JmsSpecificInfo> details = sut.createIncomingMessageMetaData(message);
         assertThat(details.origin, is(incomingDestination));
     }
 }

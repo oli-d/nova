@@ -13,15 +13,15 @@ package ch.squaredesk.nova.comm.http;
 import java.util.Collections;
 import java.util.Map;
 
-public class HttpSpecificSendingInfo {
+public class SendingInfo {
     public final HttpRequestMethod requestMethod;
     public final Map<String, String> parameters;
 
-    public HttpSpecificSendingInfo(HttpRequestMethod requestMethod) {
+    public SendingInfo(HttpRequestMethod requestMethod) {
         this(requestMethod, null);
     }
 
-    public HttpSpecificSendingInfo(HttpRequestMethod requestMethod, Map<String, String> parameters) {
+    public SendingInfo(HttpRequestMethod requestMethod, Map<String, String> parameters) {
         this.requestMethod = requestMethod;
         if (parameters == null) {
             this.parameters = Collections.emptyMap();

@@ -11,13 +11,14 @@
 
 package ch.squaredesk.nova.comm.jms;
 
-import ch.squaredesk.nova.comm.retrieving.IncomingMessageMetaData;
-import ch.squaredesk.nova.comm.rpc.RpcReply;
-
 import javax.jms.Destination;
 
-public class JmsRpcReply<T> extends RpcReply<T, Destination, JmsSpecificInfo> {
-    public JmsRpcReply(T result, IncomingMessageMetaData<Destination, JmsSpecificInfo> metaData) {
-        super(result, metaData);
+public class OutgoingMessageMetaData extends ch.squaredesk.nova.comm.sending.OutgoingMessageMetaData<Destination, JmsSpecificInfo> {
+    public OutgoingMessageMetaData(Destination destination) {
+        this(destination, null);
+    }
+
+    public OutgoingMessageMetaData(Destination destination, JmsSpecificInfo sendDetails) {
+        super(destination, sendDetails);
     }
 }

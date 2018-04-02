@@ -11,13 +11,8 @@
 
 package ch.squaredesk.nova.comm.http;
 
-import ch.squaredesk.nova.comm.retrieving.IncomingMessageMetaData;
-import ch.squaredesk.nova.comm.rpc.RpcReply;
-
-import java.net.URL;
-
-public class HttpRpcReply<T> extends RpcReply<T, URL, HttpSpecificRetrievalInfo> {
-    public HttpRpcReply(T result, IncomingMessageMetaData<URL, HttpSpecificRetrievalInfo> metaData) {
+public class RpcReply<T> extends ch.squaredesk.nova.comm.rpc.RpcReply<T, IncomingMessageMetaData> {
+    public RpcReply(T result, IncomingMessageMetaData metaData) {
         super(result, metaData);
     }
 }
