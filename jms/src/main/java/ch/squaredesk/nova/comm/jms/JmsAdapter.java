@@ -11,7 +11,7 @@
 package ch.squaredesk.nova.comm.jms;
 
 import ch.squaredesk.nova.comm.CommAdapterBuilder;
-import ch.squaredesk.nova.comm.sending.MessageSendingInfo;
+import ch.squaredesk.nova.comm.sending.OutgoingMessageMetaData;
 import io.reactivex.Completable;
 import io.reactivex.Flowable;
 import io.reactivex.Scheduler;
@@ -125,7 +125,7 @@ public class JmsAdapter<InternalMessageType> {
     //                    //
     ////////////////////////
     public Flowable<JmsRpcInvocation<InternalMessageType>> requests(Destination destination) {
-        requireNonNull(destination, "destination must not be null");
+        requireNonNull(destination, "origin must not be null");
         return rpcServer.requests(destination);
     }
 
@@ -135,7 +135,7 @@ public class JmsAdapter<InternalMessageType> {
     //                    //
     ////////////////////////
     private <RequestType extends InternalMessageType, ReplyType extends InternalMessageType>
-        Single<ReplyType> sendRequest(
+        Single<JmsRpcReply<ReplyType>> sendRequest(
             Destination destination,
             Destination replyDestination,
             RequestType request,
@@ -159,17 +159,17 @@ public class JmsAdapter<InternalMessageType> {
         String correlationId = correlationIdGenerator.get();
         JmsSpecificInfo jmsSpecificInfo = new JmsSpecificInfo(
                 correlationId, replyDestination, customHeaders, deliveryModeToUse, priorityToUse, timeToLiveToUse);
-        MessageSendingInfo<Destination, JmsSpecificInfo> sendingInfo = new MessageSendingInfo.Builder<Destination, JmsSpecificInfo>()
+        OutgoingMessageMetaData<Destination, JmsSpecificInfo> sendingInfo = new OutgoingMessageMetaData.Builder<Destination, JmsSpecificInfo>()
                 .withDestination(destination)
                 .withTransportSpecificInfo(jmsSpecificInfo)
                 .build();
 
-        return rpcClient.<RequestType,ReplyType>sendRequest(request, sendingInfo, timeout, timeUnit)
+        return rpcClient.<ReplyType>sendRequest(request, sendingInfo, timeout, timeUnit)
                 .doOnError(t -> examineSendExceptionForDeadDestinationAndInformListener(t, destination));
     }
 
     public <RequestType extends InternalMessageType, ReplyType extends InternalMessageType>
-        Single<ReplyType> sendRequest(
+        Single<JmsRpcReply<ReplyType>> sendRequest(
             Destination destination,
             Destination replyDestination,
             RequestType message,
@@ -180,7 +180,7 @@ public class JmsAdapter<InternalMessageType> {
     }
 
     public <RequestType extends InternalMessageType, ReplyType extends InternalMessageType>
-        Single<ReplyType> sendRequest(
+        Single<JmsRpcReply<ReplyType>> sendRequest(
             Destination destination,
             RequestType message,
             Map<String, Object> customHeaders,
@@ -190,7 +190,7 @@ public class JmsAdapter<InternalMessageType> {
     }
 
     public <RequestType extends InternalMessageType, ReplyType extends InternalMessageType>
-        Single<ReplyType> sendRequest(
+        Single<JmsRpcReply<ReplyType>> sendRequest(
             Destination destination,
             RequestType message,
             Map<String, Object> customHeaders) {
@@ -198,14 +198,14 @@ public class JmsAdapter<InternalMessageType> {
     }
 
     public <RequestType extends InternalMessageType, ReplyType extends InternalMessageType>
-     Single<ReplyType> sendRequest(
+        Single<JmsRpcReply<ReplyType>> sendRequest(
             Destination destination,
             RequestType message,
             long timeout, TimeUnit timeUnit) {
         return sendRequest(destination, jmsObjectRepository.getPrivateTempQueue(), message, null, null, null, null, timeout, timeUnit);
     }
     public <RequestType extends InternalMessageType, ReplyType extends InternalMessageType>
-        Single<ReplyType> sendRequest(
+        Single<JmsRpcReply<ReplyType>> sendRequest(
             Destination destination,
             RequestType message) {
         return sendRequest(destination, jmsObjectRepository.getPrivateTempQueue(), message, null, null, null, null, null, null);
@@ -229,7 +229,7 @@ public class JmsAdapter<InternalMessageType> {
             try {
                 consumer.accept(deadDestination);
             } catch (Throwable t) {
-                logger.error("An error occurred trying to inform listener about dead destination " + deadDestination, t);
+                logger.error("An error occurred trying to inform listener about dead origin " + deadDestination, t);
             }
         });
     }

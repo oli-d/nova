@@ -78,7 +78,7 @@ public class RpcServer<InternalMessageType> extends ch.squaredesk.nova.comm.rpc.
         return retVal;
     }
 
-    private static HttpSpecificInfo httpSpecificInfoFrom(Request request) throws Exception {
+    private static HttpSpecificSendingInfo httpSpecificInfoFrom(Request request) throws Exception {
         Map<String, String> parameters = new HashMap<>();
         for (Map.Entry<String, String[]> entry : request.getParameterMap().entrySet()) {
             String[] valueList = entry.getValue();
@@ -89,7 +89,7 @@ public class RpcServer<InternalMessageType> extends ch.squaredesk.nova.comm.rpc.
             parameters.put(entry.getKey(), valueToPass);
         }
 
-        return new HttpSpecificInfo(
+        return new HttpSpecificSendingInfo(
                 convert(request.getMethod()), parameters);
     }
 

@@ -1,7 +1,8 @@
 package ch.squaredesk.nova.comm.http;
 
 import ch.squaredesk.net.HttpRequestSender;
-import ch.squaredesk.nova.comm.sending.MessageSendingInfo;
+import ch.squaredesk.nova.comm.rpc.RpcReply;
+import ch.squaredesk.nova.comm.sending.OutgoingMessageMetaData;
 import ch.squaredesk.nova.metrics.Metrics;
 import com.ning.http.client.AsyncHttpClient;
 import io.reactivex.Flowable;
@@ -18,6 +19,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.IntStream;
 
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -32,14 +34,14 @@ class RpcServerTest {
 
     @BeforeEach
     void setup() {
-        sut = new RpcServer<>(httpServer, s->s, s->s, new Metrics());
+        sut = new RpcServer<>(httpServer, s -> s, s -> s, new Metrics());
         rpcClient = new RpcClient<>(null, new AsyncHttpClient(), s -> s, s -> s, new Metrics());
     }
 
     @AfterEach
     void tearDown() {
-        if (sut!=null) sut.shutdown();
-        if (rpcClient!=null) rpcClient.shutdown();
+        if (sut != null) sut.shutdown();
+        if (rpcClient != null) rpcClient.shutdown();
     }
 
     @Test
@@ -52,14 +54,14 @@ class RpcServerTest {
     @Test
     void sutCannotBeCreatedWithoutMarshaller() {
         NullPointerException npe = assertThrows(NullPointerException.class,
-                () -> new RpcServer<>(httpServer, null, s-> s, new Metrics()));
+                () -> new RpcServer<>(httpServer, null, s -> s, new Metrics()));
         assertThat(npe.getMessage(), is("messageMarshaller must not be null"));
     }
 
     @Test
     void sutCannotBeCreatedWithoutUnmarshaller() {
         NullPointerException npe = assertThrows(NullPointerException.class,
-                () -> new RpcServer<String>(httpServer, s->s, null, new Metrics()));
+                () -> new RpcServer<String>(httpServer, s -> s, null, new Metrics()));
         assertThat(npe.getMessage(), is("messageUnmarshaller must not be null"));
     }
 
@@ -82,21 +84,24 @@ class RpcServerTest {
             cdl.countDown();
         });
 
-        IntStream.range(0,numRequests).forEach(i -> sendRestRequestInNewThread(path, i));
+        IntStream.range(0, numRequests).forEach(i -> sendRestRequestInNewThread(path, i));
 
         cdl.await(20, TimeUnit.SECONDS);
-        assertThat(cdl.getCount(), is (0L));
+        assertThat(cdl.getCount(), is(0L));
     }
 
-    private String createStringOfLength (int length) {
+    private String createStringOfLength(int length) {
         switch (length) {
-            case 0: return "";
-            case 1: return "X";
-            case 2: return "XX";
+            case 0:
+                return "";
+            case 1:
+                return "X";
+            case 2:
+                return "XX";
             default:
                 char[] charArray = new char[Math.abs(length)];
                 for (int i = 0; i < charArray.length; i++) {
-                    charArray[i] = (i == 0 || i == charArray.length-1 ? 'X' : '-');
+                    charArray[i] = (i == 0 || i == charArray.length - 1 ? 'X' : '-');
                 }
                 return new String(charArray);
         }
@@ -114,10 +119,10 @@ class RpcServerTest {
             rpcInvocation.complete(rpcInvocation.request);
         });
 
-        MessageSendingInfo<String, HttpSpecificInfo> msi =
-                new MessageSendingInfo.Builder<String, HttpSpecificInfo>()
+        OutgoingMessageMetaData<String, HttpSpecificSendingInfo> msi =
+                new OutgoingMessageMetaData.Builder<String, HttpSpecificSendingInfo>()
                         .withDestination(urlAsString)
-                        .withTransportSpecificInfo(new HttpSpecificInfo(HttpRequestMethod.POST))
+                        .withTransportSpecificInfo(new HttpSpecificSendingInfo(HttpRequestMethod.POST))
                         .build();
         HttpRequestSender.HttpResponse response = HttpRequestSender.sendPostRequest(url, hugeRequest);
         assertThat(response.replyMessage, is(hugeRequest));
@@ -148,14 +153,14 @@ class RpcServerTest {
         requests.subscribe(rpcInvocation -> rpcInvocation.completeExceptionally(new Exception("no content")));
 
         String urlAsString = "http://" + rsc.interfaceName + ":" + rsc.port + path + "?p=";
-        MessageSendingInfo<URL, HttpSpecificInfo> msi = new MessageSendingInfo.Builder<URL, HttpSpecificInfo>()
+        OutgoingMessageMetaData<URL, HttpSpecificSendingInfo> msi = new OutgoingMessageMetaData.Builder<URL, HttpSpecificSendingInfo>()
                 .withDestination(new URL(urlAsString))
-                .withTransportSpecificInfo(new HttpSpecificInfo(HttpRequestMethod.POST))
+                .withTransportSpecificInfo(new HttpSpecificSendingInfo(HttpRequestMethod.POST))
                 .build();
 
-        RuntimeException exception = assertThrows(RuntimeException.class, () ->
-                rpcClient.sendRequest("{}", msi, 15, TimeUnit.SECONDS).blockingGet());
-        assertThat(exception.getMessage(), is("500 - Internal server error"));
+        RpcReply<String, URL, HttpSpecificRetrievalInfo> reply = rpcClient.sendRequest("{}", msi, 15, TimeUnit.SECONDS).blockingGet();
+        assertThat(reply.result, containsString("Internal server error"));
+        assertThat(reply.metaData.transportSpecificDetails.statusCode, is(500));
     }
 
     private void sendRestRequestInNewThread(String path, int i) {
@@ -163,9 +168,9 @@ class RpcServerTest {
             try {
                 String urlAsString = "http://" + rsc.interfaceName + ":" + rsc.port + path + "?p=" + i;
 
-                MessageSendingInfo<URL, HttpSpecificInfo> msi = new MessageSendingInfo.Builder<URL, HttpSpecificInfo>()
+                OutgoingMessageMetaData<URL, HttpSpecificSendingInfo> msi = new OutgoingMessageMetaData.Builder<URL, HttpSpecificSendingInfo>()
                         .withDestination(new URL(urlAsString))
-                        .withTransportSpecificInfo(new HttpSpecificInfo(HttpRequestMethod.POST))
+                        .withTransportSpecificInfo(new HttpSpecificSendingInfo(HttpRequestMethod.POST))
                         .build();
 
                 rpcClient.sendRequest("{}", msi, 15, TimeUnit.SECONDS).blockingGet();

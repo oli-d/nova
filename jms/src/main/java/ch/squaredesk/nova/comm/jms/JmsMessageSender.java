@@ -12,7 +12,7 @@ package ch.squaredesk.nova.comm.jms;
 
 import ch.squaredesk.nova.comm.sending.MessageMarshaller;
 import ch.squaredesk.nova.comm.sending.MessageSender;
-import ch.squaredesk.nova.comm.sending.MessageSendingInfo;
+import ch.squaredesk.nova.comm.sending.OutgoingMessageMetaData;
 import ch.squaredesk.nova.metrics.Metrics;
 import io.reactivex.Completable;
 
@@ -35,7 +35,7 @@ public class JmsMessageSender<InternalMessageType> extends MessageSender<Destina
 
 
     @Override
-    public Completable doSend(String message, MessageSendingInfo<Destination, JmsSpecificInfo> sendingInfo) {
+    public Completable doSend(String message, OutgoingMessageMetaData<Destination, JmsSpecificInfo> sendingInfo) {
         requireNonNull(message, "message must not be null");
         return Completable.create(s -> {
             try {

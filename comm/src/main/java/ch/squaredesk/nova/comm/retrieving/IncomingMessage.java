@@ -12,10 +12,10 @@ package ch.squaredesk.nova.comm.retrieving;
 
 public class IncomingMessage<InternalMessageType, DestinationType, TransportSpecificDetailsType> {
     public final InternalMessageType message;
-    public final IncomingMessageDetails<DestinationType, TransportSpecificDetailsType> details;
+    public final IncomingMessageMetaData<DestinationType, TransportSpecificDetailsType> details;
 
 
-    public IncomingMessage(InternalMessageType message, IncomingMessageDetails<DestinationType, TransportSpecificDetailsType> details) {
+    public IncomingMessage(InternalMessageType message, IncomingMessageMetaData<DestinationType, TransportSpecificDetailsType> details) {
         this.message = message;
         this.details = details;
     }

@@ -55,7 +55,7 @@ public class KafkaAdapter<InternalMessageType> {
                 destination,
                 message,
                 jmsSpecificSendingInfo
-        )/*.doOnError(t -> examineSendExceptionForDeadDestinationAndInformListener(t, destination))*/;
+        )/*.doOnError(t -> examineSendExceptionForDeadDestinationAndInformListener(t, origin))*/;
     }
 
     //////////////////////////////////

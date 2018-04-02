@@ -10,7 +10,7 @@
 
 package ch.squaredesk.nova.comm.jms;
 
-import ch.squaredesk.nova.comm.retrieving.IncomingMessageDetails;
+import ch.squaredesk.nova.comm.retrieving.IncomingMessageMetaData;
 
 import javax.jms.Destination;
 import javax.jms.JMSException;
@@ -18,9 +18,9 @@ import javax.jms.Message;
 
 class JmsMessageDetailsCreator {
 
-    IncomingMessageDetails<Destination,JmsSpecificInfo> createMessageDetailsFor(Message message) {
+    IncomingMessageMetaData<Destination,JmsSpecificInfo> createMessageDetailsFor(Message message) {
         try {
-            return new IncomingMessageDetails.Builder<Destination,JmsSpecificInfo>()
+            return new IncomingMessageMetaData.Builder<Destination,JmsSpecificInfo>()
                     .withDestination(message.getJMSDestination())
                     .withTransportSpecificDetails(JmsSpecificInfoExtractor.extractFrom(message)).build();
         } catch (JMSException e) {

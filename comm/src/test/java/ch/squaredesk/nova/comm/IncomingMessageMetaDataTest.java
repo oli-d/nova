@@ -10,7 +10,7 @@
 
 package ch.squaredesk.nova.comm;
 
-import ch.squaredesk.nova.comm.retrieving.IncomingMessageDetails;
+import ch.squaredesk.nova.comm.retrieving.IncomingMessageMetaData;
 import org.junit.jupiter.api.Test;
 
 import java.util.HashMap;
@@ -18,18 +18,18 @@ import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-class IncomingMessageDetailsTest {
+class IncomingMessageMetaDataTest {
     @Test
     void testBuilder() {
         int destination = 1;
         Map<String, Object> customHeaders = new HashMap<>();
 
-        IncomingMessageDetails<Integer, Map<String, Object>> md = new IncomingMessageDetails.Builder<Integer, Map<String, Object>>()
+        IncomingMessageMetaData<Integer, Map<String, Object>> md = new IncomingMessageMetaData.Builder<Integer, Map<String, Object>>()
                 .withDestination(destination)
                 .withTransportSpecificDetails(customHeaders)
                 .build();
 
         assertTrue(md.transportSpecificDetails == customHeaders);
-        assertTrue(md.destination == destination);
+        assertTrue(md.origin == destination);
     }
 }

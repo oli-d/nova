@@ -17,9 +17,9 @@ import ch.squaredesk.nova.tuples.Pair;
 import java.util.function.Consumer;
 
 public class HttpRpcInvocation<InternalMessageType>
-        extends RpcInvocation<InternalMessageType, HttpSpecificInfo, InternalMessageType, HttpReplyInfo>{
+        extends RpcInvocation<InternalMessageType, HttpSpecificSendingInfo, InternalMessageType, HttpReplyInfo>{
 
-    public HttpRpcInvocation(InternalMessageType request, HttpSpecificInfo transportSpecificInfo, Consumer<Pair<InternalMessageType, HttpReplyInfo>> replyConsumer, Consumer<Throwable> errorConsumer) {
+    public HttpRpcInvocation(InternalMessageType request, HttpSpecificSendingInfo transportSpecificInfo, Consumer<Pair<InternalMessageType, HttpReplyInfo>> replyConsumer, Consumer<Throwable> errorConsumer) {
         super(request, transportSpecificInfo, replyConsumer, errorConsumer);
     }
 

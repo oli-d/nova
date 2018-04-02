@@ -28,20 +28,20 @@ import static org.junit.jupiter.api.Assertions.*;
 class MessageSenderTest {
     private MessageSender<String, String, String, TestTransportInfo> sut;
     private List<String> transportMessages;
-    private List<MessageSendingInfo<String, TestTransportInfo>> messageSendingInfos;
+    private List<OutgoingMessageMetaData<String, TestTransportInfo>> outgoingMessageMetaData;
 
     @BeforeEach
     void setUp() {
         this.sut = new MessageSender<String, String, String, TestTransportInfo>(s -> s, new Metrics()) {
             @Override
-            protected Completable doSend(String transportMessage, MessageSendingInfo<String, TestTransportInfo> messageSendingInfo) {
+            protected Completable doSend(String transportMessage, OutgoingMessageMetaData<String, TestTransportInfo> outgoingMessageMetaData) {
                 transportMessages.add(transportMessage);
-                messageSendingInfos.add(messageSendingInfo);
+                MessageSenderTest.this.outgoingMessageMetaData.add(outgoingMessageMetaData);
                 return Completable.complete();
             }
         };
         transportMessages = new ArrayList<>();
-        messageSendingInfos = new ArrayList<>();
+        outgoingMessageMetaData = new ArrayList<>();
     }
 
     @Test
@@ -49,7 +49,7 @@ class MessageSenderTest {
         Throwable t = assertThrows(NullPointerException.class,
                 () -> new MessageSender<Object,Object, Object, Object>(null, new Metrics()) {
                     @Override
-                    protected Completable doSend(Object transportMessage, MessageSendingInfo messageSendingInfo) {
+                    protected Completable doSend(Object transportMessage, OutgoingMessageMetaData messageSendingInfo) {
                         return null;
                     }
                 });
@@ -59,32 +59,32 @@ class MessageSenderTest {
     @Test
     void sendingDoneWithoutTransportInfo() throws Exception {
         sut.sendMessage(
-                "destination",
+                "origin",
                 "message",
                 null).subscribe();
 
         assertThat(transportMessages.size(), is(1));
         assertThat(transportMessages, contains("message"));
-        assertThat(messageSendingInfos.size(), is(1));
-        assertThat(messageSendingInfos.get(0).destination, is("destination"));
-        assertNull(messageSendingInfos.get(0).transportSpecificInfo);
+        assertThat(outgoingMessageMetaData.size(), is(1));
+        assertThat(outgoingMessageMetaData.get(0).destination, is("origin"));
+        assertNull(outgoingMessageMetaData.get(0).transportSpecificInfo);
     }
 
     @Test
     void sendingDoneWithAdditionalTransportInfo() throws Exception {
         TestTransportInfo myTransportInfo = new TestTransportInfo("v1");
         sut.sendMessage(
-                "destination",
+                "origin",
                 "message",
                 myTransportInfo)
                 .subscribe();
 
         assertThat(transportMessages.size(), is(1));
         assertThat(transportMessages, contains("message"));
-        assertThat(messageSendingInfos.size(), is(1));
-        assertThat(messageSendingInfos.get(0).destination, is("destination"));
-        assertNotNull(messageSendingInfos.get(0).transportSpecificInfo);
-        assertThat(messageSendingInfos.get(0).transportSpecificInfo,sameInstance(myTransportInfo));
+        assertThat(outgoingMessageMetaData.size(), is(1));
+        assertThat(outgoingMessageMetaData.get(0).destination, is("origin"));
+        assertNotNull(outgoingMessageMetaData.get(0).transportSpecificInfo);
+        assertThat(outgoingMessageMetaData.get(0).transportSpecificInfo,sameInstance(myTransportInfo));
     }
 
     @SuppressWarnings("unchecked")
@@ -92,13 +92,13 @@ class MessageSenderTest {
     void sendingErrorTransportedToCompletable() {
         this.sut = new MessageSender<String, String, String, TestTransportInfo>(s -> s, new Metrics()) {
             @Override
-            protected Completable doSend(String transportMessage, MessageSendingInfo<String, TestTransportInfo> messageSendingInfo) {
+            protected Completable doSend(String transportMessage, OutgoingMessageMetaData<String, TestTransportInfo> outgoingMessageMetaData) {
                 throw new RuntimeException("for test");
             }
         };
 
 
-        TestObserver testObserver = sut.sendMessage("destination", "message", null).test();
+        TestObserver testObserver = sut.sendMessage("origin", "message", null).test();
         testObserver.assertError((Predicate<Throwable>) t -> t instanceof RuntimeException && t.getMessage().equals("for test"));
     }
 
@@ -108,13 +108,13 @@ class MessageSenderTest {
         this.sut = new MessageSender<String, String, String, TestTransportInfo>(
                 s -> { throw new RuntimeException("for test"); }, new Metrics() ) {
             @Override
-            protected Completable doSend(String transportMessage, MessageSendingInfo<String, TestTransportInfo> messageSendingInfo) {
+            protected Completable doSend(String transportMessage, OutgoingMessageMetaData<String, TestTransportInfo> outgoingMessageMetaData) {
                 return Completable.complete();
             }
         };
 
 
-        TestObserver testObserver = sut.sendMessage("destination", "message", null).test();
+        TestObserver testObserver = sut.sendMessage("origin", "message", null).test();
         testObserver.assertError((Predicate<Throwable>) t -> t instanceof RuntimeException && t.getMessage().equals("for test"));
     }
 

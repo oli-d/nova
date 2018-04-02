@@ -12,11 +12,11 @@ package ch.squaredesk.nova.comm.sending;
 
 import static java.util.Objects.requireNonNull;
 
-public class MessageSendingInfo<DestinationType, TransportSpecificInfoType> {
+public class OutgoingMessageMetaData<DestinationType, TransportSpecificInfoType> {
     public final DestinationType destination;
     public final TransportSpecificInfoType transportSpecificInfo;
 
-    protected MessageSendingInfo(Builder<DestinationType, TransportSpecificInfoType> builder) {
+    protected OutgoingMessageMetaData(Builder<DestinationType, TransportSpecificInfoType> builder) {
         this.destination = builder.destination;
         this.transportSpecificInfo = builder.transportSpecificInfo;
     }
@@ -35,20 +35,20 @@ public class MessageSendingInfo<DestinationType, TransportSpecificInfoType> {
             return this;
         }
 
-        public MessageSendingInfo<DestinationType, TransportSpecificInfoType> build() {
+        public OutgoingMessageMetaData<DestinationType, TransportSpecificInfoType> build() {
             validate();
-            return new MessageSendingInfo<>(this);
+            return new OutgoingMessageMetaData<>(this);
         }
 
         private void validate() {
-            requireNonNull(destination, "destination must not be null");
+            requireNonNull(destination, "origin must not be null");
         }
     }
 
     @Override
     public String toString() {
         return "{" +
-                "destination=" + destination +
+                "origin=" + destination +
                 ", transportSpecificInfo=" + transportSpecificInfo +
                 '}';
     }

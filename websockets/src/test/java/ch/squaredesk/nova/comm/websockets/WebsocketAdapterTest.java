@@ -273,7 +273,7 @@ class WebsocketAdapterTest {
         assertThat(testSubscriber.values().get(2).message, is(33));
         for (int i = 0; i < 3; i++) {
             assertNotNull(testSubscriber.values().get(i).details);
-            assertThat(testSubscriber.values().get(i).details.destination, is(destination));
+            assertThat(testSubscriber.values().get(i).details.origin, is(destination));
             assertNotNull(testSubscriber.values().get(i).details.transportSpecificDetails);
             assertNotNull(testSubscriber.values().get(i).details.transportSpecificDetails.webSocket);
         }

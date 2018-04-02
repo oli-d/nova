@@ -11,7 +11,7 @@
 package ch.squaredesk.nova.comm.jms;
 
 import ch.squaredesk.nova.comm.sending.MessageMarshaller;
-import ch.squaredesk.nova.comm.sending.MessageSendingInfo;
+import ch.squaredesk.nova.comm.sending.OutgoingMessageMetaData;
 import ch.squaredesk.nova.metrics.Metrics;
 import io.reactivex.Completable;
 import io.reactivex.subscribers.TestSubscriber;
@@ -134,7 +134,7 @@ class JmsRpcServerTest {
 
     private class MySender extends JmsMessageSender<String> {
         private String message;
-        private MessageSendingInfo<Destination, JmsSpecificInfo> sendingInfo;
+        private OutgoingMessageMetaData<Destination, JmsSpecificInfo> sendingInfo;
 
         MySender(String identifier, JmsObjectRepository jmsObjectRepository, MessageMarshaller<String, String> messageMarshaller, Metrics metrics) {
             super(identifier, jmsObjectRepository, messageMarshaller, metrics);
@@ -142,7 +142,7 @@ class JmsRpcServerTest {
 
 
         @Override
-        public Completable doSend(String message, MessageSendingInfo<Destination, JmsSpecificInfo> sendingInfo) {
+        public Completable doSend(String message, OutgoingMessageMetaData<Destination, JmsSpecificInfo> sendingInfo) {
             this.message = message;
             this.sendingInfo = sendingInfo;
             return super.doSend(message, sendingInfo);

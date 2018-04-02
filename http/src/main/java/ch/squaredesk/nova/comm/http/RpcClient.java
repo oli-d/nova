@@ -10,23 +10,23 @@
 
 package ch.squaredesk.nova.comm.http;
 
+import ch.squaredesk.nova.comm.retrieving.IncomingMessageMetaData;
 import ch.squaredesk.nova.comm.retrieving.MessageUnmarshaller;
+import ch.squaredesk.nova.comm.rpc.RpcReply;
 import ch.squaredesk.nova.comm.sending.MessageMarshaller;
-import ch.squaredesk.nova.comm.sending.MessageSendingInfo;
+import ch.squaredesk.nova.comm.sending.OutgoingMessageMetaData;
 import ch.squaredesk.nova.metrics.Metrics;
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.ListenableFuture;
 import com.ning.http.client.Response;
 import io.reactivex.Single;
-import io.reactivex.exceptions.Exceptions;
 
 import java.net.URL;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
 import static java.util.Objects.requireNonNull;
 
-public class RpcClient<InternalMessageType> extends ch.squaredesk.nova.comm.rpc.RpcClient<URL, InternalMessageType, HttpSpecificInfo> {
+public class RpcClient<InternalMessageType> extends ch.squaredesk.nova.comm.rpc.RpcClient<URL, InternalMessageType, HttpSpecificSendingInfo, HttpSpecificRetrievalInfo> {
     private final AsyncHttpClient client;
     private final MessageMarshaller<InternalMessageType, String> messageMarshaller;
     private final MessageUnmarshaller<String, InternalMessageType> messageUnmarshaller;
@@ -43,10 +43,10 @@ public class RpcClient<InternalMessageType> extends ch.squaredesk.nova.comm.rpc.
     }
 
 
-    public <RequestType extends InternalMessageType, ReplyType extends InternalMessageType>
-    Single<ReplyType> sendRequest(RequestType request,
-                                  MessageSendingInfo<URL, HttpSpecificInfo> messageSendingInfo,
-                                  long timeout, TimeUnit timeUnit) {
+    public <ReplyType extends InternalMessageType> Single<HttpRpcReply<ReplyType>> sendRequest(
+            InternalMessageType request,
+            OutgoingMessageMetaData<URL, HttpSpecificSendingInfo> outgoingMessageMetaData,
+            long timeout, TimeUnit timeUnit) {
         requireNonNull(timeUnit, "timeUnit must not be null");
 
         String requestAsString;
@@ -57,50 +57,36 @@ public class RpcClient<InternalMessageType> extends ch.squaredesk.nova.comm.rpc.
         }
 
         AsyncHttpClient.BoundRequestBuilder requestBuilder;
-        if (messageSendingInfo.transportSpecificInfo.requestMethod == HttpRequestMethod.POST) {
-            requestBuilder = client.preparePost(messageSendingInfo.destination.toString()).setBody(requestAsString);
-        } else if (messageSendingInfo.transportSpecificInfo.requestMethod == HttpRequestMethod.PUT) {
-            requestBuilder = client.preparePut(messageSendingInfo.destination.toString()).setBody(requestAsString);
-        } else if (messageSendingInfo.transportSpecificInfo.requestMethod == HttpRequestMethod.DELETE) {
-            requestBuilder = client.prepareDelete(messageSendingInfo.destination.toString()).setBody(requestAsString);
+        if (outgoingMessageMetaData.transportSpecificInfo.requestMethod == HttpRequestMethod.POST) {
+            requestBuilder = client.preparePost(outgoingMessageMetaData.destination.toString()).setBody(requestAsString);
+        } else if (outgoingMessageMetaData.transportSpecificInfo.requestMethod == HttpRequestMethod.PUT) {
+            requestBuilder = client.preparePut(outgoingMessageMetaData.destination.toString()).setBody(requestAsString);
+        } else if (outgoingMessageMetaData.transportSpecificInfo.requestMethod == HttpRequestMethod.DELETE) {
+            requestBuilder = client.prepareDelete(outgoingMessageMetaData.destination.toString()).setBody(requestAsString);
         } else {
-            requestBuilder = client.prepareGet(messageSendingInfo.destination.toString());
+            requestBuilder = client.prepareGet(outgoingMessageMetaData.destination.toString());
         }
 
         ListenableFuture<Response> resultFuture = requestBuilder
                 .addHeader("Content-Type", "application/json; charset=utf-8")
                 .execute();
 
-        Single timeoutSingle = Single
-                .timer(timeout, timeUnit)
-                .map(zero -> {
-                    TimeoutException te = new TimeoutException(
-                            "Request"
-                                    + (request == null ? "" : "" + String.valueOf(request))
-                                    + " to " + messageSendingInfo.destination
-                                    + " ran into timeout after "
-                                    + timeout + " " + String.valueOf(timeUnit).toLowerCase());
-                    metricsCollector.rpcTimedOut(messageSendingInfo.destination.toExternalForm());
-                    resultFuture.abort(te);
-                    Exceptions.propagate(te);
-                    return null;
-                });
-
-        Single<ReplyType> resultSingle = Single.fromFuture(resultFuture).map(response -> {
+        Single<HttpRpcReply<ReplyType>> resultSingle = Single.fromFuture(resultFuture).map(response -> {
             int statusCode = response.getStatusCode();
-            if (statusCode < 200 || statusCode >= 300) {
-                // TODO: we need to think about a better concept
-                throw new RuntimeException("" + statusCode + " - " + response.getStatusText());
-            }
+            IncomingMessageMetaData<URL, HttpSpecificRetrievalInfo> metaData = new IncomingMessageMetaData.Builder<URL, HttpSpecificRetrievalInfo>()
+                    .withDestination(outgoingMessageMetaData.destination)
+                    .withTransportSpecificDetails(new HttpSpecificRetrievalInfo(statusCode))
+                    .build();
             String responseBody = response.getResponseBody();
-            metricsCollector.rpcCompleted(messageSendingInfo.destination, responseBody);
-            return (ReplyType) messageUnmarshaller.unmarshal(responseBody);
+            metricsCollector.rpcCompleted(outgoingMessageMetaData.destination, responseBody);
+            return new HttpRpcReply<>((ReplyType) messageUnmarshaller.unmarshal(responseBody), metaData);
         });
 
-        return timeoutSingle.ambWith(resultSingle);
+        return resultSingle.timeout(timeout, timeUnit);
     }
 
     void shutdown() {
         client.close();
     }
+
 }

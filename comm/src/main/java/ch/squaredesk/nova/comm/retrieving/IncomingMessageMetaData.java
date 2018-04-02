@@ -10,23 +10,22 @@
 
 package ch.squaredesk.nova.comm.retrieving;
 
-public class IncomingMessageDetails<DestinationType, TransportSpecificDetailsType> {
-    public final DestinationType destination;
+public class IncomingMessageMetaData<DestinationType, TransportSpecificDetailsType> {
+    public final DestinationType origin;
     public final TransportSpecificDetailsType transportSpecificDetails;
 
     @Override
     public String toString() {
-        return "IncomingMessageDetails [destination=" + destination +
+        return "IncomingMessageMetaData [origin=" + origin +
                 ", transportSpecificDetails=" + transportSpecificDetails + "]";
     }
 
-    private IncomingMessageDetails(Builder<DestinationType, TransportSpecificDetailsType> builder) {
-        this.destination = builder.destination;
+    private IncomingMessageMetaData(Builder<DestinationType, TransportSpecificDetailsType> builder) {
+        this.origin = builder.destination;
         this.transportSpecificDetails = builder.transportSpecificDetails;
     }
 
     public static class Builder<DestinationType, TransportSpecificDetailsType> {
-
         private DestinationType destination;
         private TransportSpecificDetailsType transportSpecificDetails;
 
@@ -40,8 +39,8 @@ public class IncomingMessageDetails<DestinationType, TransportSpecificDetailsTyp
             return this;
         }
 
-        public IncomingMessageDetails<DestinationType, TransportSpecificDetailsType> build() {
-            return new IncomingMessageDetails<>(this);
+        public IncomingMessageMetaData<DestinationType, TransportSpecificDetailsType> build() {
+            return new IncomingMessageMetaData<>(this);
         }
     }
 

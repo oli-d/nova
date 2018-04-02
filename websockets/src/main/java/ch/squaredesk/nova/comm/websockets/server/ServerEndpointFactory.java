@@ -68,7 +68,7 @@ public class ServerEndpointFactory {
             if (metricsCollector != null) {
                 metricsCollector.unparsableMessageReceived(destination);
             }
-            throw new RuntimeException("Unable to unmarshal incoming message " + message + " on destination " + destination, e);
+            throw new RuntimeException("Unable to unmarshal incoming message " + message + " on origin " + destination, e);
         }
     }
 

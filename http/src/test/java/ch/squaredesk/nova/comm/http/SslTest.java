@@ -1,6 +1,6 @@
 package ch.squaredesk.nova.comm.http;
 
-import ch.squaredesk.nova.comm.sending.MessageSendingInfo;
+import ch.squaredesk.nova.comm.sending.OutgoingMessageMetaData;
 import ch.squaredesk.nova.metrics.Metrics;
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.AsyncHttpClientConfig;
@@ -97,9 +97,9 @@ class SslTest {
             try {
                 String urlAsString = "https://" + rsc.interfaceName + ":" + rsc.port + path + "?p=" + i;
 
-                MessageSendingInfo<URL, HttpSpecificInfo> msi = new MessageSendingInfo.Builder<URL, HttpSpecificInfo>()
+                OutgoingMessageMetaData<URL, HttpSpecificSendingInfo> msi = new OutgoingMessageMetaData.Builder<URL, HttpSpecificSendingInfo>()
                         .withDestination(new URL(urlAsString))
-                        .withTransportSpecificInfo(new HttpSpecificInfo(HttpRequestMethod.POST))
+                        .withTransportSpecificInfo(new HttpSpecificSendingInfo(HttpRequestMethod.POST))
                         .build();
 
                 rpcClient.sendRequest("{}", msi, 15, TimeUnit.SECONDS).blockingGet();

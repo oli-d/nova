@@ -12,7 +12,8 @@
 package ch.squaredesk.nova.comm.http;
 
 import ch.squaredesk.nova.comm.CommAdapterBuilder;
-import ch.squaredesk.nova.comm.sending.MessageSendingInfo;
+import ch.squaredesk.nova.comm.rpc.RpcReply;
+import ch.squaredesk.nova.comm.sending.OutgoingMessageMetaData;
 import com.ning.http.client.AsyncHttpClient;
 import io.reactivex.Flowable;
 import io.reactivex.Single;
@@ -40,42 +41,57 @@ public class HttpAdapter<MessageType> {
         this.defaultRequestTimeUnit = builder.defaultRequestTimeUnit;
     }
 
-    public <ReplyMessageType extends MessageType> Single<ReplyMessageType> sendGetRequest(String destination) {
-        return sendRequest(destination, null, new HttpSpecificInfo(HttpRequestMethod.GET), null, null );
+    public <ReplyMessageType extends MessageType>
+    Single<HttpRpcReply<ReplyMessageType>> sendGetRequest(String destination) {
+        return sendRequest(destination, null, new HttpSpecificSendingInfo(HttpRequestMethod.GET), null, null );
     }
 
     public <ReplyMessageType extends MessageType>
-    Single<ReplyMessageType> sendGetRequest(String destination, long timeout, TimeUnit timeUnit) {
-        return sendRequest(destination, null, new HttpSpecificInfo(HttpRequestMethod.GET), timeout, timeUnit);
+    Single<HttpRpcReply<ReplyMessageType>> sendGetRequest(
+                String destination,
+                long timeout, TimeUnit timeUnit) {
+        return sendRequest(destination, null, new HttpSpecificSendingInfo(HttpRequestMethod.GET), timeout, timeUnit);
     }
 
     public <RequestMessageType extends MessageType, ReplyMessageType extends MessageType>
-        Single<ReplyMessageType> sendPostRequest(String destination, RequestMessageType request) {
-        return sendRequest(destination, request, new HttpSpecificInfo(HttpRequestMethod.POST), null, null);
+    Single<HttpRpcReply<ReplyMessageType>> sendPostRequest(
+                String destination,
+                RequestMessageType request) {
+        return sendRequest(destination, request, new HttpSpecificSendingInfo(HttpRequestMethod.POST), null, null);
     }
 
     public <RequestMessageType extends MessageType, ReplyMessageType extends MessageType>
-        Single<ReplyMessageType> sendPostRequest(String destination, RequestMessageType request, long timeout, TimeUnit timeUnit) {
-        return sendRequest(destination, request, new HttpSpecificInfo(HttpRequestMethod.POST), timeout, timeUnit );
+    Single<HttpRpcReply<ReplyMessageType>> sendPostRequest(
+                String destination,
+                RequestMessageType request,
+                long timeout, TimeUnit timeUnit) {
+        return sendRequest(destination, request, new HttpSpecificSendingInfo(HttpRequestMethod.POST), timeout, timeUnit );
     }
 
     public <RequestMessageType extends MessageType, ReplyMessageType extends MessageType>
-        Single<ReplyMessageType> sendPutRequest(String destination, RequestMessageType request) {
-        return sendRequest(destination, request, new HttpSpecificInfo(HttpRequestMethod.PUT), null, null);
+    Single<HttpRpcReply<ReplyMessageType>> sendPutRequest(
+                String destination,
+                RequestMessageType request) {
+        return sendRequest(destination, request, new HttpSpecificSendingInfo(HttpRequestMethod.PUT), null, null);
     }
 
     public <RequestMessageType extends MessageType, ReplyMessageType extends MessageType>
-        Single<ReplyMessageType> sendPutRequest(String destination, RequestMessageType request, long timeout, TimeUnit timeUnit) {
-        return sendRequest(destination, request, new HttpSpecificInfo(HttpRequestMethod.PUT), timeout, timeUnit );
+    Single<HttpRpcReply<ReplyMessageType>> sendPutRequest(
+                String destination,
+                RequestMessageType request,
+                long timeout, TimeUnit timeUnit) {
+        return sendRequest(destination, request, new HttpSpecificSendingInfo(HttpRequestMethod.PUT), timeout, timeUnit );
     }
 
     public <RequestMessageType extends MessageType, ReplyMessageType extends MessageType>
-        Single<ReplyMessageType> sendRequest(String destination, RequestMessageType request) {
+    Single<HttpRpcReply<ReplyMessageType>> sendRequest(
+                String destination,
+                RequestMessageType request) {
         return sendRequest(destination, request, null, null, null);
     }
 
     public <RequestMessageType extends MessageType, ReplyMessageType extends MessageType>
-        Single<ReplyMessageType> sendRequest(
+    Single<HttpRpcReply<ReplyMessageType>> sendRequest(
                 String destination,
                 RequestMessageType request,
                 long timeout,
@@ -84,25 +100,29 @@ public class HttpAdapter<MessageType> {
     }
 
     public <RequestMessageType extends MessageType, ReplyMessageType extends MessageType>
-        Single<ReplyMessageType> sendRequest(
+    Single<HttpRpcReply<ReplyMessageType>> sendRequest(
                 String destination,
                 RequestMessageType request,
                 HttpRequestMethod requestMethod) {
-        return sendRequest(destination, request, new HttpSpecificInfo(requestMethod), null, null);
+        return sendRequest(destination, request, new HttpSpecificSendingInfo(requestMethod), null, null);
     }
 
     public <RequestMessageType extends MessageType, ReplyMessageType extends MessageType>
-        Single<ReplyMessageType> sendRequest(
+    Single<HttpRpcReply<ReplyMessageType>> sendRequest(
                 String destination,
                 RequestMessageType request,
                 HttpRequestMethod requestMethod,
                 long timeout,
                 TimeUnit timeUnit) {
-        return sendRequest(destination, request, new HttpSpecificInfo(requestMethod), timeout, timeUnit);
+        return sendRequest(destination, request, new HttpSpecificSendingInfo(requestMethod), timeout, timeUnit);
     }
 
     public <RequestMessageType extends MessageType, ReplyMessageType extends MessageType>
-        Single<ReplyMessageType> sendRequest (String destination, RequestMessageType request, HttpSpecificInfo httpInfo, Long timeout, TimeUnit timeUnit) {
+    Single<HttpRpcReply<ReplyMessageType>> sendRequest (
+                String destination,
+                RequestMessageType request,
+                HttpSpecificSendingInfo httpInfo,
+                Long timeout, TimeUnit timeUnit) {
 
         if (timeout!=null) {
             requireNonNull(timeUnit, "timeUnit must not be null if timeout specified");
@@ -118,7 +138,7 @@ public class HttpAdapter<MessageType> {
             throw new IllegalArgumentException("Invalid URL format " + destination,e);
         }
 
-        MessageSendingInfo<URL,HttpSpecificInfo> sendingInfo = new MessageSendingInfo.Builder<URL, HttpSpecificInfo>()
+        OutgoingMessageMetaData<URL,HttpSpecificSendingInfo> sendingInfo = new OutgoingMessageMetaData.Builder<URL, HttpSpecificSendingInfo>()
                 .withTransportSpecificInfo(httpInfo)
                 .withDestination(url)
                 .build();

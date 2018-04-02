@@ -10,7 +10,8 @@
 
 package ch.squaredesk.nova.comm.jms;
 
-import ch.squaredesk.nova.comm.sending.MessageSendingInfo;
+import ch.squaredesk.nova.comm.rpc.RpcReply;
+import ch.squaredesk.nova.comm.sending.OutgoingMessageMetaData;
 import ch.squaredesk.nova.metrics.Metrics;
 import io.reactivex.Single;
 import io.reactivex.disposables.Disposable;
@@ -116,14 +117,15 @@ class JmsAdapterTest {
     void rpcWorks() throws Exception {
         Destination queue = jmsHelper.echoOnQueue("myQueue1");
 
-        TestObserver<String> replyObserver = sut.sendRequest(queue, "aRequest", 500, MILLISECONDS).test().await();
-        replyObserver.assertValue("aRequest");
+        TestObserver<JmsRpcReply<String>> replyObserver = sut.sendRequest(queue, "aRequest", 500, MILLISECONDS).test().await();
+        RpcReply<String, Destination, JmsSpecificInfo> reply = replyObserver.values().get(0);
+        assertThat(reply.result, is("aRequest"));
     }
 
     @Test
     void noReplyWithinTimeoutReturnsTimeoutException() throws Exception {
         Destination queue = jmsHelper.createQueue("myQueue2");
-        TestObserver<String> replyObserver = sut.sendRequest(queue, "aRequest", 250, MILLISECONDS).test().await();
+        TestObserver<JmsRpcReply<String>> replyObserver = sut.sendRequest(queue, "aRequest", 250, MILLISECONDS).test().await();
         replyObserver.assertError(TimeoutException.class);
     }
 
@@ -248,9 +250,10 @@ class JmsAdapterTest {
                         .take(1)
                         .test();
 
-        String reply = sut.sendRequest(queue,replyQueue,"request",null,50, SECONDS)
+        RpcReply<String, Destination, JmsSpecificInfo> reply = sut
+                .sendRequest(queue,replyQueue,"request",null,50, SECONDS)
                 .blockingGet();
-        assertThat(reply,is("request"));
+        assertThat(reply.result,is("request"));
         subscriber.assertEmpty();
 
         jmsHelper.sendMessage(replyQueue, "update");
@@ -333,7 +336,7 @@ class JmsAdapterTest {
 
         sut.sendRequest(jmsHelper.createTempQueue(), "message", null, null, null);
 
-        assertNotNull(rpcClient.messageSendingInfo.transportSpecificInfo.correlationId);
+        assertNotNull(rpcClient.outgoingMessageMetaData.transportSpecificInfo.correlationId);
     }
 
     @Test
@@ -345,7 +348,7 @@ class JmsAdapterTest {
         String request = String.valueOf(UUID.randomUUID());
         sut.sendRequest(queue, request, null, null, null);
 
-        assertThat(rpcClient.messageSendingInfo.destination, sameInstance(queue));
+        assertThat(rpcClient.outgoingMessageMetaData.destination, sameInstance(queue));
         assertThat(rpcClient.request, sameInstance(request));
     }
 
@@ -360,21 +363,21 @@ class JmsAdapterTest {
         private String request;
         private long timeout;
         private TimeUnit timeUnit;
-        private MessageSendingInfo<Destination, JmsSpecificInfo> messageSendingInfo;
+        private OutgoingMessageMetaData<Destination, JmsSpecificInfo> outgoingMessageMetaData;
 
         public MyRpcClient() {
             super("TestRpcClient", null, null, new Metrics());
         }
 
         @Override
-        public <RequestType extends String, ReplyType extends String> Single<ReplyType> sendRequest(
-                RequestType request,
-                MessageSendingInfo<Destination, JmsSpecificInfo> messageSendingInfo,
+        public <ReplyType extends String> Single<JmsRpcReply<ReplyType>> sendRequest(
+                String request,
+                OutgoingMessageMetaData<Destination, JmsSpecificInfo> outgoingMessageMetaData,
                 long timeout, TimeUnit timeUnit) {
             this.request = request;
             this.timeout = timeout;
             this.timeUnit = timeUnit;
-            this.messageSendingInfo = messageSendingInfo;
+            this.outgoingMessageMetaData = outgoingMessageMetaData;
             return Single.never();
         }
     }

@@ -11,7 +11,7 @@
 package ch.squaredesk.nova.comm.kafka;
 
 import ch.squaredesk.nova.comm.retrieving.IncomingMessage;
-import ch.squaredesk.nova.comm.retrieving.IncomingMessageDetails;
+import ch.squaredesk.nova.comm.retrieving.IncomingMessageMetaData;
 import ch.squaredesk.nova.comm.retrieving.MessageReceiver;
 import ch.squaredesk.nova.comm.retrieving.MessageUnmarshaller;
 import ch.squaredesk.nova.metrics.Metrics;
@@ -121,7 +121,7 @@ public class KafkaMessageReceiver<InternalMessageType>
                 .map(topicAndMessage -> {
                     // TODO: what kind of data is interesting for consumers?
                     KafkaSpecificInfo kafkaSpecificInfo = new KafkaSpecificInfo();
-                    IncomingMessageDetails<String, KafkaSpecificInfo> messageDetails = new IncomingMessageDetails.Builder<String, KafkaSpecificInfo>()
+                    IncomingMessageMetaData<String, KafkaSpecificInfo> messageDetails = new IncomingMessageMetaData.Builder<String, KafkaSpecificInfo>()
                             .withDestination(topicAndMessage._1)
                             .withTransportSpecificDetails(kafkaSpecificInfo)
                             .build();
@@ -148,11 +148,11 @@ public class KafkaMessageReceiver<InternalMessageType>
 
     @Override
     public Flowable<IncomingMessage<InternalMessageType, String, KafkaSpecificInfo>> messages(String destination) {
-        Objects.requireNonNull(destination, "destination must not be null");
+        Objects.requireNonNull(destination, "origin must not be null");
         Objects.requireNonNull(messageUnmarshaller, "unmarshaller must not be null");
 
         return allMessagesStream
-                .filter(incomingMessage -> destination.equals(incomingMessage.details.destination))
+                .filter(incomingMessage -> destination.equals(incomingMessage.details.origin))
                 .doOnSubscribe(s -> {
                     scheduler.scheduleDirect(() -> {
                         AtomicInteger subsCounter = topicToSubscriptionCount.computeIfAbsent(

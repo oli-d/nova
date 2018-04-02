@@ -11,7 +11,7 @@
 package ch.squaredesk.nova.comm.jms;
 
 import ch.squaredesk.nova.comm.retrieving.IncomingMessage;
-import ch.squaredesk.nova.comm.retrieving.IncomingMessageDetails;
+import ch.squaredesk.nova.comm.retrieving.IncomingMessageMetaData;
 import ch.squaredesk.nova.comm.retrieving.MessageReceiver;
 import ch.squaredesk.nova.comm.retrieving.MessageUnmarshaller;
 import ch.squaredesk.nova.metrics.Metrics;
@@ -48,13 +48,13 @@ public class JmsMessageReceiver<InternalMessageType>
 
     @Override
     public Flowable<IncomingMessage<InternalMessageType, Destination, JmsSpecificInfo>> messages(Destination destination) {
-        Objects.requireNonNull(destination, "destination must not ne bull");
+        Objects.requireNonNull(destination, "origin must not ne bull");
 
         String destinationId = jmsObjectRepository.idFor(destination);
         return mapDestinationIdToMessageStream.computeIfAbsent(destinationId, key -> {
             Flowable<IncomingMessage<InternalMessageType, Destination, JmsSpecificInfo>> f = Flowable.generate(
                     () -> {
-                        logger.info("Opening connection to destination " + destinationId);
+                        logger.info("Opening connection to origin " + destinationId);
                         metricsCollector.subscriptionCreated(destinationId);
                         return jmsObjectRepository.createMessageConsumer(destination);
                     },
@@ -69,7 +69,7 @@ public class JmsMessageReceiver<InternalMessageType>
                             }
 
                             if (m == null) {
-                                logger.info("Unable to receive message from consumer for destination " + destinationId + ". Closing the connection...");
+                                logger.info("Unable to receive message from consumer for origin " + destinationId + ". Closing the connection...");
                                 emitter.onComplete();
                                 return;
                             }
@@ -98,7 +98,7 @@ public class JmsMessageReceiver<InternalMessageType>
                                 continue;
                             }
 
-                            IncomingMessageDetails<Destination, JmsSpecificInfo> messageDetails =
+                            IncomingMessageMetaData<Destination, JmsSpecificInfo> messageDetails =
                                     messageDetailsCreator.createMessageDetailsFor(m);
                             incomingMessage = new IncomingMessage<>(internalMessage, messageDetails);
                             metricsCollector.messageReceived(destinationId);
@@ -109,7 +109,7 @@ public class JmsMessageReceiver<InternalMessageType>
                         metricsCollector.subscriptionDestroyed(destinationId);
                         jmsObjectRepository.destroyConsumer(consumer);
                         mapDestinationIdToMessageStream.remove(destinationId);
-                        logger.info("Closed connection to destination " + destinationId);
+                        logger.info("Closed connection to origin " + destinationId);
                     }
             );
             return f.subscribeOn(Schedulers.io())

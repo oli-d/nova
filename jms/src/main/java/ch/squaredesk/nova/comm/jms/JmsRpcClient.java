@@ -11,16 +11,17 @@
 package ch.squaredesk.nova.comm.jms;
 
 import ch.squaredesk.nova.comm.rpc.RpcClient;
-import ch.squaredesk.nova.comm.sending.MessageSendingInfo;
+import ch.squaredesk.nova.comm.sending.OutgoingMessageMetaData;
 import ch.squaredesk.nova.metrics.Metrics;
 import io.reactivex.Single;
 
 import javax.jms.Destination;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import static java.util.Objects.requireNonNull;
 
-public class JmsRpcClient<InternalMessageType> extends RpcClient<Destination, InternalMessageType, JmsSpecificInfo> {
+public class JmsRpcClient<InternalMessageType> extends RpcClient<Destination, InternalMessageType, JmsSpecificInfo, JmsSpecificInfo> {
     private final JmsMessageSender<InternalMessageType> messageSender;
     private final JmsMessageReceiver<InternalMessageType> messageReceiver;
 
@@ -34,33 +35,38 @@ public class JmsRpcClient<InternalMessageType> extends RpcClient<Destination, In
     }
 
     @Override
-    public <RequestType extends InternalMessageType, ReplyType extends InternalMessageType> Single<ReplyType> sendRequest(
-            RequestType request,
-            MessageSendingInfo<Destination, JmsSpecificInfo> messageSendingInfo,
+    public <ReplyType extends InternalMessageType> Single<JmsRpcReply<ReplyType>> sendRequest(
+            InternalMessageType request,
+            OutgoingMessageMetaData<Destination, JmsSpecificInfo> outgoingMessageMetaData,
             long timeout, TimeUnit timeUnit) {
         requireNonNull(timeUnit, "timeUnit must not be null");
 
         // listen to RPC reply. This must be done BEFORE sending the request, otherwise we could miss a very fast response
         // if the Observable is hot
-        Single replySingle = messageReceiver.messages(messageSendingInfo.transportSpecificInfo.replyDestination)
+        Single<JmsRpcReply<ReplyType>> replySingle =
+                messageReceiver.messages(outgoingMessageMetaData.transportSpecificInfo.replyDestination)
                 .filter(incomingMessage ->
                         incomingMessage.details.transportSpecificDetails != null &&
-                        messageSendingInfo.transportSpecificInfo.correlationId.equals(incomingMessage.details.transportSpecificDetails.correlationId))
+                        outgoingMessageMetaData.transportSpecificInfo.correlationId.equals(incomingMessage.details.transportSpecificDetails.correlationId))
                 .take(1)
-                .map(incomingMessage -> incomingMessage.message)
                 .doOnNext(reply -> metricsCollector.rpcCompleted(request, reply))
-                .single((InternalMessageType) new Object()); // TODO a bit ugly, isn't it? Is there a nicer way? But: we should never be able to run into this
+                .map(incomingMessage -> new JmsRpcReply<>((ReplyType)incomingMessage.message, incomingMessage.details))
+                .single(new JmsRpcReply<>(null, null)); // TODO a bit ugly, isn't it? Is there a nicer way? But: we should never be able to run into this
 
         // send message sync
         Throwable sendError = messageSender.sendMessage(
-                messageSendingInfo.destination, request, messageSendingInfo.transportSpecificInfo).blockingGet();
+                outgoingMessageMetaData.destination, request, outgoingMessageMetaData.transportSpecificInfo).blockingGet();
         if (sendError != null) {
             return Single.error(sendError);
         }
 
-        // and either timeout or return RPC reply
-        Single timeoutSingle = Single.create(s -> metricsCollector.rpcTimedOut(request)).timeout(timeout, timeUnit);
-
-        return replySingle.ambWith(timeoutSingle);
+        return replySingle
+                .timeout(timeout, timeUnit)
+                .doOnError(t -> {
+                    if (t instanceof TimeoutException) {
+                        metricsCollector.rpcTimedOut(request);
+                    }
+                });
     }
+
 }

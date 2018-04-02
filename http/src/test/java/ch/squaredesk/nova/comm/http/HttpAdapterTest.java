@@ -11,11 +11,13 @@
 
 package ch.squaredesk.nova.comm.http;
 
+import ch.squaredesk.nova.comm.rpc.RpcReply;
 import io.reactivex.observers.TestObserver;
 import org.glassfish.grizzly.http.server.HttpServer;
 import org.junit.jupiter.api.*;
 
 import java.math.BigDecimal;
+import java.net.URL;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 
@@ -23,6 +25,8 @@ import static java.util.concurrent.TimeUnit.MICROSECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.is;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @Tag("medium")
@@ -46,7 +50,7 @@ class HttpAdapterTest {
     @Test
     void nullDestinationThrows() {
         Throwable t = assertThrows(IllegalArgumentException.class,
-                () -> sut.sendRequest(null,new BigDecimal("1.0")));
+                () -> sut.sendRequest(null, new BigDecimal("1.0")));
         assertThat(t.getMessage(), containsString("Invalid URL format"));
     }
 
@@ -59,7 +63,7 @@ class HttpAdapterTest {
 
     @Test
     void notExistingDestinationThrows() throws Exception {
-        TestObserver<BigDecimal> observer = sut
+        TestObserver<HttpRpcReply<BigDecimal>> observer = sut
                 .sendGetRequest("http://cvf.bn.c")
                 .test();
         observer.await(5, SECONDS);
@@ -68,12 +72,11 @@ class HttpAdapterTest {
 
     @Test
     void noReplyWithinTimeoutThrows() throws Exception {
-        TestObserver<BigDecimal> observer = sut
-                .sendGetRequest("https://www.nytimes.com",10L,MICROSECONDS)
+        TestObserver<HttpRpcReply<BigDecimal>> observer = sut
+                .sendGetRequest("https://www.nytimes.com", 10L, MICROSECONDS)
                 .test();
         observer.await(1, SECONDS);
-        observer.assertError(ExecutionException.class);
-        Assertions.assertTrue(observer.errors().get(0).getCause() instanceof TimeoutException);
+        observer.assertError(TimeoutException.class);
     }
 
     @Test
@@ -83,11 +86,15 @@ class HttpAdapterTest {
                 .setHttpServer(httpServer)
                 .build();
         try {
-            TestObserver<String> observer = commAdapter
+            TestObserver<HttpRpcReply<String>> observer = commAdapter
                     .sendPostRequest("http://httpbin.org/get", "{ myTest: \"value\"}")
                     .test();
             observer.await(40, SECONDS);
-            observer.assertError(throwable -> throwable.getMessage().contains("METHOD NOT ALLOWED"));
+            observer.assertValueCount(1);
+            HttpRpcReply<String> reply = observer.values().get(0);
+            assertNotNull(reply);
+            assertThat(reply.metaData.transportSpecificDetails.statusCode, is(405));
+            assertThat(reply.result, containsString("Method Not Allowed"));
         } finally {
             commAdapter.shutdown();
         }
@@ -100,9 +107,13 @@ class HttpAdapterTest {
                 .setHttpServer(httpServer)
                 .build();
         try {
-            TestObserver<String> observer = commAdapter.sendGetRequest("http://httpbin.org/post").test();
+            TestObserver<HttpRpcReply<String>> observer = commAdapter.sendGetRequest("http://httpbin.org/post").test();
             observer.await(40, SECONDS);
-            observer.assertError(throwable -> throwable.getMessage().contains("METHOD NOT ALLOWED"));
+            observer.assertValueCount(1);
+            HttpRpcReply<String> reply = observer.values().get(0);
+            assertNotNull(reply);
+            assertThat(reply.metaData.transportSpecificDetails.statusCode, is(405));
+            assertThat(reply.result, containsString("Method Not Allowed"));
         } finally {
             commAdapter.shutdown();
         }
@@ -114,13 +125,13 @@ class HttpAdapterTest {
                 .setHttpServer(httpServer)
                 .build();
         try {
-            TestObserver<String> observer = xxx
+            TestObserver<HttpRpcReply<String>> observer = xxx
                     .sendRequest("http://httpbin.org/ip", "1", HttpRequestMethod.GET)
                     .test();
 
             observer.await(40, SECONDS);
             observer.assertComplete();
-            observer.assertValue(value -> value.contains("\"origin\":"));
+            observer.assertValue(value -> value.result.contains("\"origin\":"));
         } finally {
             xxx.shutdown();
         }

@@ -95,7 +95,7 @@ and its overloaded version
 Single<ReplyType> sendGetRequest(String destination, long timeout, TimeUnit timeUnit)
 ```
 
-Those methods allow you to send an HTTP GET request to the passed destination and return a ```Single``` which either 
+Those methods allow you to send an HTTP GET request to the passed origin and return a ```Single``` which either 
 contains the server reply or an eventual error. The return value is created by the ```messageUnmarshaller``` you passed 
 into the```HttpAdapter```'s builder, which will be fed the HTTP response body.
 
@@ -126,7 +126,7 @@ public Single<ReplyType> sendRequest (String destination, RequestType request, H
 
 In fact, all the previously mentioned methods are just convenience methods that internally invoke this one. Using this 
 method you have full control over your request. The parameters are
-* ```destination``` - the URL you want to send the request to
+* ```origin``` - the URL you want to send the request to
 * ```request type``` - the object that should be sent in the HTTP request body. Must be a subtype of the type, your 
 ```HttpAdapter``` was parameterized with 
 * ```httpInfo``` - HTTP protocol specific sending information, containing
@@ -143,7 +143,7 @@ For the RPC server side, the ```HttpAdapter``` offers only a single method:
 public Flowable<RpcInvocation> requests (String destination, BackpressureStrategy backpressureStrategy)
 ```
 
-With this method you can retrieve a ```Flowable``` of all incoming RPC request. The ```destination``` you pass in should
+With this method you can retrieve a ```Flowable``` of all incoming RPC request. The ```origin``` you pass in should
 be relative to your ```HttpAdapter```'s base URL. E.g. if your ```HttpAdapter``` listens to 
 ```http://0.0.0.0:12345``` and you want to process all requests sent to ```http://0.0.0.0:12345/myEndpoint```, just 
 invoke the method like this:

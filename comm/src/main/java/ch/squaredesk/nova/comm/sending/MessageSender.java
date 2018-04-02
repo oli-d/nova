@@ -39,7 +39,7 @@ public abstract class MessageSender<DestinationType, InternalMessageType, Transp
      * is a Completable, just signalling that the message has been sent away. Using sync protocols / RPcs, the return value
      * usually is a Single that contains the RPC result
      */
-    protected abstract Completable doSend(TransportMessageType transportMessage, MessageSendingInfo<DestinationType, TransportSpecificInfoType> messageSendingInfo);
+    protected abstract Completable doSend(TransportMessageType transportMessage, OutgoingMessageMetaData<DestinationType, TransportSpecificInfoType> outgoingMessageMetaData);
 
 
     public Completable sendMessage(
@@ -47,12 +47,12 @@ public abstract class MessageSender<DestinationType, InternalMessageType, Transp
             InternalMessageType message,
             TransportSpecificInfoType transportSpecificSendingInfo) {
 
-        requireNonNull(destination, "destination must not be null");
+        requireNonNull(destination, "origin must not be null");
         TransportMessageType transportMessage;
         try {
             transportMessage = message == null ? null : messageMarshaller.marshal(message);
-            MessageSendingInfo<DestinationType, TransportSpecificInfoType> msi =
-                    new MessageSendingInfo.Builder<DestinationType, TransportSpecificInfoType>()
+            OutgoingMessageMetaData<DestinationType, TransportSpecificInfoType> msi =
+                    new OutgoingMessageMetaData.Builder<DestinationType, TransportSpecificInfoType>()
                             .withDestination(destination)
                             .withTransportSpecificInfo(transportSpecificSendingInfo)
                             .build();
