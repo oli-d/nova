@@ -14,7 +14,6 @@ import ch.squaredesk.nova.comm.retrieving.IncomingMessageMetaData;
 import ch.squaredesk.nova.comm.sending.OutgoingMessageMetaData;
 import ch.squaredesk.nova.metrics.Metrics;
 import io.reactivex.Single;
-import sun.security.krb5.internal.crypto.Des;
 
 import java.util.concurrent.TimeUnit;
 

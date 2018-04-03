@@ -13,8 +13,6 @@ package ch.squaredesk.nova.comm.sending;
 import ch.squaredesk.nova.comm.TestTransportInfo;
 import ch.squaredesk.nova.metrics.Metrics;
 import io.reactivex.Completable;
-import io.reactivex.functions.Predicate;
-import io.reactivex.observers.TestObserver;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -22,8 +20,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.*;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.hamcrest.Matchers.containsString;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class MessageSenderTest {
     private MessageSender<String, String, String, OutgoingMessageMetaData<String, TestTransportInfo>> sut;
