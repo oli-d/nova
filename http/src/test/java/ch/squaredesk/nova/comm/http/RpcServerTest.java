@@ -148,7 +148,7 @@ class RpcServerTest {
         String urlAsString = "http://" + rsc.interfaceName + ":" + rsc.port + path + "?p=";
         OutgoingMessageMetaData meta = new OutgoingMessageMetaData(
                 new URL(urlAsString),
-                new SendingInfo(HttpRequestMethod.POST));
+                new SendInfo(HttpRequestMethod.POST));
 
         RpcReply<String> reply = rpcClient.sendRequest("{}", meta, 15, TimeUnit.SECONDS).blockingGet();
         assertThat(reply.result, containsString("Internal server error"));
@@ -162,7 +162,7 @@ class RpcServerTest {
 
                 OutgoingMessageMetaData meta = new OutgoingMessageMetaData(
                         new URL(urlAsString),
-                        new SendingInfo(HttpRequestMethod.POST));
+                        new SendInfo(HttpRequestMethod.POST));
 
                 rpcClient.sendRequest("{}", meta, 15, TimeUnit.SECONDS).blockingGet();
             } catch (Exception e) {

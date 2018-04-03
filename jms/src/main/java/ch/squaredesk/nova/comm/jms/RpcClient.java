@@ -38,6 +38,10 @@ public class RpcClient<InternalMessageType> extends ch.squaredesk.nova.comm.rpc.
             OutgoingMessageMetaData outgoingMessageMetaData,
             long timeout, TimeUnit timeUnit) {
         requireNonNull(timeUnit, "timeUnit must not be null");
+        requireNonNull(outgoingMessageMetaData, "metaData must not be null");
+        requireNonNull(outgoingMessageMetaData.details, "metaData.details must not be null");
+        requireNonNull(outgoingMessageMetaData.details.correlationId, "correlationId must not be null");
+        requireNonNull(outgoingMessageMetaData.details.replyDestination, "replyDestination must not be null");
 
         // listen to RPC reply. This must be done BEFORE sending the request, otherwise we could miss a very fast response
         // if the Observable is hot

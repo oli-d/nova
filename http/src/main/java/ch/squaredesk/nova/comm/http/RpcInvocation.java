@@ -16,10 +16,10 @@ import ch.squaredesk.nova.tuples.Pair;
 import java.util.function.Consumer;
 
 public class RpcInvocation<InternalMessageType>
-        extends ch.squaredesk.nova.comm.rpc.RpcInvocation<InternalMessageType, SendingInfo, InternalMessageType, RetrievalInfo> {
+        extends ch.squaredesk.nova.comm.rpc.RpcInvocation<InternalMessageType, SendInfo, InternalMessageType, RetrievalInfo> {
 
     RpcInvocation(InternalMessageType request,
-                         SendingInfo transportSpecificInfo,
+                         SendInfo transportSpecificInfo,
                          Consumer<Pair<InternalMessageType, RetrievalInfo>> replyConsumer,
                          Consumer<Throwable> errorConsumer) {
         super(request, transportSpecificInfo, replyConsumer, errorConsumer);

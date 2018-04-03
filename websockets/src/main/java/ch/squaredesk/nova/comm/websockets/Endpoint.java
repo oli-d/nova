@@ -10,7 +10,6 @@
 package ch.squaredesk.nova.comm.websockets;
 
 import ch.squaredesk.nova.comm.retrieving.IncomingMessage;
-import ch.squaredesk.nova.comm.retrieving.IncomingMessageMetaData;
 import ch.squaredesk.nova.tuples.Pair;
 import io.reactivex.Flowable;
 
@@ -37,18 +36,13 @@ public class Endpoint<MessageType>  {
                 .connectingSockets;
     }
 
-    public Flowable<IncomingMessage<MessageType, String, WebSocketSpecificDetails>> messages () {
+    public Flowable<IncomingMessage<MessageType, IncomingMessageMetaData<MessageType>>> messages () {
         return streamSource
                 .messages
                 .map(tuple -> {
-                    WebSocketSpecificDetails webSocketSpecificDetails =
-                            new WebSocketSpecificDetails(tuple._3);
-                    IncomingMessageMetaData<String, WebSocketSpecificDetails> incomingMessageDetails =
-                            new IncomingMessageMetaData.Builder<String, WebSocketSpecificDetails>()
-                                    .withDestination(tuple._2)
-                                    .withTransportSpecificDetails(webSocketSpecificDetails)
-                                    .build();
-                    return new IncomingMessage<>(tuple._1, incomingMessageDetails);
+                    RetrieveInfo retrieveInfo = new RetrieveInfo(tuple._3);
+                    IncomingMessageMetaData<MessageType> meta = new IncomingMessageMetaData<>(tuple._2, retrieveInfo);
+                    return new IncomingMessage<>(tuple._1, meta);
                 });
     }
 

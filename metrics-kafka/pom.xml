@@ -15,7 +15,7 @@
 	<parent>
 		<groupId>ch.squaredesk.nova</groupId>
 		<artifactId>parentpom</artifactId>
-		<version>4.0.0-beta-2</version>
+		<version>5.0.0</version>
 		<relativePath>../parentpom</relativePath>
 	</parent>
 
@@ -36,7 +36,7 @@
 		<dependency>
 			<groupId>com.github.charithe</groupId>
 			<artifactId>kafka-junit</artifactId>
-			<version>4.1.0</version>
+			<version>4.1.1</version>
 			<scope>test</scope>
 		</dependency>
 	</dependencies>

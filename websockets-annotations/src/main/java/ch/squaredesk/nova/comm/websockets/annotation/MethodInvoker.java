@@ -12,8 +12,8 @@
 package ch.squaredesk.nova.comm.websockets.annotation;
 
 import ch.squaredesk.nova.comm.retrieving.IncomingMessage;
+import ch.squaredesk.nova.comm.websockets.IncomingMessageMetaData;
 import ch.squaredesk.nova.comm.websockets.MetricsCollector;
-import ch.squaredesk.nova.comm.websockets.WebSocketSpecificDetails;
 import io.reactivex.functions.Consumer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,7 +21,7 @@ import org.slf4j.LoggerFactory;
 import java.lang.reflect.Method;
 
 
-class MethodInvoker<MessageType> implements Consumer<IncomingMessage<MessageType, String, WebSocketSpecificDetails>> {
+class MethodInvoker<MessageType> implements Consumer<IncomingMessage<MessageType, IncomingMessageMetaData<MessageType>>> {
     private final static Logger LOGGER = LoggerFactory.getLogger(MethodInvoker.class);
     private final Object objectToInvokeMethodOn;
     private final Method methodToInvoke;
@@ -34,10 +34,10 @@ class MethodInvoker<MessageType> implements Consumer<IncomingMessage<MessageType
     }
 
     @Override
-    public void accept(IncomingMessage<MessageType, String, WebSocketSpecificDetails> message) throws Exception {
+    public void accept(IncomingMessage<MessageType, IncomingMessageMetaData<MessageType>> message) throws Exception {
         // FIXME: timing metrics
         try {
-            methodToInvoke.invoke(objectToInvokeMethodOn, message.message, message.metaData.transportSpecificDetails.webSocket);
+            methodToInvoke.invoke(objectToInvokeMethodOn, message.message, message.metaData.details.webSocket);
         } catch (Throwable t) {
             LOGGER.error("Unable to invoke handler for message " + message, t);
         }

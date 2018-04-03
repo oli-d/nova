@@ -8,13 +8,13 @@
  *   https://squaredesk.ch/license/oss/LICENSE
  *
  */
+package ch.squaredesk.nova.comm.websockets;
 
-package ch.squaredesk.nova.comm.jms;
 
-import javax.jms.Destination;
+public class RetrieveInfo<MessageType> {
+    public final WebSocket<MessageType> webSocket;
 
-public class IncomingMessageMetaData extends ch.squaredesk.nova.comm.retrieving.IncomingMessageMetaData<Destination, RetrieveInfo> {
-    IncomingMessageMetaData(Destination origin, RetrieveInfo details) {
-        super(origin, details);
+    public RetrieveInfo(WebSocket<MessageType> webSocket) {
+        this.webSocket = webSocket;
     }
 }

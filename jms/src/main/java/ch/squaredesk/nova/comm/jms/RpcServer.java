@@ -73,7 +73,7 @@ public class RpcServer<InternalMessageType> extends ch.squaredesk.nova.comm.rpc.
 
     private <RequestType extends InternalMessageType, ReplyType extends InternalMessageType>
         Consumer<ReplyType> createReplyHandlerFor(IncomingMessage<RequestType, IncomingMessageMetaData> request) {
-        JmsSpecificInfo sendingInfo = new JmsSpecificInfo(
+        SendInfo sendingInfo = new SendInfo(
                 request.metaData.details.correlationId,
                 null,
                 null,
@@ -81,11 +81,11 @@ public class RpcServer<InternalMessageType> extends ch.squaredesk.nova.comm.rpc.
                 null,
                 null);
         OutgoingMessageMetaData meta = new OutgoingMessageMetaData(request.metaData.details.replyDestination, sendingInfo);
-        return reply -> messageSender.doSend(reply, meta); // FIXME: bug: missing subscribe.
+        return reply -> messageSender.doSend(reply, meta).subscribe();
     }
 
     private Consumer<Throwable> createErrorReplyHandlerFor(IncomingMessage<InternalMessageType, IncomingMessageMetaData> request) {
-        JmsSpecificInfo sendingInfo = new JmsSpecificInfo(
+        SendInfo sendingInfo = new SendInfo(
                 request.metaData.details.correlationId,
                 null,
                 null,
@@ -93,7 +93,7 @@ public class RpcServer<InternalMessageType> extends ch.squaredesk.nova.comm.rpc.
                 null,
                 null);
         OutgoingMessageMetaData meta = new OutgoingMessageMetaData(request.metaData.details.replyDestination, sendingInfo);
-        return error -> messageSender.doSend(errorReplyFactory.apply(error), meta);
+        return error -> messageSender.doSend(errorReplyFactory.apply(error), meta).subscribe();
     }
 
 

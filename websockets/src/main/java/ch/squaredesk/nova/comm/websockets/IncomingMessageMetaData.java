@@ -9,14 +9,15 @@
  *
  */
 
-package ch.squaredesk.nova.comm.kafka;
+package ch.squaredesk.nova.comm.websockets;
 
-public class IncomingMessageMetaData extends ch.squaredesk.nova.comm.retrieving.IncomingMessageMetaData<String, RetrieveInfo> {
+public class IncomingMessageMetaData<MessageType>
+        extends ch.squaredesk.nova.comm.retrieving.IncomingMessageMetaData<String, RetrieveInfo<MessageType>> {
     public IncomingMessageMetaData(String origin) {
         this(origin, null);
     }
 
-    public IncomingMessageMetaData(String origin, RetrieveInfo sendDetails) {
+    public IncomingMessageMetaData(String origin, RetrieveInfo<MessageType> sendDetails) {
         super(origin, sendDetails);
     }
 }

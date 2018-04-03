@@ -107,7 +107,7 @@ class RpcServerTest {
         assertThat(mySender.sendingInfo.destination, sameInstance(requestMessage.getJMSReplyTo()));
         assertThat(mySender.sendingInfo.details.correlationId, sameInstance(requestMessage.getJMSCorrelationID()));
         assertNull(mySender.sendingInfo.details.replyDestination);
-        assertThat(mySender.sendingInfo.details.isRpcReply(), is(true));
+        assertNotNull(mySender.sendingInfo.details.correlationId);
     }
 
     @Test
@@ -127,7 +127,7 @@ class RpcServerTest {
         assertThat(mySender.sendingInfo.destination, sameInstance(requestMessage.getJMSReplyTo()));
         assertThat(mySender.sendingInfo.details.correlationId, sameInstance(requestMessage.getJMSCorrelationID()));
         assertNull(mySender.sendingInfo.details.replyDestination);
-        assertThat(mySender.sendingInfo.details.isRpcReply(), is(true));
+        assertNotNull(mySender.sendingInfo.details.correlationId);
     }
 
 
@@ -141,10 +141,10 @@ class RpcServerTest {
 
 
         @Override
-        public Completable doSend(String message, OutgoingMessageMetaData sendingInfo) {
+        public Completable doSend(String message, OutgoingMessageMetaData meta) {
             this.message = message;
-            this.sendingInfo = sendingInfo;
-            return super.doSend(message, sendingInfo);
+            this.sendingInfo = meta;
+            return super.doSend(message, meta);
         }
     }
 }

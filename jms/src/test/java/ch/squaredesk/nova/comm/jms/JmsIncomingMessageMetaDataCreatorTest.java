@@ -54,7 +54,7 @@ class JmsIncomingMessageMetaDataCreatorTest {
         Message message = jmsHelper.createMessage("payload");
         message.setJMSDestination(incomingDestination);
 
-        IncomingMessageMetaData<Destination, JmsSpecificInfo> details = sut.createIncomingMessageMetaData(message);
+        IncomingMessageMetaData<Destination, RetrieveInfo> details = sut.createIncomingMessageMetaData(message);
         assertThat(details.origin, is(incomingDestination));
     }
 }

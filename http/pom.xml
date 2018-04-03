@@ -15,7 +15,7 @@
 	<parent>
 		<groupId>ch.squaredesk.nova</groupId>
 		<artifactId>parentpom</artifactId>
-		<version>4.0.0-beta-2</version>
+		<version>5.0.0</version>
 		<relativePath>../parentpom</relativePath>
 	</parent>
 
@@ -32,7 +32,7 @@
         <dependency>
             <groupId>ch.squaredesk.nova</groupId>
             <artifactId>test-utils</artifactId>
-            <version>4.0.0-beta-2</version>
+            <version>5.0.0</version>
             <scope>test</scope>
         </dependency>
 

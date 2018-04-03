@@ -43,11 +43,10 @@ public class KafkaMessageReceiver<InternalMessageType>
     protected KafkaMessageReceiver(String identifier,
                                    Properties consumerProperties,
                                    MessageUnmarshaller<String, InternalMessageType> messageUnmarshaller,
+                                   long pollTimeout, TimeUnit pollTimeUnit,
                                    Metrics metrics) {
         super(identifier, messageUnmarshaller, metrics);
 
-        long pollTimeout = 1; // TODO: configurable
-        TimeUnit pollTimeUnit = TimeUnit.SECONDS;  // TODO: configurable
         AtomicBoolean shutdown = new AtomicBoolean(false);
 
         Function<KafkaConsumer<String, String>, ConsumerRecords<String, String>> poller = consumer -> {
@@ -118,8 +117,7 @@ public class KafkaMessageReceiver<InternalMessageType>
                 .subscribeOn(scheduler)
                 .concatMap(this::unmarshall)
                 .map(topicAndMessage -> {
-                    // TODO: what kind of data is interesting for consumers?
-                    KafkaSpecificInfo kafkaSpecificInfo = new KafkaSpecificInfo();
+                    RetrieveInfo kafkaSpecificInfo = new RetrieveInfo();
                     IncomingMessageMetaData metaData = new IncomingMessageMetaData(topicAndMessage._1, kafkaSpecificInfo);
                     return new IncomingMessage<>(topicAndMessage._2, metaData);
                 })

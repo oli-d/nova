@@ -32,7 +32,7 @@ public class MessageSender<InternalMessageType> extends ch.squaredesk.nova.comm.
     }
 
     @Override
-    public Completable doSend(InternalMessageType message, OutgoingMessageMetaData sendingInfo) {
+    public Completable doSend(InternalMessageType message, OutgoingMessageMetaData meta) {
         requireNonNull(message, "message must not be null");
 
         String messageAsText;
@@ -46,28 +46,31 @@ public class MessageSender<InternalMessageType> extends ch.squaredesk.nova.comm.
         return Completable.create(s -> {
             try {
                 TextMessage textMessage = jmsObjectRepository.createTextMessage();
-                if (sendingInfo.details != null) {
-                    textMessage.setJMSCorrelationID(sendingInfo.details.correlationId);
-                    textMessage.setJMSReplyTo(sendingInfo.details.replyDestination);
-                    if (sendingInfo.details.customHeaders != null) {
-                        for (String key : sendingInfo.details.customHeaders.keySet()) {
-                            textMessage.setObjectProperty(key, sendingInfo.details.customHeaders.get(key));
+                if (meta.details != null) {
+                    textMessage.setJMSCorrelationID(meta.details.correlationId);
+                    textMessage.setJMSReplyTo(meta.details.replyDestination);
+                    if (meta.details.customHeaders != null) {
+                        for (String key : meta.details.customHeaders.keySet()) {
+                            textMessage.setObjectProperty(key, meta.details.customHeaders.get(key));
                         }
                     }
                 }
                 textMessage.setText(messageAsText);
 
-                MessageProducer producer = jmsObjectRepository.createMessageProducer(sendingInfo.destination);
-                producer.send(textMessage,
-                        sendingInfo.details.deliveryMode,
-                        sendingInfo.details.priority,
-                        sendingInfo.details.timeToLive);
-
+                MessageProducer producer = jmsObjectRepository.createMessageProducer(meta.destination);
+                if (meta.details == null) {
+                    producer.send(textMessage);
+                } else {
+                    producer.send(textMessage,
+                            meta.details.deliveryMode,
+                            meta.details.priority,
+                            meta.details.timeToLive);
+                }
                 s.onComplete();
             } catch (Throwable t) {
                 s.onError(t);
             }
-        }).subscribeOn(JmsAdapter.jmsSubscriptionScheduler);
+        })/*.subscribeOn(JmsAdapter.jmsSubscriptionScheduler)*/;
     }
 
 }

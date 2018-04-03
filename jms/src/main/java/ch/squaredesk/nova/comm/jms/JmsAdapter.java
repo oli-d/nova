@@ -13,16 +13,13 @@ package ch.squaredesk.nova.comm.jms;
 import ch.squaredesk.nova.comm.CommAdapterBuilder;
 import io.reactivex.Completable;
 import io.reactivex.Flowable;
-import io.reactivex.Scheduler;
 import io.reactivex.Single;
-import io.reactivex.schedulers.Schedulers;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.jms.*;
 import java.util.Map;
 import java.util.concurrent.ConcurrentLinkedDeque;
-import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -32,11 +29,6 @@ import static java.util.Objects.requireNonNull;
 
 public class JmsAdapter<InternalMessageType> {
     private static final Logger logger = LoggerFactory.getLogger(JmsAdapter.class);
-    final static Scheduler jmsSubscriptionScheduler = Schedulers.from(Executors.newSingleThreadExecutor(runnable -> {
-        Thread t = new Thread(runnable, "JmsAdapter[Subscription]");
-        t.setDaemon(true);
-        return t;
-    }));
 
     private final MessageSender<InternalMessageType> messageSender;
     private final MessageReceiver<InternalMessageType> messageReceiver;
@@ -52,7 +44,7 @@ public class JmsAdapter<InternalMessageType> {
     private final TimeUnit defaultRpcTimeUnit;
 
 
-    protected JmsAdapter(Builder<InternalMessageType> builder) {
+    JmsAdapter(Builder<InternalMessageType> builder) {
         this.messageReceiver = builder.messageReceiver;
         this.messageSender = builder.messageSender;
         this.rpcServer = builder.rpcServer;
@@ -92,7 +84,7 @@ public class JmsAdapter<InternalMessageType> {
             Long timeToLive) {
 
         requireNonNull(message, "message must not be null");
-        JmsSpecificInfo jmsSpecificSendingInfo = new JmsSpecificInfo(
+        SendInfo jmsSpecificSendingInfo = new SendInfo(
                 null,
                 null,
                 customHeaders,
@@ -121,7 +113,7 @@ public class JmsAdapter<InternalMessageType> {
     //                    //
     ////////////////////////
     public Flowable<RpcInvocation<InternalMessageType>> requests(Destination destination) {
-        requireNonNull(destination, "origin must not be null");
+        requireNonNull(destination, "destination must not be null");
         return rpcServer.requests(destination);
     }
 
@@ -130,11 +122,10 @@ public class JmsAdapter<InternalMessageType> {
     // RPC client methods //
     //                    //
     ////////////////////////
-    private <RequestType extends InternalMessageType, ReplyType extends InternalMessageType>
-        Single<RpcReply<ReplyType>> sendRequest(
+    private <ReplyType extends InternalMessageType> Single<RpcReply<ReplyType>> sendRequest(
             Destination destination,
             Destination replyDestination,
-            RequestType request,
+            InternalMessageType request,
             Map<String, Object> customHeaders,
             Integer deliveryMode, Integer priority, Long timeToLive,
             Long timeout, TimeUnit timeUnit) {
@@ -153,7 +144,7 @@ public class JmsAdapter<InternalMessageType> {
         // it doesn't make sense to let request messages live longer than timeout:
         timeToLiveToUse = Math.min(timeToLiveToUse, timeUnit.toMillis(timeout));
         String correlationId = correlationIdGenerator.get();
-        JmsSpecificInfo jmsSpecificInfo = new JmsSpecificInfo(
+        SendInfo jmsSpecificInfo = new SendInfo(
                 correlationId, replyDestination, customHeaders, deliveryModeToUse, priorityToUse, timeToLiveToUse);
         OutgoingMessageMetaData sendingInfo = new OutgoingMessageMetaData(destination, jmsSpecificInfo);
 
@@ -161,46 +152,41 @@ public class JmsAdapter<InternalMessageType> {
                 .doOnError(t -> examineSendExceptionForDeadDestinationAndInformListener(t, destination));
     }
 
-    public <RequestType extends InternalMessageType, ReplyType extends InternalMessageType>
-        Single<RpcReply<ReplyType>> sendRequest(
+    public <ReplyType extends InternalMessageType> Single<RpcReply<ReplyType>> sendRequest(
             Destination destination,
             Destination replyDestination,
-            RequestType message,
+            InternalMessageType message,
             Map<String, Object> customHeaders,
             long timeout, TimeUnit timeUnit) {
 
         return sendRequest(destination, replyDestination, message, customHeaders, null, null, null,timeout, timeUnit);
     }
 
-    public <RequestType extends InternalMessageType, ReplyType extends InternalMessageType>
-        Single<RpcReply<ReplyType>> sendRequest(
+    public <ReplyType extends InternalMessageType> Single<RpcReply<ReplyType>> sendRequest(
             Destination destination,
-            RequestType message,
+            InternalMessageType message,
             Map<String, Object> customHeaders,
             Long timeout, TimeUnit timeUnit) {
 
         return sendRequest(destination, jmsObjectRepository.getPrivateTempQueue(), message, customHeaders, null, null, null, timeout, timeUnit);
     }
 
-    public <RequestType extends InternalMessageType, ReplyType extends InternalMessageType>
-        Single<RpcReply<ReplyType>> sendRequest(
+    public <ReplyType extends InternalMessageType> Single<RpcReply<ReplyType>> sendRequest(
             Destination destination,
-            RequestType message,
+            InternalMessageType message,
             Map<String, Object> customHeaders) {
         return sendRequest(destination, jmsObjectRepository.getPrivateTempQueue(), message, customHeaders, null, null, null, null, null);
     }
 
-    public <RequestType extends InternalMessageType, ReplyType extends InternalMessageType>
-        Single<RpcReply<ReplyType>> sendRequest(
+    public <ReplyType extends InternalMessageType> Single<RpcReply<ReplyType>> sendRequest(
             Destination destination,
-            RequestType message,
+            InternalMessageType message,
             long timeout, TimeUnit timeUnit) {
         return sendRequest(destination, jmsObjectRepository.getPrivateTempQueue(), message, null, null, null, null, timeout, timeUnit);
     }
-    public <RequestType extends InternalMessageType, ReplyType extends InternalMessageType>
-        Single<RpcReply<ReplyType>> sendRequest(
+    public <ReplyType extends InternalMessageType> Single<RpcReply<ReplyType>> sendRequest(
             Destination destination,
-            RequestType message) {
+            InternalMessageType message) {
         return sendRequest(destination, jmsObjectRepository.getPrivateTempQueue(), message, null, null, null, null, null, null);
     }
 
@@ -222,7 +208,7 @@ public class JmsAdapter<InternalMessageType> {
             try {
                 consumer.accept(deadDestination);
             } catch (Throwable t) {
-                logger.error("An error occurred trying to inform listener about dead origin " + deadDestination, t);
+                logger.error("An error occurred trying to inform listener about dead destination " + deadDestination, t);
             }
         });
     }
@@ -234,7 +220,7 @@ public class JmsAdapter<InternalMessageType> {
     }
 
     private static boolean exceptionSignalsDestinationDown(Throwable errorToExamine) {
-        // TODO: is there a proper way to determine this???!?!?!?! Works for ActiveMQ, but how are other brokers behave?
+        // TODO: is there a proper way to determine this???!?!?!?! Works for ActiveMQ, but how do other brokers behave?
         Function<Throwable, Boolean> testFunc = ex ->
                 (ex instanceof InvalidDestinationException) ||
                         (String.valueOf(ex).contains("does not exist"));
@@ -365,6 +351,11 @@ public class JmsAdapter<InternalMessageType> {
 
 
         // for testing
+        public Builder<InternalMessageType> setJmsObjectRepository(JmsObjectRepository jmsObjectRepository) {
+            this.jmsObjectRepository = jmsObjectRepository;
+            return this;
+        }
+
         public Builder<InternalMessageType> setRpcClient(RpcClient<InternalMessageType> rpcClient) {
             this.rpcClient = rpcClient;
             return this;
@@ -375,12 +366,12 @@ public class JmsAdapter<InternalMessageType> {
             return this;
         }
 
-        public Builder<InternalMessageType> setRpcServer(MessageReceiver<InternalMessageType> messageReceiver) {
+        public Builder<InternalMessageType> setMessageReceiver(MessageReceiver<InternalMessageType> messageReceiver) {
             this.messageReceiver = messageReceiver;
             return this;
         }
 
-        public Builder<InternalMessageType> setRpcServer(MessageSender<InternalMessageType> messageSender) {
+        public Builder<InternalMessageType> setMessageSender(MessageSender<InternalMessageType> messageSender) {
             this.messageSender = messageSender;
             return this;
         }
@@ -390,7 +381,10 @@ public class JmsAdapter<InternalMessageType> {
             requireNonNull(messageUnmarshaller,"messageUnmarshaller must be provided");
             requireNonNull(messageMarshaller,"messageMarshaller must be provided");
             requireNonNull(errorReplyFactory,"errorReplyFactory must be provided");
-            requireNonNull(connectionFactory,"connectionFactory must be provided");
+
+            if (messageSender == null || messageReceiver == null) {
+                requireNonNull(connectionFactory, "connectionFactory must be provided");
+            }
 
             if (correlationIdGenerator == null) {
                 correlationIdGenerator = new UIDCorrelationIdGenerator();
@@ -406,17 +400,19 @@ public class JmsAdapter<InternalMessageType> {
         }
 
         public JmsAdapter<InternalMessageType> createInstance() {
-            Connection connection;
-            try {
-                logger.debug("Creating connection to broker...");
-                connection = connectionFactory.createConnection();
-            } catch (JMSException e) {
-                throw new RuntimeException("Unable to create JMS session", e);
+            if (messageSender==null || messageReceiver == null) {
+                Connection connection;
+                try {
+                    logger.debug("Creating connection to broker...");
+                    connection = connectionFactory.createConnection();
+                } catch (JMSException e) {
+                    throw new RuntimeException("Unable to create JMS session", e);
+                }
+                logger.debug("Creating JmsObjectRepository...");
+                JmsSessionDescriptor producerSessionDescriptor = new JmsSessionDescriptor(producerSessionTransacted, producerSessionAckMode);
+                JmsSessionDescriptor consumerSessionDescriptor = new JmsSessionDescriptor(consumerSessionTransacted, consumerSessionAckMode);
+                jmsObjectRepository = new JmsObjectRepository(connection, producerSessionDescriptor, consumerSessionDescriptor, destinationIdGenerator);
             }
-            logger.debug("Creating JmsObjectRepository...");
-            JmsSessionDescriptor producerSessionDescriptor = new JmsSessionDescriptor(producerSessionTransacted, producerSessionAckMode);
-            JmsSessionDescriptor consumerSessionDescriptor = new JmsSessionDescriptor(consumerSessionTransacted, consumerSessionAckMode);
-            jmsObjectRepository = new JmsObjectRepository(connection, producerSessionDescriptor, consumerSessionDescriptor, destinationIdGenerator);
 
             if (messageSender == null) {
                 messageSender = new MessageSender<>(identifier, jmsObjectRepository, messageMarshaller, metrics);

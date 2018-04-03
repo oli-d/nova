@@ -9,12 +9,8 @@
  *
  */
 
-package ch.squaredesk.nova.comm.jms;
+package ch.squaredesk.nova.comm.kafka;
 
-import javax.jms.Destination;
+public class RetrieveInfo {
 
-public class IncomingMessageMetaData extends ch.squaredesk.nova.comm.retrieving.IncomingMessageMetaData<Destination, RetrieveInfo> {
-    IncomingMessageMetaData(Destination origin, RetrieveInfo details) {
-        super(origin, details);
-    }
 }

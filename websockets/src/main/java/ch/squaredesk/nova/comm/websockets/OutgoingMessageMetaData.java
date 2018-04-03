@@ -9,7 +9,7 @@
  *
  */
 
-package ch.squaredesk.nova.comm.kafka;
+package ch.squaredesk.nova.comm.websockets;
 
 public class OutgoingMessageMetaData extends ch.squaredesk.nova.comm.sending.OutgoingMessageMetaData<String, SendInfo> {
     public OutgoingMessageMetaData(String destination) {

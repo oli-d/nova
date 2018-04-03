@@ -34,14 +34,14 @@ public class RpcServer<InternalMessageType> extends ch.squaredesk.nova.comm.rpc.
 
     private final HttpServer httpServer;
 
-    protected RpcServer(HttpServer httpServer,
+    public RpcServer(HttpServer httpServer,
                         MessageMarshaller<InternalMessageType, String> messageMarshaller,
                         MessageUnmarshaller<String, InternalMessageType> messageUnmarshaller,
                         Metrics metrics) {
         this(null, httpServer, messageMarshaller, messageUnmarshaller, metrics);
     }
 
-    protected RpcServer(String identifier,
+    public RpcServer(String identifier,
                         HttpServer httpServer,
                         MessageMarshaller<InternalMessageType, String> messageMarshaller,
                         MessageUnmarshaller<String, InternalMessageType> messageUnmarshaller,
@@ -78,7 +78,7 @@ public class RpcServer<InternalMessageType> extends ch.squaredesk.nova.comm.rpc.
         return retVal;
     }
 
-    private static SendingInfo httpSpecificInfoFrom(Request request) throws Exception {
+    private static SendInfo httpSpecificInfoFrom(Request request) throws Exception {
         Map<String, String> parameters = new HashMap<>();
         for (Map.Entry<String, String[]> entry : request.getParameterMap().entrySet()) {
             String[] valueList = entry.getValue();
@@ -89,7 +89,7 @@ public class RpcServer<InternalMessageType> extends ch.squaredesk.nova.comm.rpc.
             parameters.put(entry.getKey(), valueToPass);
         }
 
-        return new SendingInfo(
+        return new SendInfo(
                 convert(request.getMethod()), parameters);
     }
 

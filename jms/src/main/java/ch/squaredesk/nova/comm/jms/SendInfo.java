@@ -6,6 +6,7 @@
  * obtain a copy of the license at
  *
  *   https://squaredesk.ch/license/oss/LICENSE
+ *
  */
 
 package ch.squaredesk.nova.comm.jms;
@@ -13,7 +14,7 @@ package ch.squaredesk.nova.comm.jms;
 import javax.jms.Destination;
 import java.util.Map;
 
-public class JmsSpecificInfo {
+public class SendInfo {
     public final String correlationId;
     public final Destination replyDestination;
     public final Integer deliveryMode;
@@ -21,18 +22,14 @@ public class JmsSpecificInfo {
     public final Long timeToLive;
     public final Map<String, Object> customHeaders;
 
-    public JmsSpecificInfo(String correlationId, Destination replyDestination, Map<String, Object> customHeaders,
-                           Integer deliveryMode, Integer priority, Long timeToLive) {
+    SendInfo(String correlationId, Destination replyDestination, Map<String, Object> customHeaders,
+             Integer deliveryMode, Integer priority, Long timeToLive) {
         this.correlationId = correlationId;
         this.replyDestination = replyDestination;
         this.customHeaders = customHeaders;
         this.deliveryMode = deliveryMode;
         this.priority = priority;
         this.timeToLive = timeToLive;
-    }
-
-    public boolean isRpcReply() {
-        return correlationId != null && replyDestination==null;
     }
 
     @Override

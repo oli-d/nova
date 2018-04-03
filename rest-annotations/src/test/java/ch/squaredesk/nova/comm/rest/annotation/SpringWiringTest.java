@@ -90,7 +90,7 @@ public class SpringWiringTest {
         @Lazy
         public RpcServer<String> rpcServer() {
             HttpServer httpServer = applicationContext.getBean(HttpServer.class);
-            return new RpcServer<>(httpServer, s->s, s->s, nova.metrics );
+            return new RpcServer<>("SWT", httpServer, s->s, s->s, nova.metrics );
         }
     }
 

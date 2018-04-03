@@ -98,7 +98,7 @@ class SslTest {
 
                 OutgoingMessageMetaData meta = new OutgoingMessageMetaData(
                         new URL(urlAsString),
-                        new SendingInfo(HttpRequestMethod.POST));
+                        new SendInfo(HttpRequestMethod.POST));
 
                 rpcClient.sendRequest("{}", meta, 15, TimeUnit.SECONDS).blockingGet();
             } catch (Exception e) {
