@@ -13,13 +13,13 @@ package ch.squaredesk.nova.comm.http;
 
 import java.net.URL;
 
-public class IncomingMessageMetaData extends ch.squaredesk.nova.comm.retrieving.IncomingMessageMetaData<URL, RetrievalInfo> {
+public class IncomingMessageMetaData extends ch.squaredesk.nova.comm.retrieving.IncomingMessageMetaData<URL, RetrieveInfo> {
 
     public IncomingMessageMetaData(URL origin) {
         this(origin, null);
     }
 
-    public IncomingMessageMetaData(URL origin, RetrievalInfo details) {
+    public IncomingMessageMetaData(URL origin, RetrieveInfo details) {
         super(origin, details);
     }
 

@@ -11,10 +11,10 @@
 
 package ch.squaredesk.nova.comm.http;
 
-public class RetrievalInfo {
+public class RetrieveInfo {
     public final int statusCode;
 
-    public RetrievalInfo(int statusCode) {
+    public RetrieveInfo(int statusCode) {
         this.statusCode = statusCode;
     }
 

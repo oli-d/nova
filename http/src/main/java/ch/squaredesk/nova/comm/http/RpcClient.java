@@ -72,7 +72,7 @@ public class RpcClient<InternalMessageType> extends ch.squaredesk.nova.comm.rpc.
             int statusCode = response.getStatusCode();
             IncomingMessageMetaData metaData = new IncomingMessageMetaData(
                     outgoingMessageMetaData.destination,
-                    new RetrievalInfo(statusCode));
+                    new RetrieveInfo(statusCode));
             String responseBody = response.getResponseBody();
             metricsCollector.rpcCompleted(outgoingMessageMetaData.destination, responseBody);
             return new RpcReply<>((ReplyType) messageUnmarshaller.unmarshal(responseBody), metaData);
