@@ -16,7 +16,7 @@
 
     <groupId>ch.squaredesk.nova</groupId>
     <artifactId>bom</artifactId>
-    <version>4.0.0-beta-3</version>
+    <version>5.0.0-beta-1</version>
     <packaging>pom</packaging>
 
     <name>Nova BOM</name>
@@ -62,91 +62,91 @@
             <dependency>
                 <groupId>ch.squaredesk.nova</groupId>
                 <artifactId>test-utils</artifactId>
-                <version>4.0.0-beta-2</version>
+                <version>5.0.0</version>
             </dependency>
 
             <dependency>
                 <groupId>ch.squaredesk.nova</groupId>
                 <artifactId>core</artifactId>
-                <version>4.0.0-beta-2</version>
+                <version>5.0.0</version>
             </dependency>
             <dependency>
                 <groupId>ch.squaredesk.nova</groupId>
                 <artifactId>spring-support</artifactId>
-                <version>4.0.0-beta-2</version>
+                <version>5.0.0</version>
             </dependency>
             <dependency>
                 <groupId>ch.squaredesk.nova</groupId>
                 <artifactId>event-annotations</artifactId>
-                <version>4.0.0-beta-2</version>
+                <version>5.0.0</version>
             </dependency>
 
             <dependency>
                 <groupId>ch.squaredesk.nova</groupId>
                 <artifactId>service</artifactId>
-                <version>4.0.1</version>
+                <version>5.0.0</version>
             </dependency>
 
             <dependency>
                 <groupId>ch.squaredesk.nova</groupId>
                 <artifactId>comm</artifactId>
-                <version>4.0.0-beta-2</version>
+                <version>5.0.0</version>
             </dependency>
             <dependency>
                 <groupId>ch.squaredesk.nova</groupId>
                 <artifactId>comm-annotations</artifactId>
-                <version>4.0.0-beta-2</version>
+                <version>5.0.0</version>
             </dependency>
             <dependency>
                 <groupId>ch.squaredesk.nova</groupId>
                 <artifactId>jms</artifactId>
-                <version>4.1.0</version>
+                <version>5.0.0</version>
             </dependency>
             <dependency>
                 <groupId>ch.squaredesk.nova</groupId>
                 <artifactId>http</artifactId>
-                <version>4.1.0</version>
+                <version>5.0.0</version>
             </dependency>
             <dependency>
                 <groupId>ch.squaredesk.nova</groupId>
                 <artifactId>http-spring</artifactId>
-                <version>4.0.2</version>
+                <version>5.0.0</version>
             </dependency>
             <dependency>
                 <groupId>ch.squaredesk.nova</groupId>
                 <artifactId>rest-annotations</artifactId>
-                <version>4.0.2</version>
+                <version>5.0.0</version>
             </dependency>
             <dependency>
                 <groupId>ch.squaredesk.nova</groupId>
                 <artifactId>websockets</artifactId>
-                <version>4.0.0-beta-2</version>
+                <version>5.0.0</version>
             </dependency>
             <dependency>
                 <groupId>ch.squaredesk.nova</groupId>
                 <artifactId>websockets-annotations</artifactId>
-                <version>4.0.1</version>
+                <version>5.0.0</version>
             </dependency>
             <dependency>
                 <groupId>ch.squaredesk.nova</groupId>
                 <artifactId>kafka</artifactId>
-                <version>4.1.0</version>
+                <version>5.0.0</version>
             </dependency>
 
             <dependency>
                 <groupId>ch.squaredesk.nova</groupId>
                 <artifactId>metrics-serialization</artifactId>
-                <version>4.0.0-beta-2</version>
+                <version>5.0.0</version>
             </dependency>
             <dependency>
                 <groupId>ch.squaredesk.nova</groupId>
                 <artifactId>metrics-elastic</artifactId>
-                <version>4.0.0-beta-2</version>
+                <version>5.0.0</version>
             </dependency>
             <dependency>
                 <groupId>ch.squaredesk.nova</groupId>
                 <artifactId>metrics-kafka</artifactId>
-                <version>4.0.1</version>
+                <version>5.0.0</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
