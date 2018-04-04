@@ -18,7 +18,7 @@ import java.util.function.Consumer;
 public class RpcInvocation<InternalMessageType>
         extends ch.squaredesk.nova.comm.rpc.RpcInvocation<InternalMessageType, SendInfo, InternalMessageType, RetrieveInfo> {
 
-    RpcInvocation(InternalMessageType request,
+    protected RpcInvocation(InternalMessageType request,
                          SendInfo transportSpecificInfo,
                          Consumer<Pair<InternalMessageType, RetrieveInfo>> replyConsumer,
                          Consumer<Throwable> errorConsumer) {
