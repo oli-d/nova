@@ -86,16 +86,16 @@ a request to a server, or it can be used to build the server side, processing in
 The most simple method for an RPC client is 
 
 ```
-Single<ReplyType> sendGetRequest(String destination)
+Single<RpcReply<ReplyMessageType>> sendGetRequest(String destination)
 ```
 
 and its overloaded version 
 
 ```
-Single<ReplyType> sendGetRequest(String destination, long timeout, TimeUnit timeUnit)
+Single<RpcReply<ReplyMessageType>> sendGetRequest(String destination, long timeout, TimeUnit timeUnit)
 ```
 
-Those methods allow you to send an HTTP GET request to the passed destination and return a ```Single``` which either 
+Those methods allow you to send an HTTP GET request to the passed origin and return a ```Single``` which either
 contains the server reply or an eventual error. The return value is created by the ```messageUnmarshaller``` you passed 
 into the```HttpAdapter```'s builder, which will be fed the HTTP response body.
 
@@ -104,8 +104,8 @@ default timeout will be used.
 
 Similar methods exist to send a POST request:
 ```
-Single<ReplyType> sendPostRequest(String destination, RequestType request)
-Single<ReplyType> sendPostRequest(String destination, RequestType request, long timeout, TimeUnit timeUnit)
+Single<RpcReply<ReplyMessageType>> sendPostRequest(String destination, RequestType request)
+Single<RpcReply<ReplyMessageType>> sendPostRequest(String destination, RequestType request, long timeout, TimeUnit timeUnit)
 ```
 
 Note that for POST it is expected that a payload will be sent with the request. This payload will
@@ -114,14 +114,14 @@ to the ```HttpAdapter```'s ```messageMarshaller```.
 
 And there are also methods to send a PUT request
 ```
-Single<ReplyType> sendPutRequest(String destination, RequestType request)
-Single<ReplyType> sendPutRequest(String destination, RequestType request, long timeout, TimeUnit timeUnit)
+Single<RpcReply<ReplyMessageType>> sendPutRequest(String destination, RequestType request)
+Single<RpcReply<ReplyMessageType>> sendPutRequest(String destination, RequestType request, long timeout, TimeUnit timeUnit)
 ```
 which behave exactly like their POST counterparts.
 
 The most versatile of the client methods is 
 ```
-public Single<ReplyType> sendRequest (String destination, RequestType request, HttpSpecificInfo httpInfo, Long timeout, TimeUnit timeUnit)
+Single<RpcReply<ReplyMessageType>> sendRequest (String destination, RequestType request, HttpSpecificInfo httpInfo, Long timeout, TimeUnit timeUnit)
 ```
 
 In fact, all the previously mentioned methods are just convenience methods that internally invoke this one. Using this 
@@ -130,17 +130,21 @@ method you have full control over your request. The parameters are
 * ```request type``` - the object that should be sent in the HTTP request body. Must be a subtype of the type, your 
 ```HttpAdapter``` was parameterized with 
 * ```httpInfo``` - HTTP protocol specific sending information, containing
-  * ```requestMethod``` - either ```HttpRequestMethod.GET``` or ```HttpRequestMethod.POST``` 
+    * ```requestMethod``` - either ```HttpRequestMethod.GET``` or ```HttpRequestMethod.POST```
 * ```timeout``` - the amount of time, the system should wait for a reply before a Timeout exception is raised. Can be null,
 in which case the default timeout is applied.
 * ```timeUnit``` - the unit, the ```timeout``` value is expressed in. Must not be ```null``` if ```timeout``` is not ```null```
+
+All ```sendRequest()``` methods return a ```Single<RpcReply<ReplyMessageType>>```. This returned object contains
+the ```result``` (the unmarshalled server reply) and a ```methaData``` object,
+containing the reply origin and protocol specific details (e.g. the HTTP return code)
 
 #### 3.2. The server view
 
 For the RPC server side, the ```HttpAdapter``` offers only a single method:
 
 ```
-public Flowable<RpcInvocation> requests (String destination, BackpressureStrategy backpressureStrategy)
+public Flowable<RpcInvocation<MessageType>> requests (String destination)
 ```
 
 With this method you can retrieve a ```Flowable``` of all incoming RPC request. The ```destination``` you pass in should
@@ -149,7 +153,7 @@ be relative to your ```HttpAdapter```'s base URL. E.g. if your ```HttpAdapter```
 invoke the method like this:
     
 ```
-requests ("/myEndpoint", myBackpressureStrategy)
+requests ("/myEndpoint")
 ```
 
 The objects you retrieve from the ```Flowable``` are of type ```RpcInvocation```. Those objects offer the public final 
@@ -157,12 +161,13 @@ field ```request``` which represent the incoming HTTP request body. In addition 
 
 ```
 void complete(ReplyType reply)
+void complete(int statusCode, ReplyType reply)
 void completeExceptionally(Throwable error)
 ```
 
 are exposed. You can use them to send back an appropriate reply resp. error to the caller.
 
-To illustrate this, here's an example of a simple echo server:
+To illustrate this, here's an example of a super simple echo server:
 
 ```
 httpAdapter.requests("/echo", BackpressureStrategy.BUFFER)

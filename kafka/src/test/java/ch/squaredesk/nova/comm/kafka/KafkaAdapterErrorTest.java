@@ -59,7 +59,7 @@ class KafkaAdapterErrorTest {
     void sendMessageOnNullQueueEagerlyThrows() {
         Throwable throwable = assertThrows(NullPointerException.class,
                 () -> sut.sendMessage(null, "message"));
-        assertThat(throwable.getMessage(), startsWith("destination"));
+        assertThat(throwable.getMessage(), startsWith("destination must not be null"));
     }
 
     @Test

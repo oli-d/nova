@@ -11,7 +11,6 @@
 package ch.squaredesk.nova.comm.kafka;
 
 import ch.squaredesk.nova.comm.retrieving.IncomingMessage;
-import ch.squaredesk.nova.comm.retrieving.IncomingMessageDetails;
 import ch.squaredesk.nova.comm.retrieving.MessageReceiver;
 import ch.squaredesk.nova.comm.retrieving.MessageUnmarshaller;
 import ch.squaredesk.nova.metrics.Metrics;
@@ -34,21 +33,20 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 
 public class KafkaMessageReceiver<InternalMessageType>
-        extends MessageReceiver<String, InternalMessageType, String, KafkaSpecificInfo> {
+        extends MessageReceiver<String, InternalMessageType, String, IncomingMessageMetaData> {
 
     private final Logger logger = LoggerFactory.getLogger(KafkaMessageReceiver.class);
-    private final Flowable<IncomingMessage<InternalMessageType, String, KafkaSpecificInfo>> allMessagesStream;
+    private final Flowable<IncomingMessage<InternalMessageType, IncomingMessageMetaData>> allMessagesStream;
     private final Scheduler scheduler = Schedulers.io();
     private final Map<String, AtomicInteger> topicToSubscriptionCount = new ConcurrentHashMap<>();
 
-    KafkaMessageReceiver(String identifier,
-                         Properties consumerProperties,
-                         MessageUnmarshaller<String, InternalMessageType> messageUnmarshaller,
-                         Metrics metrics) {
+    protected KafkaMessageReceiver(String identifier,
+                                   Properties consumerProperties,
+                                   MessageUnmarshaller<String, InternalMessageType> messageUnmarshaller,
+                                   long pollTimeout, TimeUnit pollTimeUnit,
+                                   Metrics metrics) {
         super(identifier, messageUnmarshaller, metrics);
 
-        long pollTimeout = 1; // TODO: configurable
-        TimeUnit pollTimeUnit = TimeUnit.SECONDS;  // TODO: configurable
         AtomicBoolean shutdown = new AtomicBoolean(false);
 
         Function<KafkaConsumer<String, String>, ConsumerRecords<String, String>> poller = consumer -> {
@@ -83,8 +81,8 @@ public class KafkaMessageReceiver<InternalMessageType>
                         consumerTopicsPair._2.addAll(subscribedTopics);
                         consumerTopicsPair._1.subscribe(subscribedTopics);
                     }
-                return !consumerTopicsPair._2.isEmpty();
-        };
+                    return !consumerTopicsPair._2.isEmpty();
+                };
 
         Flowable<ConsumerRecords<String, String>> consumerRecordsStream = Flowable.generate(
                 () -> {
@@ -119,19 +117,14 @@ public class KafkaMessageReceiver<InternalMessageType>
                 .subscribeOn(scheduler)
                 .concatMap(this::unmarshall)
                 .map(topicAndMessage -> {
-                    // TODO: what kind of data is interesting for consumers?
-                    KafkaSpecificInfo kafkaSpecificInfo = new KafkaSpecificInfo();
-                    IncomingMessageDetails<String, KafkaSpecificInfo> messageDetails = new IncomingMessageDetails.Builder<String, KafkaSpecificInfo>()
-                            .withDestination(topicAndMessage._1)
-                            .withTransportSpecificDetails(kafkaSpecificInfo)
-                            .build();
-
-                    return new IncomingMessage<>(topicAndMessage._2, messageDetails);
+                    RetrieveInfo kafkaSpecificInfo = new RetrieveInfo();
+                    IncomingMessageMetaData metaData = new IncomingMessageMetaData(topicAndMessage._1, kafkaSpecificInfo);
+                    return new IncomingMessage<>(topicAndMessage._2, metaData);
                 })
                 .share();
     }
 
-    Flowable<Pair<String, InternalMessageType>> unmarshall (ConsumerRecords<String, String> consumerRecords) {
+    Flowable<Pair<String, InternalMessageType>> unmarshall(ConsumerRecords<String, String> consumerRecords) {
         return Flowable.create(s -> {
             consumerRecords.forEach(record -> {
                 try {
@@ -147,12 +140,12 @@ public class KafkaMessageReceiver<InternalMessageType>
     }
 
     @Override
-    public Flowable<IncomingMessage<InternalMessageType, String, KafkaSpecificInfo>> messages (String destination) {
+    public Flowable<IncomingMessage<InternalMessageType, IncomingMessageMetaData>> messages(String destination) {
         Objects.requireNonNull(destination, "destination must not be null");
         Objects.requireNonNull(messageUnmarshaller, "unmarshaller must not be null");
 
         return allMessagesStream
-                .filter(incomingMessage -> destination.equals(incomingMessage.details.destination))
+                .filter(incomingMessage -> destination.equals(incomingMessage.metaData.origin))
                 .doOnSubscribe(s -> {
                     scheduler.scheduleDirect(() -> {
                         AtomicInteger subsCounter = topicToSubscriptionCount.computeIfAbsent(
@@ -168,11 +161,11 @@ public class KafkaMessageReceiver<InternalMessageType>
                     scheduler.scheduleDirect(() -> {
                         metricsCollector.subscriptionDestroyed(destination);
                         AtomicInteger subsCounter = topicToSubscriptionCount.get(destination);
-                        if (subsCounter==null) {
+                        if (subsCounter == null) {
                             logger.error("WTF! Unsubscribing topic {} but the counter is gone?!?!?", destination);
                         } else {
                             int count = subsCounter.decrementAndGet();
-                            if (count==0) {
+                            if (count == 0) {
                                 topicToSubscriptionCount.remove(destination);
                                 logger.info("Unsubscribed last subscription to topic " + destination);
                             } else {

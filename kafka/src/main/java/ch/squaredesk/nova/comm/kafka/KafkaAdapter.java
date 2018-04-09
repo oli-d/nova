@@ -25,6 +25,7 @@ import org.slf4j.LoggerFactory;
 import java.util.Properties;
 import java.util.UUID;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import static java.util.Objects.requireNonNull;
 
@@ -49,13 +50,10 @@ public class KafkaAdapter<InternalMessageType> {
     public <ConcreteMessageType extends InternalMessageType> Completable sendMessage(
             String destination, ConcreteMessageType message) {
         requireNonNull(message, "message must not be null");
-        KafkaSpecificInfo jmsSpecificSendingInfo = new KafkaSpecificInfo();
-
-        return this.messageSender.sendMessage(
-                destination,
-                message,
-                jmsSpecificSendingInfo
-        )/*.doOnError(t -> examineSendExceptionForDeadDestinationAndInformListener(t, destination))*/;
+        SendInfo sendInfo = new SendInfo();
+        OutgoingMessageMetaData meta = new OutgoingMessageMetaData(destination, sendInfo);
+        return this.messageSender.doSend(message, meta)
+        /*.doOnError(t -> examineSendExceptionForDeadDestinationAndInformListener(t, origin))*/;
     }
 
     //////////////////////////////////
@@ -96,9 +94,18 @@ public class KafkaAdapter<InternalMessageType> {
         private Scheduler subscriptionScheduler;
         private Properties consumerProperties = new Properties();
         private Properties producerProperties = new Properties();
+        private long pollTimeout = 1;
+        private TimeUnit pollTimeUnit = TimeUnit.SECONDS;
 
         private Builder(Class<InternalMessageType> messageTypeClass) {
             super(messageTypeClass);
+        }
+
+        public Builder<InternalMessageType> setMessagePollingTimeout(long pollTimeout, TimeUnit pollTimeUnit) {
+            requireNonNull(pollTimeUnit, "pollTimeUnit must not be null");
+            this.pollTimeout = pollTimeout;
+            this.pollTimeUnit = pollTimeUnit;
+            return this;
         }
 
         public Builder<InternalMessageType> setConsumerProperties(Properties consumerProperties) {
@@ -145,6 +152,16 @@ public class KafkaAdapter<InternalMessageType> {
             return this;
         }
 
+        public Builder<InternalMessageType> setMessageSender(KafkaMessageSender<InternalMessageType> messageSender) {
+            this.messageSender = messageSender;
+            return this;
+        }
+
+        public Builder<InternalMessageType> setMessageReceiver(KafkaMessageReceiver<InternalMessageType> messageReceiver) {
+            this.messageReceiver = messageReceiver;
+            return this;
+        }
+
         public void validate() {
             requireNonNull(serverAddress,"serverAddress must be provided");
             requireNonNull(messageUnmarshaller,"messageUnmarshaller must be provided");
@@ -176,8 +193,12 @@ public class KafkaAdapter<InternalMessageType> {
             setPropertyIfNotPresent(producerProperties, ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
             setPropertyIfNotPresent(producerProperties, ProducerConfig.CLIENT_ID_CONFIG, clientId);
 
-            messageReceiver = new KafkaMessageReceiver<>(identifier, consumerProperties, messageUnmarshaller, metrics);
-            messageSender = new KafkaMessageSender<>(identifier, producerProperties, messageMarshaller, metrics);
+            if (messageReceiver == null) {
+                messageReceiver = new KafkaMessageReceiver<>(identifier, consumerProperties, messageUnmarshaller, pollTimeout, pollTimeUnit, metrics);
+            }
+            if (messageSender == null) {
+                messageSender = new KafkaMessageSender<>(identifier, producerProperties, messageMarshaller, metrics);
+            }
             return new KafkaAdapter<>(this.messageSender, this.messageReceiver);
         }
 

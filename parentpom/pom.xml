@@ -16,7 +16,7 @@
 
     <groupId>ch.squaredesk.nova</groupId>
     <artifactId>parentpom</artifactId>
-    <version>4.0.0-beta-2</version>
+    <version>5.0.0</version>
     <packaging>pom</packaging>
 
     <name>Nova</name>
@@ -60,14 +60,8 @@
     <properties>
         <java.version>1.8</java.version>
 
-        <junit.jupiter.version>5.0.0</junit.jupiter.version>
-        <junit.platform.version>1.0.0</junit.platform.version>
-        <hamcrest.version>2.0.0.0</hamcrest.version>
-
-        <slf4j.version>1.7.5</slf4j.version>
-        <logback.version>1.2.1</logback.version>
-
-        <jackson.version>2.8.7</jackson.version>
+        <junit.jupiter.version>5.1.0</junit.jupiter.version>
+        <junit.platform.version>1.1.0</junit.platform.version>
 
         <grizzly.version>2.4.2</grizzly.version>
     </properties>
@@ -80,19 +74,11 @@
                 <version>${grizzly.version}</version>
             </dependency>
             <dependency>
-                <groupId>com.fasterxml.jackson.core</groupId>
-                <artifactId>jackson-core</artifactId>
-                <version>${jackson.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.fasterxml.jackson.core</groupId>
-                <artifactId>jackson-databind</artifactId>
-                <version>${jackson.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.fasterxml.jackson.core</groupId>
-                <artifactId>jackson-annotations</artifactId>
-                <version>${jackson.version}</version>
+                <groupId>com.fasterxml.jackson</groupId>
+                <artifactId>jackson-bom</artifactId>
+                <version>2.9.5</version>
+                <scope>import</scope>
+                <type>pom</type>
             </dependency>
         </dependencies>
     </dependencyManagement>
@@ -113,7 +99,7 @@
         </dependency>
         <dependency>
             <groupId>org.hamcrest</groupId>
-            <version>${hamcrest.version}</version>
+            <version>2.0.0.0</version>
             <artifactId>hamcrest-junit</artifactId>
             <scope>test</scope>
             <exclusions>
@@ -128,12 +114,12 @@
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
-            <version>${slf4j.version}</version>
+            <version>1.7.25</version>
         </dependency>
         <dependency>
             <groupId>ch.qos.logback</groupId>
             <artifactId>logback-classic</artifactId>
-            <version>${logback.version}</version>
+            <version>1.2.3</version>
         </dependency>
     </dependencies>
 

@@ -98,6 +98,20 @@ public class DefaultMarshallerFactory {
                     "configure", deserializationFeatureClass, boolean.class);
             serializationConfigMethod.invoke(objectMapper, deserializationFeature, false);
 
+            /**
+             * WARNING - As of Jackson 2.x, auto-registration will only register older JSR310Module, and not newer
+             * JavaTimeModule -- this is due to backwards compatibility. Because of this make sure to either use
+             * explicit registration, or, if you want to use JavaTimeModule but also auto-registration, make sure
+             * to register JavaTimeModule BEFORE calling mapper.findAndRegisterModules()).
+             *
+             * Jackson 3.x changes things as it requires Java 8 to work and can thereby directly supported features.
+             * Because of this parameter-names and datatypes modules are merged into jackson-databind and need not be
+             * registered; datetime module (JavaTimeModule) remains separate module due to its size and configurability
+             * options.
+             */
+            Method findAndRegisterModulesMethod = objectMapperClass.getMethod("findAndRegisterModules");
+            findAndRegisterModulesMethod.invoke(objectMapper);
+
             return objectMapper;
         } catch (Exception e) {
             return null;

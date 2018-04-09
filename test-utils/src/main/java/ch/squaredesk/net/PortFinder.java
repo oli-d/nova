@@ -9,6 +9,7 @@
  */
 package ch.squaredesk.net;
 
+import java.net.ServerSocket;
 import java.util.function.Consumer;
 
 public class PortFinder {
@@ -20,6 +21,11 @@ public class PortFinder {
     public static void withNextFreePort (Consumer<Integer> consumer) {
         synchronized (portLock) {
             int port = 0;
+            try(ServerSocket serverSocket = new ServerSocket(0)) {
+                port = serverSocket.getLocalPort();
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
             consumer.accept(port);
         }
     }

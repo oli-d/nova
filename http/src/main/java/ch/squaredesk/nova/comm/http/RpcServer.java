@@ -18,7 +18,6 @@ import org.glassfish.grizzly.http.server.Response;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.BufferedWriter;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
@@ -26,12 +25,12 @@ import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
-public class RpcServer<InternalMessageType> extends ch.squaredesk.nova.comm.rpc.RpcServer<String, HttpRpcInvocation<InternalMessageType>> {
+public class RpcServer<InternalMessageType> extends ch.squaredesk.nova.comm.rpc.RpcServer<String, RpcInvocation<InternalMessageType>> {
     private static final Logger logger = LoggerFactory.getLogger(RpcServer.class);
 
     private final MessageMarshaller<InternalMessageType, String> messageMarshaller;
     private final MessageUnmarshaller<String, InternalMessageType> messageUnmarshaller;
-    private final Map<String, Flowable<HttpRpcInvocation<? extends InternalMessageType>>> mapDestinationToIncomingMessages = new ConcurrentHashMap<>();
+    private final Map<String, Flowable<RpcInvocation<? extends InternalMessageType>>> mapDestinationToIncomingMessages = new ConcurrentHashMap<>();
 
     private final HttpServer httpServer;
 
@@ -42,7 +41,7 @@ public class RpcServer<InternalMessageType> extends ch.squaredesk.nova.comm.rpc.
         this(null, httpServer, messageMarshaller, messageUnmarshaller, metrics);
     }
 
-    RpcServer(String identifier,
+    public RpcServer(String identifier,
                         HttpServer httpServer,
                         MessageMarshaller<InternalMessageType, String> messageMarshaller,
                         MessageUnmarshaller<String, InternalMessageType> messageUnmarshaller,
@@ -57,12 +56,12 @@ public class RpcServer<InternalMessageType> extends ch.squaredesk.nova.comm.rpc.
     }
 
     @Override
-    public Flowable<HttpRpcInvocation<InternalMessageType>> requests(String destination) {
+    public Flowable<RpcInvocation<InternalMessageType>> requests(String destination) {
         Flowable retVal = mapDestinationToIncomingMessages
                 .computeIfAbsent(destination, key -> {
                     logger.info("Listening to requests on " + destination);
 
-                    Subject<HttpRpcInvocation<? extends InternalMessageType>> stream = PublishSubject.create();
+                    Subject<RpcInvocation<? extends InternalMessageType>> stream = PublishSubject.create();
                     stream = stream.toSerialized();
                     NonBlockingHttpHandler httpHandler = new NonBlockingHttpHandler(stream);
 
@@ -79,23 +78,23 @@ public class RpcServer<InternalMessageType> extends ch.squaredesk.nova.comm.rpc.
         return retVal;
     }
 
-    private static HttpSpecificInfo httpSpecificInfoFrom (Request request) throws Exception {
+    private static SendInfo httpSpecificInfoFrom(Request request) throws Exception {
         Map<String, String> parameters = new HashMap<>();
-        for (Map.Entry<String,String[]> entry: request.getParameterMap().entrySet()) {
+        for (Map.Entry<String, String[]> entry : request.getParameterMap().entrySet()) {
             String[] valueList = entry.getValue();
             String valueToPass = null;
-            if (valueList != null && valueList.length>0) {
+            if (valueList != null && valueList.length > 0) {
                 valueToPass = valueList[0];
             }
             parameters.put(entry.getKey(), valueToPass);
         }
 
-        return new HttpSpecificInfo(
+        return new SendInfo(
                 convert(request.getMethod()), parameters);
     }
 
-    private static HttpRequestMethod convert (Method method) {
-        if (method==Method.POST) {
+    private static HttpRequestMethod convert(Method method) {
+        if (method == Method.POST) {
             return HttpRequestMethod.POST;
         } else if (method == Method.DELETE) {
             return HttpRequestMethod.DELETE;
@@ -107,11 +106,11 @@ public class RpcServer<InternalMessageType> extends ch.squaredesk.nova.comm.rpc.
         }
     }
 
-    private static <T> T convertRequestData (String objectAsString, MessageUnmarshaller<String,T> unmarshaller) throws Exception {
+    private static <T> T convertRequestData(String objectAsString, MessageUnmarshaller<String, T> unmarshaller) throws Exception {
         return unmarshaller.unmarshal(objectAsString);
     }
 
-    private static <T> String convertResponseData (T replyObject, MessageMarshaller<T, String> marshaller) throws Exception {
+    private static <T> String convertResponseData(T replyObject, MessageMarshaller<T, String> marshaller) throws Exception {
         return marshaller.marshal(replyObject);
     }
 
@@ -119,7 +118,7 @@ public class RpcServer<InternalMessageType> extends ch.squaredesk.nova.comm.rpc.
      * writes reply Object to response body. Assumes that the marshaller creates a String that is a JSON
      * representation of the reply object
      */
-    private static void writeResponse (String reply, NIOWriter out) throws Exception {
+    private static void writeResponse(String reply, NIOWriter out) throws Exception {
         out.write(reply);
         out.flush();
         out.close();
@@ -129,11 +128,11 @@ public class RpcServer<InternalMessageType> extends ch.squaredesk.nova.comm.rpc.
      * Non-blockingly reads all (non blockingly) available characters of the passed InputReader and
      * concats those characters to the passed <currentBuffer>, returning a new character array
      */
-    private static char[] appendAvailableDataToBuffer(NIOReader in,  char currentBuffer[]) throws IOException {
+    private static char[] appendAvailableDataToBuffer(NIOReader in, char currentBuffer[]) throws IOException {
         // we are not synchronizing here, since we assume that onDataAvailable() is called sequentially
         char[] readBuffer = new char[in.readyData()];
         int numRead = in.read(readBuffer);
-        if (numRead<=0) {
+        if (numRead <= 0) {
             return currentBuffer;
         } else {
             char[] retVal = new char[currentBuffer.length + numRead];
@@ -159,15 +158,15 @@ public class RpcServer<InternalMessageType> extends ch.squaredesk.nova.comm.rpc.
     /**
      * This class implements the non-blocking http handler. It takes the incoming requests and puts them into
      * a blocking(!) queue to be processed by interested consumers.
-     *
+     * <p>
      * Blocking? Yes, because this way we apply backpressure and only read those messages from the wire that we are
      * able to process. The size of the queue defines, how many requests we are willing to lose in the worst case
      */
     private class NonBlockingHttpHandler extends HttpHandler {
-        private final Subject<HttpRpcInvocation<? extends InternalMessageType>> stream;
+        private final Subject<RpcInvocation<? extends InternalMessageType>> stream;
 
         private NonBlockingHttpHandler(
-                Subject<HttpRpcInvocation<? extends InternalMessageType>> stream) {
+                Subject<RpcInvocation<? extends InternalMessageType>> stream) {
             this.stream = stream;
         }
 
@@ -203,44 +202,44 @@ public class RpcServer<InternalMessageType> extends ch.squaredesk.nova.comm.rpc.
                     }
 
                     InternalMessageType requestObject = convertRequestData(new String(inputBuffer), messageUnmarshaller);
-                    HttpRpcInvocation<? extends InternalMessageType> rpci =
-                            new HttpRpcInvocation<>(
-                                requestObject,
-                                httpSpecificInfoFrom(request),
-                                replyInfo -> {
-                                    try {
-                                        String responseAsString = convertResponseData(replyInfo._1, messageMarshaller);
-                                        response.setContentType("application/json");
-                                        response.setContentLength(responseAsString.length());
-                                        int statusCode = replyInfo._2 == null ? 200 : replyInfo._2.statusCode;
-                                        response.setStatus(statusCode);
-                                        writeResponse(responseAsString, out);
-                                        metricsCollector.requestCompleted(requestObject, responseAsString);
-                                    } catch (Exception e) {
-                                        metricsCollector.requestCompletedExceptionally(requestObject, e);
-                                        logger.error("An error occurred trying to send HTTP response " + replyInfo, e);
+                    RpcInvocation<? extends InternalMessageType> rpci =
+                            new RpcInvocation<>(
+                                    requestObject,
+                                    httpSpecificInfoFrom(request),
+                                    replyInfo -> {
+                                        try {
+                                            String responseAsString = convertResponseData(replyInfo._1, messageMarshaller);
+                                            response.setContentType("application/json");
+                                            response.setContentLength(responseAsString.length());
+                                            int statusCode = replyInfo._2 == null ? 200 : replyInfo._2.statusCode;
+                                            response.setStatus(statusCode);
+                                            writeResponse(responseAsString, out);
+                                            metricsCollector.requestCompleted(requestObject, responseAsString);
+                                        } catch (Exception e) {
+                                            metricsCollector.requestCompletedExceptionally(requestObject, e);
+                                            logger.error("An error occurred trying to send HTTP response " + replyInfo, e);
+                                            try {
+                                                response.sendError(500, "Internal server error");
+                                            } catch (Exception any) {
+                                                logger.error("Failed to send error 500 back to client", any);
+                                            }
+                                        } finally {
+                                            try {
+                                                out.close();
+                                            } catch (Exception ignored) {
+                                                // TODO - this is from the example. Do we want to do something here?
+                                            }
+                                            response.resume();
+                                        }
+                                    },
+                                    error -> {
+                                        logger.error("An error occurred trying to process HTTP request " + requestAsString, error);
                                         try {
                                             response.sendError(500, "Internal server error");
                                         } catch (Exception any) {
                                             logger.error("Failed to send error 500 back to client", any);
                                         }
-                                    } finally {
-                                        try {
-                                            out.close();
-                                        } catch (Exception ignored) {
-                                            // TODO - this is from the example. Do we want to do something here?
-                                        }
-                                        response.resume();
                                     }
-                                },
-                                error -> {
-                                    logger.error("An error occurred trying to process HTTP request " + requestAsString, error);
-                                    try {
-                                        response.sendError(500, "Internal server error");
-                                    } catch (Exception any) {
-                                        logger.error("Failed to send error 500 back to client", any);
-                                    }
-                                }
                             );
 
                     metricsCollector.requestReceived(rpci.request);

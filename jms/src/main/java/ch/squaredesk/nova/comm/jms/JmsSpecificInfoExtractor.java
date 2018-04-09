@@ -21,12 +21,9 @@ class JmsSpecificInfoExtractor {
     private JmsSpecificInfoExtractor() {
     }
 
-    static JmsSpecificInfo extractFrom (Message message) throws JMSException {
+    static RetrieveInfo extractFrom (Message message) throws JMSException {
         Destination replyTo = message.getJMSReplyTo();
         String correlationId = message.getJMSCorrelationID();
-        int deliveryMode = message.getJMSDeliveryMode();
-        int priority = message.getJMSPriority();
-        long timeToLive = message.getJMSExpiration();
         Map<String, Object> customHeaders = null;
 
         Enumeration<String> enumeration = message.getPropertyNames();
@@ -38,8 +35,7 @@ class JmsSpecificInfoExtractor {
             }
         }
 
-        return new JmsSpecificInfo(
-                correlationId, replyTo, customHeaders, deliveryMode, priority, timeToLive);
+        return new RetrieveInfo(correlationId, replyTo, customHeaders);
     }
 
 }

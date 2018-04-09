@@ -139,7 +139,7 @@ class WebsocketAdapterTest {
             endpointAccepting.connectedWebSockets().subscribe(socket -> connectionLatch.countDown());
             endpointAccepting.closedWebSockets().subscribe(socket -> closeLatch.countDown());
             endpointAccepting.messages().subscribe(
-                    incomingMessage -> incomingMessage.details.transportSpecificDetails.webSocket.send(incomingMessage.message));
+                    incomingMessage -> incomingMessage.metaData.details.webSocket.send(incomingMessage.message));
             endpointInitiating = sut.connectTo(clientDestination);
 
             connectionLatch.await(2, TimeUnit.SECONDS);
@@ -182,7 +182,7 @@ class WebsocketAdapterTest {
             serverEndpoint = sutInteger.acceptConnections(serverDestination);
             serverEndpoint.messages().subscribe(
                     incomingMessage -> {
-                        incomingMessage.details.transportSpecificDetails.webSocket.send(incomingMessage.message);
+                        incomingMessage.metaData.details.webSocket.send(incomingMessage.message);
                     });
 
             WebSocket<String>[] sendSocketHolder = new WebSocket[1];
@@ -254,8 +254,8 @@ class WebsocketAdapterTest {
         assertThat(totalSent.getCount(), is(0l));
         assertThat(specificSent.getCount(), is(0l));
 
-        Flowable<IncomingMessage<Integer, String, WebSocketSpecificDetails>> messages = endpoint.messages();
-        TestSubscriber<IncomingMessage<Integer, String, WebSocketSpecificDetails>> testSubscriber = messages.test();
+        Flowable<IncomingMessage<Integer, IncomingMessageMetaData<Integer>>> messages = endpoint.messages();
+        TestSubscriber<IncomingMessage<Integer, IncomingMessageMetaData<Integer>>> testSubscriber = messages.test();
 
         endpoint.send(1);
         endpoint.send(2);
@@ -272,10 +272,10 @@ class WebsocketAdapterTest {
         assertThat(testSubscriber.values().get(1).message, is(2));
         assertThat(testSubscriber.values().get(2).message, is(33));
         for (int i = 0; i < 3; i++) {
-            assertNotNull(testSubscriber.values().get(i).details);
-            assertThat(testSubscriber.values().get(i).details.destination, is(destination));
-            assertNotNull(testSubscriber.values().get(i).details.transportSpecificDetails);
-            assertNotNull(testSubscriber.values().get(i).details.transportSpecificDetails.webSocket);
+            assertNotNull(testSubscriber.values().get(i).metaData);
+            assertThat(testSubscriber.values().get(i).metaData.origin, is(destination));
+            assertNotNull(testSubscriber.values().get(i).metaData);
+            assertNotNull(testSubscriber.values().get(i).metaData.details.webSocket);
         }
         assertThat(specificReceived.getCount(), is(3l));
         assertThat(totalReceived.getCount(), greaterThanOrEqualTo(3l));
@@ -288,8 +288,8 @@ class WebsocketAdapterTest {
         assertThat(totalUnparsable.getCount(), is(0l));
         assertThat(specificUnparsable.getCount(), is(0l));
 
-        Flowable<IncomingMessage<Integer, String, WebSocketSpecificDetails>> messages = receivingEndpoint.messages();
-        TestSubscriber<IncomingMessage<Integer, String, WebSocketSpecificDetails>> testSubscriber = messages.test();
+        Flowable<IncomingMessage<Integer, IncomingMessageMetaData<Integer>>> messages = receivingEndpoint.messages();
+        TestSubscriber<IncomingMessage<Integer, IncomingMessageMetaData<Integer>>> testSubscriber = messages.test();
 
         sendSocket.send("One");
         sendSocket.send("Two");
@@ -325,9 +325,9 @@ class WebsocketAdapterTest {
                 connectionLatch.countDown();
             });
 
-            TestSubscriber<IncomingMessage<Integer, String, WebSocketSpecificDetails>> testSubscriber1 =
+            TestSubscriber<IncomingMessage<Integer, IncomingMessageMetaData<Integer>>> testSubscriber1 =
                     sut.connectTo(clientDestination).messages().test();
-            TestSubscriber<IncomingMessage<Integer, String, WebSocketSpecificDetails>> testSubscriber2 =
+            TestSubscriber<IncomingMessage<Integer, IncomingMessageMetaData<Integer>>> testSubscriber2 =
                     sut.connectTo(clientDestination).messages().test();
             sut.connectTo(clientDestination).messages().subscribe(message -> {
                 messageLatch1.countDown();
@@ -466,7 +466,7 @@ class WebsocketAdapterTest {
         ServerEndpoint<String> serverEndpoint = sut.acceptConnections(serverDestination);
         // echo all incoming message and append the clientID
         serverEndpoint.messages().subscribe(incomingMessage -> {
-            WebSocket<String> webSocket = incomingMessage.details.transportSpecificDetails.webSocket;
+            WebSocket<String> webSocket = incomingMessage.metaData.details.webSocket;
             if (incomingMessage.message.startsWith("ID=")) {
                 String id = incomingMessage.message.substring("ID=".length());
                 webSocket.setUserProperty("clientId", id);

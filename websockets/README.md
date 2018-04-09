@@ -51,7 +51,7 @@ can do this in two ways
 
 * If you want to connect to a server, invoke ```WebSocketAdapter.connectTo()```
 
-Both methods require you to pass in the destination (either the one you want to connect to or the
+Both methods require you to pass in the origin (either the one you want to connect to or the
 one you are accepting clients on) and return an ```Endpoint``` instance that you can use to send and 
 retrieve messages.
 

@@ -15,30 +15,30 @@
 	<parent>
 		<groupId>ch.squaredesk.nova</groupId>
 		<artifactId>parentpom</artifactId>
-		<version>4.0.0-beta-2</version>
+		<version>5.0.0</version>
 		<relativePath>../parentpom</relativePath>
 	</parent>
 
 	<artifactId>kafka</artifactId>
-	<version>4.0.0-beta-2</version>
+	<version>5.0.0</version>
 
 	<dependencies>
 		<dependency>
 			<groupId>ch.squaredesk.nova</groupId>
 			<artifactId>comm</artifactId>
-			<version>4.0.0-beta-2</version>
+			<version>5.0.0</version>
 		</dependency>
 
 		<dependency>
 			<groupId>org.apache.kafka</groupId>
 			<artifactId>kafka-clients</artifactId>
-			<version>1.0.0</version>
+			<version>1.1.0</version>
 		</dependency>
 
 		<dependency>
 			<groupId>com.github.charithe</groupId>
 			<artifactId>kafka-junit</artifactId>
-			<version>4.1.0</version>
+			<version>4.1.1</version>
             <scope>test</scope>
 		</dependency>
 	</dependencies>

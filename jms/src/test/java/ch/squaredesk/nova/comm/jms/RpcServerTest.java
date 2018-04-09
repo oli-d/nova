@@ -11,7 +11,6 @@
 package ch.squaredesk.nova.comm.jms;
 
 import ch.squaredesk.nova.comm.sending.MessageMarshaller;
-import ch.squaredesk.nova.comm.sending.MessageSendingInfo;
 import ch.squaredesk.nova.metrics.Metrics;
 import io.reactivex.Completable;
 import io.reactivex.subscribers.TestSubscriber;
@@ -31,8 +30,8 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
 @Tag("large")
-class JmsRpcServerTest {
-    private JmsRpcServer<String> sut;
+class RpcServerTest {
+    private RpcServer<String> sut;
     private TestJmsHelper jmsHelper;
     private MySender mySender;
 
@@ -43,14 +42,14 @@ class JmsRpcServerTest {
         broker = new EmbeddedActiveMQBroker();
         broker.start();
 
-        String identifier = "JmsRpcServerTest";
+        String identifier = "RpcServerTest";
         Metrics metrics = new Metrics();
         ConnectionFactory connectionFactory = new ActiveMQConnectionFactory("vm://embedded-broker?create=false");
         Connection connection = connectionFactory.createConnection();
         JmsSessionDescriptor producerSessionDescriptor = new JmsSessionDescriptor(false, Session.AUTO_ACKNOWLEDGE);
         JmsSessionDescriptor consumerSessionDescriptor = new JmsSessionDescriptor(false, Session.AUTO_ACKNOWLEDGE);
         JmsObjectRepository jmsObjectRepository = new JmsObjectRepository(connection, producerSessionDescriptor, consumerSessionDescriptor, String::valueOf);
-        JmsMessageReceiver<String> messageReceiver = new JmsMessageReceiver<>(
+        MessageReceiver<String> messageReceiver = new MessageReceiver<>(
                 identifier,
                 jmsObjectRepository,
                 s -> s,
@@ -61,7 +60,7 @@ class JmsRpcServerTest {
                 s -> s,
                 metrics);
 
-        sut = new JmsRpcServer<>(identifier, messageReceiver, mySender, Throwable::getMessage, metrics);
+        sut = new RpcServer<>(identifier, messageReceiver, mySender, Throwable::getMessage, metrics);
         jmsObjectRepository.start();
 
         jmsHelper = new TestJmsHelper(connectionFactory);
@@ -76,7 +75,7 @@ class JmsRpcServerTest {
     @Test
     void subribeToIncomingRequests() throws Exception {
         Destination queue = jmsHelper.createQueue("subscribeToRequests");
-        TestSubscriber<JmsRpcInvocation<String>> testSubscriber = sut.requests(queue).test();
+        TestSubscriber<RpcInvocation<String>> testSubscriber = sut.requests(queue).test();
 
         jmsHelper.sendMessage(queue,"One");
         jmsHelper.sendRequest(queue,"Two");
@@ -94,7 +93,7 @@ class JmsRpcServerTest {
     @Test
     void completingRpcInvocationProperlyTriggersReplySending() throws Exception {
         Destination queue = jmsHelper.createQueue("completeRpc");
-        TestSubscriber<JmsRpcInvocation<String>> testSubscriber = sut.requests(queue).test();
+        TestSubscriber<RpcInvocation<String>> testSubscriber = sut.requests(queue).test();
         Message requestMessage = jmsHelper.sendRequest(queue, "Two");
 
         int maxLoops = 10;
@@ -106,15 +105,15 @@ class JmsRpcServerTest {
         assertThat(mySender.message, is("reply"));
         assertNotNull(mySender.sendingInfo);
         assertThat(mySender.sendingInfo.destination, sameInstance(requestMessage.getJMSReplyTo()));
-        assertThat(mySender.sendingInfo.transportSpecificInfo.correlationId, sameInstance(requestMessage.getJMSCorrelationID()));
-        assertNull(mySender.sendingInfo.transportSpecificInfo.replyDestination);
-        assertThat(mySender.sendingInfo.transportSpecificInfo.isRpcReply(), is(true));
+        assertThat(mySender.sendingInfo.details.correlationId, sameInstance(requestMessage.getJMSCorrelationID()));
+        assertNull(mySender.sendingInfo.details.replyDestination);
+        assertNotNull(mySender.sendingInfo.details.correlationId);
     }
 
     @Test
     void completingRpcInvocationExceptionallyTriggersReplySending() throws Exception {
         Destination queue = jmsHelper.createQueue("completeRpcExceptionally");
-        TestSubscriber<JmsRpcInvocation<String>> testSubscriber = sut.requests(queue).test();
+        TestSubscriber<RpcInvocation<String>> testSubscriber = sut.requests(queue).test();
         Message requestMessage = jmsHelper.sendRequest(queue, "Boom");
 
         int maxLoops = 10;
@@ -126,15 +125,15 @@ class JmsRpcServerTest {
         assertThat(mySender.message, is("4test"));
         assertNotNull(mySender.sendingInfo);
         assertThat(mySender.sendingInfo.destination, sameInstance(requestMessage.getJMSReplyTo()));
-        assertThat(mySender.sendingInfo.transportSpecificInfo.correlationId, sameInstance(requestMessage.getJMSCorrelationID()));
-        assertNull(mySender.sendingInfo.transportSpecificInfo.replyDestination);
-        assertThat(mySender.sendingInfo.transportSpecificInfo.isRpcReply(), is(true));
+        assertThat(mySender.sendingInfo.details.correlationId, sameInstance(requestMessage.getJMSCorrelationID()));
+        assertNull(mySender.sendingInfo.details.replyDestination);
+        assertNotNull(mySender.sendingInfo.details.correlationId);
     }
 
 
-    private class MySender extends JmsMessageSender<String> {
+    private class MySender extends MessageSender<String> {
         private String message;
-        private MessageSendingInfo<Destination, JmsSpecificInfo> sendingInfo;
+        private OutgoingMessageMetaData sendingInfo;
 
         MySender(String identifier, JmsObjectRepository jmsObjectRepository, MessageMarshaller<String, String> messageMarshaller, Metrics metrics) {
             super(identifier, jmsObjectRepository, messageMarshaller, metrics);
@@ -142,10 +141,10 @@ class JmsRpcServerTest {
 
 
         @Override
-        public Completable doSend(String message, MessageSendingInfo<Destination, JmsSpecificInfo> sendingInfo) {
+        public Completable doSend(String message, OutgoingMessageMetaData meta) {
             this.message = message;
-            this.sendingInfo = sendingInfo;
-            return super.doSend(message, sendingInfo);
+            this.sendingInfo = meta;
+            return super.doSend(message, meta);
         }
     }
 }

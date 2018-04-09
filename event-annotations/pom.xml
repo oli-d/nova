@@ -17,18 +17,18 @@
     <parent>
         <groupId>ch.squaredesk.nova</groupId>
         <artifactId>parentpom</artifactId>
-        <version>4.0.0-beta-2</version>
+        <version>5.0.0</version>
         <relativePath>../parentpom</relativePath>
     </parent>
 
     <artifactId>event-annotations</artifactId>
-    <version>4.0.0-beta-2</version>
+    <version>5.0.0</version>
 
     <dependencies>
         <dependency>
             <groupId>ch.squaredesk.nova</groupId>
             <artifactId>spring-support</artifactId>
-            <version>4.0.0-beta-2</version>
+            <version>5.0.0</version>
         </dependency>
     </dependencies>
 </project>

@@ -11,15 +11,14 @@
 
 package ch.squaredesk.nova.comm.jms;
 
-import ch.squaredesk.nova.comm.rpc.RpcInvocation;
 import ch.squaredesk.nova.tuples.Pair;
 
 import java.util.function.Consumer;
 
-public class JmsRpcInvocation<InternalMessageType> extends
-        RpcInvocation<InternalMessageType, JmsSpecificInfo, InternalMessageType, Void>{
+public class RpcInvocation<InternalMessageType> extends
+        ch.squaredesk.nova.comm.rpc.RpcInvocation<InternalMessageType, RetrieveInfo, InternalMessageType, Void> {
 
-    public JmsRpcInvocation(InternalMessageType request, JmsSpecificInfo transportSpecificInfo, Consumer<Pair<InternalMessageType, Void>> replyConsumer, Consumer<Throwable> errorConsumer) {
+    public RpcInvocation(InternalMessageType request, RetrieveInfo transportSpecificInfo, Consumer<Pair<InternalMessageType, Void>> replyConsumer, Consumer<Throwable> errorConsumer) {
         super(request, transportSpecificInfo, replyConsumer, errorConsumer);
     }
 }

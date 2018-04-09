@@ -20,13 +20,13 @@
 	</parent>
 
 	<artifactId>comm</artifactId>
-	<version>4.0.0-beta-2</version>
+	<version>5.0.0</version>
 
 	<dependencies>
 		<dependency>
 			<groupId>ch.squaredesk.nova</groupId>
 			<artifactId>core</artifactId>
-			<version>4.0.0-beta-2</version>
+			<version>5.0.0</version>
 		</dependency>
 		<dependency>
 			<groupId>com.fasterxml.jackson.core</groupId>

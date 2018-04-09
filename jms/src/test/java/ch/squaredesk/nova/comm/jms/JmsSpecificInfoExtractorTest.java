@@ -55,7 +55,7 @@ class JmsSpecificInfoExtractorTest {
         message.setObjectProperty("k1", "v1");
         message.setObjectProperty("k3", "v2");
 
-        JmsSpecificInfo info = JmsSpecificInfoExtractor.extractFrom(message);
+        RetrieveInfo info = JmsSpecificInfoExtractor.extractFrom(message);
         assertThat(info.correlationId, is("c1"));
         assertThat(info.customHeaders.size(), is(2));
         assertThat(info.customHeaders.get("k1"), is("v1"));

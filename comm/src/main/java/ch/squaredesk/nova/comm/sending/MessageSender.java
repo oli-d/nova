@@ -16,10 +16,15 @@ import io.reactivex.Completable;
 
 import static java.util.Objects.requireNonNull;
 
-public abstract class MessageSender<DestinationType, InternalMessageType, TransportMessageType, TransportSpecificInfoType> {
 
-    private final MessageMarshaller<InternalMessageType, TransportMessageType> messageMarshaller;
-    private final MetricsCollector metricsCollector;
+public abstract class MessageSender<
+        DestinationType,
+        InternalMessageType,
+        TransportMessageType,
+        MetaDataType extends OutgoingMessageMetaData<DestinationType, ?>> {
+
+    protected final MessageMarshaller<InternalMessageType, TransportMessageType> messageMarshaller;
+    protected final MetricsCollector metricsCollector;
 
     protected MessageSender(MessageMarshaller<InternalMessageType, TransportMessageType> messageMarshaller, Metrics metrics) {
         this(null, messageMarshaller, metrics);
@@ -39,28 +44,6 @@ public abstract class MessageSender<DestinationType, InternalMessageType, Transp
      * is a Completable, just signalling that the message has been sent away. Using sync protocols / RPcs, the return value
      * usually is a Single that contains the RPC result
      */
-    protected abstract Completable doSend(TransportMessageType transportMessage, MessageSendingInfo<DestinationType, TransportSpecificInfoType> messageSendingInfo);
+    protected abstract Completable doSend(InternalMessageType message, MetaDataType outgoingMessageMetaData);
 
-
-    public Completable sendMessage(
-            DestinationType destination,
-            InternalMessageType message,
-            TransportSpecificInfoType transportSpecificSendingInfo) {
-
-        requireNonNull(destination, "destination must not be null");
-        TransportMessageType transportMessage;
-        try {
-            transportMessage = message == null ? null : messageMarshaller.marshal(message);
-            MessageSendingInfo<DestinationType, TransportSpecificInfoType> msi =
-                    new MessageSendingInfo.Builder<DestinationType, TransportSpecificInfoType>()
-                            .withDestination(destination)
-                            .withTransportSpecificInfo(transportSpecificSendingInfo)
-                            .build();
-            Completable retVal = doSend(transportMessage, msi);
-            metricsCollector.messageSent(destination);
-            return retVal;
-        } catch (Throwable t) {
-            return Completable.error(t);
-        }
-    }
 }

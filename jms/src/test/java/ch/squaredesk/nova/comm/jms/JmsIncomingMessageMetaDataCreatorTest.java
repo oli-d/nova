@@ -10,7 +10,7 @@
 
 package ch.squaredesk.nova.comm.jms;
 
-import ch.squaredesk.nova.comm.retrieving.IncomingMessageDetails;
+import ch.squaredesk.nova.comm.retrieving.IncomingMessageMetaData;
 import org.apache.activemq.ActiveMQConnectionFactory;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -26,9 +26,9 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
 @Tag("large")
-class JmsIncomingMessageDetailsCreatorTest {
+class JmsIncomingMessageMetaDataCreatorTest {
     private TestJmsHelper jmsHelper;
-    private JmsMessageDetailsCreator sut;
+    private JmsMessageMetaDataCreator sut;
 
     private EmbeddedActiveMQBroker broker;
 
@@ -40,7 +40,7 @@ class JmsIncomingMessageDetailsCreatorTest {
         ConnectionFactory connectionFactory = new ActiveMQConnectionFactory("vm://embedded-broker?create=false");
         jmsHelper = new TestJmsHelper(connectionFactory);
         jmsHelper.start();
-        sut = new JmsMessageDetailsCreator();
+        sut = new JmsMessageMetaDataCreator();
     }
 
     @AfterEach
@@ -54,7 +54,7 @@ class JmsIncomingMessageDetailsCreatorTest {
         Message message = jmsHelper.createMessage("payload");
         message.setJMSDestination(incomingDestination);
 
-        IncomingMessageDetails<Destination, JmsSpecificInfo> details = sut.createMessageDetailsFor(message);
-        assertThat(details.destination, is(incomingDestination));
+        IncomingMessageMetaData<Destination, RetrieveInfo> details = sut.createIncomingMessageMetaData(message);
+        assertThat(details.origin, is(incomingDestination));
     }
 }

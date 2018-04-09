@@ -14,15 +14,15 @@ import ch.squaredesk.nova.tuples.Pair;
 
 import java.util.function.Consumer;
 
-public class RpcInvocation<RequestType, TransportSpecificInfoType, ReplyType, ReplySpecificInfoType> {
+public class RpcInvocation<RequestType, TransportSpecificRequestInfo, ReplyType, TransportSpecificReplyInfo> {
     public final RequestType request;
-    public final TransportSpecificInfoType transportSpecificInfo;
-    private final Consumer<Pair<ReplyType, ReplySpecificInfoType>> replyConsumer;
+    public final TransportSpecificRequestInfo transportSpecificInfo;
+    private final Consumer<Pair<ReplyType, TransportSpecificReplyInfo>> replyConsumer;
     private final Consumer<Throwable> errorConsumer;
 
     public RpcInvocation(RequestType request,
-                         TransportSpecificInfoType transportSpecificInfo,
-                         Consumer<Pair<ReplyType, ReplySpecificInfoType>> replyConsumer,
+                         TransportSpecificRequestInfo transportSpecificInfo,
+                         Consumer<Pair<ReplyType, TransportSpecificReplyInfo>> replyConsumer,
                          Consumer<Throwable> errorConsumer) {
         this.request = request;
         this.transportSpecificInfo = transportSpecificInfo;
@@ -34,7 +34,7 @@ public class RpcInvocation<RequestType, TransportSpecificInfoType, ReplyType, Re
         complete(reply, null);
     }
 
-    public void complete(ReplyType reply, ReplySpecificInfoType replySpecificInfo) {
+    public void complete(ReplyType reply, TransportSpecificReplyInfo replySpecificInfo) {
         replyConsumer.accept(new Pair<>(reply, replySpecificInfo));
     }
 
