@@ -45,7 +45,7 @@ class KafkaAdapterErrorTest {
     void subscribeWithNullDestinationEagerlyThrows() throws Exception {
         Throwable throwable = assertThrows(NullPointerException.class,
                 () -> sut.messages(null));
-        assertThat(throwable.getMessage(), is("origin must not be null"));
+        assertThat(throwable.getMessage(), is("destination must not be null"));
     }
 
     @Test
