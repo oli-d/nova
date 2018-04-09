@@ -204,14 +204,14 @@ public class HttpAdapter<MessageType> {
         }
 
         protected void validate() {
-            if (defaultRequestTimeout==null) {
-                defaultRequestTimeout = 5L;
-                defaultRequestTimeUnit = TimeUnit.SECONDS;
-            }
         }
 
         protected HttpAdapter<MessageType> createInstance() {
             validate();
+            if (defaultRequestTimeout==null) {
+                defaultRequestTimeout = 15L;
+                defaultRequestTimeUnit = TimeUnit.SECONDS;
+            }
             if (rpcClient == null) {
                 AsyncHttpClient httpClient = new AsyncHttpClient();
                 rpcClient = new RpcClient<>(identifier, httpClient, messageMarshaller, messageUnmarshaller, metrics);
