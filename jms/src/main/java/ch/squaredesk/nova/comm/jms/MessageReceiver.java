@@ -46,13 +46,13 @@ class MessageReceiver<InternalMessageType>
 
     @Override
     public Flowable<IncomingMessage<InternalMessageType, IncomingMessageMetaData>> messages(Destination destination) {
-        Objects.requireNonNull(destination, "origin must not ne bull");
+        Objects.requireNonNull(destination, "destination must not ne bull");
 
         String destinationId = jmsObjectRepository.idFor(destination);
         return mapDestinationIdToMessageStream.computeIfAbsent(destinationId, key -> {
             Flowable<IncomingMessage<InternalMessageType, IncomingMessageMetaData>> f = Flowable.generate(
                     () -> {
-                        logger.info("Opening connection to origin " + destinationId);
+                        logger.info("Opening connection to destination " + destinationId);
                         metricsCollector.subscriptionCreated(destinationId);
                         return jmsObjectRepository.createMessageConsumer(destination);
                     },
@@ -67,7 +67,7 @@ class MessageReceiver<InternalMessageType>
                             }
 
                             if (m == null) {
-                                logger.info("Unable to receive message from consumer for origin " + destinationId + ". Closing the connection...");
+                                logger.info("Unable to receive message from consumer for destination " + destinationId + ". Closing the connection...");
                                 emitter.onComplete();
                                 return;
                             }
@@ -106,7 +106,7 @@ class MessageReceiver<InternalMessageType>
                         metricsCollector.subscriptionDestroyed(destinationId);
                         jmsObjectRepository.destroyConsumer(consumer);
                         mapDestinationIdToMessageStream.remove(destinationId);
-                        logger.info("Closed connection to origin " + destinationId);
+                        logger.info("Closed connection to destination " + destinationId);
                     }
             );
             return f.subscribeOn(Schedulers.io())

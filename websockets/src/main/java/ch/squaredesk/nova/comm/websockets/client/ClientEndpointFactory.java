@@ -94,7 +94,7 @@ public class ClientEndpointFactory {
             return messageUnmarshaller.unmarshal(message);
         } catch (Exception e) {
             metricsCollector.unparsableMessageReceived(destination);
-            throw new RuntimeException("Unable to unmarshal incoming message " + message + " on origin " + destination, e);
+            throw new RuntimeException("Unable to unmarshal incoming message " + message + " on destination " + destination, e);
         }
     }
 }

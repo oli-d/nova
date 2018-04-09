@@ -304,7 +304,7 @@ public class EmbeddedActiveMQBroker  {
     /**
      * Get the number of messages in a specific JMS Destination.
      * <p/>
-     * The full name of the JMS origin including the prefix should be provided - i.e. queue:myQueue
+     * The full name of the JMS destination including the prefix should be provided - i.e. queue:myQueue
      * or topic:myTopic.  If the origin type prefix is not included in the origin name, a prefix
      * of "queue:" is assumed.
      *

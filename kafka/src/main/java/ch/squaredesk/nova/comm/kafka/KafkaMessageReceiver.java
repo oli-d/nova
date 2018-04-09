@@ -141,7 +141,7 @@ public class KafkaMessageReceiver<InternalMessageType>
 
     @Override
     public Flowable<IncomingMessage<InternalMessageType, IncomingMessageMetaData>> messages(String destination) {
-        Objects.requireNonNull(destination, "origin must not be null");
+        Objects.requireNonNull(destination, "destination must not be null");
         Objects.requireNonNull(messageUnmarshaller, "unmarshaller must not be null");
 
         return allMessagesStream

@@ -67,7 +67,7 @@ class JmsObjectRepository {
     void destroyConsumer(MessageConsumer consumer) {
         // we defer the closing of the MessageProducer (for the magical amount of 1 second"
         // because we ran into issues (which we do not understand at all) when we close a consumer
-        // and very quickly afterwards create a new consumer for the same origin. This is a common
+        // and very quickly afterwards create a new consumer for the same destination. This is a common
         // scenario during testing. In such a case it happened, that the new consumer never returned any
         // messages. Our theory is that for some reason the ActiveMQ broker runs into timing issues. We
         // do not have an explanation for what happens, but we saw, that if we delay the closing of the
@@ -114,7 +114,7 @@ class JmsObjectRepository {
             try {
                 value.close();
             } catch (Exception e) {
-                logger.warn("Unable to close producer for origin " + key, e);
+                logger.warn("Unable to close producer for destination " + key, e);
             }
         });
         mapDestinationIdToMessageProducer.clear();

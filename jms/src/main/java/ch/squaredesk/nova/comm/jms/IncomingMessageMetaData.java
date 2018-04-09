@@ -14,7 +14,7 @@ package ch.squaredesk.nova.comm.jms;
 import javax.jms.Destination;
 
 public class IncomingMessageMetaData extends ch.squaredesk.nova.comm.retrieving.IncomingMessageMetaData<Destination, RetrieveInfo> {
-    IncomingMessageMetaData(Destination origin, RetrieveInfo details) {
-        super(origin, details);
+    IncomingMessageMetaData(Destination destination, RetrieveInfo details) {
+        super(destination, details);
     }
 }
