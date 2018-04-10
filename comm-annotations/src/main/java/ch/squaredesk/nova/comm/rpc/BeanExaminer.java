@@ -13,6 +13,8 @@ package ch.squaredesk.nova.comm.rpc;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -35,22 +37,48 @@ class BeanExaminer {
                 .toArray(RpcRequestHandlerDescription[]::new);
     }
 
+    private static boolean isPublic (Method m) {
+        return Modifier.isPublic(m.getModifiers());
+    }
+
+    private static boolean returnsVoid (Method m) {
+        return m.getReturnType().equals(void.class) || m.getReturnType().equals(Void.class);
+    }
+
+    private static boolean onlyAcceptsSingleParameter(Method m) {
+        return m.getParameterCount() == 1;
+    }
+
+    private static boolean isRpcIncvocation (Class<?> classToTest) {
+        return RpcInvocation.class.isAssignableFrom(classToTest);
+    }
+
+    private Class getRpcInvocationParameterType (Type rpcInvocationType, int parameterIndex) {
+        ParameterizedType genericSuperclass;
+        if (rpcInvocationType instanceof ParameterizedType) {
+            genericSuperclass = (ParameterizedType) rpcInvocationType;
+        } else {
+            genericSuperclass = (ParameterizedType) ((Class)rpcInvocationType).getGenericSuperclass();
+        }
+
+        return (Class)genericSuperclass.getActualTypeArguments()[parameterIndex];
+    }
+
+    private boolean parameterIsProperlyTypedRpcInvocation(Method m, Class<?> incomingRequestType) {
+        Class<?> parameterType = m.getParameterTypes()[0];
+        Type genericParameterType = m.getGenericParameterTypes()[0];
+
+        return isRpcIncvocation(parameterType) &&
+                getRpcInvocationParameterType(genericParameterType,0).isAssignableFrom(incomingRequestType);
+    }
+
     private void ensureProperRpcHandlerFunction (Class<?> registeredRequestTypeClass, Object bean, Method m) {
-        if (!Modifier.isPublic(m.getModifiers())) {
+        if (!isPublic(m)) {
             throw new IllegalArgumentException("Annotated RPC request handler method " + prettyPrint(bean, m) + " must be public");
         }
-        if (m.getReturnType().equals(void.class) || m.getReturnType().equals(Void.class)) {
+        if (!(returnsVoid(m) && onlyAcceptsSingleParameter(m) && parameterIsProperlyTypedRpcInvocation(m, registeredRequestTypeClass))) {
             throw new IllegalArgumentException("Annotated RPC request handler method " + prettyPrint(bean, m)
-                    + " must be a function RequestType -> ReplyType");
-        }
-        if (m.getParameterCount() != 1) {
-            throw new IllegalArgumentException("Annotated RPC request handler method " + prettyPrint(bean, m)
-                    + " must be a function RequestType -> ReplyType");
-        }
-        Class<?> requestClass = m.getParameterTypes()[0];
-        if (!registeredRequestTypeClass.isAssignableFrom(requestClass)) {
-            throw new IllegalArgumentException("Parameter type of annotated RPC request handler method " + prettyPrint(bean, m)
-                    + " must be " + registeredRequestTypeClass.getName() + " or a subclass");
+                    + " must be a Consumer<RpcInvocation<" + registeredRequestTypeClass.getName() + ",?,?,?>");
         }
     }
 

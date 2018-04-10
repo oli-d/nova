@@ -87,13 +87,11 @@ class BeanExaminerTest {
     void handlersProperlyDetected() {
         class MyClass {
             @OnRpcInvocation(String.class)
-            public String processStringRequest(String s) {
-                return "";
+            public void processStringRequest(RpcInvocation<String, ?, ?,?> i) {
             }
 
             @OnRpcInvocation(Double.class)
-            public String foo(Double x) {
-                return "";
+            public void foo(RpcInvocation<Double, ?, ?,?> i) {
             }
         }
 
