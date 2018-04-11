@@ -19,7 +19,7 @@ import static org.hamcrest.Matchers.*;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 class RpcRequestProcessorTest {
-    private RpcRequestProcessor<MyRpcInvocation, Object, String> sut = new RpcRequestProcessor<>(new Metrics());
+    private RpcRequestProcessor<Object, MyRpcInvocation> sut = new RpcRequestProcessor<>(new Metrics());
 
     @Test
     void customDefaultHandlerMustNotBeNull() {

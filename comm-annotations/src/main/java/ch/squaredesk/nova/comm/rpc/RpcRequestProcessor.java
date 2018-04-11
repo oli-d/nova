@@ -22,9 +22,8 @@ import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiConsumer;
 
-
-public class RpcRequestProcessor<RpcInvocationType extends RpcInvocation<IncomingMessageType, ?, ReturnMessageType, ?>,
-        IncomingMessageType, ReturnMessageType> implements Consumer<RpcInvocationType> {
+public class RpcRequestProcessor<MessageType, RpcInvocationType extends RpcInvocation<? extends MessageType, ?, ? extends MessageType, ?>>
+        implements Consumer<RpcInvocationType> {
 
     private static final Logger logger = LoggerFactory.getLogger(RpcRequestProcessor.class);
 
