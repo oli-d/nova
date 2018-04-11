@@ -201,7 +201,10 @@ public class RpcServer<InternalMessageType> extends ch.squaredesk.nova.comm.rpc.
                         // TODO - this is from the example. Do we want to do something here?
                     }
 
-                    InternalMessageType requestObject = convertRequestData(new String(inputBuffer), messageUnmarshaller);
+                    InternalMessageType requestObject = requestAsString.trim().isEmpty() ?
+                            null :
+                            convertRequestData(requestAsString, messageUnmarshaller);
+
                     RpcInvocation<? extends InternalMessageType> rpci =
                             new RpcInvocation<>(
                                     requestObject,
