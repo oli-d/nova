@@ -11,6 +11,7 @@
 
 package ch.squaredesk.nova.comm.rpc;
 
+import ch.squaredesk.nova.metrics.Metrics;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -18,13 +19,21 @@ import static org.hamcrest.Matchers.*;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 class RpcRequestProcessorTest {
-    private RpcRequestProcessor<MyRpcInvocation, Object, String> sut = new RpcRequestProcessor<>();
+    private RpcRequestProcessor<MyRpcInvocation, Object, String> sut = new RpcRequestProcessor<>(new Metrics());
 
     @Test
-    void defaultHandlerMustNotBeNull() {
+    void customDefaultHandlerMustNotBeNull() {
         NullPointerException npe = Assertions.assertThrows(
                 NullPointerException.class,
                 () -> sut.onUnregisteredRequest(null));
+        assertThat(npe.getMessage(), containsString("must not be null"));
+    }
+
+    @Test
+    void customUncaughtExceptionHandlerMustNotBeNull() {
+        NullPointerException npe = Assertions.assertThrows(
+                NullPointerException.class,
+                () -> sut.onProcessingException(null));
         assertThat(npe.getMessage(), containsString("must not be null"));
     }
 
@@ -33,6 +42,17 @@ class RpcRequestProcessorTest {
         RpcInvocation[] rpcInvocationHolder = new RpcInvocation[1];
         sut.onUnregisteredRequest(rpci -> rpcInvocationHolder[0]=rpci);
         MyRpcInvocation invocation = new MyRpcInvocation("");
+
+        sut.accept(invocation);
+
+        assertThat(rpcInvocationHolder[0], sameInstance(invocation));
+    }
+
+    @Test
+    void invokingWithNoRequestInvokesDefaultHandlerIfProvided() throws Exception {
+        RpcInvocation[] rpcInvocationHolder = new RpcInvocation[1];
+        sut.onUnregisteredRequest(rpci -> rpcInvocationHolder[0]=rpci);
+        MyRpcInvocation invocation = new MyRpcInvocation(null);
 
         sut.accept(invocation);
 

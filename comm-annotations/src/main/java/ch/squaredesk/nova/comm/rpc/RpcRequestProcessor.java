@@ -12,6 +12,7 @@
 package ch.squaredesk.nova.comm.rpc;
 
 
+import ch.squaredesk.nova.metrics.Metrics;
 import io.reactivex.functions.Consumer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,6 +20,7 @@ import org.slf4j.LoggerFactory;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.BiConsumer;
 
 
 public class RpcRequestProcessor<RpcInvocationType extends RpcInvocation<IncomingMessageType, ?, ReturnMessageType, ?>,
@@ -27,10 +29,21 @@ public class RpcRequestProcessor<RpcInvocationType extends RpcInvocation<Incomin
     private static final Logger logger = LoggerFactory.getLogger(RpcRequestProcessor.class);
 
     private final Map<Class<?>, Consumer<RpcInvocationType>> handlerFunctions = new ConcurrentHashMap<>();
+    private final RpcServerMetricsCollector metricsCollector;
 
     private java.util.function.Consumer<RpcInvocationType> unregisteredRequestHandler = invocation -> {
         logger.error("No handler found to process incoming request " + invocation);
+        invocation.completeExceptionally(new RuntimeException("Invalid request"));
     };
+    private BiConsumer<RpcInvocationType, Throwable> uncaughtExceptionHandler = (invocation, error) -> {
+        logger.error("An error occurred, trying to process incoming request " + invocation, error);
+        invocation.completeExceptionally(new RuntimeException("Invalid request"));
+    };
+
+    public RpcRequestProcessor(Metrics metrics) {
+        Objects.requireNonNull(metrics, "Metrics must not be null");
+        metricsCollector = new RpcServerMetricsCollector(null, metrics);
+    }
 
     public void register (Class<?> requestClass,
                           Consumer<RpcInvocationType> handlerFunction) {
@@ -41,23 +54,35 @@ public class RpcRequestProcessor<RpcInvocationType extends RpcInvocation<Incomin
     }
 
     @Override
-    public void accept (RpcInvocationType rpcInvocation) throws Exception {
-        Consumer<RpcInvocationType> handlerFunction = handlerFunctions.get(rpcInvocation.request.getClass());
-
-        if (handlerFunction==null) {
-            unregisteredRequestHandler.accept(rpcInvocation);
-        } else {
-            try {
-                handlerFunction.accept(rpcInvocation);
-            } catch (Throwable t) {
-                logger.error("An error occurred, trying to process incoming request " + rpcInvocation, t);
+    public void accept (RpcInvocationType rpcInvocation) {
+        try {
+            Consumer<RpcInvocationType> handlerFunction = null;
+            if (rpcInvocation.request != null) {
+                handlerFunction = handlerFunctions.get(rpcInvocation.request.getClass());
             }
+
+            if (handlerFunction==null) {
+                unregisteredRequestHandler.accept(rpcInvocation);
+            } else {
+                metricsCollector.requestReceived(rpcInvocation.request);
+                handlerFunction.accept(rpcInvocation);
+                metricsCollector.requestCompleted(rpcInvocation.request, null);
+            }
+        } catch (Throwable t) {
+            logger.error("An error occurred, trying to process incoming request " + rpcInvocation, t);
+            metricsCollector.requestCompletedExceptionally(rpcInvocation.request, t);
+            rpcInvocation.completeExceptionally(new RuntimeException("Invalid request"));
         }
     }
 
     public void onUnregisteredRequest(java.util.function.Consumer<RpcInvocationType> function) {
         Objects.requireNonNull(function, "handler for unregistered requests must not be null");
         this.unregisteredRequestHandler = function;
+    }
+
+    public void onProcessingException(BiConsumer<RpcInvocationType, Throwable> function) {
+        Objects.requireNonNull(function, "handler for processing errors must not be null");
+        this.uncaughtExceptionHandler = function;
     }
 
 }

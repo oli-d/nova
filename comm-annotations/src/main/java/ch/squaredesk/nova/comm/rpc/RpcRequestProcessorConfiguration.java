@@ -11,14 +11,19 @@
 
 package ch.squaredesk.nova.comm.rpc;
 
+import ch.squaredesk.nova.Nova;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
 public class RpcRequestProcessorConfiguration {
+    @Autowired
+    private Nova nova;
+
     @Bean
     public RpcRequestProcessor rpcRequestProcessor() {
-        return new RpcRequestProcessor();
+        return new RpcRequestProcessor(nova.metrics);
     }
 
     @Bean

@@ -11,6 +11,7 @@
 
 package ch.squaredesk.nova.comm.rpc;
 
+import ch.squaredesk.nova.Nova;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -49,6 +50,10 @@ class RpcRequestHandlingBeanPostprocessorTest {
     @Configuration
     @Import(RpcRequestProcessorConfiguration.class)
     public static class MyConfig {
+        @Bean
+        Nova nova () {
+            return Nova.builder().build();
+        }
         @Bean
         Handler handler () {
             return new Handler();
