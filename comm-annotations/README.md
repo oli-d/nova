@@ -10,133 +10,45 @@ public class EchoService {
     ...
 
     @OnRpcInvocation(EchoRequest.class)
-    public EchoResponse handle (EchoRequest echoRequest) {
-        ...
+    public void handle (RpcInvocation<EchoRequest> echoRequestInvocation) {
+        EchoResult result = computeResult();
+        echoResultInvocation.complete(result);
     }
 }
 ```
 
 In that example, the method ```handle(...)``` is called whenever a new ```EchoRequest```
-was received, computes and returns an appropriate ```EchoResponse```. Please note
-that the handler method must accept a single parameter of the type that was defined
-in the annotation value and always return a result. Or in other word, it must be
-a function from the declared request type to the result type.
+was received, computes an appropriate ```EchoResponse``` and returns it
+to the client.
 
-But how is this wired up? Where does the system read the incoming requests from? How can we
-send the computed result back to the client?
+Note that the handler method must accept a single ```RpcInvocation``` parameter
+(properly typed so that the request type matches the method annotation) and is not allowed
+to return a result. Or in other word, it must be a ```Consumer<RpcInvocation<RequestTypeAccordingToAnnotation, ?, ?, ?>>```.
+
+But how is this wired up? Where does the system read the incoming requests from?
 
 The key component to answer those questions is the ```RpcRequestProcessor```. It is
 available in Spring's ```ApplicationContext``` if you import the ```RpcRequestProcessorConfiguration```
-in your service's configuration class.
+in your service's configuration class. (_Note that in order to work properly, a ```Nova```
+bean must exist in your ```ApplicationContext```. Either create it yourself or - for
+more convenience - import ``` NovaProvidingConfiguration ``` from the module
+[spring-support](../spring-support/README.md).)_
 
 The ```RpcRequestProcessor``` is designed to work seamlessly with ```Nova```'s
-communication adapters. It implements the interface ```io.reactivex.functions.Function```
-so that processing all incoming requests from a specific adapter is as simple as
-mapping the incoming request object to the corresponding service reply:
+communication adapters. It implements the interface ```io.reactivex.functions.Consumer```
+so that processing all incoming requests from a specific adapter and destination is as simple
+as subscribing the ```RpcRequestProcessor``` to the Flowable of incoming requests like so:
 
 ```java
     ...
     myCommAdapter
         .requests(requestDestination)
-        .map(rpcRequestProcessor)
+        .subscribe(rpcRequestProcessor)
     ...
 ```
 
-The result of this ```map()``` operation is a ```Flowable``` of request/result pairs
-that can be subscribed to for further processing (e.g. to send an
-appropriate reply message back to the client):
+The ```RpcRequestProcessor``` implements default behaviour for handling unregistered requests
+as well as unexpected exceptions during processing. If you want to customize this behaviour,
+you can define your own handler implementations by invoking
+``` RpcRequestProcessor.onUnregisteredRequest() ``` resp. ``` RpcRequestProcessor.onProcessingException() ```
 
-```java
-    ...
-    myCommAdapter
-        .requests(requestDestination)
-        .map(rpcRequestProcessor)
-        .subscribe(requestReplyPair -> requestReplyPair._1.complete(requestReplyPair._2))
-    ...
-```
-
-
-processes the incoming requests, checks whether an appropriate handler was registered
-and - if so - invokes it.
-
-This feature is implemented using a specific Spring ```BeanPostProcessor```. Therefore, to be able to use
-the functionality described above,
-__the following beans must exist in the ApplicationContext:__
-1. ___All of your beans that have been annotated___
-
-1. ___A Nova instance (called "nova") which will take care of the EventDispatching___
-
-1. ___Nova's EventHandlingBeanPostprocessor bean___
-
-We do prefer annotation based ApplicationContext configurations, therefore we provide the convenience
-class ```AnnotationEnablingConfiguration``` which makes providing the required
-```EventHandlingBeanPostprocessor``` bean very easy. Simply import it in your custom configuration
-class and you are ready to go. As an example:
-
-```
-@Configuration
-@Import(AnnotationEnablingConfiguration)
-public class MyConfig {
-    @Bean
-    public MyClass myBean() {
-        return new MyClass();
-    }
-
-    @Bean
-    public Nova nova() {
-        ... // create Nova instance
-    }
-
-    ... // further bean definitions
-}
-```
-
-The same approach can be taken to create the required ```Nova``` bean. Since our artifact depends on
-[spring-support](../spring-support/README.md), you can also make use of the provided
-```NovaProvidingConfiguration``` class. Simply import this configuration to make your custom ```Configuration```
-class even simpler:
-
-```
-@Configuration
-@Import({NovaProvidingConfig.class, AnnotationEnablingConfiguration})
-public class MyConfig {
-    @Bean
-    public MyClass myBean() {
-        return new MyClass();
-    }
-
-    ... // further bean definitions
-}
-```
-
-__But wait... there's one more thing!__
-
-Since we firmly believe that a modern software system should capture as much metric data as
-possible, we wanted to make it easy for every event handler to capture its own specific metrics.
-Our solution to this is that your are able to add an additional parameter to your handling method.
-If you do so, and
-
-- the parameter is of type ```EventContext```
-- and it's the last parameter in your event handling method signature,
-
-the system automatically injects an ```EventContext``` instance whenever the handler is invoked. This
-context object provides convenient access to Nova's ```Metrics``` and ```EventEmitter```.
-
-As an example, we could change the code from above to look like this:
-
-```
-public class MyClass {
-    ...
-
-    @OnEvent("myEvent")
-    public void myEventHandlerMethod (String parameter1, double parameter 2, EventContext context) {
-        ...
-        context.metrics.getCounter("myCounter").inc();
-        ...
-    }
-}
-```
-
-This would have the effect, that whenever somebody emits the ```"myEvent"``` event, the ```myEventHandler```
-method is called with an appropriate context object which - in our example - is used to increment the
-counter named ```myCounter```.
