@@ -31,6 +31,7 @@ class BeanExaminer {
                     ensureProperRpcHandlerFunction(annotation.value(), bean, m);
                     return new RpcRequestHandlerDescription(
                             annotation.value(),
+                            annotation.reply(),
                             bean,
                             m);
                 })
@@ -45,15 +46,33 @@ class BeanExaminer {
         return m.getReturnType().equals(void.class) || m.getReturnType().equals(Void.class);
     }
 
-    private static boolean onlyAcceptsSingleParameter(Method m) {
-        return m.getParameterCount() == 1;
+    private static boolean acceptsTwoParameters(Method m) {
+        return m.getParameterCount() == 2;
     }
 
-    private static boolean isRpcIncvocation (Class<?> classToTest) {
-        return RpcInvocation.class.isAssignableFrom(classToTest);
+    private static boolean isRpcCompletor(Class<?> classToTest) {
+        return RpcCompletor.class.isAssignableFrom(classToTest);
     }
 
-    private Class getRpcInvocationParameterType (Type rpcInvocationType, int parameterIndex) {
+    private static boolean parameterOneHasType(Method m, Class<?> typeToVerify) {
+        Class<?> parameterType = m.getParameterTypes()[0];
+        return parameterType.isAssignableFrom(typeToVerify);
+    }
+
+    private static boolean parameterTwoIsProperlyTypedRpcCompletor(Method m, Class<?> replyType) {
+        Class<?> parameterType = m.getParameterTypes()[1];
+        Type genericParameterType = m.getGenericParameterTypes()[1];
+
+        return isRpcCompletor(parameterType) &&
+                getRpcCompletorParameterType(genericParameterType,0).isAssignableFrom(replyType);
+    }
+
+    private static boolean parameterTwoIsRpcCompletor(Method m) {
+        Class<?> parameterType = m.getParameterTypes()[1];
+        return isRpcCompletor(parameterType);
+    }
+
+    private static Class getRpcCompletorParameterType (Type rpcInvocationType, int parameterIndex) {
         ParameterizedType genericSuperclass;
         if (rpcInvocationType instanceof ParameterizedType) {
             genericSuperclass = (ParameterizedType) rpcInvocationType;
@@ -64,33 +83,25 @@ class BeanExaminer {
         return (Class)genericSuperclass.getActualTypeArguments()[parameterIndex];
     }
 
-    private boolean parameterIsProperlyTypedRpcInvocation(Method m, Class<?> incomingRequestType) {
-        Class<?> parameterType = m.getParameterTypes()[0];
-        Type genericParameterType = m.getGenericParameterTypes()[0];
-
-        return isRpcIncvocation(parameterType) &&
-                getRpcInvocationParameterType(genericParameterType,0).isAssignableFrom(incomingRequestType);
-    }
-
-    private void ensureProperRpcHandlerFunction (Class<?> registeredRequestTypeClass, Object bean, Method m) {
+    private static void ensureProperRpcHandlerFunction (Class<?> requestTypeClass, Object bean, Method m) {
         if (!isPublic(m)) {
             throw new IllegalArgumentException("Annotated RPC request handler method " + prettyPrint(bean, m) + " must be public");
         }
-        if (!(returnsVoid(m) && onlyAcceptsSingleParameter(m) && parameterIsProperlyTypedRpcInvocation(m, registeredRequestTypeClass))) {
+        if (!(returnsVoid(m) &&
+                acceptsTwoParameters(m) &&
+                parameterOneHasType(m, requestTypeClass) &&
+                parameterTwoIsRpcCompletor(m))) {
             throw new IllegalArgumentException("Annotated RPC request handler method " + prettyPrint(bean, m)
-                    + " must be a Consumer<RpcInvocation<" + registeredRequestTypeClass.getName() + ",?,?,?>");
+                    + " must be a BiConsumer<" + requestTypeClass.getSimpleName() + ", RpcCompletor>");
         }
     }
 
     private static String prettyPrint(Object bean, Method method) {
-        StringBuilder sb = new StringBuilder(bean.getClass().getName())
-                .append('.')
-                .append(method.getName())
-                .append('(')
-                .append(Arrays.stream(method.getParameterTypes())
-                        .map(paramterClass -> paramterClass.getSimpleName())
-                        .collect(Collectors.joining(", ")))
-                .append(')');
-        return sb.toString();
+        return bean.getClass().getName() + '.' +
+                method.getName() + '(' +
+                Arrays.stream(method.getParameterTypes())
+                        .map(Class::getSimpleName)
+                        .collect(Collectors.joining(", ")) +
+                ')';
     }
 }

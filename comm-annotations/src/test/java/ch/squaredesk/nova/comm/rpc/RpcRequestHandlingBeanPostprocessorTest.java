@@ -12,6 +12,8 @@
 package ch.squaredesk.nova.comm.rpc;
 
 import ch.squaredesk.nova.Nova;
+import ch.squaredesk.nova.comm.retrieving.IncomingMessage;
+import ch.squaredesk.nova.comm.retrieving.IncomingMessageMetaData;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -62,21 +64,21 @@ class RpcRequestHandlingBeanPostprocessorTest {
 
     public static class Handler {
         @OnRpcInvocation(String.class)
-        public void processA(StringRequestRpcInvocation invocation) {
+        public void processA(String request, StringRequestRpcInvocation invocation) {
             invocation.complete(4);
         }
 
         @OnRpcInvocation(Integer.class)
-        public void processB (IntegerRequestRpcInvocation invocation) {
+        public void processB (Integer request, IntegerRequestRpcInvocation invocation) {
             invocation.complete("4");
         }
     }
 
-    public static class StringRequestRpcInvocation extends RpcInvocation<String, String, Integer, Integer> {
+    public static class StringRequestRpcInvocation extends RpcInvocation<String, IncomingMessageMetaData<?,?>, Integer, Integer> {
         Integer result;
 
         public StringRequestRpcInvocation(String request) {
-            super(request, null, null, null);
+            super(new IncomingMessage<>(request, new IncomingMessageMetaData<>(new Object(), null)), null, null);
         }
 
         @Override
@@ -85,11 +87,11 @@ class RpcRequestHandlingBeanPostprocessorTest {
         }
     }
 
-    public static class IntegerRequestRpcInvocation extends RpcInvocation<Integer, Integer, String, String> {
+    public static class IntegerRequestRpcInvocation extends RpcInvocation<Integer, IncomingMessageMetaData<?,?>, String, String> {
         String result;
 
         public IntegerRequestRpcInvocation(Integer request) {
-            super(request, null, null, null);
+            super(new IncomingMessage<>(request, new IncomingMessageMetaData<>(new Object(), null)), null, null);
         }
 
         @Override

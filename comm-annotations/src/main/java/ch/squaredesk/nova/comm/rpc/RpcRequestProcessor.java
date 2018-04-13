@@ -14,20 +14,20 @@ package ch.squaredesk.nova.comm.rpc;
 
 import ch.squaredesk.nova.metrics.Metrics;
 import io.reactivex.functions.Consumer;
+import io.reactivex.functions.BiConsumer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.BiConsumer;
 
 public class RpcRequestProcessor<MessageType, RpcInvocationType extends RpcInvocation<? extends MessageType, ?, ? extends MessageType, ?>>
         implements Consumer<RpcInvocationType> {
 
     private static final Logger logger = LoggerFactory.getLogger(RpcRequestProcessor.class);
 
-    private final Map<Class<?>, Consumer<RpcInvocationType>> handlerFunctions = new ConcurrentHashMap<>();
+    private final Map<Class<?>, BiConsumer<? extends MessageType, RpcInvocationType>> handlerFunctions = new ConcurrentHashMap<>();
     private final RpcServerMetricsCollector metricsCollector;
 
     private java.util.function.Consumer<RpcInvocationType> unregisteredRequestHandler = invocation -> {
@@ -45,7 +45,7 @@ public class RpcRequestProcessor<MessageType, RpcInvocationType extends RpcInvoc
     }
 
     public void register (Class<?> requestClass,
-                          Consumer<RpcInvocationType> handlerFunction) {
+                          BiConsumer<? extends MessageType, RpcInvocationType> handlerFunction) {
         if (handlerFunctions.containsKey(requestClass)) {
             throw new IllegalArgumentException("Handler for request type " + requestClass.getName() + " already registered");
         }
@@ -55,16 +55,17 @@ public class RpcRequestProcessor<MessageType, RpcInvocationType extends RpcInvoc
     @Override
     public void accept (RpcInvocationType rpcInvocation) {
         try {
-            Consumer<RpcInvocationType> handlerFunction = null;
-            if (rpcInvocation.request != null) {
-                handlerFunction = handlerFunctions.get(rpcInvocation.request.getClass());
+            BiConsumer<MessageType, RpcInvocationType> handlerFunction = null;
+            if (rpcInvocation.request != null && rpcInvocation.request.message != null) {
+                handlerFunction = (BiConsumer<MessageType, RpcInvocationType>) handlerFunctions.get(rpcInvocation.request.message.getClass());
             }
 
             if (handlerFunction==null) {
                 unregisteredRequestHandler.accept(rpcInvocation);
             } else {
                 metricsCollector.requestReceived(rpcInvocation.request);
-                handlerFunction.accept(rpcInvocation);
+                MessageType request = rpcInvocation.request.message;
+                handlerFunction.accept(request, rpcInvocation);
                 metricsCollector.requestCompleted(rpcInvocation.request, null);
             }
         } catch (Throwable t) {

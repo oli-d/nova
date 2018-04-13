@@ -9,8 +9,8 @@ Let's look at an example:
 public class EchoService {
     ...
 
-    @OnRpcInvocation(EchoRequest.class)
-    public void handle (RpcInvocation<EchoRequest> echoRequestInvocation) {
+    @OnRpcInvocation(EchoRequest.class, EchoResponse.class)
+    public void handle (EchoRequest request, RpcInvocation<EchoRequest> echoRequestInvocation) {
         EchoResult result = computeResult();
         echoResultInvocation.complete(result);
     }

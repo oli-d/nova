@@ -27,7 +27,7 @@ class BeanExaminerTest {
     @Test
     void noAnnotationsReturnEmptyArray() {
         class MissingAnnotation {
-            public String processRequest(RpcInvocation<String, Void, String, Void> rpcInvocation) {
+            public String processRequest(String request, RpcCompletor<String, Void> rpcCompletor) {
                 return "";
             }
         }
@@ -43,38 +43,39 @@ class BeanExaminerTest {
                 return "";
             }
         }
-        class TwoArgs {
+        class FirstArgTypeWrong {
+            @OnRpcInvocation(String.class)
+            public String processRequest(Integer i0, RpcCompletor<String, ?> c) {
+                return "";
+            }
+        }
+        class SecondArgTypeWrong {
             @OnRpcInvocation(String.class)
             public String processRequest(String s0, String s) {
                 return "";
             }
         }
-        class WrongArgType {
+        class TooManyArgs {
             @OnRpcInvocation(String.class)
-            public String processRequest(Integer i) {
+            public String processRequest(String s, RpcCompletor<String, ?> c, String s2) {
                 return "";
             }
         }
         class NotPublic {
             @OnRpcInvocation(String.class)
-            private String processRequest(String s) {
+            private String processRequest(String s, RpcCompletor<String, ?> c) {
                 return "";
             }
         }
-        class NoReturnValue1 {
+        class HasReturnValue {
             @OnRpcInvocation(String.class)
-            public void processRequest(String s) {
-            }
-        }
-        class NoReturnValue2 {
-            @OnRpcInvocation(String.class)
-            public Void processRequest(String s) {
+            public String processRequest(String s, RpcCompletor<String, ?> c) {
                 return null;
             }
         }
 
-        return Stream.of(new NoArgs(), new TwoArgs(), new WrongArgType(),
-                new NotPublic(), new NoReturnValue1(), new NoReturnValue2());
+        return Stream.of(new NoArgs(), new FirstArgTypeWrong(), new SecondArgTypeWrong(),
+                new NotPublic(), new TooManyArgs(), new HasReturnValue());
     }
 
     @ParameterizedTest
@@ -87,11 +88,11 @@ class BeanExaminerTest {
     void handlersProperlyDetected() {
         class MyClass {
             @OnRpcInvocation(String.class)
-            public void processStringRequest(RpcInvocation<String, ?, ?,?> i) {
+            public void processStringRequest(String s, RpcInvocation<String, ?, ?,?> i) {
             }
 
             @OnRpcInvocation(Double.class)
-            public void foo(RpcInvocation<Double, ?, ?,?> i) {
+            public void foo(Double d, RpcInvocation<Double, ?, ?,?> i) {
             }
         }
 
