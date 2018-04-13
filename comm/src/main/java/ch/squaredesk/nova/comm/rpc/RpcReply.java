@@ -11,9 +11,7 @@
 
 package ch.squaredesk.nova.comm.rpc;
 
-import ch.squaredesk.nova.comm.retrieving.IncomingMessageMetaData;
-
-public class RpcReply<ReplyType, MetaDataType extends IncomingMessageMetaData<?, ?>> {
+public class RpcReply<ReplyType, MetaDataType> {
     public final ReplyType result;
     public final MetaDataType metaData;
 

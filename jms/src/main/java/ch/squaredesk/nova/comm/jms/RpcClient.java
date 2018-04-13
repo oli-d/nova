@@ -13,13 +13,12 @@ package ch.squaredesk.nova.comm.jms;
 import ch.squaredesk.nova.metrics.Metrics;
 import io.reactivex.Single;
 
-import javax.jms.Destination;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import static java.util.Objects.requireNonNull;
 
-public class RpcClient<InternalMessageType> extends ch.squaredesk.nova.comm.rpc.RpcClient<Destination, InternalMessageType, OutgoingMessageMetaData, IncomingMessageMetaData> {
+public class RpcClient<InternalMessageType> extends ch.squaredesk.nova.comm.rpc.RpcClient<InternalMessageType, OutgoingMessageMetaData, IncomingMessageMetaData> {
     private final MessageSender<InternalMessageType> messageSender;
     private final MessageReceiver<InternalMessageType> messageReceiver;
 

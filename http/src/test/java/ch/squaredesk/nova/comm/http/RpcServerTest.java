@@ -78,7 +78,7 @@ class RpcServerTest {
         CountDownLatch cdl = new CountDownLatch(numRequests);
         Flowable<RpcInvocation<String>> requests = sut.requests(path);
         requests.subscribeOn(Schedulers.io()).subscribe(rpcInvocation -> {
-            rpcInvocation.complete(" description " + rpcInvocation.transportSpecificInfo.parameters.get("p"));
+            rpcInvocation.complete(" description " + rpcInvocation.request.metaData.details.parameters.get("p"));
             cdl.countDown();
         });
 
@@ -114,7 +114,7 @@ class RpcServerTest {
         String hugeRequest = createStringOfLength(5 * 1024 * 1024);
         Flowable<RpcInvocation<String>> requests = sut.requests(path);
         requests.subscribeOn(Schedulers.io()).subscribe(rpcInvocation -> {
-            rpcInvocation.complete(rpcInvocation.request);
+            rpcInvocation.complete(rpcInvocation.request.message);
         });
 
         HttpRequestSender.HttpResponse response = HttpRequestSender.sendPostRequest(url, hugeRequest);
@@ -146,9 +146,9 @@ class RpcServerTest {
         requests.subscribe(rpcInvocation -> rpcInvocation.completeExceptionally(new Exception("no content")));
 
         String urlAsString = "http://" + rsc.interfaceName + ":" + rsc.port + path + "?p=";
-        OutgoingMessageMetaData meta = new OutgoingMessageMetaData(
+        RequestMessageMetaData meta = new RequestMessageMetaData(
                 new URL(urlAsString),
-                new SendInfo(HttpRequestMethod.POST));
+                new RequestInfo(HttpRequestMethod.POST));
 
         RpcReply<String> reply = rpcClient.sendRequest("{}", meta, 15, TimeUnit.SECONDS).blockingGet();
         assertThat(reply.result, containsString("Internal server error"));
@@ -160,9 +160,9 @@ class RpcServerTest {
             try {
                 String urlAsString = "http://" + rsc.interfaceName + ":" + rsc.port + path + "?p=" + i;
 
-                OutgoingMessageMetaData meta = new OutgoingMessageMetaData(
+                RequestMessageMetaData meta = new RequestMessageMetaData(
                         new URL(urlAsString),
-                        new SendInfo(HttpRequestMethod.POST));
+                        new RequestInfo(HttpRequestMethod.POST));
 
                 rpcClient.sendRequest("{}", meta, 15, TimeUnit.SECONDS).blockingGet();
             } catch (Exception e) {

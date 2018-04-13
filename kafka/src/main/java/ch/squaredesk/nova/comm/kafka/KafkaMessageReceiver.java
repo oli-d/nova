@@ -145,7 +145,7 @@ public class KafkaMessageReceiver<InternalMessageType>
         Objects.requireNonNull(messageUnmarshaller, "unmarshaller must not be null");
 
         return allMessagesStream
-                .filter(incomingMessage -> destination.equals(incomingMessage.metaData.origin))
+                .filter(incomingMessage -> destination.equals(incomingMessage.metaData.destination))
                 .doOnSubscribe(s -> {
                     scheduler.scheduleDirect(() -> {
                         AtomicInteger subsCounter = topicToSubscriptionCount.computeIfAbsent(

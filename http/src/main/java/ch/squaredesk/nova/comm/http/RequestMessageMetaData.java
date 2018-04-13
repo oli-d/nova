@@ -11,19 +11,16 @@
 
 package ch.squaredesk.nova.comm.http;
 
-public class RetrieveInfo {
-    public final int statusCode;
+import java.net.URL;
 
-    public RetrieveInfo(int statusCode) {
-        this.statusCode = statusCode;
+public class RequestMessageMetaData extends ch.squaredesk.nova.comm.retrieving.IncomingMessageMetaData<URL, RequestInfo> {
+
+    public RequestMessageMetaData(URL destination) {
+        this(destination, null);
     }
 
-    @Override
-    public String toString() {
-        return new StringBuilder()
-            .append("{\n")
-            .append("\tstatusCode: ").append(statusCode).append('\n')
-            .append("}")
-            .toString();
+    public RequestMessageMetaData(URL destination, RequestInfo details) {
+        super(destination, details);
     }
+
 }

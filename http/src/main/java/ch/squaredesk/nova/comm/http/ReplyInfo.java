@@ -11,16 +11,19 @@
 
 package ch.squaredesk.nova.comm.http;
 
-import java.net.URL;
+public class ReplyInfo {
+    public final int statusCode;
 
-public class OutgoingMessageMetaData extends ch.squaredesk.nova.comm.sending.OutgoingMessageMetaData<URL, SendInfo> {
-
-    public OutgoingMessageMetaData(URL origin) {
-        this(origin, null);
+    public ReplyInfo(int statusCode) {
+        this.statusCode = statusCode;
     }
 
-    public OutgoingMessageMetaData(URL origin, SendInfo details) {
-        super(origin, details);
+    @Override
+    public String toString() {
+        return new StringBuilder()
+            .append("{\n")
+            .append("\tstatusCode: ").append(statusCode).append('\n')
+            .append("}")
+            .toString();
     }
-
 }
