@@ -68,7 +68,17 @@ class RpcRequestProcessorTest {
     }
 
     @Test
-    void registeredFunctionsGetProperlyInvoked() throws Exception {
+    void registeredFunctionsGetProperlyInvoked() {
+        class MyObject {
+            private String value;
+
+            private MyObject(String value) { this.value = value;}
+        }
+        class MyExtendedObject extends MyObject {
+            private String valueToo;
+
+            private MyExtendedObject(String value, String valueToo) { super(value); this.valueToo = value;}
+        }
         Object[] resultHolder = new Object[1];
         sut.register(String.class, x -> {
             resultHolder[0] = "String";
@@ -78,6 +88,12 @@ class RpcRequestProcessorTest {
         });
         sut.register(Double.class, x -> {
             resultHolder[0] = "Double";
+        });
+        sut.register(MyExtendedObject.class, x -> {
+            resultHolder[0] = "Extended";
+        });
+        sut.register(MyObject.class, x -> {
+            resultHolder[0] = "MyObject";
         });
 
         sut.accept(new MyRpcInvocation("value"));
@@ -90,10 +106,14 @@ class RpcRequestProcessorTest {
         assertThat(resultHolder[0], is("Double"));
         sut.accept(new MyRpcInvocation(3.0));
         assertThat(resultHolder[0], is("Double"));
+        sut.accept(new MyRpcInvocation(new MyObject("val")));
+        assertThat(resultHolder[0], is("MyObject"));
+        sut.accept(new MyRpcInvocation(new MyExtendedObject("val", "val2")));
+        assertThat(resultHolder[0], is("Extended"));
     }
 
     private class MyRpcInvocation extends RpcInvocation<Object, Void, String, Void> {
-        public MyRpcInvocation(Object request) {
+        private MyRpcInvocation(Object request) {
             super(request, null, null, null);
         }
     }
