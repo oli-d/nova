@@ -34,7 +34,7 @@ public class RpcRequestProcessor<MessageType, RpcInvocationType extends RpcInvoc
         logger.error("No handler found to process incoming request " + invocation);
         invocation.completeExceptionally(new RuntimeException("Invalid request"));
     };
-    private BiConsumer<RpcInvocationType, Throwable> uncaughtExceptionHandler = (invocation, error) -> {
+    private java.util.function.BiConsumer<RpcInvocationType, Throwable> uncaughtExceptionHandler = (invocation, error) -> {
         logger.error("An error occurred, trying to process incoming request " + invocation, error);
         invocation.completeExceptionally(new RuntimeException("Invalid request"));
     };
@@ -65,13 +65,12 @@ public class RpcRequestProcessor<MessageType, RpcInvocationType extends RpcInvoc
             } else {
                 metricsCollector.requestReceived(rpcInvocation.request);
                 MessageType request = rpcInvocation.request.message;
-                handlerFunction.accept(request, rpcInvocation);
                 metricsCollector.requestCompleted(rpcInvocation.request, null);
+                handlerFunction.accept(request, rpcInvocation);
             }
         } catch (Throwable t) {
-            logger.error("An error occurred, trying to process incoming request " + rpcInvocation, t);
             metricsCollector.requestCompletedExceptionally(rpcInvocation.request, t);
-            rpcInvocation.completeExceptionally(new RuntimeException("Invalid request"));
+            uncaughtExceptionHandler.accept(rpcInvocation, t);
         }
     }
 
@@ -80,7 +79,7 @@ public class RpcRequestProcessor<MessageType, RpcInvocationType extends RpcInvoc
         this.unregisteredRequestHandler = function;
     }
 
-    public void onProcessingException(BiConsumer<RpcInvocationType, Throwable> function) {
+    public void onProcessingException(java.util.function.BiConsumer<RpcInvocationType, Throwable> function) {
         Objects.requireNonNull(function, "handler for processing errors must not be null");
         this.uncaughtExceptionHandler = function;
     }
