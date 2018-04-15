@@ -29,7 +29,6 @@ class BeanExaminer {
                     ensureProperRpcHandlerFunction(annotation.value(), bean, m);
                     return new RpcRequestHandlerDescription(
                             annotation.value(),
-                            annotation.reply(),
                             bean,
                             m);
                 })

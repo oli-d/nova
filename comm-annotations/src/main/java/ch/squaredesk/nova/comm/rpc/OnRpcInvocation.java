@@ -20,6 +20,4 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 public @interface OnRpcInvocation {
     Class<?> value();
-    Class<?> request() default String.class;
-    Class<?> reply() default String.class;
 }
