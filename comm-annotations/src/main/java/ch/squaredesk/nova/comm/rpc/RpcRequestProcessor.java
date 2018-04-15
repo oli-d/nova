@@ -13,8 +13,8 @@ package ch.squaredesk.nova.comm.rpc;
 
 
 import ch.squaredesk.nova.metrics.Metrics;
-import io.reactivex.functions.Consumer;
 import io.reactivex.functions.BiConsumer;
+import io.reactivex.functions.Consumer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
