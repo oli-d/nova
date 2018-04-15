@@ -59,28 +59,9 @@ class BeanExaminer {
         return parameterType.isAssignableFrom(typeToVerify);
     }
 
-    private static boolean parameterTwoIsProperlyTypedRpcCompletor(Method m, Class<?> replyType) {
-        Class<?> parameterType = m.getParameterTypes()[1];
-        Type genericParameterType = m.getGenericParameterTypes()[1];
-
-        return isRpcCompletor(parameterType) &&
-                getRpcCompletorParameterType(genericParameterType,0).isAssignableFrom(replyType);
-    }
-
     private static boolean parameterTwoIsRpcCompletor(Method m) {
         Class<?> parameterType = m.getParameterTypes()[1];
         return isRpcCompletor(parameterType);
-    }
-
-    private static Class getRpcCompletorParameterType (Type rpcInvocationType, int parameterIndex) {
-        ParameterizedType genericSuperclass;
-        if (rpcInvocationType instanceof ParameterizedType) {
-            genericSuperclass = (ParameterizedType) rpcInvocationType;
-        } else {
-            genericSuperclass = (ParameterizedType) ((Class)rpcInvocationType).getGenericSuperclass();
-        }
-
-        return (Class)genericSuperclass.getActualTypeArguments()[parameterIndex];
     }
 
     private static void ensureProperRpcHandlerFunction (Class<?> requestTypeClass, Object bean, Method m) {
