@@ -11,7 +11,9 @@
 
 package ch.squaredesk.nova.comm.rpc;
 
-import ch.squaredesk.nova.tuples.Pair;
+import ch.squaredesk.nova.Nova;
+import ch.squaredesk.nova.comm.retrieving.IncomingMessage;
+import ch.squaredesk.nova.comm.retrieving.IncomingMessageMetaData;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -21,7 +23,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 
-import static org.hamcrest.Matchers.sameInstance;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 class RpcRequestHandlingBeanPostprocessorTest {
@@ -41,18 +42,20 @@ class RpcRequestHandlingBeanPostprocessorTest {
         StringRequestRpcInvocation stringInvocation = new StringRequestRpcInvocation("request");
         IntegerRequestRpcInvocation integerInvocation = new IntegerRequestRpcInvocation(5);
 
-        Pair pairStringRequest = rpcRequestProcessor.apply(stringInvocation);
-        Pair pairIntRequest = rpcRequestProcessor.apply(integerInvocation);
+        rpcRequestProcessor.accept(stringInvocation);
+        rpcRequestProcessor.accept(integerInvocation);
 
-        assertThat(pairStringRequest._1, sameInstance(stringInvocation));
-        assertThat(pairStringRequest._2, Matchers.is(4));
-        assertThat(pairIntRequest._1, sameInstance(integerInvocation));
-        assertThat(pairIntRequest._2, Matchers.is("4"));
+        assertThat(stringInvocation.result, Matchers.is(4));
+        assertThat(integerInvocation.result, Matchers.is("4"));
     }
 
     @Configuration
     @Import(RpcRequestProcessorConfiguration.class)
     public static class MyConfig {
+        @Bean
+        Nova nova () {
+            return Nova.builder().build();
+        }
         @Bean
         Handler handler () {
             return new Handler();
@@ -61,25 +64,39 @@ class RpcRequestHandlingBeanPostprocessorTest {
 
     public static class Handler {
         @OnRpcInvocation(String.class)
-        public int processA(String s) {
-            return 4;
+        public void processA(String request, StringRequestRpcInvocation invocation) {
+            invocation.complete(4);
         }
 
         @OnRpcInvocation(Integer.class)
-        public String processB (Integer i) {
-            return "4";
+        public void processB (Integer request, IntegerRequestRpcInvocation invocation) {
+            invocation.complete("4");
         }
     }
 
-    public static class StringRequestRpcInvocation extends RpcInvocation<String, String, Integer, Integer> {
+    public static class StringRequestRpcInvocation extends RpcInvocation<String, IncomingMessageMetaData<?,?>, Integer, Integer> {
+        Integer result;
+
         public StringRequestRpcInvocation(String request) {
-            super(request, null, null, null);
+            super(new IncomingMessage<>(request, new IncomingMessageMetaData<>(new Object(), null)), null, null);
+        }
+
+        @Override
+        public void complete(Integer result) {
+            this.result = result;
         }
     }
 
-    public static class IntegerRequestRpcInvocation extends RpcInvocation<Integer, Integer, String, String> {
+    public static class IntegerRequestRpcInvocation extends RpcInvocation<Integer, IncomingMessageMetaData<?,?>, String, String> {
+        String result;
+
         public IntegerRequestRpcInvocation(Integer request) {
-            super(request, null, null, null);
+            super(new IncomingMessage<>(request, new IncomingMessageMetaData<>(new Object(), null)), null, null);
+        }
+
+        @Override
+        public void complete(String result) {
+            this.result = result;
         }
     }
 }

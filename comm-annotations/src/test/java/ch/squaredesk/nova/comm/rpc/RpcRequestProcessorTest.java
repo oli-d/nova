@@ -11,76 +11,127 @@
 
 package ch.squaredesk.nova.comm.rpc;
 
-import ch.squaredesk.nova.tuples.Pair;
+import ch.squaredesk.nova.comm.retrieving.IncomingMessage;
+import ch.squaredesk.nova.comm.retrieving.IncomingMessageMetaData;
+import ch.squaredesk.nova.metrics.Metrics;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-import static org.hamcrest.Matchers.containsString;
-import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.*;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 class RpcRequestProcessorTest {
-    private RpcRequestProcessor<MyRpcInvocation, Object, String> sut = new RpcRequestProcessor<>();
+    private RpcRequestProcessor<Object, MyRpcInvocation> sut = new RpcRequestProcessor<>(new Metrics());
 
     @Test
-    void exceptionInHandlerFunctionInvokesErrorFunctionIfProvided() throws Exception {
-        RuntimeException exception = new RuntimeException("for test");
-        sut.onProcessingException((rpci,error) -> error.getMessage());
-        sut.register(String.class, x -> { throw exception; });
-
-        Pair<MyRpcInvocation, String> pair = sut.apply(new MyRpcInvocation(""));
-
-        assertThat(pair._2, is(exception.getMessage()));
+    void customDefaultHandlerMustNotBeNull() {
+        NullPointerException npe = Assertions.assertThrows(
+                NullPointerException.class,
+                () -> sut.onUnregisteredRequest(null));
+        assertThat(npe.getMessage(), containsString("must not be null"));
     }
 
     @Test
-    void invokingWithUnregisteredRequestTypeInvokesErrorFunctionIfProvided() throws Exception {
-        sut.onMissingRequestProcessor(rpci -> "oops");
-
-        Pair<MyRpcInvocation, String> pair = sut.apply(new MyRpcInvocation(""));
-
-        assertThat(pair._2, is("oops"));
+    void customUncaughtExceptionHandlerMustNotBeNull() {
+        NullPointerException npe = Assertions.assertThrows(
+                NullPointerException.class,
+                () -> sut.onProcessingException(null));
+        assertThat(npe.getMessage(), containsString("must not be null"));
     }
 
     @Test
-    void invokingWithUnregisteredRequestTypeInvokesErrorCallbackIfOnlyThisIsProvided() throws Exception {
-        sut.onProcessingException((rpci, error) -> error.getMessage());
+    void invokingWithUnregisteredRequestTypeInvokesDefaultHandlerIfProvided() throws Exception {
+        RpcInvocation[] rpcInvocationHolder = new RpcInvocation[1];
+        sut.onUnregisteredRequest(rpci -> rpcInvocationHolder[0]=rpci);
+        MyRpcInvocation invocation = new MyRpcInvocation("");
 
-        Pair<MyRpcInvocation, String> pair = sut.apply(new MyRpcInvocation(""));
+        sut.accept(invocation);
 
-        assertThat(pair._2, containsString("not supported"));
+        assertThat(rpcInvocationHolder[0], sameInstance(invocation));
+    }
+
+    @Test
+    void invokingWithNoIncomingMessageInvokesDefaultHandlerIfProvided() throws Exception {
+        RpcInvocation[] rpcInvocationHolder = new RpcInvocation[1];
+        sut.onUnregisteredRequest(rpci -> rpcInvocationHolder[0]=rpci);
+        MyRpcInvocation invocation = new MyRpcInvocation(null);
+
+        sut.accept(invocation);
+
+        assertThat(rpcInvocationHolder[0], sameInstance(invocation));
+    }
+
+    @Test
+    void invokingWithNoRequestInvokesDefaultHandlerIfProvided() throws Exception {
+        RpcInvocation[] rpcInvocationHolder = new RpcInvocation[1];
+        sut.onUnregisteredRequest(rpci -> rpcInvocationHolder[0]=rpci);
+        MyRpcInvocation invocation = new MyRpcInvocation(new IncomingMessage(null, new IncomingMessageMetaData<>(new Object(), null)));
+
+        sut.accept(invocation);
+
+        assertThat(rpcInvocationHolder[0], sameInstance(invocation));
     }
 
     @Test
     void registeringTheSameRequestTypeAgainThrows() {
-        sut.register(String.class, s -> null);
+        sut.register(String.class, (request, completor) -> {});
         IllegalArgumentException iae = Assertions.assertThrows(IllegalArgumentException.class,
-                () -> sut.register(String.class, s -> null));
+                () -> sut.register(String.class, (request, completor) -> {}));
         assertThat(iae.getMessage(), containsString("already registered"));
     }
 
     @Test
-    void registeredFunctionsGetProperlyInvoked() throws Exception {
-        sut.register(String.class, x -> "String");
-        sut.register(Integer.class, x -> "Int");
-        sut.register(Double.class, x -> "Double");
+    void registeredFunctionsGetProperlyInvoked() {
+        class MyObject {
+            private String value;
 
-        Pair<MyRpcInvocation, String> pair = sut.apply(new MyRpcInvocation(""));
-        assertThat(pair._2, is("String"));
-        pair = sut.apply(new MyRpcInvocation(Integer.valueOf(1)));
-        assertThat(pair._2, is("Int"));
-        pair = sut.apply(new MyRpcInvocation(2));
-        assertThat(pair._2, is("Int"));
-        pair = sut.apply(new MyRpcInvocation(Double.valueOf(3.0)));
-        assertThat(pair._2, is("Double"));
-        pair = sut.apply(new MyRpcInvocation(3.0));
-        assertThat(pair._2, is("Double"));
+            private MyObject(String value) { this.value = value;}
+        }
+        class MyExtendedObject extends MyObject {
+            private String valueToo;
+
+            private MyExtendedObject(String value, String valueToo) { super(value); this.valueToo = value;}
+        }
+        Object[] resultHolder = new Object[1];
+        sut.register(String.class, (request, invocation) -> {
+            resultHolder[0] = "String";
+        });
+        sut.register(Integer.class, (request, invocation) -> {
+            resultHolder[0] = "Integer";
+        });
+        sut.register(Double.class, (request, invocation) -> {
+            resultHolder[0] = "Double";
+        });
+        sut.register(MyExtendedObject.class, (request, invocation) -> {
+            resultHolder[0] = "Extended";
+        });
+        sut.register(MyObject.class, (request, invocation) -> {
+            resultHolder[0] = "MyObject";
+        });
+
+        sut.accept(new MyRpcInvocation("value"));
+        assertThat(resultHolder[0], is("String"));
+        sut.accept(new MyRpcInvocation(Integer.valueOf(1)));
+        assertThat(resultHolder[0], is("Integer"));
+        sut.accept(new MyRpcInvocation(2));
+        assertThat(resultHolder[0], is("Integer"));
+        sut.accept(new MyRpcInvocation(Double.valueOf(3.0)));
+        assertThat(resultHolder[0], is("Double"));
+        sut.accept(new MyRpcInvocation(3.0));
+        assertThat(resultHolder[0], is("Double"));
+        sut.accept(new MyRpcInvocation(new MyObject("val")));
+        assertThat(resultHolder[0], is("MyObject"));
+        sut.accept(new MyRpcInvocation(new MyExtendedObject("val", "val2")));
+        assertThat(resultHolder[0], is("Extended"));
     }
 
+    private class MyRpcInvocation extends RpcInvocation<Object, IncomingMessageMetaData<?, ?>, String, Void> {
+        private MyRpcInvocation(Object request) {
+            this(new IncomingMessage<>(request, new IncomingMessageMetaData<>(new Object(), null)));
+        }
 
-    private class MyRpcInvocation extends RpcInvocation<Object, Void, String, Void> {
-        public MyRpcInvocation(Object request) {
-            super(request, null, null, null);
+        private MyRpcInvocation(IncomingMessage incomingMessage) {
+            super(incomingMessage, null, null);
         }
     }
 }

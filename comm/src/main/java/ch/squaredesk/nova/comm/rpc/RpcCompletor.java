@@ -6,13 +6,16 @@
  * obtain a copy of the license at
  *
  *   https://squaredesk.ch/license/oss/LICENSE
- *
  */
 
-package ch.squaredesk.nova.comm.http;
+package ch.squaredesk.nova.comm.rpc;
 
-public class RpcReply<T> extends ch.squaredesk.nova.comm.rpc.RpcReply<T, ReplyMessageMetaData> {
-    public RpcReply(T result, ReplyMessageMetaData metaData) {
-        super(result, metaData);
+public interface RpcCompletor<ReplyType, TransportSpecificReplyInfo> {
+    default void complete(ReplyType reply) {
+        complete(reply, null);
     }
+
+    void complete(ReplyType reply, TransportSpecificReplyInfo replySpecificInfo);
+
+    void completeExceptionally(Throwable error);
 }

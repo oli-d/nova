@@ -12,28 +12,40 @@
 package ch.squaredesk.nova.comm.rpc;
 
 
-import ch.squaredesk.nova.tuples.Pair;
-import io.reactivex.functions.Function;
+import ch.squaredesk.nova.metrics.Metrics;
+import io.reactivex.functions.BiConsumer;
+import io.reactivex.functions.Consumer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.BiFunction;
 
-
-public class RpcRequestProcessor<RpcInvocationType extends RpcInvocation<IncomingMessageType, ?, ReturnMessageType, ?>, IncomingMessageType, ReturnMessageType>
-        implements Function<RpcInvocationType, Pair<RpcInvocationType, ReturnMessageType>> {
+public class RpcRequestProcessor<MessageType, RpcInvocationType extends RpcInvocation<? extends MessageType, ?, ? extends MessageType, ?>>
+        implements Consumer<RpcInvocationType> {
 
     private static final Logger logger = LoggerFactory.getLogger(RpcRequestProcessor.class);
 
-    private final Map<Class<?>, Function<IncomingMessageType, ReturnMessageType>> handlerFunctions = new ConcurrentHashMap<>();
+    private final Map<Class<?>, BiConsumer<? extends MessageType, RpcInvocationType>> handlerFunctions = new ConcurrentHashMap<>();
+    private final RpcServerMetricsCollector metricsCollector;
 
-    private java.util.function.Function<IncomingMessageType, ReturnMessageType> onMissingHandler;
-    private BiFunction<IncomingMessageType, Throwable, ReturnMessageType> onProcessingException;
+    private java.util.function.Consumer<RpcInvocationType> unregisteredRequestHandler = invocation -> {
+        logger.error("No handler found to process incoming request " + invocation);
+        invocation.completeExceptionally(new RuntimeException("Invalid request"));
+    };
+    private java.util.function.BiConsumer<RpcInvocationType, Throwable> uncaughtExceptionHandler = (invocation, error) -> {
+        logger.error("An error occurred, trying to process incoming request " + invocation, error);
+        invocation.completeExceptionally(new RuntimeException("Invalid request"));
+    };
+
+    public RpcRequestProcessor(Metrics metrics) {
+        Objects.requireNonNull(metrics, "Metrics must not be null");
+        metricsCollector = new RpcServerMetricsCollector(null, metrics);
+    }
 
     public void register (Class<?> requestClass,
-                          Function<IncomingMessageType, ReturnMessageType> handlerFunction) {
+                          BiConsumer<? extends MessageType, RpcInvocationType> handlerFunction) {
         if (handlerFunctions.containsKey(requestClass)) {
             throw new IllegalArgumentException("Handler for request type " + requestClass.getName() + " already registered");
         }
@@ -41,44 +53,35 @@ public class RpcRequestProcessor<RpcInvocationType extends RpcInvocation<Incomin
     }
 
     @Override
-    public Pair<RpcInvocationType, ReturnMessageType> apply(RpcInvocationType rpcInvocation) throws Exception {
-        Function<IncomingMessageType, ReturnMessageType> handlerFunction =
-                handlerFunctions.get(rpcInvocation.request.getClass());
+    public void accept (RpcInvocationType rpcInvocation) {
+        try {
+            BiConsumer<MessageType, RpcInvocationType> handlerFunction = null;
+            if (rpcInvocation.request != null && rpcInvocation.request.message != null) {
+                handlerFunction = (BiConsumer<MessageType, RpcInvocationType>) handlerFunctions.get(rpcInvocation.request.message.getClass());
+            }
 
-        ReturnMessageType reply = null;
-
-        if (handlerFunction==null) {
-            if (onMissingHandler!=null) {
-                reply = onMissingHandler.apply(rpcInvocation.request);
+            if (handlerFunction==null) {
+                unregisteredRequestHandler.accept(rpcInvocation);
             } else {
-                if (onProcessingException!=null) {
-                    reply = onProcessingException.apply(
-                            rpcInvocation.request,
-                            new IllegalArgumentException("Requests of type " + rpcInvocation.request.getClass().getSimpleName() + " are not supported"));
-                } else {
-                    logger.error("No handler found to process incoming request " + rpcInvocation);
-                }
+                metricsCollector.requestReceived(rpcInvocation.request);
+                MessageType request = rpcInvocation.request.message;
+                metricsCollector.requestCompleted(rpcInvocation.request, null);
+                handlerFunction.accept(request, rpcInvocation);
             }
-        } else {
-            try {
-                reply = handlerFunction.apply(rpcInvocation.request);
-            } catch (Throwable t) {
-                if (onProcessingException != null) {
-                    reply = onProcessingException.apply(rpcInvocation.request, t);
-                } else {
-                    logger.error("An error occurred, trying to process incoming request " + rpcInvocation, t);
-                }
-            }
+        } catch (Throwable t) {
+            metricsCollector.requestCompletedExceptionally(rpcInvocation.request, t);
+            uncaughtExceptionHandler.accept(rpcInvocation, t);
         }
-
-        return new Pair<>(rpcInvocation, reply);
     }
 
-    public void onMissingRequestProcessor(java.util.function.Function<IncomingMessageType, ReturnMessageType> function) {
-        this.onMissingHandler = function;
+    public void onUnregisteredRequest(java.util.function.Consumer<RpcInvocationType> function) {
+        Objects.requireNonNull(function, "handler for unregistered requests must not be null");
+        this.unregisteredRequestHandler = function;
     }
 
-    public void onProcessingException(BiFunction<IncomingMessageType, Throwable, ReturnMessageType> function) {
-        this.onProcessingException = function;
+    public void onProcessingException(java.util.function.BiConsumer<RpcInvocationType, Throwable> function) {
+        Objects.requireNonNull(function, "handler for processing errors must not be null");
+        this.uncaughtExceptionHandler = function;
     }
+
 }

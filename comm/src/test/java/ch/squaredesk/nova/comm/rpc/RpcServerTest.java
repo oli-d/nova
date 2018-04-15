@@ -10,6 +10,7 @@
 
 package ch.squaredesk.nova.comm.rpc;
 
+import ch.squaredesk.nova.comm.retrieving.IncomingMessageMetaData;
 import ch.squaredesk.nova.metrics.Metrics;
 import io.reactivex.Flowable;
 import org.junit.jupiter.api.Test;
@@ -26,14 +27,14 @@ class RpcServerTest {
         assertThat(t.getMessage(), containsString("metrics"));
     }
 
-    private class MyRpcServer extends RpcServer<String, RpcInvocation<String, Void, String, Void>> {
+    private class MyRpcServer extends RpcServer<String, RpcInvocation<String, IncomingMessageMetaData<Void, Void>, String, Void>> {
 
         protected MyRpcServer(Metrics metrics) {
             super(metrics);
         }
 
         @Override
-        public Flowable<RpcInvocation<String, Void, String, Void>> requests(String destination) {
+        public Flowable<RpcInvocation<String, IncomingMessageMetaData<Void, Void>, String, Void>> requests(String destination) {
             return Flowable.empty();
         }
     }

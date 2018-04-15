@@ -53,7 +53,7 @@ public class KafkaAdapter<InternalMessageType> {
         SendInfo sendInfo = new SendInfo();
         OutgoingMessageMetaData meta = new OutgoingMessageMetaData(destination, sendInfo);
         return this.messageSender.doSend(message, meta)
-        /*.doOnError(t -> examineSendExceptionForDeadDestinationAndInformListener(t, origin))*/;
+        /*.doOnError(t -> examineSendExceptionForDeadDestinationAndInformListener(t, destination))*/;
     }
 
     //////////////////////////////////

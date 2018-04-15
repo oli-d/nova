@@ -11,19 +11,10 @@
 
 package ch.squaredesk.nova.comm.http;
 
-public class RetrieveInfo {
-    public final int statusCode;
+public interface RpcCompletor<MessageType> extends ch.squaredesk.nova.comm.rpc.RpcCompletor<MessageType, ReplyInfo> {
 
-    public RetrieveInfo(int statusCode) {
-        this.statusCode = statusCode;
-    }
-
-    @Override
-    public String toString() {
-        return new StringBuilder()
-            .append("{\n")
-            .append("\tstatusCode: ").append(statusCode).append('\n')
-            .append("}")
-            .toString();
+    default void complete(int statusCode, MessageType reply) {
+        ReplyInfo replyInfo = new ReplyInfo(statusCode);
+        complete(reply, replyInfo);
     }
 }

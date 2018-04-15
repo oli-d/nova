@@ -18,12 +18,11 @@ import com.ning.http.client.ListenableFuture;
 import com.ning.http.client.Response;
 import io.reactivex.Single;
 
-import java.net.URL;
 import java.util.concurrent.TimeUnit;
 
 import static java.util.Objects.requireNonNull;
 
-public class RpcClient<InternalMessageType> extends ch.squaredesk.nova.comm.rpc.RpcClient<URL, InternalMessageType, OutgoingMessageMetaData, IncomingMessageMetaData> {
+public class RpcClient<InternalMessageType> extends ch.squaredesk.nova.comm.rpc.RpcClient<InternalMessageType, RequestMessageMetaData, ReplyMessageMetaData> {
     private final AsyncHttpClient client;
     private final MessageMarshaller<InternalMessageType, String> messageMarshaller;
     private final MessageUnmarshaller<String, InternalMessageType> messageUnmarshaller;
@@ -42,7 +41,7 @@ public class RpcClient<InternalMessageType> extends ch.squaredesk.nova.comm.rpc.
 
     public <ReplyType extends InternalMessageType> Single<RpcReply<ReplyType>> sendRequest(
             InternalMessageType request,
-            OutgoingMessageMetaData outgoingMessageMetaData,
+            RequestMessageMetaData requestMessageMetaData,
             long timeout, TimeUnit timeUnit) {
         requireNonNull(timeUnit, "timeUnit must not be null");
 
@@ -54,14 +53,14 @@ public class RpcClient<InternalMessageType> extends ch.squaredesk.nova.comm.rpc.
         }
 
         AsyncHttpClient.BoundRequestBuilder requestBuilder;
-        if (outgoingMessageMetaData.details.requestMethod == HttpRequestMethod.POST) {
-            requestBuilder = client.preparePost(outgoingMessageMetaData.destination.toString()).setBody(requestAsString);
-        } else if (outgoingMessageMetaData.details.requestMethod == HttpRequestMethod.PUT) {
-            requestBuilder = client.preparePut(outgoingMessageMetaData.destination.toString()).setBody(requestAsString);
-        } else if (outgoingMessageMetaData.details.requestMethod == HttpRequestMethod.DELETE) {
-            requestBuilder = client.prepareDelete(outgoingMessageMetaData.destination.toString()).setBody(requestAsString);
+        if (requestMessageMetaData.details.requestMethod == HttpRequestMethod.POST) {
+            requestBuilder = client.preparePost(requestMessageMetaData.destination.toString()).setBody(requestAsString);
+        } else if (requestMessageMetaData.details.requestMethod == HttpRequestMethod.PUT) {
+            requestBuilder = client.preparePut(requestMessageMetaData.destination.toString()).setBody(requestAsString);
+        } else if (requestMessageMetaData.details.requestMethod == HttpRequestMethod.DELETE) {
+            requestBuilder = client.prepareDelete(requestMessageMetaData.destination.toString()).setBody(requestAsString);
         } else {
-            requestBuilder = client.prepareGet(outgoingMessageMetaData.destination.toString());
+            requestBuilder = client.prepareGet(requestMessageMetaData.destination.toString());
         }
 
         ListenableFuture<Response> resultFuture = requestBuilder
@@ -70,11 +69,11 @@ public class RpcClient<InternalMessageType> extends ch.squaredesk.nova.comm.rpc.
 
         Single<RpcReply<ReplyType>> resultSingle = Single.fromFuture(resultFuture).map(response -> {
             int statusCode = response.getStatusCode();
-            IncomingMessageMetaData metaData = new IncomingMessageMetaData(
-                    outgoingMessageMetaData.destination,
-                    new RetrieveInfo(statusCode));
+            ReplyMessageMetaData metaData = new ReplyMessageMetaData(
+                    requestMessageMetaData.destination,
+                    new ReplyInfo(statusCode));
             String responseBody = response.getResponseBody();
-            metricsCollector.rpcCompleted(outgoingMessageMetaData.destination, responseBody);
+            metricsCollector.rpcCompleted(requestMessageMetaData.destination, responseBody);
             return new RpcReply<>((ReplyType) messageUnmarshaller.unmarshal(responseBody), metaData);
         });
 

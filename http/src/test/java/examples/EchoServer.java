@@ -50,7 +50,7 @@ public class EchoServer {
                 .subscribe(
                         incomingMessage -> {
                             // just send the message back to the sender
-                            incomingMessage.complete(incomingMessage.request);
+                            incomingMessage.complete(incomingMessage.request.message);
                         }
                 );
 

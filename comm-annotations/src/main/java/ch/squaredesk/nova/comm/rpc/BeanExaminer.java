@@ -35,34 +35,51 @@ class BeanExaminer {
                 .toArray(RpcRequestHandlerDescription[]::new);
     }
 
-    private void ensureProperRpcHandlerFunction (Class<?> registeredRequestTypeClass, Object bean, Method m) {
-        if (!Modifier.isPublic(m.getModifiers())) {
+    private static boolean isPublic (Method m) {
+        return Modifier.isPublic(m.getModifiers());
+    }
+
+    private static boolean returnsVoid (Method m) {
+        return m.getReturnType().equals(void.class) || m.getReturnType().equals(Void.class);
+    }
+
+    private static boolean acceptsTwoParameters(Method m) {
+        return m.getParameterCount() == 2;
+    }
+
+    private static boolean isRpcCompletor(Class<?> classToTest) {
+        return RpcCompletor.class.isAssignableFrom(classToTest);
+    }
+
+    private static boolean parameterOneHasType(Method m, Class<?> typeToVerify) {
+        Class<?> parameterType = m.getParameterTypes()[0];
+        return parameterType.isAssignableFrom(typeToVerify);
+    }
+
+    private static boolean parameterTwoIsRpcCompletor(Method m) {
+        Class<?> parameterType = m.getParameterTypes()[1];
+        return isRpcCompletor(parameterType);
+    }
+
+    private static void ensureProperRpcHandlerFunction (Class<?> requestTypeClass, Object bean, Method m) {
+        if (!isPublic(m)) {
             throw new IllegalArgumentException("Annotated RPC request handler method " + prettyPrint(bean, m) + " must be public");
         }
-        if (m.getReturnType().equals(void.class) || m.getReturnType().equals(Void.class)) {
+        if (!(returnsVoid(m) &&
+                acceptsTwoParameters(m) &&
+                parameterOneHasType(m, requestTypeClass) &&
+                parameterTwoIsRpcCompletor(m))) {
             throw new IllegalArgumentException("Annotated RPC request handler method " + prettyPrint(bean, m)
-                    + " must be a function RequestType -> ReplyType");
-        }
-        if (m.getParameterCount() != 1) {
-            throw new IllegalArgumentException("Annotated RPC request handler method " + prettyPrint(bean, m)
-                    + " must be a function RequestType -> ReplyType");
-        }
-        Class<?> requestClass = m.getParameterTypes()[0];
-        if (!registeredRequestTypeClass.isAssignableFrom(requestClass)) {
-            throw new IllegalArgumentException("Parameter type of annotated RPC request handler method " + prettyPrint(bean, m)
-                    + " must be " + registeredRequestTypeClass.getName() + " or a subclass");
+                    + " must be a BiConsumer<" + requestTypeClass.getSimpleName() + ", RpcCompletor>");
         }
     }
 
     private static String prettyPrint(Object bean, Method method) {
-        StringBuilder sb = new StringBuilder(bean.getClass().getName())
-                .append('.')
-                .append(method.getName())
-                .append('(')
-                .append(Arrays.stream(method.getParameterTypes())
-                        .map(paramterClass -> paramterClass.getSimpleName())
-                        .collect(Collectors.joining(", ")))
-                .append(')');
-        return sb.toString();
+        return bean.getClass().getName() + '.' +
+                method.getName() + '(' +
+                Arrays.stream(method.getParameterTypes())
+                        .map(Class::getSimpleName)
+                        .collect(Collectors.joining(", ")) +
+                ')';
     }
 }

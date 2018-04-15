@@ -13,17 +13,17 @@ package ch.squaredesk.nova.comm.retrieving;
 import static java.util.Objects.requireNonNull;
 
 public class IncomingMessageMetaData<DestinationType, TransportSpecificDetailsType> {
-    public final DestinationType origin;
+    public final DestinationType destination;
     public final TransportSpecificDetailsType details;
 
-    public IncomingMessageMetaData(DestinationType origin, TransportSpecificDetailsType details) {
-        requireNonNull(origin, "origin must not be null");
-        this.origin = origin;
+    public IncomingMessageMetaData(DestinationType destination, TransportSpecificDetailsType details) {
+        requireNonNull(destination, "destination must not be null");
+        this.destination = destination;
         this.details = details;
     }
 
     @Override
     public String toString() {
-        return "{origin=" + origin + ", details=" + details + '}';
+        return "{destination=" + destination + ", details=" + details + '}';
     }
 }

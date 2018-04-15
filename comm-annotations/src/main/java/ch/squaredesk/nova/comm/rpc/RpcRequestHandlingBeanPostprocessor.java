@@ -35,7 +35,7 @@ public class RpcRequestHandlingBeanPostprocessor implements BeanPostProcessor {
             // TODO metrics
             rpcRequestProcessor.register(
                     handlerDescription.requestClass,
-                    request -> handlerDescription.methodToInvoke.invoke(handlerDescription.bean, request));
+                    (request, rpcInvocation) -> handlerDescription.methodToInvoke.invoke(handlerDescription.bean, request, rpcInvocation));
         });
         return bean;
     }

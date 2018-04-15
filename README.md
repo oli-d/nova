@@ -65,3 +65,22 @@ Currently, the following libraries exist:
   * [metrics-elastic](./metrics-elastic/README.md): Utility to push Metrics to Elasticsearch
   * [metrics-kafka](./metrics-kafka/README.md): Utility to push Metrics to Kafka
 
+### 3. How do I integrate it in my projects?
+
+The easiest way is to retrieve Nova from Maven central. We recommend you are using
+```maven```'s dependency management feature and import the ```BOM```, so that
+you can be sure that all included modules properly work with each other:
+
+```xml
+<dependencyManagement>
+    <dependencies>
+        <dependency>
+            <groupId>ch.squaredesk.nova</groupId>
+            <artifactId>bom</artifactId>
+            <version>5.0.0-beta-1</version>
+            <scope>import</scope>
+            <type>pom</type>
+        </dependency>
+    </dependencies>
+</dependencymanagement>
+```

@@ -47,12 +47,10 @@ public class RpcServer<InternalMessageType> extends ch.squaredesk.nova.comm.rpc.
                 .filter(this::isRpcRequest)
                 .map(incomingMessage -> {
                     metricsCollector.requestReceived(incomingMessage.message);
-                    InternalMessageType request = incomingMessage.message;
                     Consumer<InternalMessageType> replyConsumer = createReplyHandlerFor(incomingMessage);
                     Consumer<Throwable> errorConsumer = createErrorReplyHandlerFor(incomingMessage);
                     return new RpcInvocation<>(
-                            request,
-                            incomingMessage.metaData.details,
+                            incomingMessage,
                             reply -> {
                                 replyConsumer.accept(reply._1);
                                 metricsCollector.requestCompleted(incomingMessage.message, reply);

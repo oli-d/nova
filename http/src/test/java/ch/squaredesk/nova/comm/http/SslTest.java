@@ -81,7 +81,7 @@ class SslTest {
         CountDownLatch cdl = new CountDownLatch(numRequests);
         Flowable<RpcInvocation<String>> requests = sut.requests(path);
         requests.subscribeOn(Schedulers.io()).subscribe(rpcInvocation -> {
-            rpcInvocation.complete(" description " + rpcInvocation.transportSpecificInfo.parameters.get("p"));
+            rpcInvocation.complete(" description " + rpcInvocation.request.metaData.details.parameters.get("p"));
             cdl.countDown();
         });
 
@@ -96,9 +96,9 @@ class SslTest {
             try {
                 String urlAsString = "https://" + rsc.interfaceName + ":" + rsc.port + path + "?p=" + i;
 
-                OutgoingMessageMetaData meta = new OutgoingMessageMetaData(
+                RequestMessageMetaData meta = new RequestMessageMetaData(
                         new URL(urlAsString),
-                        new SendInfo(HttpRequestMethod.POST));
+                        new RequestInfo(HttpRequestMethod.POST));
 
                 rpcClient.sendRequest("{}", meta, 15, TimeUnit.SECONDS).blockingGet();
             } catch (Exception e) {

@@ -305,7 +305,7 @@ public class EmbeddedActiveMQBroker  {
      * Get the number of messages in a specific JMS Destination.
      * <p/>
      * The full name of the JMS destination including the prefix should be provided - i.e. queue:myQueue
-     * or topic:myTopic.  If the origin type prefix is not included in the origin name, a prefix
+     * or topic:myTopic.  If the destination type prefix is not included in the destination name, a prefix
      * of "queue:" is assumed.
      *
      * @param fullDestinationName the full name of the JMS Destination
@@ -358,7 +358,7 @@ public class EmbeddedActiveMQBroker  {
         }
 
         if (!foundDestination) {
-            log.warn("Didn't find origin {} in broker {}", fullDestinationName, getBrokerName());
+            log.warn("Didn't find destination {} in broker {}", fullDestinationName, getBrokerName());
         }
 
         return messageCount;

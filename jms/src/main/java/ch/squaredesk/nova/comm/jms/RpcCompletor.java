@@ -9,10 +9,7 @@
  *
  */
 
-package ch.squaredesk.nova.comm.http;
+package ch.squaredesk.nova.comm.jms;
 
-public class RpcReply<T> extends ch.squaredesk.nova.comm.rpc.RpcReply<T, ReplyMessageMetaData> {
-    public RpcReply(T result, ReplyMessageMetaData metaData) {
-        super(result, metaData);
-    }
+public interface RpcCompletor<MessageType> extends ch.squaredesk.nova.comm.rpc.RpcCompletor<MessageType, SendInfo> {
 }

@@ -11,8 +11,19 @@
 
 package ch.squaredesk.nova.comm.http;
 
-public class RpcReply<T> extends ch.squaredesk.nova.comm.rpc.RpcReply<T, ReplyMessageMetaData> {
-    public RpcReply(T result, ReplyMessageMetaData metaData) {
-        super(result, metaData);
+public class ReplyInfo {
+    public final int statusCode;
+
+    public ReplyInfo(int statusCode) {
+        this.statusCode = statusCode;
+    }
+
+    @Override
+    public String toString() {
+        return new StringBuilder()
+            .append("{\n")
+            .append("\tstatusCode: ").append(statusCode).append('\n')
+            .append("}")
+            .toString();
     }
 }
