@@ -9,28 +9,31 @@ Let's look at an example:
 public class EchoService {
     ...
 
-    @OnRpcInvocation(EchoRequest.class, EchoResponse.class)
-    public void handle (EchoRequest request, RpcInvocation<EchoRequest> echoRequestInvocation) {
+    @OnRpcInvocation(EchoRequest.class)
+    public void handle (EchoRequest request, RpcCompletor<EchoRequest> requestCompletor) {
         EchoResult result = computeResult();
-        echoResultInvocation.complete(result);
+        completor.complete(result);
     }
 }
 ```
 
-In that example, the method ```handle(...)``` is called whenever a new ```EchoRequest```
+In that example, the ```handle(...)``` method is called whenever a new ```EchoRequest```
 was received, computes an appropriate ```EchoResponse``` and returns it
 to the client.
 
-Note that the handler method must accept a single ```RpcInvocation``` parameter
-(properly typed so that the request type matches the method annotation) and is not allowed
-to return a result. Or in other word, it must be a ```Consumer<RpcInvocation<RequestTypeAccordingToAnnotation, ?, ?, ?>>```.
+Note that the handler method must accept exactly two parameters - the first one
+is the incoming request and must match the type, defined in the ```RpcInvocation```
+annotation, and the second one is an RPCCompletor that can be used to ...
+well... complete the request. In other word, it must be a
+```BiConsumer<RequestTypeAccordingToAnnotation, RpcCompletor<ReplyType>>```.
 
 But how is this wired up? Where does the system read the incoming requests from?
 
 The key component to answer those questions is the ```RpcRequestProcessor```. It is
-available in Spring's ```ApplicationContext``` if you import the ```RpcRequestProcessorConfiguration```
-in your service's configuration class. (_Note that in order to work properly, a ```Nova```
-bean must exist in your ```ApplicationContext```. Either create it yourself or - for
+automatically available in Spring's ```ApplicationContext``` if you import
+the ```RpcRequestProcessorConfiguration``` in your service's configuration
+class. (_Note that in order to work properly, a ```Nova``` bean must
+exist in your ```ApplicationContext```. Either create it yourself or - for
 more convenience - import ``` NovaProvidingConfiguration ``` from the module
 [spring-support](../spring-support/README.md).)_
 
@@ -47,8 +50,10 @@ as subscribing the ```RpcRequestProcessor``` to the Flowable of incoming request
     ...
 ```
 
-The ```RpcRequestProcessor``` implements default behaviour for handling unregistered requests
-as well as unexpected exceptions during processing. If you want to customize this behaviour,
-you can define your own handler implementations by invoking
-``` RpcRequestProcessor.onUnregisteredRequest() ``` resp. ``` RpcRequestProcessor.onProcessingException() ```
+The ```RpcRequestProcessor``` then dispatches all incoming requests to the
+appropriate handler methods. It implements default behaviour for handling
+unregistered requests as well as unexpected exceptions during processing.
+If you want to customize this behaviour, you can define your own handler
+implementations by invoking ``` RpcRequestProcessor.onUnregisteredRequest() ```
+resp. ``` RpcRequestProcessor.onProcessingException() ```
 
