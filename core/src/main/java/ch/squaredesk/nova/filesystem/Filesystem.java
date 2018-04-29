@@ -147,8 +147,8 @@ public class Filesystem {
             try {
                 channel.write(ByteBuffer.wrap(content.getBytes(encoding)));
                 s.onComplete();
-            } catch (Throwable t) {
-                s.onError(t);
+            } catch (Exception e) {
+                s.onError(e);
             } finally {
                 channel.close();
             }

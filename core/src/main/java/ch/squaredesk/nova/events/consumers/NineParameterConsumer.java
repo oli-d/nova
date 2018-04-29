@@ -59,10 +59,10 @@ public interface NineParameterConsumer<
 
         try {
             accept(p1, p2, p3, p4, p5, p6, p7, p8, p9);
-        } catch (Throwable t) {
-            LoggerFactory.getLogger("ch.squaredesk.nova.event.consumers")
-                    .error("Error, trying to consume event with parameters " +
-                            Arrays.toString(data));
+        } catch (Exception e) {
+            LoggerFactory
+                    .getLogger("ch.squaredesk.nova.event.consumers")
+                    .error("Error, trying to consume event with parameters {}", Arrays.toString(data), e);
         }
     }
 }

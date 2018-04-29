@@ -32,10 +32,10 @@ public interface SingleParameterConsumer<P1>  extends Consumer<Object[]> {
 
         try {
             consume(p1);
-        } catch (Throwable t) {
-            LoggerFactory.getLogger("ch.squaredesk.nova.event.consumers")
-                    .error("Error, trying to consume event with parameters " +
-                            Arrays.toString(data));
+        } catch (Exception e) {
+            LoggerFactory
+                    .getLogger("ch.squaredesk.nova.event.consumers")
+                    .error("Error, trying to consume event with parameters {}", Arrays.toString(data), e);
         }
     }
 }

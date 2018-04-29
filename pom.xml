@@ -125,7 +125,7 @@
             <dependency>
                 <groupId>ch.squaredesk.nova</groupId>
                 <artifactId>websockets-annotations</artifactId>
-                <version>5.0.0</version>
+                <version>5.0.1</version>
             </dependency>
             <dependency>
                 <groupId>ch.squaredesk.nova</groupId>

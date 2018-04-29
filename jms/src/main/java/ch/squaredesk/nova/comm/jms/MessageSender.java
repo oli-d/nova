@@ -67,8 +67,8 @@ public class MessageSender<InternalMessageType> extends ch.squaredesk.nova.comm.
                             meta.details.timeToLive);
                 }
                 s.onComplete();
-            } catch (Throwable t) {
-                s.onError(t);
+            } catch (Exception e) {
+                s.onError(e);
             }
         })/*.subscribeOn(JmsAdapter.jmsSubscriptionScheduler)*/;
     }

@@ -130,9 +130,9 @@ public class KafkaMessageReceiver<InternalMessageType>
                 try {
                     InternalMessageType internalMessage = messageUnmarshaller.unmarshal(record.value());
                     s.onNext(new Pair<>(record.topic(), internalMessage));
-                } catch (Throwable t) {
+                } catch (Exception e) {
                     metricsCollector.unparsableMessageReceived(record.topic());
-                    logger.error("Unable to parse incoming message " + record, t);
+                    logger.error("Unable to parse incoming message {}", record, e);
                 }
             });
             s.onComplete();

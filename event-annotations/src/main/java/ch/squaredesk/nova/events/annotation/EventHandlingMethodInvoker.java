@@ -24,7 +24,7 @@ public class EventHandlingMethodInvoker implements Consumer<Object[]> {
     private final EventContext eventContext;
     private final boolean injectEventContext;
 
-    public EventHandlingMethodInvoker(Object objectToInvokeMethodOn, Method methodToInvoke, EventContext eventContext) {
+    EventHandlingMethodInvoker(Object objectToInvokeMethodOn, Method methodToInvoke, EventContext eventContext) {
         this.objectToInvokeMethodOn = objectToInvokeMethodOn;
         this.methodToInvoke = methodToInvoke;
         this.eventContext = eventContext;
@@ -41,7 +41,7 @@ public class EventHandlingMethodInvoker implements Consumer<Object[]> {
             } else {
                 methodToInvoke.invoke(objectToInvokeMethodOn, parameterArray);
             }
-        } catch (Throwable t) {
+        } catch (Exception e) {
             LOGGER.error("Unable to invoke event Handler");
             LOGGER.error("\tParameters: ");
             if (data!=null) {
@@ -50,7 +50,7 @@ public class EventHandlingMethodInvoker implements Consumer<Object[]> {
             } else {
                 LOGGER.error("\t\tnull");
             }
-            LOGGER.error("\tException: ",t);
+            LOGGER.error("\tException: ",e);
         }
     }
 
