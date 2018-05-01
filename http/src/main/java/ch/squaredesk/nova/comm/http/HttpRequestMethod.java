@@ -11,5 +11,5 @@
 package ch.squaredesk.nova.comm.http;
 
 public enum HttpRequestMethod {
-    GET, POST, PUT, DELETE
+    CONNECT, DELETE, GET, HEAD, OPTIONS, PATCH, POST, PRI, PUT, TRACE
 }

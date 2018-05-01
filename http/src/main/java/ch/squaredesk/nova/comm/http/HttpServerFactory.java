@@ -26,7 +26,7 @@ public class HttpServerFactory {
             if (serverConfig.sslTrustStorePass!=null)
             sslContextConfigurator.setTrustStorePass(serverConfig.sslTrustStorePass);
             boolean clientMode = false; // TODO
-            boolean wantsClientAuth = false; // TODO
+            boolean wantsClientAuth = serverConfig.sslNeedsClientAuth; // TODO
             SSLEngineConfigurator sslEngineConfigurator = new SSLEngineConfigurator(
                     sslContextConfigurator, clientMode, serverConfig.sslNeedsClientAuth, wantsClientAuth);
             listener.setSecure(true);

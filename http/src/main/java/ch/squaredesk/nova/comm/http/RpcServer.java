@@ -103,15 +103,26 @@ public class RpcServer<InternalMessageType> extends ch.squaredesk.nova.comm.rpc.
     }
 
     private static HttpRequestMethod convert(Method method) {
-        if (method == Method.POST) {
-            return HttpRequestMethod.POST;
+        if (method == Method.CONNECT) {
+            return HttpRequestMethod.CONNECT;
         } else if (method == Method.DELETE) {
             return HttpRequestMethod.DELETE;
+        } else if (method == Method.GET) {
+            return HttpRequestMethod.GET;
+        } else if (method == Method.HEAD) {
+            return HttpRequestMethod.HEAD;
+        } else if (method == Method.OPTIONS) {
+            return HttpRequestMethod.OPTIONS;
+        } else if (method == Method.PATCH) {
+            return HttpRequestMethod.PATCH;
+        } else if (method == Method.PRI) {
+            return HttpRequestMethod.PRI;
         } else if (method == Method.PUT) {
             return HttpRequestMethod.PUT;
+        } else if (method == Method.TRACE) {
+            return HttpRequestMethod.TRACE;
         } else {
-            // TODO: do we want to add all other ones known to grizzly?
-            return HttpRequestMethod.GET;
+            throw new IllegalArgumentException("Unsupported HTTP method " + method);
         }
     }
 
