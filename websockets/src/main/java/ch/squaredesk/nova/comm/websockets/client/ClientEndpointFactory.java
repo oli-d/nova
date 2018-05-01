@@ -13,6 +13,7 @@ import ch.squaredesk.nova.comm.retrieving.MessageUnmarshaller;
 import ch.squaredesk.nova.comm.sending.MessageMarshaller;
 import ch.squaredesk.nova.comm.websockets.*;
 import com.ning.http.client.AsyncHttpClient;
+import com.ning.http.client.providers.grizzly.websocket.GrizzlyWebSocketAdapter;
 import com.ning.http.client.ws.WebSocketUpgradeHandler;
 
 import java.util.function.Consumer;
@@ -42,7 +43,12 @@ public class ClientEndpointFactory {
                 EndpointStreamSourceFactory.createStreamSourceFor(destination, webSocketFactory, listener, metricsCollector);
 
         Consumer<CloseReason> closeAction = closeReason -> {
-            underlyingWebSocket.close();
+            if (underlyingWebSocket instanceof GrizzlyWebSocketAdapter) {
+                GrizzlyWebSocketAdapter gwsa = (GrizzlyWebSocketAdapter) underlyingWebSocket;
+                gwsa.getGrizzlyWebSocket().close(closeReason.code, closeReason.text);
+            } else {
+                underlyingWebSocket.close();
+            }
             listener.close();
         };
         return new ClientEndpoint<>(endpointStreamSource, webSocket, closeAction);

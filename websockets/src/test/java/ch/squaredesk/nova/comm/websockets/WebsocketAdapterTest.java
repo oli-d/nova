@@ -388,8 +388,7 @@ class WebsocketAdapterTest {
     }
 
     @Test
-    // TODO: how can we make the client lib transport a close reason?
-    void serverSideCloseReasonNotTransportedToClients() throws Exception {
+    void serverSideCloseReasonTransportedToClients() throws Exception {
         CountDownLatch closeLatch = new CountDownLatch(2);
         List<CloseReason> closeReasons = new ArrayList<>();
 
@@ -408,17 +407,20 @@ class WebsocketAdapterTest {
             closeReasons.add(pair._2);
             closeLatch.countDown();
         });
-        serverEndpoint.close(CloseReason.SERVICE_RESTART);
+        serverEndpoint.close(CloseReason.GOING_AWAY);
 
         closeLatch.await(2, TimeUnit.SECONDS);
         assertThat(closeLatch.getCount(), is(0L));
 
-        assertThat(closeReasons, contains(CloseReason.NO_STATUS_CODE, CloseReason.NO_STATUS_CODE));
+        assertThat(closeReasons, contains(CloseReason.GOING_AWAY, CloseReason.GOING_AWAY));
     }
 
 
+    /**
+     * The grizzly implementation we are using for the server side ALWAYS calls onClose()
+     * with CloseReason.GOING_AWAY, no matter what the client sends :-(.
+     */
     @Test
-    // TODO: how can we make the client lib transport a close reason?
     void clientSideCloseReasonNotTransportedToServer() throws Exception {
         CountDownLatch closeLatch = new CountDownLatch(2);
         List<CloseReason> closeReasons = new ArrayList<>();
