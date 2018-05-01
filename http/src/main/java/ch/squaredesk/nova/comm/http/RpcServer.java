@@ -117,6 +117,8 @@ public class RpcServer<InternalMessageType> extends ch.squaredesk.nova.comm.rpc.
             return HttpRequestMethod.PATCH;
         } else if (method == Method.PRI) {
             return HttpRequestMethod.PRI;
+        } else if (method == Method.POST) {
+            return HttpRequestMethod.POST;
         } else if (method == Method.PUT) {
             return HttpRequestMethod.PUT;
         } else if (method == Method.TRACE) {
