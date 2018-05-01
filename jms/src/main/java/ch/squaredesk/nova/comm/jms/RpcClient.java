@@ -52,7 +52,7 @@ public class RpcClient<InternalMessageType> extends ch.squaredesk.nova.comm.rpc.
                 .take(1)
                 .doOnNext(reply -> metricsCollector.rpcCompleted(request, reply))
                 .map(incomingMessage -> new RpcReply<>((ReplyType)incomingMessage.message, incomingMessage.metaData))
-                .single(new RpcReply<>(null, null)); // TODO a bit ugly, isn't it? Is there a nicer way? But: we should never be able to run into this
+                .singleOrError();
 
         // send message sync
         Throwable sendError = messageSender.doSend(request, outgoingMessageMetaData).blockingGet();
