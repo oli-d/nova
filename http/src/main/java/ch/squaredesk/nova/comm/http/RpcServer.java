@@ -221,10 +221,10 @@ public class RpcServer<InternalMessageType> extends ch.squaredesk.nova.comm.rpc.
                             new RpcInvocation<>(
                                     new IncomingMessage<>(requestObject, metaData),
                                     replyInfo -> {
+                                        response.setCharacterEncoding("utf-8");
                                         try (NIOWriter out = response.getNIOWriter()) {
                                             String responseAsString = convertResponseData(replyInfo._1, messageMarshaller);
                                             response.setContentType("application/json; charset=utf-8");
-                                            response.setCharacterEncoding("utf-8");
                                             response.setContentLength(responseAsString.length());
                                             int statusCode;
                                             if (replyInfo._2 == null) {
