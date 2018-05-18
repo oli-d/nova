@@ -47,7 +47,7 @@ class MetricsCollectorTest {
     }
 
     @Test
-    void subscriptionCreated() throws Exception {
+    void subscriptionCreated() {
         sut.subscriptionCreated("destination2");
 
         assertThat(metrics.getCounter("messageReceiver", "test", "subscriptions", "total").getCount(), is(1L));

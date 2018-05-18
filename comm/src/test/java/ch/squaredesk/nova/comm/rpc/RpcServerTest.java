@@ -29,7 +29,7 @@ class RpcServerTest {
 
     private class MyRpcServer extends RpcServer<String, RpcInvocation<String, IncomingMessageMetaData<Void, Void>, String, Void>> {
 
-        protected MyRpcServer(Metrics metrics) {
+        MyRpcServer(Metrics metrics) {
             super(metrics);
         }
 

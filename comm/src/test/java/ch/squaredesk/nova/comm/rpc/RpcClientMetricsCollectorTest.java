@@ -21,7 +21,7 @@ class RpcClientMetricsCollectorTest {
     private RpcClientMetricsCollector sut = new RpcClientMetricsCollector(null, metrics);
 
     @Test
-    void rpcCompleted() throws Exception {
+    void rpcCompleted() {
         sut.rpcCompleted("req1", "reply1");
 
         assertThat(metrics.getMeter("rpcClient","completed","total").getCount(), is(1L));
@@ -32,7 +32,7 @@ class RpcClientMetricsCollectorTest {
     }
 
     @Test
-    void rpcCompletedWithNullRequestAndReplyPossible() throws Exception {
+    void rpcCompletedWithNullRequestAndReplyPossible() {
         sut.rpcCompleted(null, null);
 
         assertThat(metrics.getMeter("rpcClient","completed","total").getCount(), is(1L));
@@ -42,7 +42,7 @@ class RpcClientMetricsCollectorTest {
     }
 
     @Test
-    void rpcTimedOut() throws Exception {
+    void rpcTimedOut() {
         sut.rpcTimedOut("req2");
 
         assertThat(metrics.getMeter("rpcClient","completed","total").getCount(), is(0L));

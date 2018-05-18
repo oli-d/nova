@@ -10,37 +10,15 @@
 
 package ch.squaredesk.nova.comm.sending;
 
-import ch.squaredesk.nova.comm.TestTransportInfo;
 import ch.squaredesk.nova.metrics.Metrics;
 import io.reactivex.Completable;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-
-import java.util.ArrayList;
-import java.util.List;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class MessageSenderTest {
-    private MessageSender<String, String, String, OutgoingMessageMetaData<String, TestTransportInfo>> sut;
-    private List<String> transportMessages;
-    private List<OutgoingMessageMetaData<String, TestTransportInfo>> outgoingMessageMetaData;
-
-    @BeforeEach
-    void setUp() {
-        this.sut = new MessageSender<String, String, String, OutgoingMessageMetaData<String, TestTransportInfo>>(s -> s, new Metrics()) {
-            @Override
-            protected Completable doSend(String transportMessage, OutgoingMessageMetaData<String, TestTransportInfo> outgoingMessageMetaData) {
-                transportMessages.add(transportMessage);
-                MessageSenderTest.this.outgoingMessageMetaData.add(outgoingMessageMetaData);
-                return Completable.complete();
-            }
-        };
-        transportMessages = new ArrayList<>();
-        outgoingMessageMetaData = new ArrayList<>();
-    }
 
     @Test
     void instanceCannotBeCreatedWithoutMarshaller() {
