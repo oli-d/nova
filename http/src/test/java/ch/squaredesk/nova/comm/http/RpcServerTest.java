@@ -13,6 +13,8 @@ import org.junit.jupiter.api.Test;
 
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.IntStream;
@@ -78,7 +80,7 @@ class RpcServerTest {
         CountDownLatch cdl = new CountDownLatch(numRequests);
         Flowable<RpcInvocation<String>> requests = sut.requests(path);
         requests.subscribeOn(Schedulers.io()).subscribe(rpcInvocation -> {
-            rpcInvocation.complete(" description " + rpcInvocation.request.metaData.details.parameters.get("p"));
+            rpcInvocation.complete(" description " + rpcInvocation.request.metaData.details.headerParams.get("p"));
             cdl.countDown();
         });
 
@@ -136,6 +138,25 @@ class RpcServerTest {
 
         connection.connect();
         assertThat(connection.getResponseCode(), is(555));
+    }
+
+    @Test
+    void httpHeadersCanBeSetWhenCompletingRpc() throws Exception {
+        sut.start();
+        String path = "/returnCodeTest";
+        String urlAsString = "http://" + rsc.interfaceName + ":" + rsc.port + path;
+        URL url = new URL(urlAsString);
+        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+        Map<String,String> customHeaders = new HashMap<>();
+        customHeaders.put("myParam", "myValue");
+
+        Flowable<RpcInvocation<String>> requests = sut.requests(path);
+        requests.subscribeOn(Schedulers.io()).subscribe(rpcInvocation -> {
+            rpcInvocation.complete("someReply", customHeaders);
+        });
+
+        connection.connect();
+        assertThat(connection.getHeaderField("myParam"), is("myValue"));
     }
 
     @Test

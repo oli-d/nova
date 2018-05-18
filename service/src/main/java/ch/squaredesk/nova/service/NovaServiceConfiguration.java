@@ -14,6 +14,7 @@ package ch.squaredesk.nova.service;
 import ch.squaredesk.nova.events.annotation.AnnotationEnablingConfiguration;
 import ch.squaredesk.nova.events.annotation.NovaProvidingConfiguration;
 import ch.squaredesk.nova.service.annotation.LifecycleBeanProcessor;
+import io.reactivex.observers.TestObserver;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -23,6 +24,7 @@ import org.springframework.core.env.Environment;
 
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.Callable;
 import java.util.stream.Stream;
 
 @Configuration

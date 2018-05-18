@@ -223,9 +223,18 @@ public class RpcServer<InternalMessageType> extends ch.squaredesk.nova.comm.rpc.
                                     replyInfo -> {
                                         try (NIOWriter out = response.getNIOWriter()) {
                                             String responseAsString = convertResponseData(replyInfo._1, messageMarshaller);
-                                            response.setContentType("application/json");
+                                            response.setContentType("application/json; charset=utf-8");
+                                            response.setCharacterEncoding("utf-8");
                                             response.setContentLength(responseAsString.length());
-                                            int statusCode = replyInfo._2 == null ? 200 : replyInfo._2.statusCode;
+                                            int statusCode;
+                                            if (replyInfo._2 == null) {
+                                                statusCode = 200;
+                                            } else {
+                                                replyInfo._2.headerParams.entrySet().forEach(
+                                                        entry -> response.setHeader(entry.getKey(), entry.getValue())
+                                                );
+                                                statusCode = replyInfo._2.statusCode;
+                                            }
                                             response.setStatus(statusCode);
                                             writeResponse(responseAsString, out);
                                             metricsCollector.requestCompleted(requestObject, responseAsString);

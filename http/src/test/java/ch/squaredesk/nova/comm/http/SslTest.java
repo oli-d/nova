@@ -81,7 +81,7 @@ class SslTest {
         CountDownLatch cdl = new CountDownLatch(numRequests);
         Flowable<RpcInvocation<String>> requests = sut.requests(path);
         requests.subscribeOn(Schedulers.io()).subscribe(rpcInvocation -> {
-            rpcInvocation.complete(" description " + rpcInvocation.request.metaData.details.parameters.get("p"));
+            rpcInvocation.complete(" description " + rpcInvocation.request.metaData.details.headerParams.get("p"));
             cdl.countDown();
         });
 

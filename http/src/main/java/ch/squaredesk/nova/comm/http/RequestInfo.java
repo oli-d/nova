@@ -15,18 +15,18 @@ import java.util.Map;
 
 public class RequestInfo {
     public final HttpRequestMethod requestMethod;
-    public final Map<String, String> parameters;
+    public final Map<String, String> headerParams;
 
     public RequestInfo(HttpRequestMethod requestMethod) {
         this(requestMethod, null);
     }
 
-    public RequestInfo(HttpRequestMethod requestMethod, Map<String, String> parameters) {
+    public RequestInfo(HttpRequestMethod requestMethod, Map<String, String> headerParams) {
         this.requestMethod = requestMethod;
-        if (parameters == null) {
-            this.parameters = Collections.emptyMap();
+        if (headerParams == null) {
+            this.headerParams = Collections.emptyMap();
         } else {
-            this.parameters = parameters;
+            this.headerParams = headerParams;
         }
     }
 
@@ -35,8 +35,8 @@ public class RequestInfo {
         StringBuilder sb = new StringBuilder()
             .append("{\n")
             .append("\trequestMethod: ").append(requestMethod).append('\n')
-            .append("\tparameters: {\n");
-        for (Map.Entry<String, String> entry: parameters.entrySet()) {
+            .append("\theaderParams: {\n");
+        for (Map.Entry<String, String> entry: headerParams.entrySet()) {
             sb.append("\t\t").append(entry.getKey()).append(": ").append(entry.getValue()).append('\n');
         }
         sb.append("\t}\n");
