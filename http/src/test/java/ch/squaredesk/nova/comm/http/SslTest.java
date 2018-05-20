@@ -12,13 +12,13 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
-import javax.net.ssl.KeyManagerFactory;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.TrustManagerFactory;
+import javax.net.ssl.*;
 import java.io.FileInputStream;
+import java.net.URL;
 import java.security.KeyStore;
 import java.security.SecureRandom;
-import java.util.ArrayList;
+import java.security.cert.X509Certificate;
+import java.util.concurrent.TimeUnit;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.awaitility.Awaitility.await;
@@ -68,22 +68,69 @@ class SslTest {
         if (rpcClient!=null) rpcClient.shutdown();
     }
 
+    public static void nuke() {
+        try {
+            TrustManager[] trustAllCerts = new TrustManager[]{
+                    new X509TrustManager() {
+                        public X509Certificate[] getAcceptedIssuers() {
+                            X509Certificate[] myTrustedAnchors = new X509Certificate[0];
+                            return myTrustedAnchors;
+                        }
+
+                        @Override
+                        public void checkClientTrusted(X509Certificate[] certs, String authType) {
+                        }
+
+                        @Override
+                        public void checkServerTrusted(X509Certificate[] certs, String authType) {
+                        }
+                    }
+            };
+
+            SSLContext sc = SSLContext.getInstance("SSL");
+            sc.init(null, trustAllCerts, new SecureRandom());
+            HttpsURLConnection.setDefaultSSLSocketFactory(sc.getSocketFactory());
+            HttpsURLConnection.setDefaultHostnameVerifier(new HostnameVerifier() {
+                @Override
+                public boolean verify(String arg0, SSLSession arg1) {
+                    return true;
+                }
+            });
+        } catch (Exception e) {
+        }
+    }
+
     @Test
     void requestsProperlyDispatched() throws Exception {
+        nuke();
         sut.start();
-        ArrayList<String> parameterList = new ArrayList<>();
         int numRequests = 5;
         String path = "/bla";
         TestSubscriber<String> subscriber = sut.requests(path)
-            .subscribeOn(Schedulers.io())
-            .map(rpcInvocation -> rpcInvocation.request.metaData.details.headerParams.get("p"))
-            .test();
+                .subscribeOn(Schedulers.io())
+                .map(rpcInvocation -> rpcInvocation.request.metaData.details.headerParams.get("p")
+                ).test();
 
         Observable.range(0, numRequests)
-            .subscribe(i -> requestSender.sendPostRestRequestInNewThread(path + "?p="+ i));
+            .subscribe(i -> sendRestRequestInNewThread(path, i));
 
         await().atMost(20, SECONDS).until(subscriber::valueCount, is(numRequests));
-
-        System.out.println("");
     }
+
+    private void sendRestRequestInNewThread(String path, int i) {
+        new Thread(() -> {
+            try {
+                String urlAsString = "https://" + rsc.interfaceName + ":" + rsc.port + path + "?p=" + i;
+
+                RequestMessageMetaData meta = new RequestMessageMetaData(
+                        new URL(urlAsString),
+                        new RequestInfo(HttpRequestMethod.POST));
+
+                rpcClient.sendRequest("{}", meta, 15, TimeUnit.SECONDS);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }).start();
+    }
+
 }
