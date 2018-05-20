@@ -13,12 +13,14 @@ import org.junit.jupiter.api.Test;
 
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.IntStream;
 
+import static org.awaitility.Awaitility.await;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
@@ -77,19 +79,18 @@ class RpcServerTest {
         sut.start();
         int numRequests = 15;
         String path = "/bla";
-        CountDownLatch cdl = new CountDownLatch(numRequests);
+        List<String> responses = new ArrayList<>();
+
         sut.requests(path)
-            .subscribeOn(Schedulers.io())
-            .map(rpcInvocation -> {
+            .subscribe(rpcInvocation -> {
                 rpcInvocation.complete(" description " + rpcInvocation.request.metaData.details.headerParams.get("p"));
-                cdl.countDown();
-                return 1;
-            }).test();
+            });
 
-        IntStream.range(0, numRequests).forEach(i -> sendRestRequest(path, i));
+        IntStream.range(0, numRequests).forEach(i -> {
+            responses.add(sendRestRequest(path, i).result);
+        });
 
-        cdl.await(20, TimeUnit.SECONDS);
-        assertThat(cdl.getCount(), is(0L));
+        await().atMost(20, TimeUnit.SECONDS).until(responses::size, is(numRequests));
     }
 
     private String createStringOfLength(int length) {
@@ -194,16 +195,15 @@ class RpcServerTest {
         assertThat(reply.metaData.details.statusCode, is(500));
     }
 
-    private void sendRestRequest(String path, int i) {
+    private RpcReply<String> sendRestRequest(String path, int i) {
         try {
             String urlAsString = "http://" + rsc.interfaceName + ":" + rsc.port + path + "?p=" + i;
-            System.out.println(">>>>> " + urlAsString);
 
             RequestMessageMetaData meta = new RequestMessageMetaData(
                     new URL(urlAsString),
                     new RequestInfo(HttpRequestMethod.POST));
 
-            rpcClient.sendRequest("{}", meta, 15, TimeUnit.SECONDS).blockingGet();
+            return rpcClient.sendRequest("{}", meta, 15, TimeUnit.SECONDS).blockingGet();
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

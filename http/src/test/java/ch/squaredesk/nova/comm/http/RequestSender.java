@@ -29,17 +29,20 @@ class RequestSender {
     }
 
     void sendPostRestRequestInNewThread(String path) {
+        sendPostRestRequestInNewThread(path, "{}");
+    }
+
+    void sendPostRestRequestInNewThread(String path, String payload) {
         if (path != null && !path.trim().startsWith("/")) {
             path = "/" + path.trim();
         }
         String pathToUseForLambda = path;
         new Thread(() -> {
             try {
-                System.out.println(">>>>>> " + baseUrl + pathToUseForLambda + " in " + Thread.currentThread().getName());
                 RequestMessageMetaData meta = new RequestMessageMetaData(
                     new URL(baseUrl + pathToUseForLambda),
                     new RequestInfo(HttpRequestMethod.POST));
-                rpcClient.sendRequest("{}", meta, 15, SECONDS);
+                rpcClient.sendRequest(payload, meta, 15, SECONDS).blockingGet();
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
