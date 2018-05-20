@@ -110,7 +110,7 @@ class RpcServerTest {
     }
 
     @Test
-    void largeRquestsProperlyDispatched() throws Exception {
+    void largeRequestsProperlyDispatched() throws Exception {
         sut.start();
         String path = "/biiig";
         String urlAsString = "http://" + rsc.interfaceName + ":" + rsc.port + path;
@@ -123,6 +123,22 @@ class RpcServerTest {
 
         HttpRequestSender.HttpResponse response = HttpRequestSender.sendPostRequest(url, hugeRequest);
         assertThat(response.replyMessage, is(hugeRequest));
+    }
+
+    @Test
+    void largeResponseProperlyDispatched() throws Exception {
+        sut.start();
+        String path = "/biiigResponse";
+        String urlAsString = "http://" + rsc.interfaceName + ":" + rsc.port + path;
+        URL url = new URL(urlAsString);
+        String hugeReply = createStringOfLength(15 * 1024 * 1024);
+        Flowable<RpcInvocation<String>> requests = sut.requests(path);
+        requests.subscribeOn(Schedulers.io()).subscribe(rpcInvocation -> {
+            rpcInvocation.complete(hugeReply);
+        });
+
+        HttpRequestSender.HttpResponse response = HttpRequestSender.sendPostRequest(url, "request");
+        assertThat(response.replyMessage, is(hugeReply));
     }
 
     @Test

@@ -19,6 +19,7 @@ import org.glassfish.grizzly.http.server.Response;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.BufferedWriter;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -141,9 +142,9 @@ public class RpcServer<InternalMessageType> extends ch.squaredesk.nova.comm.rpc.
      * representation of the reply object
      */
     private static void writeResponse(String reply, NIOWriter out) throws Exception {
-        out.write(reply);
-        out.flush();
-        out.close();
+        try (BufferedWriter writer = new BufferedWriter(out)) {
+            writer.write(reply);
+        }
     }
 
     /**
@@ -237,7 +238,7 @@ public class RpcServer<InternalMessageType> extends ch.squaredesk.nova.comm.rpc.
                                         response.setCharacterEncoding("utf-8");
                                         try (NIOWriter out = response.getNIOWriter()) {
                                             String responseAsString = convertResponseData(replyInfo._1, messageMarshaller);
-                                            response.setContentType("application/json; charset=utf-8");
+                                            response.setContentType("application/json");
                                             response.setContentLength(responseAsString.length());
                                             int statusCode;
                                             if (replyInfo._2 == null) {
