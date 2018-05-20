@@ -13,19 +13,21 @@ import ch.squaredesk.nova.comm.websockets.CloseReason;
 import ch.squaredesk.nova.comm.websockets.StreamCreatingEndpointWrapper;
 import ch.squaredesk.nova.tuples.Pair;
 import com.ning.http.client.ws.WebSocket;
+import com.ning.http.client.ws.WebSocketCloseCodeReasonListener;
 import com.ning.http.client.ws.WebSocketTextListener;
 import io.reactivex.BackpressureStrategy;
 import io.reactivex.Flowable;
 import io.reactivex.subjects.BehaviorSubject;
 import io.reactivex.subjects.PublishSubject;
 import io.reactivex.subjects.Subject;
+import org.glassfish.grizzly.websockets.WebSocketListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.function.Function;
 
 public class StreamCreatingWebSocketTextListener<MessageType>
-        implements WebSocketTextListener, StreamCreatingEndpointWrapper<WebSocket, MessageType> {
+        implements WebSocketTextListener, WebSocketCloseCodeReasonListener, StreamCreatingEndpointWrapper<WebSocket, MessageType> {
 
     private static final Logger logger = LoggerFactory.getLogger(StreamCreatingEndpointWrapper.class);
 
@@ -57,8 +59,19 @@ public class StreamCreatingWebSocketTextListener<MessageType>
 
     @Override
     public void onClose(WebSocket websocket) {
-        // FIXME: close reason
-        closedSockets.onNext(new Pair<>(websocket, CloseReason.NO_STATUS_CODE));
+        // noop, this is handled in the specific onClose(WebSocket, code, reason)
+    }
+
+    @Override
+    public void onClose(WebSocket websocket, int code, String reason) {
+        logger.trace("onClose() invoked with webSocket={}, code={}, reason={}.", websocket, code, reason);
+        CloseReason closeReason;
+        try {
+            closeReason = CloseReason.forCloseCode(code);
+        } catch (Exception e) {
+            closeReason = CloseReason.NO_STATUS_CODE;
+        }
+        closedSockets.onNext(new Pair<>(websocket, closeReason));
     }
 
     @Override

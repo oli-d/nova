@@ -32,7 +32,7 @@ class RpcClientTest {
     private class MyRpcClient extends RpcClient<String,
             OutgoingMessageMetaData<String, Void>,
             IncomingMessageMetaData<String, Void>> {
-        protected MyRpcClient(Metrics metrics) {
+        MyRpcClient(Metrics metrics) {
             super(metrics);
         }
 

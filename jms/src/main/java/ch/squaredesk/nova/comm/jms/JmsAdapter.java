@@ -207,8 +207,8 @@ public class JmsAdapter<InternalMessageType> {
         this.destinationListeners.forEach(consumer -> {
             try {
                 consumer.accept(deadDestination);
-            } catch (Throwable t) {
-                logger.error("An error occurred trying to inform listener about dead destination " + deadDestination, t);
+            } catch (Exception e) {
+                logger.error("An error occurred trying to inform listener about dead destination {}", deadDestination, e);
             }
         });
     }

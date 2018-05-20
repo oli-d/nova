@@ -14,7 +14,7 @@ public enum CloseReason {
     GOING_AWAY(1001, "Endpoint going away"),
     PROTOCOL_ERROR(1002, "Protocol error"),
     CANNOT_ACCEPT(1003, "Unacceptable data received"),
-    // RESERVED(1004, "reserved"),
+    RESERVED(1004, "reserved"),
     NO_STATUS_CODE(1005, "No status code", false),
     CLOSED_ABNORMALLY(1006, "Closed abnormally", false),
     NOT_CONSISTENT(1007, "Inconsistent data received"),
@@ -47,6 +47,7 @@ public enum CloseReason {
             case 1001: return GOING_AWAY;
             case 1002: return PROTOCOL_ERROR;
             case 1003: return CANNOT_ACCEPT;
+            case 1004: return RESERVED;
             case 1005: return NO_STATUS_CODE;
             case 1006: return CLOSED_ABNORMALLY;
             case 1007: return NOT_CONSISTENT;

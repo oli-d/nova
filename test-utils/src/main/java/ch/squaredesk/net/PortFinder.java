@@ -20,7 +20,7 @@ public class PortFinder {
 
     public static void withNextFreePort (Consumer<Integer> consumer) {
         synchronized (portLock) {
-            int port = 0;
+            int port;
             try(ServerSocket serverSocket = new ServerSocket(0)) {
                 port = serverSocket.getLocalPort();
             } catch (Exception e) {

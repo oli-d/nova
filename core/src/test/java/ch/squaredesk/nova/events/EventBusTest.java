@@ -50,26 +50,20 @@ public class EventBusTest {
     }
 
     @Test
-    void uncaughtErrorInSubscriberVoidsObservable() throws Exception {
-        CountDownLatch countDownLatch = new CountDownLatch(1);
+    void uncaughtErrorInSubscriberVoidsObservable() {
         AtomicInteger i = new AtomicInteger(0);
-
         Disposable d = eventBus.on("x")
                 .subscribe(
                         data -> {
-                            if (i.incrementAndGet()==2)
-                            throw new RuntimeException("for test");
-                        },
-                        t -> countDownLatch.countDown());
-        assertFalse(d.isDisposed());
+                            if (i.incrementAndGet()==2) throw new RuntimeException("for test");
+                        });
 
         eventBus.emit("x");
+        assertThat(i.get(), is(1));
+        assertFalse(d.isDisposed());
+
         eventBus.emit("x"); // should throw
-
-        countDownLatch.await(2, TimeUnit.SECONDS);
-        assertThat(countDownLatch.getCount(),is(0L));
-
-
+        assertThat(i.get(), is(2));
         assertTrue(d.isDisposed());
 
         eventBus.emit("x");
@@ -77,26 +71,6 @@ public class EventBusTest {
         assertThat(i.get(), is(2)); // 3rd one should not have been delivered
     }
 
-
-    @Test
-    void observableWithUncaughtErrorInObserverIsDestroyed() throws Exception {
-        CountDownLatch countDownLatch = new CountDownLatch(1);
-
-        Disposable d = eventBus.on("x")
-                .subscribe(
-                        data -> {
-                            throw new RuntimeException("for test");
-                        },
-                        t -> countDownLatch.countDown());
-        assertFalse(d.isDisposed());
-
-        eventBus.emit("x"); // throws
-
-        countDownLatch.await(2, TimeUnit.SECONDS);
-        assertThat(countDownLatch.getCount(),is(0L));
-
-        assertTrue(d.isDisposed());
-    }
 
     @Test
     void eachSubscriptionFedByDifferentFlowable() {
@@ -111,21 +85,16 @@ public class EventBusTest {
     }
 
     @Test
-    void testRegisteredListenerCalledEverytimeAnEventIsEmitted() throws Exception {
+    void testRegisteredListenerCalledEverytimeAnEventIsEmitted() {
         List<Object[]> listener1InvocationParams = new ArrayList<>();
-        CountDownLatch countDownLatch = new CountDownLatch(3);
-
         eventBus.on(String.class).subscribe(data -> {
             listener1InvocationParams.add(data);
-            countDownLatch.countDown();
         });
 
         eventBus.emit(String.class, "MyEvent1");
         eventBus.emit(String.class, "MyEvent2");
         eventBus.emit(String.class, "MyEvent3", "MyEvent4");
 
-        countDownLatch.await(500,TimeUnit.MILLISECONDS);
-        assertThat(countDownLatch.getCount(), is(0L));
         assertThat(listener1InvocationParams.size(), is(3));
         assertThat(listener1InvocationParams.get(0).length, is(1));
         assertThat(listener1InvocationParams.get(0)[0], is("MyEvent1"));
@@ -137,28 +106,27 @@ public class EventBusTest {
     }
 
     @Test
-    void allObserversForEventInformedWhenEventIsEmitted() throws Exception {
+    void allObserversForEventInformedWhenEventIsEmitted() {
         int numberOfObservers = 5;
-        final CountDownLatch countDownLatch = new CountDownLatch(numberOfObservers);
-        NoParameterConsumer consumer = countDownLatch::countDown;
+        AtomicInteger counter = new AtomicInteger();
+        NoParameterConsumer consumer = counter::incrementAndGet;
 
         for (int i=0; i<numberOfObservers; i++) {
             eventBus.on("Test").subscribe(consumer);
         }
         eventBus.emit("Test");
 
-        countDownLatch.await(1, TimeUnit.SECONDS);
-        assertThat(countDownLatch.getCount(), is(0L));
+        assertThat(counter.get(), is(numberOfObservers));
     }
 
     @Test
-    void allSubscribersOfAllObserversForEventInformedWhenEventIsEmitted() throws Exception {
-        int numberOfObservers = 5;
+    void allSubscribersOfAllObservablesForEventInformedWhenEventIsEmitted() {
+        int numberOfObservables = 5;
         int numberOfSubscriptions = 5;
-        final CountDownLatch countDownLatch = new CountDownLatch(numberOfObservers * numberOfSubscriptions);
-        NoParameterConsumer consumer = countDownLatch::countDown;
+        AtomicInteger counter = new AtomicInteger();
+        NoParameterConsumer consumer = counter::incrementAndGet;
 
-        for (int i=0; i<numberOfObservers; i++) {
+        for (int i=0; i<numberOfObservables; i++) {
             Flowable<Object[]> observable = eventBus.on("Test");
             for (int j=0; j<numberOfSubscriptions; j++) {
                 observable.subscribe(consumer);
@@ -166,106 +134,71 @@ public class EventBusTest {
         }
         eventBus.emit("Test");
 
-        countDownLatch.await(1, TimeUnit.SECONDS);
-
-        assertThat(countDownLatch.getCount(), is(0L));
+        assertThat(counter.get(), is(numberOfObservables * numberOfSubscriptions));
     }
 
     @Test
-    void testAllRegisteredListenersMatchingEventAreCalledWhenEventIsEmitted() throws Exception {
-        CountDownLatch countDownLatch = new CountDownLatch(3);
-        boolean[] invocationFlags = new boolean[3];
-
-        eventBus.on(String.class).subscribe(data -> {
-            invocationFlags[0] = true;
-            countDownLatch.countDown();
-        });
-        eventBus.on(String.class).subscribe(data -> {
-            invocationFlags[1] = true;
-            countDownLatch.countDown();
-        });
-        eventBus.on(Integer.class).subscribe(data -> {
-            invocationFlags[2] = true;
-            countDownLatch.countDown();
-        });
+    void testAllRegisteredListenersMatchingEventAreCalledWhenEventIsEmitted() {
+        TestSubscriber<Object[]> observer1 = eventBus.on(String.class).test();
+        TestSubscriber<Object[]> observer2 = eventBus.on(String.class).test();
+        TestSubscriber<Object[]> observer3 = eventBus.on(Integer.class).test();
 
         eventBus.emit(String.class, "My String");
 
-        countDownLatch.await(500, TimeUnit.MILLISECONDS);
-        assertThat(countDownLatch.getCount(), is(1L)); // the Integer listener should NOT have been fired
-        assertTrue(invocationFlags[0]);
-        assertTrue(invocationFlags[1]);
-        assertFalse(invocationFlags[2]);
+        observer1.assertValueCount(1);
+        observer2.assertValueCount(1);
+        observer3.assertEmpty();
     }
 
     @Test
-    void testListenerCanBeRemovedSeparately() throws Exception {
-        TestSubscriber<Object[]> observer1 = eventBus.on(String.class).take(1).test();
-        TestSubscriber<Object[]> observer2 = eventBus.on(String.class).take(2).test();
+    void testListenerCanBeRemovedSeparately() {
+        TestSubscriber<Object[]> observer1 = eventBus.on(String.class).test();
+        TestSubscriber<Object[]> observer2 = eventBus.on(String.class).test();
 
         // emit -> both observers should get it
         eventBus.emit(String.class, "MyEvent1");
-        assertTrue(observer1.await(100,TimeUnit.MILLISECONDS));
         observer1.dispose();
-
-        // emit again -> observer 2 should also still get this one after unsubscription of observer 1
+        // emit again -> observer 2 should still get this after observer 1 was disposed
         eventBus.emit(String.class, "MyEvent2");
-        assertTrue(observer2.await(100,TimeUnit.MILLISECONDS));
+
+        observer1.assertValueCount(1);
         observer2.assertValueCount(2);
     }
 
     @Test
-    void allListenersCanBeRemoved() throws Exception {
+    void allListenersCanBeRemoved() {
         boolean[] invocationFlag = new boolean[1];
         Disposable d1 = eventBus.on(String.class).subscribe(data -> invocationFlag[0] = true);
-        Disposable d2 = eventBus.on(String.class).take(1).subscribe(data -> invocationFlag[0] = true);
+        Disposable d2 = eventBus.on(String.class).subscribe(data -> invocationFlag[0] = true);
 
         d1.dispose();
         d2.dispose();
         eventBus.emit(String.class, "MyEvent1");
 
-        Thread.sleep(500);
         assertFalse(invocationFlag[0]);
     }
 
     @Test
     void allObserversForEventInformedEvenWhenOneThrowsUncaughtException() {
         int numberOfGoodObservers = 5;
-        final CountDownLatch countDownLatch = new CountDownLatch(numberOfGoodObservers);
-        NoParameterConsumer goodConsumer = countDownLatch::countDown;
+        AtomicInteger counter = new AtomicInteger();
+        NoParameterConsumer goodConsumer = counter::incrementAndGet;
         NoParameterConsumer badConsumer = () -> { throw new RuntimeException("for test"); };
-
+        eventBus.on("Test").subscribe(badConsumer);
         for (int i = 0; i < numberOfGoodObservers; i++) {
             eventBus.on("Test").subscribe(goodConsumer);
         }
-        eventBus.on("Test").subscribe(badConsumer);
+
         eventBus.emit("Test");
 
-        try {
-            countDownLatch.await(1, TimeUnit.SECONDS);
-        } catch (InterruptedException e) {
-        }
-        assertThat(countDownLatch.getCount(), is(0L));
+        assertThat(counter.get(), is(numberOfGoodObservers));
     }
 
     @Test
-    void subscriptionDiesOnUnhandledObserverException() throws InterruptedException {
-        AtomicInteger counter = new AtomicInteger();
-        final CountDownLatch latch = new CountDownLatch(1);
+    void subscriptionDiesOnUnhandledObserverException() {
+        NastyConsumer nastyConsumer = new NastyConsumer();
+        eventBus.on("xxx").subscribe(nastyConsumer);
 
-        Consumer<Object[]> listener = param -> {
-            if ("throw".equals(param[0])) {
-                throw new RuntimeException("for test");
-            } else if ("end".equals(param[0])) {
-                latch.countDown();
-            } else {
-                counter.incrementAndGet();
-            }
-        };
-
-        Flowable observable = eventBus.on("xxx");
-
-        observable.subscribe(listener);
         eventBus.emit("xxx", "count");
         eventBus.emit("xxx", "count");
         eventBus.emit("xxx", "throw");
@@ -273,42 +206,14 @@ public class EventBusTest {
         eventBus.emit("xxx", "count"); // no count, since observer dead
         eventBus.emit("xxx", "end");
 
-        latch.await(500, TimeUnit.MILLISECONDS);
-        assertThat(latch.getCount(),is(1L)); // no count down, since "end" was emitted after throw
-        assertThat(counter.get(), is(2));
+        assertFalse(nastyConsumer.completed); // not set since "end" was emitted after throw
+        assertThat(nastyConsumer.counter, is(2));
     }
 
     @Test
-    void otherSubscriptionAreNotAffectedIfObserverThrowsUnhandledException() throws InterruptedException {
-        class NastyConsumer implements Consumer<Object[]> {
-            private int counter = 0;
-            CountDownLatch latch = new CountDownLatch(1);
-            @Override
-            public void accept(Object[] param) throws Exception {
-                if ("throw".equals(param[0])) {
-                    throw new RuntimeException("for test");
-                } else if ("end".equals(param[0])) {
-                    latch.countDown();
-                } else {
-                    counter++;
-                }
-            }
-        }
-        class NiceConsumer implements Consumer<Object[]> {
-            private int counter = 0;
-            CountDownLatch latch = new CountDownLatch(1);
-            @Override
-            public void accept(Object[] param) throws Exception {
-                if ("end".equals(param[0])) {
-                    latch.countDown();
-                } else {
-                    counter++;
-                }
-            }
-        }
+    void otherSubscriptionAreNotAffectedIfObserverThrowsUnhandledException() {
         NastyConsumer consumer1 = new NastyConsumer();
         NiceConsumer consumer2 = new NiceConsumer();
-
         eventBus.on("xxx").subscribe(consumer1);
         eventBus.on("xxx").subscribe(consumer2);
 
@@ -319,9 +224,8 @@ public class EventBusTest {
         eventBus.emit("xxx", "count"); // no count on consumer1, since observer dead
         eventBus.emit("xxx", "end");
 
-        consumer2.latch.await(500, TimeUnit.MILLISECONDS);
-        assertThat(consumer1.latch.getCount(),is(1L)); // no count down, since "end" was emitted after throw
-        assertThat(consumer2.latch.getCount(),is(0L));
+        assertFalse(consumer1.completed);
+        assertTrue(consumer2.completed);
         assertThat(consumer1.counter, is(2));
         assertThat(consumer2.counter, is(5)); // 4*count + 1*throw
     }
@@ -330,7 +234,6 @@ public class EventBusTest {
     void subscriptionSurvivesOnUnhandledObserverExceptionIfNovaConsumerUsed() throws InterruptedException {
         AtomicInteger counter = new AtomicInteger();
         CountDownLatch latch = new CountDownLatch(1);
-
         SingleParameterConsumer<String> listener = param -> {
             if ("throw".equals(param)) {
                 throw new RuntimeException("for test");
@@ -340,10 +243,8 @@ public class EventBusTest {
                 counter.incrementAndGet();
             }
         };
+        eventBus.on("xxx").subscribe(listener);
 
-        Flowable observable = eventBus.on("xxx");
-
-        observable.subscribe(listener);
         eventBus.emit("xxx", "count");
         eventBus.emit("xxx", "count");
         eventBus.emit("xxx", "throw");
@@ -354,5 +255,35 @@ public class EventBusTest {
         latch.await(500, TimeUnit.MILLISECONDS);
         assertThat(latch.getCount(),is(0L));
         assertThat(counter.get(),is(4));
+    }
+
+    private class NastyConsumer implements Consumer<Object[]> {
+        private int counter = 0;
+        private boolean completed;
+
+        @Override
+        public void accept(Object[] param) {
+            if ("throw".equals(param[0])) {
+                throw new RuntimeException("for test");
+            } else if ("end".equals(param[0])) {
+                completed = true;
+            } else {
+                counter++;
+            }
+        }
+    }
+
+    class NiceConsumer implements Consumer<Object[]> {
+        private int counter = 0;
+        private boolean completed;
+
+        @Override
+        public void accept(Object[] param) {
+            if ("end".equals(param[0])) {
+                completed = true;
+            } else {
+                counter++;
+            }
+        }
     }
 }

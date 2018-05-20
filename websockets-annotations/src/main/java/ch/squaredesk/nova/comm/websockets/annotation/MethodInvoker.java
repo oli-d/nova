@@ -38,8 +38,8 @@ class MethodInvoker<MessageType> implements Consumer<IncomingMessage<MessageType
         // FIXME: timing metrics
         try {
             methodToInvoke.invoke(objectToInvokeMethodOn, message.message, message.metaData.details.webSocket);
-        } catch (Throwable t) {
-            LOGGER.error("Unable to invoke handler for message " + message, t);
+        } catch (Exception e) {
+            LOGGER.error("Unable to invoke handler for message {}", message, e);
         }
     }
 

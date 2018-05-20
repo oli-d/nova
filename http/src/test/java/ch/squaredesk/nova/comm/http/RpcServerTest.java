@@ -78,13 +78,15 @@ class RpcServerTest {
         int numRequests = 15;
         String path = "/bla";
         CountDownLatch cdl = new CountDownLatch(numRequests);
-        Flowable<RpcInvocation<String>> requests = sut.requests(path);
-        requests.subscribeOn(Schedulers.io()).subscribe(rpcInvocation -> {
-            rpcInvocation.complete(" description " + rpcInvocation.request.metaData.details.headerParams.get("p"));
-            cdl.countDown();
-        });
+        sut.requests(path)
+            .subscribeOn(Schedulers.io())
+            .map(rpcInvocation -> {
+                rpcInvocation.complete(" description " + rpcInvocation.request.metaData.details.headerParams.get("p"));
+                cdl.countDown();
+                return 1;
+            }).test();
 
-        IntStream.range(0, numRequests).forEach(i -> sendRestRequestInNewThread(path, i));
+        IntStream.range(0, numRequests).forEach(i -> sendRestRequest(path, i));
 
         cdl.await(20, TimeUnit.SECONDS);
         assertThat(cdl.getCount(), is(0L));
@@ -176,19 +178,18 @@ class RpcServerTest {
         assertThat(reply.metaData.details.statusCode, is(500));
     }
 
-    private void sendRestRequestInNewThread(String path, int i) {
-        new Thread(() -> {
-            try {
-                String urlAsString = "http://" + rsc.interfaceName + ":" + rsc.port + path + "?p=" + i;
+    private void sendRestRequest(String path, int i) {
+        try {
+            String urlAsString = "http://" + rsc.interfaceName + ":" + rsc.port + path + "?p=" + i;
+            System.out.println(">>>>> " + urlAsString);
 
-                RequestMessageMetaData meta = new RequestMessageMetaData(
-                        new URL(urlAsString),
-                        new RequestInfo(HttpRequestMethod.POST));
+            RequestMessageMetaData meta = new RequestMessageMetaData(
+                    new URL(urlAsString),
+                    new RequestInfo(HttpRequestMethod.POST));
 
-                rpcClient.sendRequest("{}", meta, 15, TimeUnit.SECONDS).blockingGet();
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }).start();
+            rpcClient.sendRequest("{}", meta, 15, TimeUnit.SECONDS).blockingGet();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 }

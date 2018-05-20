@@ -18,7 +18,6 @@ import io.reactivex.functions.Consumer;
 import org.junit.jupiter.api.Test;
 
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
@@ -149,7 +148,6 @@ public class ConsumerWrappersTest {
         eventBus.emit("e");
 
         for (CountDownLatch latch : latches) {
-            latch.await(100, TimeUnit.MILLISECONDS);
             assertThat(latch.getCount(),is(0L));
         }
     }
@@ -307,7 +305,6 @@ public class ConsumerWrappersTest {
         eventBus.emit("e", p1, p2, p3, p4, p5, p6, p7, p8, p9, p10);
 
         for (CountDownLatch latch : latches) {
-            latch.await(100, TimeUnit.MILLISECONDS);
             assertThat(latch.getCount(),is(0L));
         }
 

@@ -29,7 +29,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 class DefaultMarshallerFactoryTest {
     @Test
     void properMessageUnmarshallerCreatedForMessageHandler() throws Exception {
-        MessageUnmarshaller unmarshaller = getUnmarshallerForMessageType(String.class);
+        MessageUnmarshaller<String,?> unmarshaller = getUnmarshallerForMessageType(String.class);
         assertThat(unmarshaller.unmarshal("4"), is("4"));
         unmarshaller = getUnmarshallerForMessageType(Integer.class);
         assertThat(unmarshaller.unmarshal("4"), is(4));

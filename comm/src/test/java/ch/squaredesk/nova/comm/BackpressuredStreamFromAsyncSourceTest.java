@@ -25,7 +25,7 @@ class BackpressuredStreamFromAsyncSourceTest {
     @Test
     void onCompleteInvokesCloseAction() throws Exception {
         CountDownLatch cdl = new CountDownLatch(1);
-        Runnable closeAction = () -> cdl.countDown();
+        Runnable closeAction = cdl::countDown;
         BackpressuredStreamFromAsyncSource<String> sut = new BackpressuredStreamFromAsyncSource<>(closeAction);
 
         sut.toFlowable().subscribeOn(Schedulers.io()).subscribe();

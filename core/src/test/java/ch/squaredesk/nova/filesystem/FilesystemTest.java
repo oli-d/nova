@@ -11,6 +11,7 @@
 package ch.squaredesk.nova.filesystem;
 
 import ch.squaredesk.nova.Nova;
+import io.reactivex.observers.TestObserver;
 import io.reactivex.subscribers.TestSubscriber;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
@@ -19,12 +20,11 @@ import org.junit.jupiter.api.Test;
 
 import java.io.File;
 import java.nio.file.NoSuchFileException;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 
+import static java.util.concurrent.TimeUnit.SECONDS;
+import static org.awaitility.Awaitility.await;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class FilesystemTest {
@@ -36,7 +36,7 @@ class FilesystemTest {
     }
 
     @AfterAll
-    static void removeTestFiles() throws Throwable {
+    static void removeTestFiles() {
         String[] files = { "bla.txt", "isntThere.txt", "src/test/resources/isntThere.txt" };
         for (String s : files) {
             File f = new File(s);
@@ -48,45 +48,35 @@ class FilesystemTest {
 
 
     @Test
-    void testReadTextFile() throws Throwable {
+    void testReadTextFile() {
         TestSubscriber<String> testSubscriber = filesystem.readTextFile("src/test/resources/someFile.txt").test();
         testSubscriber.assertValueCount(3);
         testSubscriber.assertValues("This is some content in some file.","", "This is more content.");
     }
 
     @Test
-    void testReadTextFileFromClasspath() throws Throwable {
+    void testReadTextFileFromClasspath() {
         TestSubscriber<String> testSubscriber = filesystem.readTextFileFromClasspath("/someFile.txt").test();
         testSubscriber.assertValueCount(3);
         testSubscriber.assertValues("This is some content in some file.", "", "This is more content.");
     }
 
     @Test
-    void testReadFileFully() throws Throwable {
-        CountDownLatch countDownLatch = new CountDownLatch(1);
-        String[] resultContainer = new String[1];
-        filesystem.readTextFileFully("src/test/resources/someFile.txt")
-                .doFinally(countDownLatch::countDown)
-                .subscribe(contents -> resultContainer[0] = contents);
+    void testReadFileFully() {
+        TestObserver<String> observer = filesystem.readTextFileFully("src/test/resources/someFile.txt")
+                .test();
 
-        countDownLatch.await(2, TimeUnit.SECONDS);
-        assertThat(countDownLatch.getCount(),is(0L));
-        assertThat(resultContainer[0],is("This is some content in some file.\n\nThis is more content."));
+        await().atMost(2, SECONDS).until(observer::isTerminated);
+        observer.assertValue("This is some content in some file.\n\nThis is more content.");
     }
 
     @Test
-    void testReadFileFullyWithUnknownPathCausesErrorCallbackToBeInvoked() throws Throwable {
-        CountDownLatch countDownLatch = new CountDownLatch(1);
-        Throwable[] resultContainer = new Throwable[1];
-        filesystem.readTextFileFully("doesntExist.txt")
-                .doFinally(countDownLatch::countDown)
-                .subscribe(
-                        s -> {},
-                        t -> resultContainer[0] = t);
+    void testReadFileFullyWithUnknownPathCausesErrorCallbackToBeInvoked() {
+        TestObserver<String> observer = filesystem.readTextFileFully("doesntExist.txt")
+                .test();
 
-        countDownLatch.await(2, TimeUnit.SECONDS);
-        assertThat(countDownLatch.getCount(),is(0L));
-        assertNotNull(resultContainer[0]);
+        await().atMost(2, SECONDS).until(observer::isTerminated);
+        observer.assertError(NoSuchFileException.class);
     }
 
     @Test
@@ -96,15 +86,11 @@ class FilesystemTest {
     }
 
     @Test
-    void testWriteFileAsyncWithUnknownPathCreatesFile() throws Throwable {
-        CountDownLatch countDownLatch = new CountDownLatch(1);
+    void testWriteFileAsyncWithUnknownPathCreatesFile() {
         try {
-            filesystem.writeFile("content", "isntThere.txt")
-                    .doFinally(countDownLatch::countDown)
-                    .subscribe();
+            TestObserver<Void> observer = filesystem.writeFile("content", "isntThere.txt").test();
 
-            countDownLatch.await(2,TimeUnit.SECONDS);
-            assertThat(countDownLatch.getCount(),is(0L));
+            await().atMost(2, SECONDS).until(observer::isTerminated);
             assertTrue(new File("isntThere.txt").exists());
         } finally {
             File file = new File("isntThere.txt");
@@ -133,13 +119,13 @@ class FilesystemTest {
     }
 
     @Test
-    void testReadTextFileFullyFromClasspath() throws Throwable {
+    void testReadTextFileFullyFromClasspath() {
         assertThat(filesystem.readTextFileFullyFromClasspath("/someFile.txt").blockingGet(),
                 is("This is some content in some file.\n\nThis is more content."));
     }
 
     @Test
-    void testReadFileFromClasspathSyncWithUnknownPathThrowsException() throws Throwable {
+    void testReadFileFromClasspathSyncWithUnknownPathThrowsException() {
         try {
             filesystem.readTextFileFullyFromClasspath("src/test/resources/" + System.currentTimeMillis() + ".txt")
                     .blockingGet();
