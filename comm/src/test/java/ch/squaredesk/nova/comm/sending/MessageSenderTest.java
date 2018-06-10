@@ -18,18 +18,30 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-class MessageSenderTest {
+class MessageSenderImplBaseTest {
 
     @Test
     void instanceCannotBeCreatedWithoutMarshaller() {
         Throwable t = assertThrows(NullPointerException.class,
-                () -> new MessageSender<Object,Object, Object, OutgoingMessageMetaData<Object, Object>>(null, new Metrics()) {
+                () -> new MessageSenderImplBase<Object,Object, Object, OutgoingMessageMetaData<Object, Object>>(null, new Metrics()) {
                     @Override
-                    protected Completable doSend(Object transportMessage, OutgoingMessageMetaData messageSendingInfo) {
+                    public Completable doSend(Object transportMessage, OutgoingMessageMetaData messageSendingInfo) {
                         return null;
                     }
                 });
         assertThat(t.getMessage(), containsString("messageMarshaller"));
+    }
+
+    @Test
+    void instanceCannotBeCreatedWithoutMetrics() {
+        Throwable t = assertThrows(NullPointerException.class,
+                () -> new MessageSenderImplBase<Object,Object, Object, OutgoingMessageMetaData<Object, Object>>(x -> x, null) {
+                    @Override
+                    public Completable doSend(Object transportMessage, OutgoingMessageMetaData messageSendingInfo) {
+                        return null;
+                    }
+                });
+        assertThat(t.getMessage(), containsString("metrics"));
     }
 
 }

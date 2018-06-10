@@ -64,7 +64,7 @@ class RpcClientTest {
                 objectRepository,
                 s -> s,
                 metrics);
-        sut = new RpcClient<>("id", messageReceiver, messageSender, metrics);
+        sut = new RpcClient<>("id", messageSender, messageReceiver, metrics);
 
         jmsHelper = new TestJmsHelper(connectionFactory);
         jmsHelper.start();

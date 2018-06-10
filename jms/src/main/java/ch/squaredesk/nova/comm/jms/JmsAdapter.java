@@ -30,8 +30,8 @@ import static java.util.Objects.requireNonNull;
 public class JmsAdapter<InternalMessageType> {
     private static final Logger logger = LoggerFactory.getLogger(JmsAdapter.class);
 
-    private final MessageSender<InternalMessageType> messageSender;
-    private final MessageReceiver<InternalMessageType> messageReceiver;
+    private final ch.squaredesk.nova.comm.sending.MessageSender<InternalMessageType, OutgoingMessageMetaData> messageSender;
+    private final ch.squaredesk.nova.comm.retrieving.MessageReceiver<Destination, InternalMessageType, IncomingMessageMetaData> messageReceiver;
     private final RpcClient<InternalMessageType> rpcClient;
     private final RpcServer<InternalMessageType> rpcServer;
     private final JmsObjectRepository jmsObjectRepository;
@@ -272,8 +272,8 @@ public class JmsAdapter<InternalMessageType> {
         private long defaultTimeToLive = Message.DEFAULT_TIME_TO_LIVE;
         private int defaultDeliveryMode = DeliveryMode.NON_PERSISTENT;
         private JmsObjectRepository jmsObjectRepository;
-        private MessageSender<InternalMessageType> messageSender;
-        private MessageReceiver<InternalMessageType> messageReceiver;
+        private ch.squaredesk.nova.comm.sending.MessageSender<InternalMessageType, OutgoingMessageMetaData> messageSender;
+        private ch.squaredesk.nova.comm.retrieving.MessageReceiver<Destination, InternalMessageType, IncomingMessageMetaData> messageReceiver;
         private RpcServer<InternalMessageType> rpcServer;
         private RpcClient<InternalMessageType> rpcClient;
         private long defaultRpcTimeout;
@@ -366,12 +366,12 @@ public class JmsAdapter<InternalMessageType> {
             return this;
         }
 
-        public Builder<InternalMessageType> setMessageReceiver(MessageReceiver<InternalMessageType> messageReceiver) {
+        public Builder<InternalMessageType> setMessageReceiver(ch.squaredesk.nova.comm.retrieving.MessageReceiver<Destination, InternalMessageType, IncomingMessageMetaData> messageReceiver) {
             this.messageReceiver = messageReceiver;
             return this;
         }
 
-        public Builder<InternalMessageType> setMessageSender(MessageSender<InternalMessageType> messageSender) {
+        public Builder<InternalMessageType> setMessageSender(ch.squaredesk.nova.comm.sending.MessageSender<InternalMessageType, OutgoingMessageMetaData> messageSender) {
             this.messageSender = messageSender;
             return this;
         }
@@ -424,7 +424,7 @@ public class JmsAdapter<InternalMessageType> {
                 rpcServer = new RpcServer<>(identifier, messageReceiver, messageSender, errorReplyFactory, metrics);
             }
             if (rpcClient==null) {
-                rpcClient = new RpcClient<>(identifier, messageReceiver, messageSender, metrics);
+                rpcClient = new RpcClient<>(identifier, messageSender, messageReceiver, metrics);
             }
             return new JmsAdapter<>(this);
         }

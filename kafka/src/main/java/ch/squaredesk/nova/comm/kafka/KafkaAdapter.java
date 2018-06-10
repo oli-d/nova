@@ -11,6 +11,8 @@
 package ch.squaredesk.nova.comm.kafka;
 
 import ch.squaredesk.nova.comm.CommAdapterBuilder;
+import ch.squaredesk.nova.comm.retrieving.MessageReceiver;
+import ch.squaredesk.nova.comm.sending.MessageSender;
 import io.reactivex.Completable;
 import io.reactivex.Flowable;
 import io.reactivex.Scheduler;
@@ -32,12 +34,12 @@ import static java.util.Objects.requireNonNull;
 public class KafkaAdapter<InternalMessageType> {
     private static final Logger logger = LoggerFactory.getLogger(KafkaAdapter.class);
 
-    private final KafkaMessageSender<InternalMessageType> messageSender;
-    private final KafkaMessageReceiver<InternalMessageType> messageReceiver;
+    private final MessageSender<InternalMessageType, OutgoingMessageMetaData> messageSender;
+    private final MessageReceiver<String, InternalMessageType, IncomingMessageMetaData> messageReceiver;
 
 
-    KafkaAdapter(KafkaMessageSender<InternalMessageType> messageSender,
-                 KafkaMessageReceiver<InternalMessageType> messageReceiver) {
+    KafkaAdapter(MessageSender<InternalMessageType, OutgoingMessageMetaData> messageSender,
+                 MessageReceiver<String, InternalMessageType, IncomingMessageMetaData> messageReceiver) {
         this.messageReceiver = messageReceiver;
         this.messageSender = messageSender;
     }
@@ -72,7 +74,9 @@ public class KafkaAdapter<InternalMessageType> {
     //                     //
     /////////////////////////
     public void shutdown() {
-        messageReceiver.shutdown();
+        if (messageReceiver instanceof KafkaMessageReceiver) {
+            ((KafkaMessageReceiver)messageReceiver).shutdown();
+        }
         logger.info("KafkaAdapter shut down");
     }
 
@@ -89,8 +93,8 @@ public class KafkaAdapter<InternalMessageType> {
     public static class Builder<InternalMessageType> extends CommAdapterBuilder<InternalMessageType, KafkaAdapter<InternalMessageType>>{
         private String serverAddress;
         private String identifier;
-        private KafkaMessageSender<InternalMessageType> messageSender;
-        private KafkaMessageReceiver<InternalMessageType> messageReceiver;
+        private MessageSender<InternalMessageType, OutgoingMessageMetaData> messageSender;
+        private MessageReceiver<String, InternalMessageType, IncomingMessageMetaData> messageReceiver;
         private Scheduler subscriptionScheduler;
         private Properties consumerProperties = new Properties();
         private Properties producerProperties = new Properties();
@@ -152,12 +156,12 @@ public class KafkaAdapter<InternalMessageType> {
             return this;
         }
 
-        public Builder<InternalMessageType> setMessageSender(KafkaMessageSender<InternalMessageType> messageSender) {
+        public Builder<InternalMessageType> setMessageSender(MessageSender<InternalMessageType, OutgoingMessageMetaData> messageSender) {
             this.messageSender = messageSender;
             return this;
         }
 
-        public Builder<InternalMessageType> setMessageReceiver(KafkaMessageReceiver<InternalMessageType> messageReceiver) {
+        public Builder<InternalMessageType> setMessageReceiver(MessageReceiver<String, InternalMessageType, IncomingMessageMetaData> messageReceiver) {
             this.messageReceiver = messageReceiver;
             return this;
         }

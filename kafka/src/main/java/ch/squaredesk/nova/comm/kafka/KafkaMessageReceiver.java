@@ -11,7 +11,7 @@
 package ch.squaredesk.nova.comm.kafka;
 
 import ch.squaredesk.nova.comm.retrieving.IncomingMessage;
-import ch.squaredesk.nova.comm.retrieving.MessageReceiver;
+import ch.squaredesk.nova.comm.retrieving.MessageReceiverImplBase;
 import ch.squaredesk.nova.comm.retrieving.MessageUnmarshaller;
 import ch.squaredesk.nova.metrics.Metrics;
 import ch.squaredesk.nova.tuples.Pair;
@@ -33,7 +33,7 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 
 public class KafkaMessageReceiver<InternalMessageType>
-        extends MessageReceiver<String, InternalMessageType, String, IncomingMessageMetaData> {
+        extends MessageReceiverImplBase<String, InternalMessageType, String, IncomingMessageMetaData> {
 
     private final Logger logger = LoggerFactory.getLogger(KafkaMessageReceiver.class);
     private final Flowable<IncomingMessage<InternalMessageType, IncomingMessageMetaData>> allMessagesStream;

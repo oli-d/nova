@@ -22,13 +22,13 @@ import static java.util.Objects.requireNonNull;
 
 public class RpcServer<InternalMessageType> extends ch.squaredesk.nova.comm.rpc.RpcServer<Destination, RpcInvocation<InternalMessageType>> {
 
-    private final MessageSender<InternalMessageType> messageSender;
-    private final MessageReceiver<InternalMessageType> messageReceiver;
+    private final ch.squaredesk.nova.comm.sending.MessageSender<InternalMessageType, OutgoingMessageMetaData> messageSender;
+    private final ch.squaredesk.nova.comm.retrieving.MessageReceiver<Destination, InternalMessageType, IncomingMessageMetaData> messageReceiver;
     private final Function<Throwable, InternalMessageType> errorReplyFactory;
 
     RpcServer(String identifier,
-              MessageReceiver<InternalMessageType> messageReceiver,
-              MessageSender<InternalMessageType> messageSender,
+              ch.squaredesk.nova.comm.retrieving.MessageReceiver<Destination, InternalMessageType, IncomingMessageMetaData> messageReceiver,
+              ch.squaredesk.nova.comm.sending.MessageSender<InternalMessageType, OutgoingMessageMetaData> messageSender,
               Function<Throwable, InternalMessageType> errorReplyFactory,
               Metrics metrics) {
         super(identifier, metrics);

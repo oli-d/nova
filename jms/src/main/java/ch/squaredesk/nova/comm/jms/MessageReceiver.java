@@ -11,6 +11,7 @@
 package ch.squaredesk.nova.comm.jms;
 
 import ch.squaredesk.nova.comm.retrieving.IncomingMessage;
+import ch.squaredesk.nova.comm.retrieving.MessageReceiverImplBase;
 import ch.squaredesk.nova.comm.retrieving.MessageUnmarshaller;
 import ch.squaredesk.nova.metrics.Metrics;
 import io.reactivex.Flowable;
@@ -26,7 +27,7 @@ import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
 class MessageReceiver<InternalMessageType>
-        extends ch.squaredesk.nova.comm.retrieving.MessageReceiver<Destination, InternalMessageType, String, IncomingMessageMetaData> {
+        extends MessageReceiverImplBase<Destination, InternalMessageType, String, IncomingMessageMetaData> {
 
     private static final Logger logger = LoggerFactory.getLogger(MessageReceiver.class);
 

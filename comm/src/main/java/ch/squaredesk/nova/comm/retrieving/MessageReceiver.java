@@ -10,32 +10,13 @@
 
 package ch.squaredesk.nova.comm.retrieving;
 
-import ch.squaredesk.nova.metrics.Metrics;
 import io.reactivex.Flowable;
 
-import static java.util.Objects.requireNonNull;
-
-public abstract class MessageReceiver<
+public interface MessageReceiver<
         DestinationType,
         InternalMessageType,
-        TransportMessageType,
         MetaDataType extends IncomingMessageMetaData<DestinationType, ?>> {
-    protected final MessageUnmarshaller<TransportMessageType, InternalMessageType> messageUnmarshaller;
-    protected final MetricsCollector metricsCollector;
 
-    protected MessageReceiver(MessageUnmarshaller<TransportMessageType, InternalMessageType> messageUnmarshaller, Metrics metrics) {
-        this(null, messageUnmarshaller, metrics);
-    }
-
-    protected MessageReceiver(String identifier,
-                              MessageUnmarshaller<TransportMessageType, InternalMessageType> messageUnmarshaller,
-                              Metrics metrics) {
-        requireNonNull(metrics, "metrics must not be null");
-        requireNonNull(messageUnmarshaller, "messageUnmarshaller must not be null");
-        this.messageUnmarshaller = messageUnmarshaller;
-        this.metricsCollector = new MetricsCollector(identifier, metrics);
-    }
-
-    public abstract Flowable<IncomingMessage<InternalMessageType, MetaDataType>> messages(DestinationType destination);
+    Flowable<IncomingMessage<InternalMessageType, MetaDataType>> messages(DestinationType destination);
 
 }

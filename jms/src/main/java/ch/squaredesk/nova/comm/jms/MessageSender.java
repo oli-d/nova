@@ -11,6 +11,7 @@
 package ch.squaredesk.nova.comm.jms;
 
 import ch.squaredesk.nova.comm.sending.MessageMarshaller;
+import ch.squaredesk.nova.comm.sending.MessageSenderImplBase;
 import ch.squaredesk.nova.metrics.Metrics;
 import io.reactivex.Completable;
 
@@ -20,7 +21,7 @@ import javax.jms.TextMessage;
 
 import static java.util.Objects.requireNonNull;
 
-public class MessageSender<InternalMessageType> extends ch.squaredesk.nova.comm.sending.MessageSender<Destination, InternalMessageType, String, OutgoingMessageMetaData> {
+public class MessageSender<InternalMessageType> extends MessageSenderImplBase<Destination, InternalMessageType, String, OutgoingMessageMetaData> {
     private final JmsObjectRepository jmsObjectRepository;
 
     MessageSender(String identifier,
