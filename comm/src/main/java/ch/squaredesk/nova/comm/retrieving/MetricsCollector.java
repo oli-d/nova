@@ -11,8 +11,8 @@
 package ch.squaredesk.nova.comm.retrieving;
 
 import ch.squaredesk.nova.metrics.Metrics;
-import com.codahale.metrics.Counter;
-import com.codahale.metrics.Meter;
+import io.dropwizard.metrics5.Counter;
+import io.dropwizard.metrics5.Meter;
 
 import static java.util.Objects.requireNonNull;
 
@@ -26,7 +26,7 @@ public class MetricsCollector {
     MetricsCollector(String identifier, Metrics metrics) {
         requireNonNull(metrics, "metrics must not be null");
         this.metrics = metrics;
-        this.identifierPrefix = Metrics.name("messageReceiver", identifier);
+        this.identifierPrefix = Metrics.name("messageReceiver", identifier).toString();
         totalNumberOfReceivedMessages = metrics.getMeter(this.identifierPrefix,"received","total");
         totalNumberOfSubscriptions = metrics.getCounter(this.identifierPrefix,"subscriptions","total");
         totalNumberOfUnparsableMessages = metrics.getCounter(this.identifierPrefix,"unparsable","total");

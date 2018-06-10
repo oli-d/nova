@@ -26,7 +26,7 @@ import org.springframework.core.annotation.Order;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
-public class SpringWiringTest {
+class SpringWiringTest {
 
     private AnnotationConfigApplicationContext ctx = new AnnotationConfigApplicationContext();
     private String serverUrl;
@@ -39,12 +39,12 @@ public class SpringWiringTest {
     }
 
     @AfterEach
-    public void tearDown() throws Exception {
+    void tearDown() throws Exception {
         ctx.close();
     }
 
     @Test
-    public void restEndpointCanProperlyBeInvoked() throws Exception {
+    void restEndpointCanProperlyBeInvoked() throws Exception {
         setupContext(MyConfig.class);
         Metrics metrics = ctx.getBean(Nova.class).metrics;
         assertThat(metrics.getTimer("rest", "foo").getCount(), is(0L));
@@ -55,7 +55,7 @@ public class SpringWiringTest {
     }
 
     @Test
-    public void restAnnotationsCanBeMixedWithHttpRpcServer() throws Exception {
+    void restAnnotationsCanBeMixedWithHttpRpcServer() throws Exception {
         setupContext(MyMixedConfig.class);
         ctx.getBean(HttpServer.class).start();
         RpcServer<String> rpcServer = ctx.getBean(RpcServer.class);

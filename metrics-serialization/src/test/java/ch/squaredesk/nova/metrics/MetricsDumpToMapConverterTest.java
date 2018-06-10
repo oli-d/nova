@@ -14,14 +14,13 @@ class MetricsDumpToMapConverterTest {
 
     @Test
     void nullDumpThrows() {
-        assertThrows(NullPointerException.class, () -> MetricsDumpToMapConverter.convert(null));
+        assertThrows(NullPointerException.class, () -> MetricsConverter.convert(null));
     }
 
     @Test
     void nullAdditionalAttributesIsOk() {
         Nova nova = Nova.builder().build();
-        MetricsDump dump = nova.metrics.dump();
-        assertNotNull(MetricsDumpToMapConverter.convert(dump, null));
+        assertNotNull(MetricsConverter.convert(nova.metrics.dump().metrics, null));
     }
 
     @Test
@@ -29,16 +28,15 @@ class MetricsDumpToMapConverterTest {
         Nova nova = Nova.builder().build();
         MetricsDump dump = nova.metrics.dump();
 
-        Map<String, Object> dumpAsMap = MetricsDumpToMapConverter.convert(dump);
+        Map<String, Map<String, Object>> dumpAsMap = MetricsConverter.convert(dump.metrics);
 
-        dump.metrics.keySet().forEach(key -> assertTrue(dumpAsMap.containsKey(key)));
-        assertThat(dumpAsMap.size(), is(dump.metrics.size() + 3));
-        assertTrue(dumpAsMap.containsKey("timestamp"));
-        assertTrue(dumpAsMap.containsKey("hostName"));
-        assertTrue(dumpAsMap.containsKey("hostAddress"));
-        dumpAsMap.entrySet().stream()
-                .filter(entry -> dump.metrics.containsKey(entry.getKey()))
-                .forEach(entry -> assertTrue(((Map) entry.getValue()).containsKey("type")));
+        dump.metrics.keySet().forEach(key -> assertTrue(dumpAsMap.containsKey(key.toString())));
+        assertThat(dumpAsMap.size(), is(dump.metrics.size() ));
+        dump.metrics.keySet().forEach(metricName -> {
+            String key = metricName.toString();
+            assertTrue(dumpAsMap.containsKey(key));
+            assertTrue(dumpAsMap.get(key).containsKey("type"));
+        });
     }
 
     @Test
@@ -49,7 +47,7 @@ class MetricsDumpToMapConverterTest {
         additionalAttributes.put("key1", "value1");
         additionalAttributes.put("key2", "value2");
 
-        Map<String, Object> dumpAsMap = MetricsDumpToMapConverter.convert(dump, additionalAttributes);
+        Map<String, Map<String, Object>> dumpAsMap = MetricsConverter.convert(dump.metrics, additionalAttributes);
 
         dumpAsMap.entrySet().stream()
                 .filter(entry -> dump.metrics.keySet().contains(entry.getKey()))

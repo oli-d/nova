@@ -10,6 +10,8 @@
 
 package ch.squaredesk.nova.metrics;
 
+import io.dropwizard.metrics5.MetricName;
+
 import java.lang.management.ManagementFactory;
 import java.lang.management.OperatingSystemMXBean;
 import java.lang.reflect.Method;
@@ -55,13 +57,13 @@ public class CpuMeter implements CompoundMetric {
     }
 
     @Override
-    public Map<String, Object> getValues() {
-        Map<String, Object> values = new HashMap<>();
+    public Map<MetricName, Object> getValues() {
+        Map<MetricName, Object> values = new HashMap<>();
         if (systemCpuLoadRetrievalMethod!=null) {
-            values.put("systemLoadPercent", invoke(systemCpuLoadRetrievalMethod) * 100.0);
+            values.put(Metrics.name("systemLoadPercent"), invoke(systemCpuLoadRetrievalMethod) * 100.0);
         }
         if (processCpuLoadRetrievalMethod!=null) {
-            values.put("processLoadPercent", invoke(processCpuLoadRetrievalMethod) * 100.0);
+            values.put(Metrics.name("processLoadPercent"), invoke(processCpuLoadRetrievalMethod) * 100.0);
         }
         return values;
     }

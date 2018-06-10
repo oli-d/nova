@@ -13,7 +13,7 @@ package ch.squaredesk.nova.comm.rest.annotation;
 import ch.squaredesk.nova.Nova;
 import ch.squaredesk.nova.comm.http.HttpServerConfiguration;
 import ch.squaredesk.nova.comm.http.spring.HttpServerConfigurationProvidingConfiguration;
-import com.codahale.metrics.Timer;
+import io.dropwizard.metrics5.Timer;
 import org.glassfish.grizzly.http.server.HttpServer;
 import org.glassfish.jersey.grizzly2.httpserver.GrizzlyHttpServerFactory;
 import org.glassfish.jersey.server.ResourceConfig;

@@ -10,11 +10,8 @@
 
 package ch.squaredesk.nova.metrics.elastic;
 
-import ch.squaredesk.nova.metrics.CompoundMetric;
+import ch.squaredesk.nova.metrics.MetricsConverter;
 import ch.squaredesk.nova.metrics.MetricsDump;
-import ch.squaredesk.nova.tuples.Pair;
-import ch.squaredesk.nova.tuples.Tuple3;
-import com.codahale.metrics.Metric;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.reactivex.Observable;
 import io.reactivex.Single;
@@ -35,6 +32,7 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 
@@ -170,23 +168,24 @@ public class ElasticMetricsReporter implements Consumer<MetricsDump> {
     }
 
     Single<BulkRequest> requestFor(MetricsDump metricsDump) throws Exception {
+        Map<String, Object> additionalAttributes = new HashMap<>();
         LocalDateTime timestampInUtc = timestampInUtc(metricsDump.timestamp);
+        additionalAttributes.put("@timestamp", timestampInUtc);
+        additionalAttributes.put("host", metricsDump.hostName);
+        additionalAttributes.put("hostAddress", metricsDump.hostAddress);
 
-        return Observable.fromIterable(metricsDump.metrics.entrySet())
-                .map(entry -> new Tuple3<>(entry.getValue().getClass().getSimpleName(), entry.getKey(), entry.getValue()))
-                .map(tupleTypeAndNameAndMetric -> {
-                    Map<String, Object> map = toMap(tupleTypeAndNameAndMetric._3);
-                    map.put("name", tupleTypeAndNameAndMetric._2);
-                    map.put("@timestamp", timestampInUtc);
-                    map.put("host", metricsDump.hostName);
-                    map.put("hostAddress", metricsDump.hostAddress);
-                    map.putAll(additionalMetricAttributes);
-                    return new Pair<>(tupleTypeAndNameAndMetric._1, map);
+        Map<String, Map<String, Object>> convertedDump = MetricsConverter.convert(metricsDump.metrics, additionalAttributes);
+
+        return Observable.fromIterable(convertedDump.entrySet())
+                .map(entry -> {
+                    Map<String, Object> map = entry.getValue();
+                    map.put("name", entry.getKey());
+                    return map;
                 })
-                .map(typeAndMetricAsMap -> new IndexRequest()
+                .map(map -> new IndexRequest()
                         .index(indexName)
-                        .type(typeAndMetricAsMap._1)
-                        .source(typeAndMetricAsMap._2)
+                        .type((String)map.get("type"))
+                        .source(map)
                 )
                 .reduce(Requests.bulkRequest(),
                         (bulkRequestBuilder, indexRequest) -> {
@@ -194,14 +193,6 @@ public class ElasticMetricsReporter implements Consumer<MetricsDump> {
                             return bulkRequestBuilder;
                         })
                 ;
-    }
-
-    private Map<String, Object> toMap(Metric metric) {
-        if (metric instanceof CompoundMetric) {
-            return ((CompoundMetric) metric).getValues();
-        } else {
-            return objectMapper.convertValue(metric, Map.class);
-        }
     }
 
 }

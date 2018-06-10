@@ -1,4 +1,7 @@
-# Nova [![Codeship Build Status](https://app.codeship.com/projects/2283d970-1edb-0135-0041-4ec1c01dd1d7/status?branch=master)](https://app.codeship.com/projects/220890)
+# Nova
+
+[![Maven Central](https://maven-badges.herokuapp.com/maven-central/ch.squaredesk.nova/bom/badge.svg?style=plastic)](https://maven-badges.herokuapp.com/maven-central/ch.squaredesk.nova/bom)
+[![Codeship Build Status](https://app.codeship.com/projects/2283d970-1edb-0135-0041-4ec1c01dd1d7/status?branch=master)](https://app.codeship.com/projects/220890)
  
 ### 1. Why?
 The goal of this project is to provide a small and easy-to-use 
@@ -77,7 +80,7 @@ you can be sure that all included modules properly work with each other:
         <dependency>
             <groupId>ch.squaredesk.nova</groupId>
             <artifactId>bom</artifactId>
-            <version>5.0.0-beta-1</version>
+            <version>5.2.0</version>
             <scope>import</scope>
             <type>pom</type>
         </dependency>

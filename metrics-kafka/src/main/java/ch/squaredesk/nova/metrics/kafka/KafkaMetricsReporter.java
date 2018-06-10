@@ -12,24 +12,21 @@ package ch.squaredesk.nova.metrics.kafka;
 
 import ch.squaredesk.nova.comm.kafka.KafkaAdapter;
 import ch.squaredesk.nova.metrics.MetricsDump;
-import ch.squaredesk.nova.metrics.MetricsDumpToMapConverter;
+import ch.squaredesk.nova.metrics.SerializableMetricsDump;
 import io.reactivex.functions.Consumer;
 
-import java.util.Map;
-
 public class KafkaMetricsReporter implements Consumer<MetricsDump> {
-    private final KafkaAdapter<Map> kafkaAdapter;
+    private final KafkaAdapter<SerializableMetricsDump> kafkaAdapter;
     private final String topicName;
 
-    public KafkaMetricsReporter(KafkaAdapter<Map> kafkaAdapter, String topicName) {
+    public KafkaMetricsReporter(KafkaAdapter<SerializableMetricsDump> kafkaAdapter, String topicName) {
         this.kafkaAdapter = kafkaAdapter;
         this.topicName = topicName;
     }
 
     @Override
     public void accept(MetricsDump metricsDump) {
-        Map<String, Object> dumpAsMap = MetricsDumpToMapConverter.convert(metricsDump);
-        kafkaAdapter.sendMessage(topicName, dumpAsMap).subscribe();
+        kafkaAdapter.sendMessage(topicName, SerializableMetricsDump.createFor(metricsDump)).subscribe();
     }
 
 }

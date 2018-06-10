@@ -2,8 +2,9 @@ package ch.squaredesk.nova.metrics;
 
 import ch.squaredesk.nova.tuples.Pair;
 import ch.squaredesk.nova.tuples.Tuple3;
-import com.codahale.metrics.Metric;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.dropwizard.metrics5.Metric;
+import io.dropwizard.metrics5.MetricName;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -22,20 +23,20 @@ import java.util.Map;
  *   - type
  *
  */
-public class MetricsDumpToMapConverter {
+public class MetricsConverter {
     private static final ObjectMapper objectMapper = new ObjectMapper();
 
-    private MetricsDumpToMapConverter() {
+    private MetricsConverter() {
     }
 
-    public static Map<String, Object> convert(MetricsDump dump) {
+    public static Map<String, Map<String, Object>> convert(Map<MetricName, Metric> dump) {
         return convert(dump,null);
     }
 
-    public static Map<String, Object> convert(MetricsDump dump, Map<String, Object> additionalAttributes) {
-        HashMap<String, Object> returnValue = new HashMap<>();
+    public static Map<String, Map<String, Object>> convert(Map<MetricName, Metric> dump, Map<String, Object> additionalAttributes) {
+        HashMap<String, Map<String, Object>> returnValue = new HashMap<>();
 
-        dump.metrics.entrySet().stream()
+        dump.entrySet().stream()
                 // for each metric, create a tuple containing the type, the name and the metric itself
                 .map(entry -> new Tuple3<>(
                         entry.getValue().getClass().getSimpleName(),
@@ -52,20 +53,30 @@ public class MetricsDumpToMapConverter {
                     return new Pair<>(tupleTypeAndNameAndMetric._2, map);
                 })
                 // and add it to the return value
-                .forEach(metricNameMapPair -> returnValue.put(metricNameMapPair._1, metricNameMapPair._2));
+                .forEach(metricNameMapPair -> returnValue.put(metricNameMapPair._1.toString(), metricNameMapPair._2));
 
-        returnValue.put("timestamp", dump.timestamp);
-        returnValue.put("hostName", dump.hostName);
-        returnValue.put("hostAddress", dump.hostAddress);
+        return returnValue;
+    }
+
+    private static Map<String, Object> toMap (CompoundMetric compoundMetric) {
+        Map<String, Object> returnValue = new HashMap<>();
+        Map<MetricName, Object> values = compoundMetric.getValues();
+
+        if (!values.isEmpty()) {
+            values.forEach((key, value) -> returnValue.put(key.toString(), value));
+        }
+        returnValue.put("type", compoundMetric.getClass().getSimpleName());
 
         return returnValue;
     }
 
     private static Map<String, Object> toMap(Metric metric) {
         if (metric instanceof CompoundMetric) {
-            return ((CompoundMetric) metric).getValues();
+            return toMap((CompoundMetric) metric);
         } else {
-            return objectMapper.convertValue(metric, Map.class);
+            Map map = objectMapper.convertValue(metric, Map.class);
+            map.put("type", metric.getClass().getSimpleName());
+            return map;
         }
     }
 

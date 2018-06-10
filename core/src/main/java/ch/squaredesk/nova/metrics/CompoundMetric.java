@@ -10,10 +10,11 @@
 
 package ch.squaredesk.nova.metrics;
 
-import com.codahale.metrics.Metric;
+import io.dropwizard.metrics5.Metric;
+import io.dropwizard.metrics5.MetricName;
 
 import java.util.Map;
 
 public interface CompoundMetric extends Metric {
-    Map<String, Object> getValues();
+    Map<MetricName, Object> getValues();
 }

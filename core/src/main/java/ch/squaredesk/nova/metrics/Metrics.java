@@ -10,7 +10,7 @@
 
 package ch.squaredesk.nova.metrics;
 
-import com.codahale.metrics.*;
+import io.dropwizard.metrics5.*;
 import io.reactivex.Observable;
 import org.slf4j.LoggerFactory;
 
@@ -58,51 +58,78 @@ public class Metrics {
         logReporter.report();
     }
 
+    public <T extends Metric> void register(MetricName metricName, T metric) {
+        metricRegistry.register(metricName, metric);
+    }
+
     public <T extends Metric> void register(T metric, String idPathFirst, String... idPathRemainder) {
-        metricRegistry.register(name(idPathFirst,idPathRemainder), metric);
+        register(name(idPathFirst,idPathRemainder), metric);
+    }
+
+    public boolean remove(MetricName metricName) {
+        return metricRegistry.remove(metricName);
     }
 
     public boolean remove(String idPathFirst, String... idPathRemainder) {
-        return metricRegistry.remove(name(idPathFirst,idPathRemainder));
+        return remove(name(idPathFirst,idPathRemainder));
+    }
+
+    public Meter getMeter(MetricName metricName) {
+        return metricRegistry.meter(metricName);
     }
 
     public Meter getMeter(String idPathFirst, String... idPathRemainder) {
-        return metricRegistry.meter(name(idPathFirst,idPathRemainder));
+        return getMeter(name(idPathFirst,idPathRemainder));
+    }
+
+    public Counter getCounter(MetricName metricName) {
+        return metricRegistry.counter(metricName);
     }
 
     public Counter getCounter(String idPathFirst, String... idPathRemainder) {
-        return metricRegistry.counter(name(idPathFirst,idPathRemainder));
+        return getCounter(name(idPathFirst,idPathRemainder));
+    }
+
+    public Timer getTimer(MetricName metricName) {
+        return metricRegistry.timer(metricName);
     }
 
     public Timer getTimer(String idPathFirst, String... idPathRemainder) {
-        return metricRegistry.timer(name(idPathFirst,idPathRemainder));
+        return getTimer(name(idPathFirst,idPathRemainder));
+    }
+
+    public Histogram getHistogram(MetricName metricName) {
+        return metricRegistry.histogram(metricName);
     }
 
     public Histogram getHistogram(String idPathFirst, String... idPathRemainder) {
-        return metricRegistry.histogram(name(idPathFirst,idPathRemainder));
+        return getHistogram(name(idPathFirst,idPathRemainder));
     }
 
-    public Gauge getGauge(String idPathFirst, String... idPathRemainder) {
-        String theMetricName = name(idPathFirst, idPathRemainder);
-        Optional<Map.Entry<String, Gauge>> gaugeEntry = metricRegistry
+    public Gauge getGauge(MetricName metricName) {
+        Optional<Map.Entry<MetricName, Gauge>> gaugeEntry = metricRegistry
                 .getGauges()
                 .entrySet()
                 .stream()
-                .filter(entry -> entry.getKey().equals(theMetricName))
+                .filter(entry -> entry.getKey().equals(metricName))
                 .findFirst();
 
         if (gaugeEntry.isPresent()) {
             return gaugeEntry.get().getValue();
         } else {
-            return metricRegistry.register(name(idPathFirst,idPathRemainder), new SettableGauge());
+            return metricRegistry.register(metricName, new SettableGauge());
         }
     }
 
-    public Map<String, Metric> getMetrics() {
+    public Gauge getGauge(String idPathFirst, String... idPathRemainder) {
+        return getGauge(name(idPathFirst, idPathRemainder));
+    }
+
+    public Map<MetricName, Metric> getMetrics() {
         return metricRegistry.getMetrics();
     }
 
-    public static String name(String idPathFirst, String... idPathRemainder) {
+    public static MetricName name(String idPathFirst, String... idPathRemainder) {
         return MetricRegistry.name(idPathFirst, idPathRemainder);
     }
 

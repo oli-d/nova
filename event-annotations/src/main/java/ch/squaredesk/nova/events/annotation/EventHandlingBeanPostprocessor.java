@@ -12,7 +12,8 @@ package ch.squaredesk.nova.events.annotation;
 
 import ch.squaredesk.nova.Nova;
 import ch.squaredesk.nova.metrics.Metrics;
-import com.codahale.metrics.Timer;
+import io.dropwizard.metrics5.MetricName;
+import io.dropwizard.metrics5.Timer;
 import io.reactivex.Flowable;
 import io.reactivex.functions.Consumer;
 import org.slf4j.Logger;
@@ -62,7 +63,7 @@ public class EventHandlingBeanPostprocessor implements BeanPostProcessor, Applic
             logger.debug("Registering annotated event handler: {} -> {}",
                     event, prettyPrint(eventHandlerDescription.bean, eventHandlerDescription.methodToInvoke));
             if (eventHandlerDescription.captureInvocationTimeMetrics) {
-                String timerName = Metrics.name(novaIdentifier, "invocationTime",
+                MetricName timerName = Metrics.name(novaIdentifier, "invocationTime",
                         eventHandlerDescription.bean.getClass().getSimpleName(), event);
                 Timer timer = eventContext.metrics.getTimer(timerName);
                 eventConsumer = new TimeMeasuringEventHandlingMethodInvoker(timer, invoker);

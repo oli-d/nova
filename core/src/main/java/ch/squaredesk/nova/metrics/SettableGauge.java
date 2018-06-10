@@ -10,7 +10,7 @@
 
 package ch.squaredesk.nova.metrics;
 
-import com.codahale.metrics.Gauge;
+import io.dropwizard.metrics5.Gauge;
 
 import java.util.concurrent.atomic.AtomicLong;
 

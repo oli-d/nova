@@ -11,7 +11,7 @@
 package ch.squaredesk.nova.events;
 
 import ch.squaredesk.nova.metrics.Metrics;
-import com.codahale.metrics.Meter;
+import io.dropwizard.metrics5.Meter;
 
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -28,7 +28,7 @@ public class EventMetricsCollector {
     public EventMetricsCollector(String identifier, Metrics metrics) {
         this.metrics = metrics;
         this.eventSpecificDispatchMeters = new ConcurrentHashMap<>();
-        this.identifierPrefix = Metrics.name("eventBus", identifier);
+        this.identifierPrefix = Metrics.name("eventBus", identifier).toString();
         allDispatchedEvents = new Meter();
         metrics.register(allDispatchedEvents,this.identifierPrefix,"dispatchedEvents","total");
     }

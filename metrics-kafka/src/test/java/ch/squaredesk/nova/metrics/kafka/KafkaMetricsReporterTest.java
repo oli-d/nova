@@ -13,6 +13,8 @@ package ch.squaredesk.nova.metrics.kafka;
 import ch.qos.logback.classic.Level;
 import ch.squaredesk.nova.Nova;
 import ch.squaredesk.nova.comm.kafka.KafkaAdapter;
+import ch.squaredesk.nova.metrics.SerializableMetricsDump;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.charithe.kafka.EphemeralKafkaBroker;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.ProducerConfig;
@@ -23,7 +25,6 @@ import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -34,7 +35,7 @@ class KafkaMetricsReporterTest {
     private static final int KAFKA_PORT = 11_000;
 
     private EphemeralKafkaBroker kafkaBroker;
-    private KafkaAdapter<Map> kafkaAdapter;
+    private KafkaAdapter<SerializableMetricsDump> kafkaAdapter;
     private KafkaMetricsReporter sut;
 
     @BeforeAll
@@ -55,7 +56,8 @@ class KafkaMetricsReporterTest {
         kafkaBroker = EphemeralKafkaBroker.create(KAFKA_PORT);
         kafkaBroker.start().get();
 
-        kafkaAdapter = KafkaAdapter.builder(Map.class)
+        ObjectMapper om = new ObjectMapper();
+        kafkaAdapter = KafkaAdapter.builder(SerializableMetricsDump.class)
                 .setServerAddress("127.0.0.1:" + KAFKA_PORT)
                 .setIdentifier("Test")
                 .addProducerProperty(ProducerConfig.BATCH_SIZE_CONFIG, "1")

@@ -11,6 +11,7 @@
 package ch.squaredesk.nova.spring;
 
 import ch.squaredesk.nova.Nova;
+import ch.squaredesk.nova.metrics.Metrics;
 import io.reactivex.BackpressureStrategy;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
@@ -46,8 +47,8 @@ class NovaProvidingConfigurationTest {
     void instanceIsCreatedWithDefaultValuesWhenJustImportingNovaProvidingConfig() {
         Nova sut = createSut();
         assertThat(sut.identifier, is(""));
-        assertNotNull(sut.metrics.getMetrics().get("jvm.mem"));
-        assertNotNull(sut.metrics.getMetrics().get("jvm.gc"));
+        assertNotNull(sut.metrics.getMetrics().get(Metrics.name("jvm.mem")));
+        assertNotNull(sut.metrics.getMetrics().get(Metrics.name("jvm.gc")));
         assertThat(sut.eventBus.eventBusConfig.warnOnUnhandledEvents, is(false));
         assertThat(sut.eventBus.eventBusConfig.defaultBackpressureStrategy, is(BackpressureStrategy.BUFFER));
     }

@@ -19,6 +19,7 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.BeanInitializationException;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
+import org.springframework.beans.factory.UnsatisfiedDependencyException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.context.annotation.Bean;
@@ -56,7 +57,7 @@ public class NovaServiceTest {
     @Test
     void serviceCannotBeCreatedWithConfigThatDoesntReturnNovaInstance() {
         assertThrows(
-                NullPointerException.class,
+                UnsatisfiedDependencyException.class,
                 () -> MyService.createInstance(MyService.class, MyCrippledConfig.class));
     }
 

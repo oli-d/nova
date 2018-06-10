@@ -15,24 +15,24 @@
 	<parent>
 		<groupId>ch.squaredesk.nova</groupId>
 		<artifactId>parentpom</artifactId>
-		<version>5.0.0</version>
+		<version>5.2.0</version>
 		<relativePath>../parentpom</relativePath>
 	</parent>
 
 	<artifactId>http</artifactId>
-    <version>5.1.0</version>
+    <version>5.2.0</version>
 
     <dependencies>
 		<dependency>
 			<groupId>ch.squaredesk.nova</groupId>
 			<artifactId>comm</artifactId>
-            <version>5.0.0</version>
+            <version>5.2.0</version>
         </dependency>
 
         <dependency>
             <groupId>ch.squaredesk.nova</groupId>
             <artifactId>test-utils</artifactId>
-            <version>5.0.0</version>
+            <version>5.2.0</version>
             <scope>test</scope>
         </dependency>
 
@@ -40,13 +40,6 @@
             <groupId>org.glassfish.grizzly</groupId>
             <artifactId>grizzly-http-server-core</artifactId>
         </dependency>
-
-        <!--all:-->
-            <!--grizzly-http-server-core-->
-            <!--grizzly-http-servlet-->
-            <!--grizzly-comet-->
-            <!--grizzly-websockets-->
-            <!--javax.servlet:javax-servlet-api:4.0.0-b07-->
 
         <!-- The Grizzly AsyncHttpClient currently requires grizzly 2.3.33. Since we want to
                 use the latest, we have to manually massage the dependencies: -->

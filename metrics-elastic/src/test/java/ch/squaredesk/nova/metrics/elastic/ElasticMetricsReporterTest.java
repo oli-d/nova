@@ -14,6 +14,7 @@ import ch.squaredesk.nova.metrics.Metrics;
 import ch.squaredesk.nova.metrics.MetricsDump;
 import ch.squaredesk.nova.tuples.Pair;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.dropwizard.metrics5.MetricName;
 import io.reactivex.observers.TestObserver;
 import org.elasticsearch.action.DocWriteRequest;
 import org.elasticsearch.action.bulk.BulkRequest;
@@ -53,7 +54,7 @@ class ElasticMetricsReporterTest {
         metrics.getCounter("test", "counter1");
         metrics.getMeter("test", "meter1");
         metrics.register(new MyMetric(), "test", "myMetric1");
-        MetricsDump dump = new MetricsDump(metrics.getMetrics());
+        MetricsDump dump = metrics.dump();
 
         IllegalStateException ex = Assertions.assertThrows(IllegalStateException.class,
                 () -> sut.accept(dump)
@@ -67,7 +68,7 @@ class ElasticMetricsReporterTest {
         metrics.getCounter("test","counter1");
         metrics.getMeter("test","meter1");
         metrics.register(new MyMetric(), "test","myMetric1");
-        MetricsDump dump = new MetricsDump(metrics.getMetrics());
+        MetricsDump dump = metrics.dump();
 
         TestObserver<BulkRequest> bulkRequestObserver = sut.requestFor(dump).test();
         bulkRequestObserver.assertComplete();
@@ -142,7 +143,7 @@ class ElasticMetricsReporterTest {
 
     private class MyMetric implements CompoundMetric {
         @Override
-        public Map<String,Object> getValues() {
+        public Map<MetricName,Object> getValues() {
             return new HashMap<>();
         }
     }

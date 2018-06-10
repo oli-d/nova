@@ -11,7 +11,7 @@
 package ch.squaredesk.nova.comm.sending;
 
 import ch.squaredesk.nova.metrics.Metrics;
-import com.codahale.metrics.Meter;
+import io.dropwizard.metrics5.Meter;
 
 import java.util.Objects;
 
@@ -23,7 +23,7 @@ class MetricsCollector {
     MetricsCollector(String identifier, Metrics metrics) {
         Objects.requireNonNull(metrics, "metrics must not be null");
         this.metrics = metrics;
-        this.identifierPrefix = Metrics.name("messageSender", identifier);
+        this.identifierPrefix = Metrics.name("messageSender", identifier).toString();
         totalNumberOfSentMessages = metrics.getMeter(this.identifierPrefix,"sent","total");
     }
 
