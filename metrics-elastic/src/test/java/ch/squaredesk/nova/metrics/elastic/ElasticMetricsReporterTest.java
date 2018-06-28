@@ -12,6 +12,7 @@ package ch.squaredesk.nova.metrics.elastic;
 import ch.squaredesk.nova.metrics.CompoundMetric;
 import ch.squaredesk.nova.metrics.Metrics;
 import ch.squaredesk.nova.metrics.MetricsDump;
+import ch.squaredesk.nova.metrics.SerializableMetricsDump;
 import ch.squaredesk.nova.tuples.Pair;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.dropwizard.metrics5.MetricName;
@@ -71,6 +72,33 @@ class ElasticMetricsReporterTest {
         MetricsDump dump = metrics.dump();
 
         TestObserver<BulkRequest> bulkRequestObserver = sut.requestFor(dump).test();
+        bulkRequestObserver.assertComplete();
+        bulkRequestObserver.assertValueCount(1);
+        BulkRequest bulkRequest = bulkRequestObserver.values().get(0);
+
+        List<DocWriteRequest> requests = bulkRequest.requests();
+        assertThat(requests.size(), is(3));
+        for (DocWriteRequest request: requests) {
+            assertTrue(request instanceof IndexRequest);
+            IndexRequest ir = (IndexRequest)request;
+            Map<String,Object> sourceAsMap = getMapFrom(ir.source());
+            assertNotNull(sourceAsMap.get("host"));
+            assertNotNull(sourceAsMap.get("hostAddress"));
+            assertNotNull(sourceAsMap.get("@timestamp"));
+            assertThat(sourceAsMap.get("name"),Matchers.oneOf("test.counter1","test.meter1","test.myMetric1"));
+        }
+    }
+
+    @Test
+    void requestFromSerializableMetricsDumpIsCreatedAsExpected() throws Exception {
+        Metrics metrics = new Metrics();
+        metrics.getCounter("test","counter1");
+        metrics.getMeter("test","meter1");
+        metrics.register(new MyMetric(), "test","myMetric1");
+        MetricsDump dump = metrics.dump();
+        SerializableMetricsDump serializableDump = SerializableMetricsDump.createFor(dump);
+
+        TestObserver<BulkRequest> bulkRequestObserver = sut.requestFor(serializableDump).test();
         bulkRequestObserver.assertComplete();
         bulkRequestObserver.assertValueCount(1);
         BulkRequest bulkRequest = bulkRequestObserver.values().get(0);

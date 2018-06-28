@@ -12,6 +12,7 @@ package ch.squaredesk.nova.metrics.elastic;
 
 import ch.squaredesk.nova.metrics.MetricsConverter;
 import ch.squaredesk.nova.metrics.MetricsDump;
+import ch.squaredesk.nova.metrics.SerializableMetricsDump;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.reactivex.Observable;
 import io.reactivex.Single;
@@ -44,7 +45,6 @@ public class ElasticMetricsReporter implements Consumer<MetricsDump> {
     private final int elasticPort;
     private final String indexName;
     private final Map<String, Object> additionalMetricAttributes;
-    private final ObjectMapper objectMapper = new ObjectMapper();
     private final ZoneId zoneForTimestamps = ZoneId.of("UTC");
     private RestClient restClient;
     private RestHighLevelClient client;
@@ -63,28 +63,23 @@ public class ElasticMetricsReporter implements Consumer<MetricsDump> {
 
 
     @Override
-    public void accept(MetricsDump metricsDump) throws Exception {
+    public void accept(MetricsDump metricsDump) {
         accept(metricsDump, defaultExceptionHandler);
     }
 
-    public void accept(MetricsDump metricsDump, Consumer<Throwable> exceptionHandler) throws Exception {
+    public void accept(MetricsDump metricsDump, Consumer<Throwable> exceptionHandler) {
         if (client == null) {
             throw new IllegalStateException("not started yet");
         }
         fireRequest(requestFor(metricsDump), exceptionHandler);
     }
 
-    /**
-     * Sends a metrics dump, created with MetricsDumpToMapConverter, to Elastic.
-     */
-    public void accept(Map<String, Object> metricsDump) throws Exception {
+
+    public void accept(SerializableMetricsDump metricsDump){
         accept(metricsDump, defaultExceptionHandler);
     }
 
-    /**
-     * Sends a metrics dump, created with MetricsDumpToMapConverter, to Elastic.
-     */
-    public void accept(Map<String, Object> metricsDump, Consumer<Throwable> exceptionHandler) throws Exception {
+    public void accept(SerializableMetricsDump metricsDump, Consumer<Throwable> exceptionHandler) {
         if (client == null) {
             throw new IllegalStateException("not started yet");
         }
@@ -132,7 +127,7 @@ public class ElasticMetricsReporter implements Consumer<MetricsDump> {
         );
     }
 
-    Single<BulkRequest> requestFor(Map<String, Object> metricsDump) throws Exception {
+    Single<BulkRequest> requestFor(Map<String, Object> metricsDump) {
         Long timestamp = (Long) metricsDump.remove("timestamp");
         LocalDateTime timestampInUtc = timestamp == null ? null : timestampInUtc(timestamp);
         String hostName = (String) metricsDump.remove("hostName");
@@ -167,25 +162,12 @@ public class ElasticMetricsReporter implements Consumer<MetricsDump> {
         return Instant.ofEpochMilli(timestampInMillis).atZone(zoneForTimestamps).toLocalDateTime();
     }
 
-    Single<BulkRequest> requestFor(MetricsDump metricsDump) throws Exception {
-        Map<String, Object> additionalAttributes = new HashMap<>();
-        LocalDateTime timestampInUtc = timestampInUtc(metricsDump.timestamp);
-        additionalAttributes.put("@timestamp", timestampInUtc);
-        additionalAttributes.put("host", metricsDump.hostName);
-        additionalAttributes.put("hostAddress", metricsDump.hostAddress);
-
-        Map<String, Map<String, Object>> convertedDump = MetricsConverter.convert(metricsDump.metrics, additionalAttributes);
-
-        return Observable.fromIterable(convertedDump.entrySet())
-                .map(entry -> {
-                    Map<String, Object> map = entry.getValue();
-                    map.put("name", entry.getKey());
-                    return map;
-                })
+    private Single<BulkRequest> requestFor (Observable<Map<String, Object>> metricsAsMaps) {
+        return metricsAsMaps
                 .map(map -> new IndexRequest()
-                        .index(indexName)
-                        .type((String)map.get("type"))
-                        .source(map)
+                                .index(indexName)
+                                .type((String)map.get("type"))
+                                .source(map)
                 )
                 .reduce(Requests.bulkRequest(),
                         (bulkRequestBuilder, indexRequest) -> {
@@ -193,6 +175,41 @@ public class ElasticMetricsReporter implements Consumer<MetricsDump> {
                             return bulkRequestBuilder;
                         })
                 ;
+
+    }
+
+    Single<BulkRequest> requestFor(MetricsDump metricsDump) {
+        Map<String, Object> additionalAttributes = new HashMap<>();
+        LocalDateTime timestampInUtc = timestampInUtc(metricsDump.timestamp);
+        additionalAttributes.put("@timestamp", timestampInUtc);
+        additionalAttributes.put("host", metricsDump.hostName);
+        additionalAttributes.put("hostAddress", metricsDump.hostAddress);
+
+        Map<String, Map<String, Object>> convertedDump = MetricsConverter.convert(metricsDump.metrics, additionalAttributes);
+        Observable<Map<String, Object>> enrichedMetrics = Observable.fromIterable(convertedDump.entrySet())
+                .map(entry -> {
+                    Map<String, Object> map = entry.getValue();
+                    map.put("name", entry.getKey());
+                    return map;
+                });
+        return requestFor(enrichedMetrics);
+    }
+
+    Single<BulkRequest> requestFor(SerializableMetricsDump metricsDump) {
+        Map<String, Object> additionalAttributes = new HashMap<>();
+        LocalDateTime timestampInUtc = timestampInUtc(metricsDump.timestamp);
+        additionalAttributes.put("@timestamp", timestampInUtc);
+        additionalAttributes.put("host", metricsDump.hostName);
+        additionalAttributes.put("hostAddress", metricsDump.hostAddress);
+
+        Observable<Map<String, Object>> enrichedMetrics = Observable.fromIterable(metricsDump.metrics.entrySet())
+                .map(entry -> {
+                    Map<String, Object> map = entry.getValue();
+                    map.put("name", entry.getKey());
+                    map.putAll(additionalAttributes);
+                    return map;
+                });
+        return requestFor(enrichedMetrics);
     }
 
 }
