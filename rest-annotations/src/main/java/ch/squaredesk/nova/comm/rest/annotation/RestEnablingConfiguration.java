@@ -16,6 +16,7 @@ import ch.squaredesk.nova.comm.http.spring.HttpServerConfigurationProvidingConfi
 import io.dropwizard.metrics5.Timer;
 import org.glassfish.grizzly.http.server.HttpServer;
 import org.glassfish.jersey.grizzly2.httpserver.GrizzlyHttpServerFactory;
+import org.glassfish.jersey.media.multipart.MultiPartFeature;
 import org.glassfish.jersey.server.ResourceConfig;
 import org.glassfish.jersey.server.monitoring.ApplicationEvent;
 import org.glassfish.jersey.server.monitoring.ApplicationEventListener;
@@ -75,6 +76,7 @@ public class RestEnablingConfiguration {
     public HttpServer restHttpServer() {
         RestBeanPostprocessor restBeanPostprocessor = applicationContext.getBean(RestBeanPostprocessor.class);
         ResourceConfig resourceConfig = restBeanPostprocessor.resourceConfig;
+        resourceConfig.register(MultiPartFeature.class);
 
         if (captureRestMetrics() && nova != null) {
             RequestEventListener requestEventListener = event -> {
