@@ -78,3 +78,12 @@ Finally, distribute your public key again:
 
 $ gpg2 --keyserver hkp://pool.sks-keyservers.net --send-keys A6BAB25C
 
+=========================
+To transfer the keys to another machine
+
+Exporting the keys on the source host:
+$ gpg --export --armor > public.asc
+$ gpg --export-secret-keys --armor > private.asc
+
+And import them on the target:
+$ gpg --import private.asc
