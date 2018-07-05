@@ -70,6 +70,18 @@ class BeanExaminerTest {
         assertThat(sut.startupHandlersIn(new MyClassWithHandler()).length, is(1));
         assertThat(sut.startupHandlersIn(new MyClassWithoutHandler()).length, is(0));
     }
+    @Test
+    void properlyDetectsStartHandlersInSubclasses() {
+        class MyBaseClassWithHandler {
+            @OnServiceStartup()
+            public void m1() { }
+            public void m2() { }
+        }
+        class MySublassClassWithoutHandler extends MyBaseClassWithHandler{
+            public void s1(String p1) { }
+        }
+        assertThat(sut.startupHandlersIn(new MySublassClassWithoutHandler()).length, is(1));
+    }
 
     @Test
     void throwsIfNonPublicMethodIsAnnotatedAsStartHandler() {
