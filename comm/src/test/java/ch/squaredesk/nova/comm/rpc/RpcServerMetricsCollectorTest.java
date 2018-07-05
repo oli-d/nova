@@ -21,7 +21,7 @@ class RpcServerMetricsCollectorTest {
     private RpcServerMetricsCollector sut = new RpcServerMetricsCollector(null, metrics);
 
     @Test
-    void requestReceived() throws Exception {
+    void requestReceived() {
         sut.requestReceived("req1");
 
         assertThat(metrics.getMeter("rpcServer.requests.total").getCount(), Matchers.is(1L));
@@ -35,7 +35,7 @@ class RpcServerMetricsCollectorTest {
     }
 
     @Test
-    void requestReceivedWithNullRequestPossible() throws Exception {
+    void requestReceivedWithNullRequestPossible() {
         sut.requestReceived(null);
 
         assertThat(metrics.getMeter("rpcServer.requests.total").getCount(), Matchers.is(1L));
@@ -49,7 +49,7 @@ class RpcServerMetricsCollectorTest {
     }
 
     @Test
-    void requestCompleted() throws Exception {
+    void requestCompleted() {
         sut.requestCompleted("req1", "reply1");
 
         assertThat(metrics.getMeter("rpcServer.requests.total").getCount(), Matchers.is(0L));
@@ -63,7 +63,7 @@ class RpcServerMetricsCollectorTest {
     }
 
     @Test
-    void requestCompletedWithNullRequestAndReplyPossible() throws Exception {
+    void requestCompletedWithNullRequestAndReplyPossible() {
         sut.requestCompleted(null, null);
 
         assertThat(metrics.getMeter("rpcServer.requests.total").getCount(), Matchers.is(0L));
@@ -77,7 +77,7 @@ class RpcServerMetricsCollectorTest {
     }
 
     @Test
-    void requestCompletedExceptionally() throws Exception {
+    void requestCompletedExceptionally() {
         sut.requestCompletedExceptionally("req3", new RuntimeException("4 test"));
 
         assertThat(metrics.getMeter("rpcServer.requests.total").getCount(), Matchers.is(0L));
@@ -91,7 +91,7 @@ class RpcServerMetricsCollectorTest {
     }
 
     @Test
-    void requestCompletedExceptionallyWithNullRequestPossible() throws Exception {
+    void requestCompletedExceptionallyWithNullRequestPossible() {
         sut.requestCompletedExceptionally(null, null);
 
         assertThat(metrics.getMeter("rpcServer.requests.total").getCount(), Matchers.is(0L));

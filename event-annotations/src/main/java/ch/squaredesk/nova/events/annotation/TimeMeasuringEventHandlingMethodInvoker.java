@@ -10,8 +10,7 @@
 
 package ch.squaredesk.nova.events.annotation;
 
-import ch.squaredesk.nova.metrics.SettableGauge;
-import com.codahale.metrics.Timer;
+import io.dropwizard.metrics5.Timer;
 import io.reactivex.functions.Consumer;
 
 public class TimeMeasuringEventHandlingMethodInvoker implements Consumer<Object[]> {

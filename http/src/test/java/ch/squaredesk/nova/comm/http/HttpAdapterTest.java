@@ -6,46 +6,57 @@
  * obtain a copy of the license at
  *
  *   https://squaredesk.ch/license/oss/LICENSE
+ *
  */
 
 package ch.squaredesk.nova.comm.http;
 
-import ch.squaredesk.nova.metrics.Metrics;
+import ch.squaredesk.net.PortFinder;
+import ch.squaredesk.nova.tuples.Pair;
+import com.sun.net.httpserver.HttpExchange;
 import io.reactivex.observers.TestObserver;
 import org.glassfish.grizzly.http.server.HttpServer;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
+import java.io.IOException;
+import java.io.OutputStream;
 import java.math.BigDecimal;
+import java.net.InetSocketAddress;
 import java.util.concurrent.TimeoutException;
+import java.util.function.Consumer;
 
-import static java.util.concurrent.TimeUnit.MICROSECONDS;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.hamcrest.Matchers.is;
+import static org.junit.jupiter.api.Assertions.*;
 
+@Tag("medium")
 class HttpAdapterTest {
-    private HttpServerConfiguration rsc = new HttpServerConfiguration("localhost", 8888);
+    private HttpServerConfiguration rsc = HttpServerConfiguration.builder().interfaceName("localhost").port(10000).build();
     private HttpServer httpServer = HttpServerFactory.serverFor(rsc);
     private HttpAdapter<BigDecimal> sut;
 
     @BeforeEach
     void setup() {
-        sut = HttpAdapter.<BigDecimal>builder()
-                .setMessageMarshaller(BigDecimal::toString)
-                .setMessageUnmarshaller(BigDecimal::new)
-                .setErrorReplyFactory(t -> BigDecimal.ZERO)
-                .setMetrics(new Metrics())
+        sut = HttpAdapter.builder(BigDecimal.class)
                 .setHttpServer(httpServer)
                 .build();
+    }
 
+    @AfterEach
+    void tearDown() {
+        sut.shutdown();
     }
 
     @Test
     void nullDestinationThrows() {
         Throwable t = assertThrows(IllegalArgumentException.class,
-                () -> sut.sendRequest(null,new BigDecimal("1.0")));
+                () -> sut.sendRequest(null, new BigDecimal("1.0")));
         assertThat(t.getMessage(), containsString("Invalid URL format"));
     }
 
@@ -58,72 +69,135 @@ class HttpAdapterTest {
 
     @Test
     void notExistingDestinationThrows() throws Exception {
-        TestObserver<BigDecimal> observer = sut
+        TestObserver<RpcReply<BigDecimal>> observer = sut
                 .sendGetRequest("http://cvf.bn.c")
                 .test();
         observer.await(5, SECONDS);
-        System.out.println(observer.errors());
         observer.assertError(Exception.class);
     }
 
     @Test
     void noReplyWithinTimeoutThrows() throws Exception {
-        TestObserver<BigDecimal> observer = sut
-                .sendGetRequest("http://blick.ch",10L,MICROSECONDS)
-                .test();
-        observer.await(1, SECONDS);
-        observer.assertError(TimeoutException.class);
+        HttpAdapter<String> commAdapter = HttpAdapter.builder(String.class).build();
+        Pair<com.sun.net.httpserver.HttpServer, Integer> serverPortPair =
+                httpServer("/timeoutTest", "noResponse", httpExchange -> {
+                    try {
+                        Thread.sleep(2000);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                });
+
+        try {
+            TestObserver<RpcReply<String>> observer = commAdapter
+                    .sendGetRequest("http://localhost:" + serverPortPair._2 + "/timeoutTest", 10l, MILLISECONDS)
+                    .test();
+            observer.await(1, SECONDS);
+            observer.assertError(TimeoutException.class);
+        } finally {
+            serverPortPair._1.stop(0);
+            commAdapter.shutdown();
+        }
     }
 
     @Test
     void postRequestCanBeSpecified() throws Exception {
-        // we send a POST to httpbin/get and check that they return an error
-        HttpAdapter<String> commAdapter = HttpAdapter.<String>builder()
-                .setMessageMarshaller(outgoingMessage -> outgoingMessage)
-                .setMessageUnmarshaller(incomingMessage -> incomingMessage)
-                .setMetrics(new Metrics())
-                .setErrorReplyFactory(t -> "Error: " + t.getMessage())
-                .setHttpServer(httpServer)
-                .build();
-        TestObserver<String> observer = commAdapter
-                .sendPostRequest("http://httpbin.org/get", "{ myTest: \"value\"}")
-                .test();
-        observer.await(40, SECONDS);
-        observer.assertError(throwable -> throwable.getMessage().contains("METHOD NOT ALLOWED"));
+        HttpAdapter<String> commAdapter = HttpAdapter.builder(String.class).build();
+        String[] requestMethodHolder = new String[1];
+        Pair<com.sun.net.httpserver.HttpServer, Integer> serverPortPair =
+                httpServer("/postTest", "myPostResponse", httpExchange -> requestMethodHolder[0] = httpExchange.getRequestMethod());
+
+        try {
+            TestObserver<RpcReply<String>> observer = commAdapter
+                    .sendPostRequest("http://localhost:"+ serverPortPair._2 + "/postTest", "{ myTest: \"value\"}")
+                    .test();
+            observer.await(40, SECONDS);
+            observer.assertValueCount(1);
+            RpcReply<String> reply = observer.values().get(0);
+            assertNotNull(reply);
+            assertThat(reply.metaData.details.statusCode, is(200));
+            assertThat(reply.result, is("myPostResponse"));
+            assertThat(requestMethodHolder[0], is ("POST"));
+        } finally {
+            serverPortPair._1.stop(0);
+            commAdapter.shutdown();
+        }
     }
 
     @Test
     void getRequestCanBeSpecified() throws Exception {
-        // we send a POST to httpbin/get and check that they return an error
-        HttpAdapter<String> commAdapter = HttpAdapter.<String>builder()
-                .setMessageMarshaller(outgoingMessage -> outgoingMessage)
-                .setMessageUnmarshaller(incomingMessage -> incomingMessage)
-                .setHttpServer(httpServer)
-                .setMetrics(new Metrics())
-                .setHttpServer(httpServer)
-                .setErrorReplyFactory(t -> "Error: " + t.getMessage())
-                .build();
-        TestObserver<String> observer = commAdapter.sendGetRequest("http://httpbin.org/post").test();
-        observer.await(40, SECONDS);
-        observer.assertError(throwable -> throwable.getMessage().contains("METHOD NOT ALLOWED"));
+        HttpAdapter<String> commAdapter = HttpAdapter.builder(String.class).build();
+        String[] requestMethodHolder = new String[1];
+        Pair<com.sun.net.httpserver.HttpServer, Integer> serverPortPair =
+                httpServer("/getTest", "myGetResponse", httpExchange -> requestMethodHolder[0] = httpExchange.getRequestMethod());
+
+        try {
+            TestObserver<RpcReply<String>> observer = commAdapter
+                    .sendGetRequest("http://localhost:" + serverPortPair._2 + "/getTest")
+                    .test();
+            observer.await(40, SECONDS);
+            observer.assertValueCount(1);
+            RpcReply<String> reply = observer.values().get(0);
+            assertNotNull(reply);
+            assertThat(reply.metaData.details.statusCode, is(200));
+            assertThat(reply.result, is("myGetResponse"));
+            assertThat(requestMethodHolder[0], is("GET"));
+        } finally {
+            serverPortPair._1.stop(0);
+            commAdapter.shutdown();
+        }
     }
 
     @Test
     void rpcWorksProperly() throws Exception {
-        HttpAdapter<String> xxx = HttpAdapter.<String>builder()
-                .setMessageMarshaller(outgoingMessage ->  outgoingMessage)
-                .setMessageUnmarshaller(incomingMessage -> incomingMessage)
-                .setMetrics(new Metrics())
-                .setErrorReplyFactory(t -> "Error: " + t.getMessage())
-                .setHttpServer(httpServer)
-                .build();
-        TestObserver<String> observer = xxx
-                .sendRequest("http://httpbin.org/ip", "1", HttpRequestMethod.GET)
-                .test();
+        HttpAdapter<String> xxx = HttpAdapter.builder(String.class).build();
+        Pair<com.sun.net.httpserver.HttpServer, Integer> serverPortPair =
+                httpServer("/rpcTest", "rpcResponse");
+        try {
+            TestObserver<RpcReply<String>> observer = xxx
+                    .sendRequest("http://localhost:" + serverPortPair._2 + "/rpcTest", "1", HttpRequestMethod.GET)
+                    .test();
 
-        observer.await(40, SECONDS);
-        observer.assertComplete();
-        observer.assertValue(value -> value.contains("\"origin\":"));
+            observer.await(40, SECONDS);
+            observer.assertComplete();
+            observer.assertValue(reply -> reply.result.equals("rpcResponse"));
+        } finally {
+            serverPortPair._1.stop(0);
+            xxx.shutdown();
+        }
     }
 
+    private Pair<com.sun.net.httpserver.HttpServer, Integer> httpServer(String path,
+                                                                        String response) {
+        return httpServer(path, response, exchange -> {
+        });
+    }
+
+    private Pair<com.sun.net.httpserver.HttpServer, Integer> httpServer(String path,
+                                                                        String response,
+                                                                        Consumer<HttpExchange> requestHandler) {
+        Pair<com.sun.net.httpserver.HttpServer, Integer>[] retVal = new Pair[1];
+
+        PortFinder.withNextFreePort(port -> {
+            com.sun.net.httpserver.HttpServer server = null;
+            try {
+                server = com.sun.net.httpserver.HttpServer
+                        .create(new InetSocketAddress(port), 0);
+                server.createContext(path, httpExchange -> {
+                    requestHandler.accept(httpExchange);
+                    httpExchange.sendResponseHeaders(200, response.length());
+                    OutputStream os = httpExchange.getResponseBody();
+                    os.write(response.getBytes());
+                    os.close();
+                });
+                server.setExecutor(null); // creates a default executor
+                server.start();
+            } catch (IOException e) {
+                fail(e);
+            }
+            retVal[0] = new Pair<>(server, port);
+        });
+
+        return retVal[0];
+    }
 }

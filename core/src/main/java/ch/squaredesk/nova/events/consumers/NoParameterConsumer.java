@@ -24,10 +24,10 @@ public interface NoParameterConsumer extends Consumer<Object[]> {
     default void accept(Object... data) {
         try {
             accept();
-        } catch (Throwable t) {
-            LoggerFactory.getLogger("ch.squaredesk.nova.event.consumers")
-                    .error("Error, trying to consume event with parameters " +
-                            Arrays.toString(data));
+        } catch (Exception e) {
+            LoggerFactory
+                    .getLogger("ch.squaredesk.nova.event.consumers")
+                    .error("Error, trying to consume event with parameters {}", Arrays.toString(data), e);
         }
     }
 }

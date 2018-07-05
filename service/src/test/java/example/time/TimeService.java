@@ -11,7 +11,6 @@ package example.time;
 
 import ch.squaredesk.nova.service.NovaService;
 import ch.squaredesk.nova.service.annotation.OnServiceInit;
-import ch.squaredesk.nova.service.annotation.OnServiceStartup;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;

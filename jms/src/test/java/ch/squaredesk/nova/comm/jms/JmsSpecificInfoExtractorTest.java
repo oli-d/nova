@@ -13,6 +13,7 @@ package ch.squaredesk.nova.comm.jms;
 import org.apache.activemq.ActiveMQConnectionFactory;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import javax.jms.ConnectionFactory;
@@ -23,6 +24,7 @@ import javax.jms.Message;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
+@Tag("large")
 class JmsSpecificInfoExtractorTest {
     private TestJmsHelper jmsHelper;
     private EmbeddedActiveMQBroker broker;
@@ -53,7 +55,7 @@ class JmsSpecificInfoExtractorTest {
         message.setObjectProperty("k1", "v1");
         message.setObjectProperty("k3", "v2");
 
-        JmsSpecificInfo info = JmsSpecificInfoExtractor.extractFrom(message);
+        RetrieveInfo info = JmsSpecificInfoExtractor.extractFrom(message);
         assertThat(info.correlationId, is("c1"));
         assertThat(info.customHeaders.size(), is(2));
         assertThat(info.customHeaders.get("k1"), is("v1"));

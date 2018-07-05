@@ -10,6 +10,8 @@
 
 package ch.squaredesk.nova.metrics;
 
+import io.dropwizard.metrics5.MetricName;
+
 import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryMXBean;
 import java.lang.management.MemoryPoolMXBean;
@@ -17,7 +19,7 @@ import java.lang.management.MemoryUsage;
 import java.util.*;
 import java.util.regex.Pattern;
 
-import static com.codahale.metrics.MetricRegistry.name;
+import static io.dropwizard.metrics5.MetricRegistry.name;
 
 /**
  * This class is heavily inspired by the MemoryUsageGaugeSet of the dropwizards metrics-jvm package (dependency:
@@ -40,27 +42,27 @@ public class MemoryMeter implements CompoundMetric {
     }
 
     @Override
-    public Map<String, Object> getValues() {
-        java.lang.management.MemoryUsage nonHeapUsage = mxBean.getNonHeapMemoryUsage();
-        java.lang.management.MemoryUsage heapUsage = mxBean.getHeapMemoryUsage();
-        Map<String, Object> values = new HashMap<>();
+    public Map<MetricName, Object> getValues() {
+        MemoryUsage nonHeapUsage = mxBean.getNonHeapMemoryUsage();
+        MemoryUsage heapUsage = mxBean.getHeapMemoryUsage();
+        Map<MetricName, Object> values = new HashMap<>();
 
-        values.put("heapInitial", heapUsage.getInit());
-        values.put("heapUsed", heapUsage.getUsed());
-        values.put("heapMax", heapUsage.getMax());
-        values.put("heapCommitted", heapUsage.getCommitted());
-        values.put("heapFree", heapUsage.getMax() - heapUsage.getUsed());
-        values.put("heapUsageInPercent", (double)heapUsage.getUsed() / (double)heapUsage.getMax() * 100.0);
-        values.put("totalInitial", heapUsage.getInit() + nonHeapUsage.getInit());
-        values.put("totalUsed", heapUsage.getUsed() + nonHeapUsage.getUsed());
-        values.put("totalMax", heapUsage.getMax() + nonHeapUsage.getMax());
-        values.put("totalCommitted", heapUsage.getCommitted() + nonHeapUsage.getCommitted());
-        values.put("totalFree", heapUsage.getMax() + nonHeapUsage.getMax() - heapUsage.getUsed() - nonHeapUsage.getUsed());
-        values.put("totalUsageInPercent", ((double)heapUsage.getUsed() + (double)nonHeapUsage.getUsed()) /
+        values.put(name("heapInitial"), heapUsage.getInit());
+        values.put(name("heapUsed"), heapUsage.getUsed());
+        values.put(name("heapMax"), heapUsage.getMax());
+        values.put(name("heapCommitted"), heapUsage.getCommitted());
+        values.put(name("heapFree"), heapUsage.getMax() - heapUsage.getUsed());
+        values.put(name("heapUsageInPercent"), (double)heapUsage.getUsed() / (double)heapUsage.getMax() * 100.0);
+        values.put(name("totalInitial"), heapUsage.getInit() + nonHeapUsage.getInit());
+        values.put(name("totalUsed"), heapUsage.getUsed() + nonHeapUsage.getUsed());
+        values.put(name("totalMax"), heapUsage.getMax() + nonHeapUsage.getMax());
+        values.put(name("totalCommitted"), heapUsage.getCommitted() + nonHeapUsage.getCommitted());
+        values.put(name("totalFree"), heapUsage.getMax() + nonHeapUsage.getMax() - heapUsage.getUsed() - nonHeapUsage.getUsed());
+        values.put(name("totalUsageInPercent"), ((double)heapUsage.getUsed() + (double)nonHeapUsage.getUsed()) /
                 ((double)heapUsage.getMax() + (double)nonHeapUsage.getMax()) * 100.0);
 
         for (MemoryPoolMXBean pool : memoryPools) {
-            String poolName = name("pools", WHITESPACE.matcher(pool.getName()).replaceAll("-"));
+            String poolName = name("pools", WHITESPACE.matcher(pool.getName()).replaceAll("-")).toString();
             MemoryUsage usage = pool.getUsage();
 
             values.put(name(poolName, "usageInPercent"),

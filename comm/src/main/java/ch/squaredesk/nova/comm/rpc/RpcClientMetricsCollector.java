@@ -11,7 +11,7 @@
 package ch.squaredesk.nova.comm.rpc;
 
 import ch.squaredesk.nova.metrics.Metrics;
-import com.codahale.metrics.Meter;
+import io.dropwizard.metrics5.Meter;
 
 public class RpcClientMetricsCollector {
     private final Metrics metrics;
@@ -21,7 +21,7 @@ public class RpcClientMetricsCollector {
 
     RpcClientMetricsCollector(String identifier, Metrics metrics) {
         this.metrics = metrics;
-        this.identifierPrefix = Metrics.name("rpcClient", identifier);
+        this.identifierPrefix = Metrics.name("rpcClient", identifier).toString();
         totalNumberOfCompletedRequests = metrics.getMeter(this.identifierPrefix,"completed","total");
         totalNumberOfTimedOutRequests = metrics.getMeter(this.identifierPrefix,"timeout","total");
     }
@@ -40,7 +40,9 @@ public class RpcClientMetricsCollector {
     }
 
     private void mark(Meter... meters) {
-        for (Meter m : meters) m.mark();
+        for (Meter m : meters) {
+            m.mark();
+        }
     }
 
 }

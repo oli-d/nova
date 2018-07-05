@@ -12,42 +12,39 @@ package ch.squaredesk.nova.comm.http;
 
 import ch.squaredesk.nova.comm.retrieving.MessageUnmarshaller;
 import ch.squaredesk.nova.comm.sending.MessageMarshaller;
-import ch.squaredesk.nova.comm.sending.MessageSendingInfo;
 import ch.squaredesk.nova.metrics.Metrics;
+import com.ning.http.client.AsyncHttpClient;
+import com.ning.http.client.ListenableFuture;
+import com.ning.http.client.Response;
 import io.reactivex.Single;
-import okhttp3.*;
-import okhttp3.MediaType;
 
-import java.net.URL;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
 import static java.util.Objects.requireNonNull;
 
-class RpcClient<InternalMessageType> extends ch.squaredesk.nova.comm.rpc.RpcClient<URL, InternalMessageType, HttpSpecificInfo> {
-    private static final MediaType JSON = okhttp3.MediaType.parse("application/json; charset=utf-8");
-    private final OkHttpClient client = new OkHttpClient();
-
+public class RpcClient<InternalMessageType> extends ch.squaredesk.nova.comm.rpc.RpcClient<InternalMessageType, RequestMessageMetaData, ReplyMessageMetaData> {
+    private final AsyncHttpClient client;
     private final MessageMarshaller<InternalMessageType, String> messageMarshaller;
     private final MessageUnmarshaller<String, InternalMessageType> messageUnmarshaller;
 
-    RpcClient(String identifier,
-              MessageMarshaller<InternalMessageType, String> messageMarshaller,
-              MessageUnmarshaller<String, InternalMessageType> messageUnmarshaller,
-              Metrics metrics) {
+    protected RpcClient(String identifier,
+                        AsyncHttpClient client,
+                        MessageMarshaller<InternalMessageType, String> messageMarshaller,
+                        MessageUnmarshaller<String, InternalMessageType> messageUnmarshaller,
+                        Metrics metrics) {
         super(identifier, metrics);
+        this.client = client;
         this.messageUnmarshaller = messageUnmarshaller;
         this.messageMarshaller = messageMarshaller;
     }
 
 
-    public <RequestType extends InternalMessageType, ReplyType extends InternalMessageType>
-        Single<ReplyType> sendRequest(RequestType request,
-                                      MessageSendingInfo<URL, HttpSpecificInfo> messageSendingInfo,
-                                      long timeout, TimeUnit timeUnit) {
+    public <ReplyType extends InternalMessageType> Single<RpcReply<ReplyType>> sendRequest(
+            InternalMessageType request,
+            RequestMessageMetaData requestMessageMetaData,
+            long timeout, TimeUnit timeUnit) {
         requireNonNull(timeUnit, "timeUnit must not be null");
 
-        // TODO: threading?
         String requestAsString;
         try {
             requestAsString = request != null ? messageMarshaller.marshal(request) : null;
@@ -55,43 +52,36 @@ class RpcClient<InternalMessageType> extends ch.squaredesk.nova.comm.rpc.RpcClie
             return Single.error(e);
         }
 
-        Request.Builder requestBuilder = new Request.Builder().url(messageSendingInfo.destination);
-        Request httpRequest;
-        if (messageSendingInfo.transportSpecificInfo.requestMethod == HttpRequestMethod.POST) {
-            RequestBody body = RequestBody.create(JSON, requestAsString);
-            httpRequest = requestBuilder.post(body).build();
-        } else if (messageSendingInfo.transportSpecificInfo.requestMethod == HttpRequestMethod.PUT) {
-            RequestBody body = RequestBody.create(JSON, requestAsString);
-            httpRequest = requestBuilder.put(body).build();
-        } else if (messageSendingInfo.transportSpecificInfo.requestMethod == HttpRequestMethod.DELETE) {
-            RequestBody body = RequestBody.create(JSON, requestAsString);
-            httpRequest = requestBuilder.delete(body).build();
+        AsyncHttpClient.BoundRequestBuilder requestBuilder;
+        if (requestMessageMetaData.details.requestMethod == HttpRequestMethod.POST) {
+            requestBuilder = client.preparePost(requestMessageMetaData.destination.toString()).setBody(requestAsString);
+        } else if (requestMessageMetaData.details.requestMethod == HttpRequestMethod.PUT) {
+            requestBuilder = client.preparePut(requestMessageMetaData.destination.toString()).setBody(requestAsString);
+        } else if (requestMessageMetaData.details.requestMethod == HttpRequestMethod.DELETE) {
+            requestBuilder = client.prepareDelete(requestMessageMetaData.destination.toString()).setBody(requestAsString);
         } else {
-            httpRequest = requestBuilder.get().build();
+            requestBuilder = client.prepareGet(requestMessageMetaData.destination.toString());
         }
-        Call call = client.newCall(httpRequest);
 
-        Single timeoutSingle = Single
-                .timer(timeout, timeUnit)
-                .map(zero -> {
-                    metricsCollector.rpcTimedOut(messageSendingInfo.destination.toExternalForm());
-                    call.cancel();
-                    throw new TimeoutException();
-                });
+        ListenableFuture<Response> resultFuture = requestBuilder
+                .addHeader("Content-Type", "application/json; charset=utf-8")
+                .execute();
 
-        Single<ReplyType> resultSingle = Single.fromCallable(() -> {
-            Response response = call.execute();
-            metricsCollector.rpcCompleted(messageSendingInfo.destination, response);
-            if (response.isSuccessful()) {
-                return response.body().string();
-            } else {
-                throw new RuntimeException(response.message());
-            }
-        }).map(callResult -> {
-            metricsCollector.rpcCompleted(messageSendingInfo.destination, callResult);
-            return (ReplyType) messageUnmarshaller.unmarshal(callResult);
+        Single<RpcReply<ReplyType>> resultSingle = Single.fromFuture(resultFuture).map(response -> {
+            int statusCode = response.getStatusCode();
+            ReplyMessageMetaData metaData = new ReplyMessageMetaData(
+                    requestMessageMetaData.destination,
+                    new ReplyInfo(statusCode));
+            String responseBody = response.getResponseBody();
+            metricsCollector.rpcCompleted(requestMessageMetaData.destination, responseBody);
+            return new RpcReply<>((ReplyType) messageUnmarshaller.unmarshal(responseBody), metaData);
         });
 
-        return timeoutSingle.ambWith(resultSingle);
+        return resultSingle.timeout(timeout, timeUnit);
     }
+
+    void shutdown() {
+        client.close();
+    }
+
 }

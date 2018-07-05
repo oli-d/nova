@@ -10,12 +10,14 @@
 
 package ch.squaredesk.nova.metrics;
 
+import io.dropwizard.metrics5.MetricName;
+
 import java.lang.management.GarbageCollectorMXBean;
 import java.lang.management.ManagementFactory;
 import java.util.*;
 import java.util.regex.Pattern;
 
-import static com.codahale.metrics.MetricRegistry.name;
+import static io.dropwizard.metrics5.MetricRegistry.name;
 
 /**
  * This class is heavily inspired by the GarbageCollectorMetricSet of the dropwizards metrics-jvm package (dependency:
@@ -46,8 +48,8 @@ public class GarbageCollectionMeter implements CompoundMetric {
     }
 
     @Override
-    public Map<String, Object> getValues() {
-        final Map<String, Object> values = new HashMap<>();
+    public Map<MetricName, Object> getValues() {
+        final Map<MetricName, Object> values = new HashMap<>();
         for (final GarbageCollectorMXBean gc : garbageCollectors) {
             final String name = WHITESPACE.matcher(gc.getName()).replaceAll("-");
             values.put(name(name, "count"), gc.getCollectionCount());

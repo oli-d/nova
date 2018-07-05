@@ -19,8 +19,6 @@ import org.springframework.context.annotation.AnnotationConfigApplicationContext
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-import javax.annotation.PostConstruct;
-import javax.annotation.PreDestroy;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.Objects;
@@ -56,11 +54,7 @@ public abstract class NovaService {
         if (registerShutdownHook) {
             Runtime.getRuntime().addShutdownHook(new Thread(()->shutdown()));
         }
-        try {
-            lifecycleBeanProcessor.invokeInitHandlers();
-        } catch (Throwable t) {
-            throw t;
-        }
+        lifecycleBeanProcessor.invokeInitHandlers();
     }
 
     public void start() {
@@ -68,11 +62,7 @@ public abstract class NovaService {
             throw new IllegalStateException("service " + serviceName + "/" + instanceId + " already started");
         }
 
-        try {
-            lifecycleBeanProcessor.invokeStartupHandlers();
-        } catch (Throwable t) {
-            throw t;
-        }
+        lifecycleBeanProcessor.invokeStartupHandlers();
 
         lifeline.start();
         started = true;

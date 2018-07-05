@@ -1,26 +1,26 @@
 package ch.squaredesk.nova.comm.http;
 
-import org.glassfish.jersey.server.ResourceConfig;
-import org.glassfish.jersey.server.model.Resource;
-import org.junit.jupiter.api.BeforeEach;
+import org.glassfish.grizzly.http.server.HttpServer;
+import org.hamcrest.MatcherAssert;
+import org.hamcrest.Matchers;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+@Tag("medium")
 class HttpServerFactoryTest {
-    HttpServerConfiguration serverConfig;
-    ResourceConfig resourceConfig;
-
-    @BeforeEach
-    void setup() {
-        serverConfig = new HttpServerConfiguration( "localhost", 5678);
-        resourceConfig = new ResourceConfig();
-        resourceConfig.registerResources(Resource.builder().build());
-    }
     @Test
     void serverCantBeCreatedWithoutConfig() {
         assertThrows(NullPointerException.class,
                 () -> HttpServerFactory.serverFor(null));
+    }
+
+    @Test
+    void serverNotAutomaticallyStarted() {
+        HttpServerConfiguration rsc = HttpServerConfiguration.builder().interfaceName("localhost").port(10000).build();
+        HttpServer httpServer = HttpServerFactory.serverFor(rsc);
+        MatcherAssert.assertThat(httpServer.isStarted(), Matchers.is(false));
     }
 
 }

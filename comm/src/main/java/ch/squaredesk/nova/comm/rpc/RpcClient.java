@@ -10,7 +10,6 @@
 
 package ch.squaredesk.nova.comm.rpc;
 
-import ch.squaredesk.nova.comm.sending.MessageSendingInfo;
 import ch.squaredesk.nova.metrics.Metrics;
 import io.reactivex.Single;
 
@@ -18,12 +17,15 @@ import java.util.concurrent.TimeUnit;
 
 import static java.util.Objects.requireNonNull;
 
-public abstract class RpcClient<DestinationType, InternalMessageType, TransportSpecificInfoType> {
+public abstract class RpcClient<
+        InternalMessageType,
+        RequestMetaDataType,
+        ReplyMetaDataType> {
 
     protected final RpcClientMetricsCollector metricsCollector;
 
     protected RpcClient(Metrics metrics) {
-        this (null, metrics);
+        this(null, metrics);
     }
 
     protected RpcClient(String identifier, Metrics metrics) {
@@ -31,8 +33,9 @@ public abstract class RpcClient<DestinationType, InternalMessageType, TransportS
         this.metricsCollector = new RpcClientMetricsCollector(identifier, metrics);
     }
 
-    public abstract <RequestType extends InternalMessageType, ReplyType extends InternalMessageType>
-        Single<ReplyType> sendRequest(RequestType request,
-                                      MessageSendingInfo<DestinationType, TransportSpecificInfoType> messageSendingInfo,
-                                      long timeout, TimeUnit timeUnit);
+    public abstract <ReplyType extends InternalMessageType>
+        Single<? extends RpcReply<ReplyType, ReplyMetaDataType>> sendRequest(
+            InternalMessageType request,
+            RequestMetaDataType requestMetaData,
+            long timeout, TimeUnit timeUnit);
 }

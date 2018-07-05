@@ -12,7 +12,6 @@ package ch.squaredesk.nova.service.annotation;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.util.Arrays;
 import java.util.stream.Collectors;
 
 import static java.util.Arrays.stream;
@@ -70,8 +69,13 @@ class BeanExaminer {
             .append('.')
             .append(method.getName())
             .append('(')
+<<<<<<< HEAD
             .append(Arrays.stream(method.getParameterTypes())
                     .map(parameterClass -> parameterClass.getSimpleName())
+=======
+            .append(stream(method.getParameterTypes())
+                    .map(paramterClass -> paramterClass.getSimpleName())
+>>>>>>> master
                     .collect(Collectors.joining(", ")))
             .append(')');
         return sb.toString();

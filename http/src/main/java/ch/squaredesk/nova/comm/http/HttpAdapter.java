@@ -6,16 +6,13 @@
  * obtain a copy of the license at
  *
  *   https://squaredesk.ch/license/oss/LICENSE
+ *
  */
 
 package ch.squaredesk.nova.comm.http;
 
-import ch.squaredesk.nova.comm.retrieving.MessageUnmarshaller;
-import ch.squaredesk.nova.comm.rpc.RpcInvocation;
-import ch.squaredesk.nova.comm.sending.MessageMarshaller;
-import ch.squaredesk.nova.comm.sending.MessageSendingInfo;
-import ch.squaredesk.nova.metrics.Metrics;
-import io.reactivex.BackpressureStrategy;
+import ch.squaredesk.nova.comm.CommAdapterBuilder;
+import com.ning.http.client.AsyncHttpClient;
 import io.reactivex.Flowable;
 import io.reactivex.Single;
 import org.glassfish.grizzly.http.server.HttpServer;
@@ -25,7 +22,6 @@ import org.slf4j.LoggerFactory;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Function;
 
 import static java.util.Objects.requireNonNull;
 
@@ -36,49 +32,64 @@ public class HttpAdapter<MessageType> {
     private final TimeUnit defaultRequestTimeUnit;
 
 
-    private HttpAdapter(Builder builder) {
+    private HttpAdapter(Builder<MessageType> builder) {
         this.rpcClient = builder.rpcClient;
         this.rpcServer = builder.rpcServer;
         this.defaultRequestTimeout = builder.defaultRequestTimeout;
         this.defaultRequestTimeUnit = builder.defaultRequestTimeUnit;
     }
 
-    public <ReplyMessageType extends MessageType> Single<ReplyMessageType> sendGetRequest(String destination) {
-        return sendRequest(destination, null, new HttpSpecificInfo(HttpRequestMethod.GET), null, null );
+    public <ReplyMessageType extends MessageType>
+    Single<RpcReply<ReplyMessageType>> sendGetRequest(String destination) {
+        return sendRequest(destination, null, new RequestInfo(HttpRequestMethod.GET), null, null );
     }
 
     public <ReplyMessageType extends MessageType>
-    Single<ReplyMessageType> sendGetRequest(String destination, long timeout, TimeUnit timeUnit) {
-        return sendRequest(destination, null, new HttpSpecificInfo(HttpRequestMethod.GET), timeout, timeUnit);
+    Single<RpcReply<ReplyMessageType>> sendGetRequest(
+                String destination,
+                long timeout, TimeUnit timeUnit) {
+        return sendRequest(destination, null, new RequestInfo(HttpRequestMethod.GET), timeout, timeUnit);
     }
 
     public <RequestMessageType extends MessageType, ReplyMessageType extends MessageType>
-        Single<ReplyMessageType> sendPostRequest(String destination, RequestMessageType request) {
-        return sendRequest(destination, request, new HttpSpecificInfo(HttpRequestMethod.POST), null, null);
+    Single<RpcReply<ReplyMessageType>> sendPostRequest(
+                String destination,
+                RequestMessageType request) {
+        return sendRequest(destination, request, new RequestInfo(HttpRequestMethod.POST), null, null);
     }
 
     public <RequestMessageType extends MessageType, ReplyMessageType extends MessageType>
-        Single<ReplyMessageType> sendPostRequest(String destination, RequestMessageType request, long timeout, TimeUnit timeUnit) {
-        return sendRequest(destination, request, new HttpSpecificInfo(HttpRequestMethod.POST), timeout, timeUnit );
+    Single<RpcReply<ReplyMessageType>> sendPostRequest(
+                String destination,
+                RequestMessageType request,
+                long timeout, TimeUnit timeUnit) {
+        return sendRequest(destination, request, new RequestInfo(HttpRequestMethod.POST), timeout, timeUnit );
     }
 
     public <RequestMessageType extends MessageType, ReplyMessageType extends MessageType>
-        Single<ReplyMessageType> sendPutRequest(String destination, RequestMessageType request) {
-        return sendRequest(destination, request, new HttpSpecificInfo(HttpRequestMethod.PUT), null, null);
+    Single<RpcReply<ReplyMessageType>> sendPutRequest(
+                String destination,
+                RequestMessageType request) {
+        return sendRequest(destination, request, new RequestInfo(HttpRequestMethod.PUT), null, null);
     }
 
     public <RequestMessageType extends MessageType, ReplyMessageType extends MessageType>
-        Single<ReplyMessageType> sendPutRequest(String destination, RequestMessageType request, long timeout, TimeUnit timeUnit) {
-        return sendRequest(destination, request, new HttpSpecificInfo(HttpRequestMethod.PUT), timeout, timeUnit );
+    Single<RpcReply<ReplyMessageType>> sendPutRequest(
+                String destination,
+                RequestMessageType request,
+                long timeout, TimeUnit timeUnit) {
+        return sendRequest(destination, request, new RequestInfo(HttpRequestMethod.PUT), timeout, timeUnit );
     }
 
     public <RequestMessageType extends MessageType, ReplyMessageType extends MessageType>
-        Single<ReplyMessageType> sendRequest(String destination, RequestMessageType request) {
+    Single<RpcReply<ReplyMessageType>> sendRequest(
+                String destination,
+                RequestMessageType request) {
         return sendRequest(destination, request, null, null, null);
     }
 
     public <RequestMessageType extends MessageType, ReplyMessageType extends MessageType>
-        Single<ReplyMessageType> sendRequest(
+    Single<RpcReply<ReplyMessageType>> sendRequest(
                 String destination,
                 RequestMessageType request,
                 long timeout,
@@ -87,25 +98,29 @@ public class HttpAdapter<MessageType> {
     }
 
     public <RequestMessageType extends MessageType, ReplyMessageType extends MessageType>
-        Single<ReplyMessageType> sendRequest(
+    Single<RpcReply<ReplyMessageType>> sendRequest(
                 String destination,
                 RequestMessageType request,
                 HttpRequestMethod requestMethod) {
-        return sendRequest(destination, request, new HttpSpecificInfo(requestMethod), null, null);
+        return sendRequest(destination, request, new RequestInfo(requestMethod), null, null);
     }
 
     public <RequestMessageType extends MessageType, ReplyMessageType extends MessageType>
-        Single<ReplyMessageType> sendRequest(
+    Single<RpcReply<ReplyMessageType>> sendRequest(
                 String destination,
                 RequestMessageType request,
                 HttpRequestMethod requestMethod,
                 long timeout,
                 TimeUnit timeUnit) {
-        return sendRequest(destination, request, new HttpSpecificInfo(requestMethod), timeout, timeUnit);
+        return sendRequest(destination, request, new RequestInfo(requestMethod), timeout, timeUnit);
     }
 
     public <RequestMessageType extends MessageType, ReplyMessageType extends MessageType>
-        Single<ReplyMessageType> sendRequest (String destination, RequestMessageType request, HttpSpecificInfo httpInfo, Long timeout, TimeUnit timeUnit) {
+    Single<RpcReply<ReplyMessageType>> sendRequest (
+                String destination,
+                RequestMessageType request,
+                RequestInfo httpInfo,
+                Long timeout, TimeUnit timeUnit) {
 
         if (timeout!=null) {
             requireNonNull(timeUnit, "timeUnit must not be null if timeout specified");
@@ -121,16 +136,13 @@ public class HttpAdapter<MessageType> {
             throw new IllegalArgumentException("Invalid URL format " + destination,e);
         }
 
-        MessageSendingInfo<URL,HttpSpecificInfo> sendingInfo = new MessageSendingInfo.Builder<URL, HttpSpecificInfo>()
-                .withTransportSpecificInfo(httpInfo)
-                .withDestination(url)
-                .build();
+        RequestMessageMetaData sendingInfo = new RequestMessageMetaData(url, httpInfo);
 
         return rpcClient.sendRequest(request, sendingInfo, timeout, timeUnit);
     }
 
-    public Flowable<RpcInvocation<MessageType, MessageType, HttpSpecificInfo>> requests(String destination, BackpressureStrategy backpressureStrategy) {
-        return rpcServer.requests(destination, backpressureStrategy);
+    public Flowable<RpcInvocation<MessageType>> requests(String destination) {
+        return rpcServer.requests(destination);
     }
 
     public void start() throws Exception {
@@ -138,29 +150,28 @@ public class HttpAdapter<MessageType> {
     }
 
     public void shutdown() {
-        rpcServer.shutdown();
+        if (rpcServer!=null) {
+            rpcServer.shutdown();
+        }
+        rpcClient.shutdown();
     }
 
-    public static <MessageType> Builder<MessageType> builder() {
-        return new Builder<>();
+    public static <MessageType> Builder<MessageType> builder(Class<MessageType> messageTypeClass) {
+        return new Builder<>(messageTypeClass);
     }
 
-    public static class Builder<MessageType> {
+    public static class Builder<MessageType> extends CommAdapterBuilder<MessageType, HttpAdapter<MessageType>>{
         private static Logger logger = LoggerFactory.getLogger(Builder.class);
 
         private String identifier;
-        private Metrics metrics;
-        private MessageMarshaller<MessageType,String> messageMarshaller;
-        private MessageUnmarshaller<String,MessageType> messageUnmarshaller;
         private HttpServer httpServer;
-        private Function<Throwable, MessageType> errorReplyFactory;
         private RpcClient<MessageType> rpcClient;
         private RpcServer<MessageType> rpcServer;
         private Long defaultRequestTimeout;
         private TimeUnit defaultRequestTimeUnit;
-        private Integer serverPort;
 
-        private Builder() {
+        private Builder(Class<MessageType> messageTypeClass) {
+            super(messageTypeClass);
         }
 
         public Builder<MessageType> setDefaultRequestTimeout(long timeout, TimeUnit timeUnit) {
@@ -177,8 +188,13 @@ public class HttpAdapter<MessageType> {
             return this;
         }
 
-        public Builder<MessageType> setServerPort(Integer port) {
-            this.serverPort = port;
+        public Builder<MessageType> setRpcServer(RpcServer<MessageType> rpcServer) {
+            this.rpcServer = rpcServer;
+            return this;
+        }
+
+        public Builder<MessageType> setRpcClient(RpcClient<MessageType> rpcClient) {
+            this.rpcClient = rpcClient;
             return this;
         }
 
@@ -187,47 +203,26 @@ public class HttpAdapter<MessageType> {
             return this;
         }
 
-        public Builder<MessageType> setMetrics(Metrics metrics) {
-            this.metrics = metrics;
-            return this;
+        protected void validate() {
         }
 
-        public Builder<MessageType> setMessageMarshaller(MessageMarshaller<MessageType,String> marshaller) {
-            this.messageMarshaller = marshaller;
-            return this;
-        }
-
-        public Builder<MessageType> setMessageUnmarshaller(MessageUnmarshaller<String,MessageType> unmarshaller) {
-            this.messageUnmarshaller = unmarshaller;
-            return this;
-        }
-
-        public Builder<MessageType> setErrorReplyFactory(Function<Throwable, MessageType> errorReplyFactory) {
-            this.errorReplyFactory = errorReplyFactory;
-            return this;
-        }
-
-        public Builder<MessageType> validate() {
-            requireNonNull(httpServer,"httpServer instance must not be null");
-            requireNonNull(messageMarshaller," messageMarshaller instance must not be null");
-            requireNonNull(messageUnmarshaller," messageUnmarshaller instance must not be null");
-            requireNonNull(errorReplyFactory," errorReplyFactory instance must not be null");
-            requireNonNull(metrics," Metrics instance must not be null");
+        protected HttpAdapter<MessageType> createInstance() {
+            validate();
             if (defaultRequestTimeout==null) {
-                defaultRequestTimeout = 5L;
+                defaultRequestTimeout = 15L;
                 defaultRequestTimeUnit = TimeUnit.SECONDS;
             }
-            if (serverPort==null) {
-                serverPort = 10000;
-                logger.warn("No HTTP server port specified, falling back to default " + serverPort);
+            if (rpcClient == null) {
+                AsyncHttpClient httpClient = new AsyncHttpClient();
+                rpcClient = new RpcClient<>(identifier, httpClient, messageMarshaller, messageUnmarshaller, metrics);
             }
-            return this;
-        }
-
-        public HttpAdapter<MessageType> build() {
-            validate();
-            rpcClient = new RpcClient<>(identifier, messageMarshaller, messageUnmarshaller, metrics);
-            rpcServer = new RpcServer<>(identifier, httpServer, messageMarshaller, messageUnmarshaller, metrics);
+            if (rpcServer == null) {
+                if (httpServer == null) {
+                    logger.info("No httpServer provided, HTTP Adapter will only be usable in client mode!!!");
+                } else {
+                    rpcServer = new RpcServer<>(identifier, httpServer, messageMarshaller, messageUnmarshaller, metrics);
+                }
+            }
             return new HttpAdapter<>(this);
         }
     }

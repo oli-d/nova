@@ -10,90 +10,50 @@
 
 package ch.squaredesk.nova.comm.kafka;
 
-import ch.squaredesk.nova.comm.sending.MessageSendingInfo;
 import ch.squaredesk.nova.metrics.Metrics;
-import io.reactivex.observers.TestObserver;
-import org.apache.kafka.clients.producer.Callback;
+import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.Producer;
-import org.apache.kafka.clients.producer.ProducerRecord;
-import org.apache.kafka.clients.producer.RecordMetadata;
-import org.apache.kafka.common.Metric;
-import org.apache.kafka.common.MetricName;
-import org.apache.kafka.common.PartitionInfo;
+import org.apache.kafka.clients.producer.ProducerConfig;
+import org.apache.kafka.common.serialization.StringSerializer;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.util.List;
-import java.util.Map;
+import java.lang.reflect.Field;
 import java.util.Properties;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
+import java.util.UUID;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
 
 class KafkaMessageSenderTest {
-    private KafkaMessageSender<String> sut;
+    Properties producerProps;
+    KafkaMessageSender<String> sut;
 
     @BeforeEach
     void setup() {
-        sut = new KafkaMessageSender<>(
-                "myId",
-                new MyObjectFactory(),
-                message -> message,
-                new Metrics());
+        producerProps = new Properties();
+        producerProps.put("bootstrap.servers","127.0.0.1:8888");
+        producerProps.put("key.serializer",StringSerializer.class.getName());
+        producerProps.put("value.serializer", StringSerializer.class.getName());
+        producerProps.put("client.id", UUID.randomUUID().toString());
+
+        sut = new KafkaMessageSender<>("ID", producerProps, s->s, new Metrics());
     }
 
     @Test
-    void messageMarshallingErrorOnSendForwardedToSubscriber() {
-        TestObserver observer = sut.doSend("myMessage",
-                new MessageSendingInfo.Builder<String, KafkaSpecificInfo>()
-                        .withDestination("dest")
-                        .withTransportSpecificInfo(new KafkaSpecificInfo())
-                        .build()).test();
-        observer.assertError(RuntimeException.class);
-        observer.assertErrorMessage("for test");
+    void sutConsidersPassedProperties()  throws Exception {
+        ProducerConfig producerConfig = getProducerConfigFrom(sut);
+        assertThat(producerConfig.getString("client.id"), is(producerProps.get("client.id")));
     }
 
-    private class MyObjectFactory extends KafkaObjectFactory {
+    private static ProducerConfig getProducerConfigFrom (KafkaMessageSender<?> kafkaMessageSender) throws Exception {
+        Field f = KafkaMessageSender.class.getDeclaredField("producer");
+        f.setAccessible(true);
+        Producer p = (Producer)f.get(kafkaMessageSender);
 
-        MyObjectFactory() {
-            super(new Properties(), new Properties());
-        }
-
-        @Override
-        public Producer<String, String> producer() {
-            return new Producer<String, String>() {
-                @Override
-                public Future<RecordMetadata> send(ProducerRecord<String, String> record) {
-                    throw new RuntimeException("for test");
-                }
-
-                @Override
-                public Future<RecordMetadata> send(ProducerRecord<String, String> record, Callback callback) {
-                    return null;
-                }
-
-                @Override
-                public void flush() {
-                }
-
-                @Override
-                public List<PartitionInfo> partitionsFor(String topic) {
-                    return null;
-                }
-
-                @Override
-                public Map<MetricName, ? extends Metric> metrics() {
-                    return null;
-                }
-
-                @Override
-                public void close() {
-                }
-
-                @Override
-                public void close(long timeout, TimeUnit unit) {
-                }
-            };
-        }
+        f = KafkaProducer.class.getDeclaredField("producerConfig");
+        f.setAccessible(true);
+        return (ProducerConfig)f.get(p);
     }
+
 }

@@ -11,25 +11,32 @@
 package ch.squaredesk.nova.comm.retrieving;
 
 import ch.squaredesk.nova.metrics.Metrics;
-import com.codahale.metrics.Counter;
-import com.codahale.metrics.Meter;
+import io.dropwizard.metrics5.Counter;
+import io.dropwizard.metrics5.Meter;
 
 import static java.util.Objects.requireNonNull;
 
-class MetricsCollector {
+public class MetricsCollector {
     private final Metrics metrics;
     private final String identifierPrefix;
     private final Meter totalNumberOfReceivedMessages;
     private final Counter totalNumberOfSubscriptions;
+    private final Counter totalNumberOfUnparsableMessages;
 
     MetricsCollector(String identifier, Metrics metrics) {
         requireNonNull(metrics, "metrics must not be null");
         this.metrics = metrics;
-        this.identifierPrefix = Metrics.name("messageReceiver", identifier);
+        this.identifierPrefix = Metrics.name("messageReceiver", identifier).toString();
         totalNumberOfReceivedMessages = metrics.getMeter(this.identifierPrefix,"received","total");
         totalNumberOfSubscriptions = metrics.getCounter(this.identifierPrefix,"subscriptions","total");
+        totalNumberOfUnparsableMessages = metrics.getCounter(this.identifierPrefix,"unparsable","total");
     }
 
+
+    public void unparsableMessageReceived(Object destination) {
+        metrics.getCounter(identifierPrefix, "unparsable", String.valueOf(destination)).inc();
+        totalNumberOfUnparsableMessages.inc();
+    }
 
     public void messageReceived(Object destination) {
         metrics.getMeter(identifierPrefix, "received", String.valueOf(destination)).mark();

@@ -34,9 +34,9 @@ public class EventBus {
     // the event specific subjects
     private final ConcurrentHashMap<Object,Subject<Object[]>> eventSpecificSubjects;
 
-    public EventBus(String identifier, EventBusConfig eventBusConfig, Metrics metrics) {
-        this.eventBusConfig = eventBusConfig;
-        this.metricsCollector = new EventMetricsCollector(identifier, metrics);
+    public EventBus(String identifier, EventBusConfig eventBusConfig, Metrics metrics){
+            this.eventBusConfig = eventBusConfig;
+            this.metricsCollector = new EventMetricsCollector(identifier, metrics);
         logger.debug("Instantiating event loop {} using the following config {}",identifier, eventBusConfig);
         eventSpecificSubjects = new ConcurrentHashMap<>();
     }

@@ -1,5 +1,8 @@
-# Nova [![Build Status](https://travis-ci.org/oli-d/nova.svg?branch=master)](https://travis-ci.org/oli-d/nova)
+# Nova
 
+[![Maven Central](https://maven-badges.herokuapp.com/maven-central/ch.squaredesk.nova/bom/badge.svg?style=plastic)](https://maven-badges.herokuapp.com/maven-central/ch.squaredesk.nova/bom)
+[![Codeship Build Status](https://app.codeship.com/projects/2283d970-1edb-0135-0041-4ec1c01dd1d7/status?branch=master)](https://app.codeship.com/projects/220890)
+ 
 ### 1. Why?
 The goal of this project is to provide a small and easy-to-use 
 library that enables developers to rapidly build systems or 
@@ -43,14 +46,44 @@ solve it in a consistent way, making it easy to combine them. They provide solut
 allowing service developers to concentrate on the required business logic. 
 
 Currently, the following libraries exist:
-* [core](./core/README.md): core functionality, used by all other components
-* [spring-support](./spring-support/README.md): convenient creation of Nova bean with Spring
-* [comm](./comm/README.md): communication base library, protocol agnostic reactive message sending and retrieval
-* [jms](./jms/README.md): reactive JMS messaging
-* [http](./http/README.md): reactive HTTP communication
-* [rest-annotations](./rest-annotations/README.md): annotation based REST communication
-* [kafka](./kafka/README.md): reactive Kafka communication
-* [event-annotations](./event-annotations/README.md): allows your spring beans to automatically connect to the EventBus using annotations
-* [service](./service/README.md): Small service skeleton with a defined lifecycle and easy access to Nova and its EventBus 
-* [metrics-elastic](./metrics-elastic/README.md): Utility to push Metrics to Elasticsearch 
-* ...
+
+- Core functionality
+  * [core](./core/README.md): core functionality, used by all other components
+  * [spring-support](./spring-support/README.md): convenient creation of Nova bean with Spring
+  * [event-annotations](./event-annotations/README.md): allows your spring beans to automatically connect to the EventBus using annotations
+
+- Communication
+  * [comm](./comm/README.md): communication base library providing protocol agnostic, reactive message sending and retrieval
+  * [jms](./jms/README.md): reactive JMS messaging
+  * [http](./http/README.md): reactive HTTP communication
+  * [http-spring](./http-spring/README.md): convenience classes to easily enable HTTP communication with spring
+  * [rest-annotations](./rest-annotations/README.md): annotation based REST communication
+  * [websockets](./websockets/README.md): reactive WebSocket communication
+  * [websockets-annotations](./websockets-annotations/README.md): annotation based WebSocket communication
+  * [kafka](./kafka/README.md): reactive Kafka communication
+
+- Service related
+  * [service](./service/README.md): Small service skeleton with a defined lifecycle and easy access to Nova and its EventBus 
+  * [metrics-serialization](./metrics-serialization/README.md): Utility to easily serialize MetricDumps
+  * [metrics-elastic](./metrics-elastic/README.md): Utility to push Metrics to Elasticsearch
+  * [metrics-kafka](./metrics-kafka/README.md): Utility to push Metrics to Kafka
+
+### 3. How do I integrate it in my projects?
+
+The easiest way is to retrieve Nova from Maven central. We recommend you are using
+```maven```'s dependency management feature and import the ```BOM```, so that
+you can be sure that all included modules properly work with each other:
+
+```xml
+<dependencyManagement>
+    <dependencies>
+        <dependency>
+            <groupId>ch.squaredesk.nova</groupId>
+            <artifactId>bom</artifactId>
+            <version>5.2.0</version>
+            <scope>import</scope>
+            <type>pom</type>
+        </dependency>
+    </dependencies>
+</dependencymanagement>
+```

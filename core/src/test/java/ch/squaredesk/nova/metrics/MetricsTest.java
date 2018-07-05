@@ -25,7 +25,7 @@ public class MetricsTest {
     private Metrics sut;
 
     @BeforeEach
-    public void setUp() {
+    void setUp() {
         sut = new Metrics();
     }
 
@@ -53,5 +53,4 @@ public class MetricsTest {
         assertThat(dump.hostName, is(inetAddress.getHostName()));
         assertThat(dump.hostAddress, is(inetAddress.getHostAddress()));
     }
-
 }

@@ -1,0 +1,80 @@
+(see http://central.sonatype.org/pages/working-with-pgp-signatures.html)
+
+Install GPG
+	$ brew install gpg
+
+You can generate a key with
+	$ gpg --gen-key
+
+Once key pair is generated, we can list them along with any other keys installed:
+	$ gpg --list-keys
+	$ gpg --list-secret-keys
+
+Since other people need your public key to verify your files, you have to distribute your public key to a key server:
+	$ gpg --keyserver hkp://pool.sks-keyservers.net --send-keys <key ID, e.g. 3856F23D227992D042C893978FBDDB651C41C388>
+		The --keyserver parameter identifies the target key server address and use --send-keys is the keyid of the key you want to distribute. You can get your keyid by listing the public keys. Once submitted to a key server, your public key will be synchronized to other key servers.
+
+Now other people can import your public key from the key server to their local machines:
+	$ gpg --keyserver hkp://pool.sks-keyservers.net --recv-keys <key ID, e.g. 3856F23D227992D042C893978FBDDB651C41C388>
+
+When trying to deploy, maven might bring up the annoying "Inappropriate ioctl for device" error. Reason is that passphrase cannot be properly handed from maven to gpg. One workaround is to
+execute a dummy command before the deployment, so that gpg has the password in its cache (see https://issues.apache.org/jira/browse/MGPG-59), e.g.
+	$ gpg --use-agent --armor --detach-sign --output $(mktemp) pom.xml
+
+==============================
+
+Dealing with Expired Keys
+When you generate your PGP key, you need to specify how long the key should be valid. After that period you can edit your existing key to extend it's valid time.
+
+For example, I have a key pair which expires on 2012-02-27:
+
+$ gpg2 --list-keys
+/Users/juven/.gnupg/pubring.gpg
+-------------------------------
+pub   2048R/A6BAB25C 2011-08-31 [expires: 2012-02-27]
+uid                  Juven Xu (for testing) <test@juvenxu.com>
+sub   2048R/DD289F64 2011-08-31 [expires: 2011-02-27]
+You can edit a key with the following command using the key id as parameter:
+
+$ gpg2 --edit-key A6BAB25C
+gpg (GnuPG/MacGPG2) 2.0.17; Copyright (C) 2011 Free Software Foundation, Inc.
+This is free software: you are free to change and redistribute it.
+There is NO WARRANTY, to the extent permitted by law.
+
+Secret key is available.
+
+pub  2048R/A6BAB25C  created: 2011-08-31  expires: 2012-02-27  usage: SC
+                     trust: ultimate      validity: ultimate
+sub  2048R/DD289F64  created: 2011-08-31  expires: 2011-02-27  usage: E
+(1). Juven Xu (for testing) <test@juvenxu.com>
+
+There is only one key to edit, so I choose 1:
+
+gpg> 1 
+pub  2048R/A6BAB25C  created: 2011-08-31  expires: 2012-02-27  usage: SC
+                     trust: ultimate      validity: ultimate
+sub  2048R/DD289F64  created: 2011-08-31  expires: 2011-02-27  usage: E
+(1)* Juven Xu (for testing) <test@juvenxu.com>
+You will see the * after (1), which mean you've selected this key to edit. To edit the keys expiration time, enter the following command:
+
+gpg> expire
+Changing expiration time for the primary key.
+Please specify how long the key should be valid.
+         0 = key does not expire
+      <n>  = key expires in n days
+      <n>w = key expires in n weeks
+      <n>m = key expires in n months
+      <n>y = key expires in n years
+Enter what you need, for example 10m (10 months), and confirm it. The last step about editing is saving it what you've done:
+
+gpg> save
+Now you can see your key's expires time is updated:
+
+$ gpg2 --list-keys
+pub   2048R/A6BAB25C 2011-08-31 [expires: 2012-06-26]
+uid                  Juven Xu (for testing) &lt;test@juvenxu.com&gt;
+sub   2048R/DD289F64 2011-08-31 [expires: 2011-02-27]
+Finally, distribute your public key again:
+
+$ gpg2 --keyserver hkp://pool.sks-keyservers.net --send-keys A6BAB25C
+

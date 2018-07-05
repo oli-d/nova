@@ -15,7 +15,7 @@ import javax.jms.*;
 import java.util.function.Supplier;
 
 public class TestConnection implements Connection {
-    private final java.util.function.Supplier<Session> sessionSupplier;
+    private final Supplier<Session> sessionSupplier;
 
     public TestConnection(Supplier<Session> sessionSupplier) {
         this.sessionSupplier = sessionSupplier;
@@ -23,8 +23,11 @@ public class TestConnection implements Connection {
 
     @Override
     public Session createSession(boolean transacted, int acknowledgeMode) throws JMSException {
-        if (sessionSupplier!=null) return sessionSupplier.get();
-        else return null;
+        if (sessionSupplier!=null) {
+            return sessionSupplier.get();
+        } else {
+            return null;
+        }
     }
 
     @Override

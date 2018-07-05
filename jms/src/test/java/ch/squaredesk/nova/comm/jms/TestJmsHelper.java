@@ -51,6 +51,16 @@ public class TestJmsHelper {
         return message;
     }
 
+    public Message sendReply(Destination destination, String reply, String correlationId) throws JMSException {
+        MessageProducer producer = session.createProducer(destination);
+        Message message = createMessage(reply);
+        message.setJMSCorrelationID(correlationId);
+        message.setJMSReplyTo(null);
+        producer.send(message);
+        producer.close();
+        return message;
+    }
+
     public Destination echoOnQueue (String destination) throws JMSException {
         Destination queue = createQueue(destination);
         MessageConsumer consumer = session.createConsumer(queue);

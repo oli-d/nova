@@ -6,3 +6,4 @@
 .project
 !/.travis*
 !.gitignore
+/.idea/

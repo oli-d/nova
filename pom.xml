@@ -15,12 +15,146 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>ch.squaredesk.nova</groupId>
-    <artifactId>nova-all</artifactId>
-    <version>4.0.0-SNAPSHOT</version>
+    <artifactId>bom</artifactId>
+    <version>5.2.0</version>
     <packaging>pom</packaging>
+
+    <name>Nova BOM</name>
+    <description>Java libraries for rapid (micro) service development</description>
+    <url>https://squaredesk.ch</url>
+
+    <licenses>
+        <license>
+            <name>Squaredesk Open Source License</name>
+            <url>https://squaredesk.ch/license/oss/LICENSEt</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
+
+    <developers>
+        <developer>
+            <name>Oliver Dotzauer</name>
+            <email>oliver@squaredesk.ch</email>
+            <organization>squaredesk GmbH</organization>
+            <organizationUrl>https://squaredesk.ch</organizationUrl>
+        </developer>
+    </developers>
+
+    <scm>
+        <connection>scm:git:git://github.com/oli-d/nova.git</connection>
+        <developerConnection>scm:git:ssh://github.com:oli-d/nova.git</developerConnection>
+        <url>https://github.com/oli-d/nova/tree/master</url>
+    </scm>
+
+    <distributionManagement>
+        <snapshotRepository>
+            <id>ossrh</id>
+            <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+        </snapshotRepository>
+        <repository>
+            <id>ossrh</id>
+            <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+        </repository>
+    </distributionManagement>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>ch.squaredesk.nova</groupId>
+                <artifactId>test-utils</artifactId>
+                <version>5.2.0</version>
+            </dependency>
+
+            <dependency>
+                <groupId>ch.squaredesk.nova</groupId>
+                <artifactId>core</artifactId>
+                <version>5.2.0</version>
+            </dependency>
+            <dependency>
+                <groupId>ch.squaredesk.nova</groupId>
+                <artifactId>spring-support</artifactId>
+                <version>5.2.0</version>
+            </dependency>
+            <dependency>
+                <groupId>ch.squaredesk.nova</groupId>
+                <artifactId>event-annotations</artifactId>
+                <version>5.2.0</version>
+            </dependency>
+
+            <dependency>
+                <groupId>ch.squaredesk.nova</groupId>
+                <artifactId>service</artifactId>
+                <version>5.2.0</version>
+            </dependency>
+
+            <dependency>
+                <groupId>ch.squaredesk.nova</groupId>
+                <artifactId>comm</artifactId>
+                <version>5.2.0</version>
+            </dependency>
+            <dependency>
+                <groupId>ch.squaredesk.nova</groupId>
+                <artifactId>comm-annotations</artifactId>
+                <version>5.2.0</version>
+            </dependency>
+            <dependency>
+                <groupId>ch.squaredesk.nova</groupId>
+                <artifactId>jms</artifactId>
+                <version>5.2.0</version>
+            </dependency>
+            <dependency>
+                <groupId>ch.squaredesk.nova</groupId>
+                <artifactId>http</artifactId>
+                <version>5.2.0</version>
+            </dependency>
+            <dependency>
+                <groupId>ch.squaredesk.nova</groupId>
+                <artifactId>http-spring</artifactId>
+                <version>5.2.0</version>
+            </dependency>
+            <dependency>
+                <groupId>ch.squaredesk.nova</groupId>
+                <artifactId>rest-annotations</artifactId>
+                <version>5.2.0</version>
+            </dependency>
+            <dependency>
+                <groupId>ch.squaredesk.nova</groupId>
+                <artifactId>websockets</artifactId>
+                <version>5.2.0</version>
+            </dependency>
+            <dependency>
+                <groupId>ch.squaredesk.nova</groupId>
+                <artifactId>websockets-annotations</artifactId>
+                <version>5.2.0</version>
+            </dependency>
+            <dependency>
+                <groupId>ch.squaredesk.nova</groupId>
+                <artifactId>kafka</artifactId>
+                <version>5.2.0</version>
+            </dependency>
+
+            <dependency>
+                <groupId>ch.squaredesk.nova</groupId>
+                <artifactId>metrics-serialization</artifactId>
+                <version>5.2.0</version>
+            </dependency>
+            <dependency>
+                <groupId>ch.squaredesk.nova</groupId>
+                <artifactId>metrics-elastic</artifactId>
+                <version>5.2.0</version>
+            </dependency>
+            <dependency>
+                <groupId>ch.squaredesk.nova</groupId>
+                <artifactId>metrics-kafka</artifactId>
+                <version>5.2.0</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
 
     <modules>
         <module>parentpom</module>
+
+        <module>test-utils</module>
 
         <module>core</module>
         <module>spring-support</module>
@@ -28,41 +162,101 @@
 
         <module>service</module>
 
-        <module>metrics-elastic</module>
-
         <module>comm</module>
+        <module>comm-annotations</module>
         <module>jms</module>
         <module>http</module>
-        <module>kafka</module>
+        <module>http-spring</module>
         <module>rest-annotations</module>
+        <module>websockets</module>
+        <module>websockets-annotations</module>
+        <module>kafka</module>
+
+        <module>metrics-serialization</module>
+        <module>metrics-elastic</module>
+        <module>metrics-kafka</module>
     </modules>
 
-
-    <!--<profiles>-->
-        <!--<profile>-->
-            <!--<id>backend</id>-->
-            <!--<modules>-->
-                <!--<module>something-lib</module>-->
-                <!--<module>something-domain</module>-->
-            <!--</modules>-->
-        <!--</profile>-->
-        <!--<profile>-->
-            <!--<id>frontend</id>-->
-            <!--<modules>-->
-                <!--<module>something-web</module>-->
-            <!--</modules>-->
-        <!--</profile>-->
-        <!--<profile>-->
-            <!--<id>all</id>-->
-            <!--<activation>-->
-                <!--<activeByDefault>true</activeByDefault>-->
-            <!--</activation>-->
-            <!--<modules>-->
-                <!--<module>something-pom</module>-->
-                <!--<module>something-lib</module>-->
-                <!--<module>something-domain</module>-->
-                <!--<module>something-web</module>-->
-            <!--</modules>-->
-        <!--</profile>-->
-    <!--</profiles>-->
+    <profiles>
+        <profile>
+            <id>release</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-javadoc-plugin</artifactId>
+                        <version>2.9.1</version>
+                        <executions>
+                            <execution>
+                                <id>attach-javadocs</id>
+                                <goals>
+                                    <goal>jar</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <configuration>
+                            <properties>
+                                <includeTags>none</includeTags>
+                            </properties>
+                        </configuration>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-gpg-plugin</artifactId>
+                        <version>1.5</version>
+                        <executions>
+                            <execution>
+                                <id>sign-artifacts</id>
+                                <phase>verify</phase>
+                                <goals>
+                                    <goal>sign</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.sonatype.plugins</groupId>
+                        <artifactId>nexus-staging-maven-plugin</artifactId>
+                        <version>1.6.7</version>
+                        <extensions>true</extensions>
+                        <configuration>
+                            <serverId>ossrh</serverId>
+                            <nexusUrl>https://oss.sonatype.org/</nexusUrl>
+                            <autoReleaseAfterClose>true</autoReleaseAfterClose>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <!--
+        <profile>
+            <id>backend</id>
+            <modules>
+                <module>something-lib</module>
+                <module>something-domain</module>
+            </modules>
+        </profile>
+        <profile>
+            <id>frontend</id>
+            <modules>
+                <module>something-web</module>
+            </modules>
+        </profile>
+        <profile>
+            <id>all</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+            <modules>
+                <module>something-pom</module>
+                <module>something-lib</module>
+                <module>something-domain</module>
+                <module>something-web</module>
+            </modules>
+        </profile>
+        -->
+    </profiles>
 </project>

@@ -45,8 +45,4 @@ class MetricsCollectorTest {
         assertThat(metrics.getMeter("messageSender", "test", "sent", "destination1").getCount(), is(1L));
     }
 
-    @Test
-    void messageSent() throws Exception {
-    }
-
 }

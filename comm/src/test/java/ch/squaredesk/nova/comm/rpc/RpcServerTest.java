@@ -10,8 +10,8 @@
 
 package ch.squaredesk.nova.comm.rpc;
 
+import ch.squaredesk.nova.comm.retrieving.IncomingMessageMetaData;
 import ch.squaredesk.nova.metrics.Metrics;
-import io.reactivex.BackpressureStrategy;
 import io.reactivex.Flowable;
 import org.junit.jupiter.api.Test;
 
@@ -27,15 +27,14 @@ class RpcServerTest {
         assertThat(t.getMessage(), containsString("metrics"));
     }
 
-    private class MyRpcServer extends RpcServer<String,String, Void> {
+    private class MyRpcServer extends RpcServer<String, RpcInvocation<String, IncomingMessageMetaData<Void, Void>, String, Void>> {
 
-        protected MyRpcServer(Metrics metrics) {
+        MyRpcServer(Metrics metrics) {
             super(metrics);
         }
 
         @Override
-        public <RequestType extends String, ReplyType extends String> Flowable<RpcInvocation<RequestType, ReplyType, Void>>
-            requests(String destination, BackpressureStrategy backpressureStrategy) {
+        public Flowable<RpcInvocation<String, IncomingMessageMetaData<Void, Void>, String, Void>> requests(String destination) {
             return Flowable.empty();
         }
     }

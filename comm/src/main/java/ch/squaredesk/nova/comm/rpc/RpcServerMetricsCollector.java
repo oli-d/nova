@@ -11,7 +11,7 @@
 package ch.squaredesk.nova.comm.rpc;
 
 import ch.squaredesk.nova.metrics.Metrics;
-import com.codahale.metrics.Meter;
+import io.dropwizard.metrics5.Meter;
 
 public class RpcServerMetricsCollector {
     private final Metrics metrics;
@@ -22,7 +22,7 @@ public class RpcServerMetricsCollector {
 
     RpcServerMetricsCollector(String identifier, Metrics metrics) {
         this.metrics = metrics;
-        this.identifierPrefix = Metrics.name("rpcServer", identifier);
+        this.identifierPrefix = Metrics.name("rpcServer", identifier).toString();
         totalNumberOfReceivedRequests = metrics.getMeter(this.identifierPrefix,"requests","total");
         totalNumberOfCompletedRequests = metrics.getMeter(this.identifierPrefix,"completed","total");
         totalNumberOfErrorRequests = metrics.getMeter(this.identifierPrefix,"error","total");
@@ -48,7 +48,9 @@ public class RpcServerMetricsCollector {
     }
 
     private void mark(Meter... meters) {
-        for (Meter m : meters) m.mark();
+        for (Meter m : meters) {
+            m.mark();
+        }
     }
 
 

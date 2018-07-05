@@ -10,21 +10,21 @@
 
 package ch.squaredesk.nova.comm.retrieving;
 
-public class IncomingMessage<InternalMessageType, DestinationType, TransportSpecificDetailsType> {
+public class IncomingMessage<InternalMessageType, MetaDataType extends IncomingMessageMetaData<?,?>> {
     public final InternalMessageType message;
-    public final IncomingMessageDetails<DestinationType, TransportSpecificDetailsType> details;
+    public final MetaDataType metaData;
 
 
-    public IncomingMessage(InternalMessageType message, IncomingMessageDetails<DestinationType, TransportSpecificDetailsType> details) {
+    public IncomingMessage(InternalMessageType message, MetaDataType metaData) {
         this.message = message;
-        this.details = details;
+        this.metaData = metaData;
     }
 
     @Override
     public String toString() {
         return "IncomingMessage{" +
                 "message=" + message +
-                ", details=" + details +
+                ", metaData=" + metaData +
                 '}';
     }
 }

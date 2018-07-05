@@ -199,7 +199,7 @@ Well, we have a few different choices to provide the appropriate value.
 The first one is that we can add ```defaults.properties``` to the classpath:
 ```Java
 messagePrefix=default
-NOVA.HTTP.REST.PORT=9999
+NOVA.HTTP.SERVER.PORT=9999
 ```
 We set the message prefix to "default" and change the port on which we want to listen to
 the REST requests to 9999.
@@ -225,7 +225,7 @@ properly. Luckily, we have two ways to override the default port 9999. The first
 can set the appropriate OS environment variable or pass a VM parameter when invoking java:
 
 ```
-java -DNOVA.HTTP.REST.PORT=8888 -jar timeservice.jar
+java -DNOVA.HTTP.SERVER.PORT=8888 -jar timeservice.jar
 ```
 
 Assuming port 8888 is not in use, the service can now properly start up.
@@ -233,7 +233,7 @@ Assuming port 8888 is not in use, the service can now properly start up.
 In addition to the port, we can also override the message prefix:
 
 ```
-java -DNOVA.HTTP.REST.PORT=8888 -DmessagePrefix=myPrefix -jar timeservice.jar
+java -DNOVA.HTTP.SERVER.PORT=8888 -DmessagePrefix=myPrefix -jar timeservice.jar
 ```
 
 As the command can become very long if we have a lot of parameters to specify,

@@ -15,10 +15,11 @@ import ch.squaredesk.nova.service.annotation.OnServiceInit;
 import ch.squaredesk.nova.service.annotation.OnServiceShutdown;
 import ch.squaredesk.nova.service.annotation.OnServiceStartup;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.BeanCreationException;
 import org.springframework.beans.factory.BeanInitializationException;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
+import org.springframework.beans.factory.UnsatisfiedDependencyException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.context.annotation.Bean;
@@ -26,13 +27,12 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Component;
 
-import javax.annotation.PostConstruct;
-
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.*;
 
+@Tag("medium")
 public class NovaServiceTest {
     @AfterEach
     void tearDown() {
@@ -57,7 +57,7 @@ public class NovaServiceTest {
     @Test
     void serviceCannotBeCreatedWithConfigThatDoesntReturnNovaInstance() {
         assertThrows(
-                NullPointerException.class,
+                UnsatisfiedDependencyException.class,
                 () -> MyService.createInstance(MyService.class, MyCrippledConfig.class));
     }
 
@@ -304,7 +304,6 @@ public class NovaServiceTest {
     public static class MyConfigForBrokenInitService extends NovaServiceConfiguration<MyBrokenInitService> {
         @Bean
         public MyBrokenInitService serviceInstance() {
-            System.out.println("--- " + Thread.currentThread() + " - service instance creation");
             return new MyBrokenInitService();
         }
     }

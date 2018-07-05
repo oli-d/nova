@@ -11,12 +11,11 @@
 package ch.squaredesk.nova.comm.rpc;
 
 import ch.squaredesk.nova.metrics.Metrics;
-import io.reactivex.BackpressureStrategy;
 import io.reactivex.Flowable;
 
 import static java.util.Objects.requireNonNull;
 
-public abstract class RpcServer<DestinationType, InternalMessageType, TransportSpecificInfoType> {
+public abstract class RpcServer<DestinationType, RpcInvocationType> {
 
     protected final RpcServerMetricsCollector metricsCollector;
 
@@ -29,7 +28,5 @@ public abstract class RpcServer<DestinationType, InternalMessageType, TransportS
     }
 
 
-    public abstract <RequestType extends InternalMessageType, ReplyType extends InternalMessageType>
-        Flowable<RpcInvocation<RequestType, ReplyType, TransportSpecificInfoType>> requests(
-            DestinationType destination, BackpressureStrategy backpressureStrategy);
+    public abstract Flowable<RpcInvocationType> requests(DestinationType destination);
 }
