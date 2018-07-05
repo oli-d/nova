@@ -55,7 +55,7 @@ function getArtifactVersion() {
 
 function bumpVersion() {
     if [ "$2" != "" ]; then
-        mvn -o versions:set -DgenerateBackupPoms=false -oldVersion=* -DgroupId=* -DartifactId=$1 -DnewVersion=$2
+        mvn -o versions:set -DgenerateBackupPoms=false -DoldVersion=* -DgroupId=* -DartifactId=$1 -DnewVersion=$2
     fi
 }
 
