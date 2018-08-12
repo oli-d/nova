@@ -12,13 +12,13 @@ package ch.squaredesk.nova.comm.http.spring;
 import org.glassfish.grizzly.http.server.HttpServer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.DisposableBean;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.event.ContextRefreshedEvent;
 
-import javax.annotation.PreDestroy;
 import java.io.IOException;
 
-public class HttpServerStarter implements ApplicationListener<ContextRefreshedEvent> {
+public class HttpServerStarter implements ApplicationListener<ContextRefreshedEvent>, DisposableBean {
     private Logger logger = LoggerFactory.getLogger(HttpServerStarter.class);
 
     private HttpServer httpServer;
@@ -36,11 +36,10 @@ public class HttpServerStarter implements ApplicationListener<ContextRefreshedEv
         }
     }
 
-    @PreDestroy
-    public void shutdown() {
+    @Override
+    public void destroy() throws Exception {
         if (httpServer != null) {
             httpServer.shutdown();
         }
     }
-
 }

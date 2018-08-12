@@ -11,6 +11,7 @@
 
 package ch.squaredesk.nova.comm;
 
+import java.lang.reflect.Constructor;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.Arrays;
@@ -68,7 +69,7 @@ public class ReflectionHelper {
             throw new IllegalArgumentException("Unable to load class " + className, e);
         }
         try {
-            return classObject.newInstance();
+            return classObject.getConstructor().newInstance();
         } catch (Exception e) {
             throw new IllegalArgumentException("Unable to instantiate class " + className, e);
         }

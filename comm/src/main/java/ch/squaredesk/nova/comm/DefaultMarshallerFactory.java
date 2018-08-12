@@ -89,7 +89,7 @@ public class DefaultMarshallerFactory {
     private static Object instantiateObjectMapperViaReflection() {
         try {
             Class objectMapperClass = Class.forName("com.fasterxml.jackson.databind.ObjectMapper");
-            Object objectMapper = objectMapperClass.newInstance();
+            Object objectMapper = objectMapperClass.getConstructor().newInstance();
 
             Class deserializationFeatureClass = Class.forName("com.fasterxml.jackson.databind.DeserializationFeature");
             Object deserializationFeature = Enum.valueOf(deserializationFeatureClass, "FAIL_ON_UNKNOWN_PROPERTIES");
