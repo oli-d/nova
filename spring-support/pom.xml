@@ -31,11 +31,11 @@
             <version>5.2.0</version>
         </dependency>
 
+        <!--FIXME: Spring 5.0.8 is not Java10 ready, this should come with 5.1-->
         <dependency>
             <groupId>org.springframework</groupId>
             <artifactId>spring-context</artifactId>
-            <version>5.0.6.RELEASE</version>
+            <version>5.0.8.RELEASE</version>
         </dependency>
-
     </dependencies>
 </project>
