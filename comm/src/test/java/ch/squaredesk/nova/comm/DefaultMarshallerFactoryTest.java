@@ -45,7 +45,7 @@ class DefaultMarshallerFactoryTest {
 
     @Test
     void properMessageMarshallerCreatedForMessageHandler() throws Exception {
-        MessageMarshaller marshaller = getMarshallerForMessageType(String.class);
+        MessageMarshaller<String, String> marshaller = getMarshallerForMessageType(String.class);
         assertThat(marshaller.marshal("4"), is("4"));
         marshaller = getMarshallerForMessageType(Integer.class);
         assertThat(marshaller.marshal(4), is("4"));

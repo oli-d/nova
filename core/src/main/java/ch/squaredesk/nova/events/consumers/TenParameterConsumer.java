@@ -33,6 +33,7 @@ public interface TenParameterConsumer<
                 P5 param5, P6 param6, P7 param7, P8 param8,
                 P9 param9, P10 param10);
 
+    @SuppressWarnings("unchecked")
     default void accept(Object... data) {
         P1 p1 = null;
         P2 p2 = null;

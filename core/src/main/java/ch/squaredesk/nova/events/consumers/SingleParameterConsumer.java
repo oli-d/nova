@@ -21,6 +21,7 @@ public interface SingleParameterConsumer<P1>  extends Consumer<Object[]> {
 
     void consume(P1 param1);
 
+    @SuppressWarnings("unchecked")
     default void accept(Object... data) {
         P1 p1 = null;
         if (data != null && data.length > 0) {

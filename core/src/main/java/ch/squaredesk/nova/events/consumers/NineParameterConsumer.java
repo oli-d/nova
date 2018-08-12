@@ -32,6 +32,7 @@ public interface NineParameterConsumer<
                 P5 param5, P6 param6, P7 param7, P8 param8,
                 P9 param9);
 
+    @SuppressWarnings("unchecked")
     default void accept(Object... data) {
         P1 p1 = null;
         P2 p2 = null;

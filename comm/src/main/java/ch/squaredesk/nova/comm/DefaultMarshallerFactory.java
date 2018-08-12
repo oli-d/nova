@@ -21,7 +21,7 @@ public class DefaultMarshallerFactory {
     private DefaultMarshallerFactory() {
     }
 
-    public static MessageMarshaller<?, String> getMarshallerForMessageType(Class<?> messageType) {
+    public static <MessageType> MessageMarshaller<MessageType, String> getMarshallerForMessageType(Class<MessageType> messageType) {
         if (messageType.equals(Object.class)) {
             // Jackson obviously can transfer arbitrary objects into a String, so we would not need to
             // throw an exception here. Unfortunately unmarshalling would not work, since the
@@ -44,7 +44,7 @@ public class DefaultMarshallerFactory {
                 throw new IllegalArgumentException("Unable to create default marshaller for message type " + messageType);
             } else {
                 Method marshallingMethod = getMarshallingMethod(objectMapper);
-                return (MessageMarshaller<Object, String>) o -> {
+                return o -> {
                     try {
                         return (String) marshallingMethod.invoke(objectMapper, o);
                     } catch (Exception e) {

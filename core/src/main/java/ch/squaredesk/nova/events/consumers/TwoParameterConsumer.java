@@ -23,6 +23,7 @@ public interface TwoParameterConsumer<
 
     void accept(P1 param1, P2 param2);
 
+    @SuppressWarnings("unchecked")
     default void accept(Object... data) {
         P1 p1 = null;
         P2 p2 = null;
