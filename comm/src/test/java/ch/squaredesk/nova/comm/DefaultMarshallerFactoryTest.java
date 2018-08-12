@@ -45,16 +45,11 @@ class DefaultMarshallerFactoryTest {
 
     @Test
     void properMessageMarshallerCreatedForMessageHandler() throws Exception {
-        MessageMarshaller<String, String> marshaller = getMarshallerForMessageType(String.class);
-        assertThat(marshaller.marshal("4"), is("4"));
-        marshaller = getMarshallerForMessageType(Integer.class);
-        assertThat(marshaller.marshal(4), is("4"));
-        marshaller = getMarshallerForMessageType(Double.class);
-        assertThat(marshaller.marshal(4.0), is("4.0"));
-        marshaller = getMarshallerForMessageType(Double.class);
-        assertThat(marshaller.marshal(BigDecimal.ONE), is("1"));
-        marshaller = getMarshallerForMessageType(MyClass.class);
-        assertThat(marshaller.marshal(new MyClass("xxx")), is("{\"field\":\"xxx\"}"));
+        assertThat(getMarshallerForMessageType(String.class).marshal("4"), is("4"));
+        assertThat(getMarshallerForMessageType(Integer.class).marshal(4), is("4"));
+        assertThat(getMarshallerForMessageType(Double.class).marshal(4.0), is("4.0"));
+        assertThat(getMarshallerForMessageType(BigDecimal.class).marshal(BigDecimal.ONE), is("1"));
+        assertThat(getMarshallerForMessageType(MyClass.class).marshal(new MyClass("xxx")), is("{\"field\":\"xxx\"}"));
         IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> getMarshallerForMessageType(Object.class) );
         assertThat(ex.getMessage(), Matchers.endsWith("not supported"));
     }
