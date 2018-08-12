@@ -117,21 +117,6 @@ class ElasticMetricsReporterTest {
     }
 
     @Test
-    void mapDumpMissingTypeInfoCausesErrorWhenCreatingRequest() throws Exception {
-        Map<String, Object> dumpAsMap = new HashMap<>();
-        Arrays.asList("counter1", "meter1", "myMetric1")
-                .forEach(name -> {
-                    Map<String, Object> metricMap = new HashMap<>();
-                    metricMap.put("host", "someVal");
-                    metricMap.put("someAttribute", "someVal");
-                    dumpAsMap.put("test." + name, metricMap);
-                });
-
-        TestObserver<BulkRequest> bulkRequestObserver = sut.requestFor(dumpAsMap).test();
-        bulkRequestObserver.assertErrorMessage("metricMap must contain type entry");
-    }
-
-    @Test
     void requestFromMapDumpIsCreatedAsExpected() throws Exception {
         Map<String, Object> dumpAsMap = new HashMap<>();
         Arrays.asList(new Pair<>("counter", "counter1"),

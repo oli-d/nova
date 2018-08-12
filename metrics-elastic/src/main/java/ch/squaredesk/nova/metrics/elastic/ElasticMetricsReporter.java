@@ -142,7 +142,6 @@ public class ElasticMetricsReporter implements Consumer<MetricsDump> {
                     return retVal;
                 })
                 .map(metricAsMap -> {
-                    Objects.requireNonNull(metricAsMap.get("type"), "metricMap must contain type entry");
                     metricAsMap.put("@timestamp", timestampInUtc);
                     metricAsMap.put("host", hostName);
                     metricAsMap.put("hostAddress", hostAddress);
@@ -166,7 +165,7 @@ public class ElasticMetricsReporter implements Consumer<MetricsDump> {
         return metricsAsMaps
                 .map(map -> new IndexRequest()
                                 .index(indexName)
-                                .type((String)map.get("type"))
+                                .type("doc")
                                 .source(map)
                 )
                 .reduce(Requests.bulkRequest(),
