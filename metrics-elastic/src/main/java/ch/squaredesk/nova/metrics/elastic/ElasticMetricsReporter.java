@@ -13,7 +13,6 @@ package ch.squaredesk.nova.metrics.elastic;
 import ch.squaredesk.nova.metrics.MetricsConverter;
 import ch.squaredesk.nova.metrics.MetricsDump;
 import ch.squaredesk.nova.metrics.SerializableMetricsDump;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.reactivex.Observable;
 import io.reactivex.Single;
 import io.reactivex.functions.Consumer;

@@ -12,7 +12,6 @@
 package ch.squaredesk.nova.comm;
 
 import ch.squaredesk.nova.comm.retrieving.MessageUnmarshaller;
-import ch.squaredesk.nova.comm.sending.MessageMarshaller;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.hamcrest.Matchers;
