@@ -15,7 +15,6 @@ import ch.squaredesk.net.PortFinder;
 import ch.squaredesk.nova.tuples.Pair;
 import com.sun.net.httpserver.HttpExchange;
 import io.reactivex.observers.TestObserver;
-import org.awaitility.Awaitility;
 import org.glassfish.grizzly.http.server.HttpServer;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -113,7 +112,7 @@ class HttpAdapterTest {
             TestObserver<RpcReply<String>> observer = commAdapter
                     .sendPostRequest("http://localhost:"+ serverPortPair._2 + "/postTest", "{ myTest: \"value\"}")
                     .test();
-            await().atMost(40, SECONDS).until(() -> observer.valueCount() == 1);
+            await().atMost(40, SECONDS).until(observer::valueCount, is(1));
             RpcReply<String> reply = observer.values().get(0);
             assertNotNull(reply);
             assertThat(reply.metaData.details.statusCode, is(200));
@@ -136,7 +135,7 @@ class HttpAdapterTest {
             TestObserver<RpcReply<String>> observer = commAdapter
                     .sendGetRequest("http://localhost:" + serverPortPair._2 + "/getTest")
                     .test();
-            await().atMost(40, SECONDS).until(() -> observer.valueCount() == 1);
+            await().atMost(40, SECONDS).until(observer::valueCount, is(1));
             RpcReply<String> reply = observer.values().get(0);
             assertNotNull(reply);
             assertThat(reply.metaData.details.statusCode, is(200));
@@ -158,7 +157,7 @@ class HttpAdapterTest {
                     .sendRequest("http://localhost:" + serverPortPair._2 + "/rpcTest", "1", HttpRequestMethod.GET)
                     .test();
 
-            await().atMost(40, SECONDS).until(() -> observer.valueCount() == 1);
+            await().atMost(40, SECONDS).until(observer::valueCount, is(1));
             observer.assertComplete();
             observer.assertValue(reply -> reply.result.equals("rpcResponse"));
         } finally {
