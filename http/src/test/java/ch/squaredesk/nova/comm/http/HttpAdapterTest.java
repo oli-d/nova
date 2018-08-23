@@ -15,6 +15,7 @@ import ch.squaredesk.net.PortFinder;
 import ch.squaredesk.nova.tuples.Pair;
 import com.sun.net.httpserver.HttpExchange;
 import io.reactivex.observers.TestObserver;
+import org.awaitility.Awaitility;
 import org.glassfish.grizzly.http.server.HttpServer;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -30,6 +31,7 @@ import java.util.function.Consumer;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
+import static org.awaitility.Awaitility.await;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
@@ -111,8 +113,7 @@ class HttpAdapterTest {
             TestObserver<RpcReply<String>> observer = commAdapter
                     .sendPostRequest("http://localhost:"+ serverPortPair._2 + "/postTest", "{ myTest: \"value\"}")
                     .test();
-            observer.await(40, SECONDS);
-            observer.assertValueCount(1);
+            await().atMost(40, SECONDS).until(() -> observer.valueCount() == 1);
             RpcReply<String> reply = observer.values().get(0);
             assertNotNull(reply);
             assertThat(reply.metaData.details.statusCode, is(200));
@@ -135,8 +136,7 @@ class HttpAdapterTest {
             TestObserver<RpcReply<String>> observer = commAdapter
                     .sendGetRequest("http://localhost:" + serverPortPair._2 + "/getTest")
                     .test();
-            observer.await(40, SECONDS);
-            observer.assertValueCount(1);
+            await().atMost(40, SECONDS).until(() -> observer.valueCount() == 1);
             RpcReply<String> reply = observer.values().get(0);
             assertNotNull(reply);
             assertThat(reply.metaData.details.statusCode, is(200));
@@ -158,7 +158,7 @@ class HttpAdapterTest {
                     .sendRequest("http://localhost:" + serverPortPair._2 + "/rpcTest", "1", HttpRequestMethod.GET)
                     .test();
 
-            observer.await(40, SECONDS);
+            await().atMost(40, SECONDS).until(() -> observer.valueCount() == 1);
             observer.assertComplete();
             observer.assertValue(reply -> reply.result.equals("rpcResponse"));
         } finally {
