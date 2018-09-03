@@ -28,7 +28,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.Lazy;
-import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.core.env.Environment;
 
@@ -37,7 +36,7 @@ import java.net.URI;
 
 @Configuration
 @Import(HttpServerConfigurationProvidingConfiguration.class)
-@Order(value = Ordered.LOWEST_PRECEDENCE)
+@Order // default = Ordered.LOWEST_PRECEDENCE, which is exactly what we want
 public class RestEnablingConfiguration {
     @Autowired
     Environment environment;
@@ -75,8 +74,9 @@ public class RestEnablingConfiguration {
     @Bean("httpServer")
     public HttpServer restHttpServer() {
         RestBeanPostprocessor restBeanPostprocessor = applicationContext.getBean(RestBeanPostprocessor.class);
-        ResourceConfig resourceConfig = restBeanPostprocessor.resourceConfig;
-        resourceConfig.register(MultiPartFeature.class);
+        ResourceConfig resourceConfig = new ResourceConfig()
+            .register(MultiPartFeature.class)
+            .registerInstances(restBeanPostprocessor.handlerBeans.toArray());
 
         if (captureRestMetrics() && nova != null) {
             RequestEventListener requestEventListener = event -> {

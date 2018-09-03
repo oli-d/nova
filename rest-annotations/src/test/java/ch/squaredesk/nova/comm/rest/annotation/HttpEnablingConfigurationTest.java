@@ -23,13 +23,17 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 
+import javax.ws.rs.GET;
+import javax.ws.rs.Path;
+import java.util.Set;
+
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class HttpEnablingConfigurationTest {
     HttpServerConfiguration serverConfiguration;
-    ResourceConfig resourceConfig;
+    Set<Object> handlerBeans;
     AnnotationConfigApplicationContext ctx;
 
     private ApplicationContext setupContext(Class configClass) throws Exception {
@@ -37,7 +41,7 @@ class HttpEnablingConfigurationTest {
         ctx.register(configClass);
         ctx.refresh();
         serverConfiguration = ctx.getBean(HttpServerConfiguration.class);
-        resourceConfig = ctx.getBean(RestBeanPostprocessor.class).resourceConfig;
+        handlerBeans = ctx.getBean(RestBeanPostprocessor.class).handlerBeans;
         return ctx;
     }
 
@@ -71,13 +75,12 @@ class HttpEnablingConfigurationTest {
         setupContext(MyConfig.class);
         assertThat(serverConfiguration.port, is(10000));
         assertThat(serverConfiguration.interfaceName, is("0.0.0.0"));
-        assertTrue(resourceConfig.getResources().isEmpty());
     }
 
     @Test
     void annotatedBeansAreAddedToResourceConfig() throws Exception{
         setupContext(MyConfigWithAnnotatedBean.class);
-        assertThat(resourceConfig.getResources().size(), is(2));
+        assertThat(handlerBeans.size(), is(1));
     }
 
     @Configuration
@@ -94,12 +97,15 @@ class HttpEnablingConfigurationTest {
         }
     }
 
+    @Path("/")
     public static class MyDummyBeanToHaveAtLeastOneRestEndpoint {
-        @OnRestRequest("somePath")
+        @Path("somePath")
+        @GET
         public void foo() {
         }
 
-        @OnRestRequest("someAdditionalPath")
+        @Path("someAdditionalPath")
+        @GET
         public void bar() {
         }
     }

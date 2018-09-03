@@ -12,6 +12,9 @@ package ch.squaredesk.nova.comm.rest.annotation;
 
 import org.junit.jupiter.api.Test;
 
+import javax.ws.rs.GET;
+import javax.ws.rs.Path;
+
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
@@ -21,34 +24,25 @@ class BeanExaminerTest {
 
     @Test
     void properlyDetectsRestEndpoints() {
+        @Path("m1")
         class MyRestClass1 {
-            @OnRestRequest("m1")
+            @GET
             public void m1(String p1) { }
             public void m2(String p1) { }
         }
         class MyNonRestClass1 {
+            @Path("m1")
             public void m1(String p1) { }
         }
 
-        assertThat(BeanExaminer.restEndpointsIn(new MyRestClass1()).length, is(1));
-        assertThat(BeanExaminer.restEndpointsIn(new MyNonRestClass1()).length, is(0));
-    }
-
-    @Test
-    void throwsIfNonPublicMethodIsAnnotated() {
-        class MyRestClass2 {
-            @OnRestRequest("m1")
-            void m1(String p1) { }
-        }
-
-        assertThrows(IllegalArgumentException.class,
-                () -> BeanExaminer.restEndpointsIn(new MyRestClass2()));
+        assertThat(BeanExaminer.isRestHandler(new MyRestClass1()), is(true));
+        assertThat(BeanExaminer.isRestHandler(new MyNonRestClass1()), is(false));
     }
 
     @Test
     void needsNonNullBean() throws Exception {
         Throwable t = assertThrows(NullPointerException.class,
-                () -> BeanExaminer.restEndpointsIn(null)
+                () -> BeanExaminer.isRestHandler(null)
         );
         assertThat(t.getMessage(), containsString("bean"));
     }

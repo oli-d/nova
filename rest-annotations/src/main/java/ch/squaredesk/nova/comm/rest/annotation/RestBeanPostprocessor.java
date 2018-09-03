@@ -10,9 +10,11 @@
 
 package ch.squaredesk.nova.comm.rest.annotation;
 
-import org.glassfish.jersey.server.ResourceConfig;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.config.BeanPostProcessor;
+
+import java.util.HashSet;
+import java.util.Set;
 
 
 /**
@@ -27,7 +29,7 @@ import org.springframework.beans.factory.config.BeanPostProcessor;
  * the Spring dependency
  */
 public class RestBeanPostprocessor implements BeanPostProcessor {
-    final ResourceConfig resourceConfig = new ResourceConfig();
+    final Set<Object> handlerBeans = new HashSet<>();
 
 
     @Override
@@ -37,9 +39,8 @@ public class RestBeanPostprocessor implements BeanPostProcessor {
 
     @Override
     public Object postProcessAfterInitialization(Object bean, String beanName) throws BeansException {
-        RestEndpoint[] restEndpoints = BeanExaminer.restEndpointsIn(bean);
-        for (RestEndpoint endpointDescription: restEndpoints) {
-            resourceConfig.registerResources(RestResourceFactory.resourceFor(endpointDescription.resourceDescriptor, bean, endpointDescription.handlerMethod));
+        if (BeanExaminer.isRestHandler(bean)) {
+            handlerBeans.add(bean);
         }
         return bean;
     }

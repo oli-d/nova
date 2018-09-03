@@ -23,6 +23,9 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.*;
 import org.springframework.core.annotation.Order;
 
+import javax.ws.rs.GET;
+import javax.ws.rs.Path;
+
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
@@ -104,8 +107,9 @@ class SpringWiringTest {
 
     }
 
+    @Path("/foo")
     public static class MyBean {
-        @OnRestRequest("/foo")
+        @GET
         public String restHandler()  {
             return "MyBean";
         }
