@@ -13,7 +13,6 @@ package ch.squaredesk.nova.comm.rest.annotation;
 import ch.squaredesk.nova.comm.http.HttpServerConfiguration;
 import ch.squaredesk.nova.spring.NovaProvidingConfiguration;
 import org.glassfish.grizzly.http.server.HttpServer;
-import org.glassfish.jersey.server.ResourceConfig;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -29,7 +28,6 @@ import java.util.Set;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class HttpEnablingConfigurationTest {
     HttpServerConfiguration serverConfiguration;
