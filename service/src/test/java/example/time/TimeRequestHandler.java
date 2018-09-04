@@ -9,10 +9,12 @@
  */
 package example.time;
 
-import ch.squaredesk.nova.comm.rest.annotation.OnRestRequest;
 
+import javax.ws.rs.GET;
+import javax.ws.rs.Path;
 import java.time.LocalDateTime;
 
+@Path("/time")
 public class TimeRequestHandler {
     public final String messagePrefix;
 
@@ -20,7 +22,7 @@ public class TimeRequestHandler {
         this.messagePrefix = messagePrefix;
     }
 
-    @OnRestRequest("/time")
+    @GET
     public String time() {
         return messagePrefix + " " + LocalDateTime.now() + "\n";
     }
