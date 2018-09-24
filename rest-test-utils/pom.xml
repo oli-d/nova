@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~ Copyright (c) Squaredesk GmbH and Oliver Dotzauer.
+  ~
+  ~ This program is distributed under the squaredesk open source license. See the LICENSE file
+  ~ distributed with this work for additional information regarding copyright ownership. You may also
+  ~ obtain a copy of the license at
+  ~
+  ~   https://squaredesk.ch/license/oss/LICENSE
+  ~
+  -->
+
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <parent>
+        <artifactId>parentpom</artifactId>
+        <groupId>ch.squaredesk.nova</groupId>
+        <version>5.3.0</version>
+        <relativePath>../parentpom/pom.xml</relativePath>
+    </parent>
+    <modelVersion>4.0.0</modelVersion>
+
+    <artifactId>rest-test-utils</artifactId>
+    <version>5.3.1</version>
+
+    <dependencies>
+        <dependency>
+            <groupId>ch.squaredesk.nova</groupId>
+            <artifactId>http-test-utils</artifactId>
+            <version>5.3.1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.glassfish.jersey.containers</groupId>
+            <artifactId>jersey-container-grizzly2-http</artifactId>
+            <version>${jersey.version}</version>
+            <exclusions>
+                <!--Exclude grizzly, since we already get that from the http dependency-->
+                <exclusion>
+                    <groupId>org.glassfish.grizzly</groupId>
+                    <artifactId>grizzly-http-server</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+    </dependencies>
+
+</project>

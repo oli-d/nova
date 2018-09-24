@@ -9,7 +9,7 @@
  *
  */
 
-package ch.squaredesk.net;
+package ch.squaredesk.nova.comm.http;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -22,16 +22,45 @@ public class HttpRequestSender {
     private HttpRequestSender() {
     }
 
+    public static HttpResponse sendPutRequest (String url, String request) throws IOException {
+        return sendPutRequest(new URL(url), request);
+    }
+
+    public static HttpResponse sendPutRequest (URL url, String request) throws IOException {
+        return sendRequest("PUT", url, request);
+    }
+
+    public static HttpResponse sendPostRequest (String url, String request) throws IOException {
+        return sendPostRequest(new URL(url), request);
+    }
+
     public static HttpResponse sendPostRequest (URL url, String request) throws IOException {
+        return sendRequest("POST", url, request);
+    }
+
+    public static HttpResponse sendGetRequest (String url) throws IOException {
+        return sendGetRequest(new URL(url));
+    }
+
+    public static HttpResponse sendGetRequest (URL url) throws IOException {
+        return sendRequest("GET", url, null);
+    }
+
+    public static HttpResponse sendRequest (String method, URL url, String request) throws IOException {
         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
 
-        connection.setDoOutput(true); // Triggers POST.
+        if ("POST".equals(method) || "PUT".equals(method)) {
+            connection.setDoOutput(true);
+        }
+        connection.setRequestMethod(method);
         String charset = "UTF-8";
         connection.setRequestProperty("Accept-Charset", charset);
         connection.setRequestProperty("Content-Type", "text/plain");
 
-        try (OutputStream output = connection.getOutputStream()) {
-            output.write(request.getBytes(charset));
+        if (request!=null) {
+            try (OutputStream output = connection.getOutputStream()) {
+                output.write(request.getBytes(charset));
+            }
         }
         connection.connect();
 

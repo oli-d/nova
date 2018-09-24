@@ -1,6 +1,5 @@
 package ch.squaredesk.nova.comm.http;
 
-import ch.squaredesk.net.HttpRequestSender;
 import ch.squaredesk.nova.metrics.Metrics;
 import com.ning.http.client.AsyncHttpClient;
 import io.reactivex.Flowable;

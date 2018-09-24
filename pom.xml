@@ -62,7 +62,7 @@
             <dependency>
                 <groupId>ch.squaredesk.nova</groupId>
                 <artifactId>test-utils</artifactId>
-                <version>5.3.0</version>
+                <version>5.3.1</version>
             </dependency>
 
             <dependency>
@@ -105,12 +105,17 @@
             <dependency>
                 <groupId>ch.squaredesk.nova</groupId>
                 <artifactId>http</artifactId>
-                <version>5.3.0</version>
+                <version>5.3.1</version>
+            </dependency>
+            <dependency>
+                <groupId>ch.squaredesk.nova</groupId>
+                <artifactId>http-test-utils</artifactId>
+                <version>5.3.1</version>
             </dependency>
             <dependency>
                 <groupId>ch.squaredesk.nova</groupId>
                 <artifactId>http-spring</artifactId>
-                <version>5.3.0</version>
+                <version>5.3.1</version>
             </dependency>
             <dependency>
                 <groupId>ch.squaredesk.nova</groupId>
@@ -175,6 +180,8 @@
         <module>metrics-serialization</module>
         <module>metrics-elastic</module>
         <module>metrics-kafka</module>
+        <module>http-test-utils</module>
+        <module>rest-test-utils</module>
     </modules>
 
     <profiles>
