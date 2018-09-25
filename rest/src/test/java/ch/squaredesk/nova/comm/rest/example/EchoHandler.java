@@ -6,8 +6,9 @@
  * obtain a copy of the license at
  *
  *   https://squaredesk.ch/license/oss/LICENSE
+ *
  */
-package ch.squaredesk.nova.comm.rest.annotation.example;
+package ch.squaredesk.nova.comm.rest.example;
 
 import javax.ws.rs.*;
 import javax.ws.rs.container.AsyncResponse;

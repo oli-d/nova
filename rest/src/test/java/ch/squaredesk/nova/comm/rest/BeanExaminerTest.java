@@ -6,9 +6,10 @@
  * obtain a copy of the license at
  *
  *   https://squaredesk.ch/license/oss/LICENSE
+ *
  */
 
-package ch.squaredesk.nova.comm.rest.annotation;
+package ch.squaredesk.nova.comm.rest;
 
 import org.junit.jupiter.api.Test;
 

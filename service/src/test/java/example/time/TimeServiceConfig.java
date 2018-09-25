@@ -9,7 +9,7 @@
  */
 package example.time;
 
-import ch.squaredesk.nova.comm.rest.annotation.RestEnablingConfiguration;
+import ch.squaredesk.nova.comm.rest.RestEnablingConfiguration;
 import ch.squaredesk.nova.service.NovaServiceConfiguration;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;

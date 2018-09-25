@@ -57,7 +57,7 @@ Currently, the following libraries exist:
   * [jms](./jms/README.md): reactive JMS messaging
   * [http](./http/README.md): reactive HTTP communication
   * [http-spring](./http-spring/README.md): convenience classes to easily enable HTTP communication with spring
-  * [rest-annotations](./rest-annotations/README.md): annotation based REST communication
+  * [rest](./rest/README.md): annotation based REST communication
   * [websockets](./websockets/README.md): reactive WebSocket communication
   * [websockets-annotations](./websockets-annotations/README.md): annotation based WebSocket communication
   * [kafka](./kafka/README.md): reactive Kafka communication

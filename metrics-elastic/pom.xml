@@ -15,18 +15,18 @@
 	<parent>
 		<groupId>ch.squaredesk.nova</groupId>
 		<artifactId>parentpom</artifactId>
-		<version>5.3.0</version>
+		<version>5.3.1</version>
 		<relativePath>../parentpom</relativePath>
 	</parent>
 
 	<artifactId>metrics-elastic</artifactId>
-	<version>5.3.0</version>
+	<version>5.3.1</version>
 
 	<dependencies>
 		<dependency>
 			<groupId>ch.squaredesk.nova</groupId>
 			<artifactId>metrics-serialization</artifactId>
-			<version>5.3.0</version>
+			<version>5.3.1</version>
 		</dependency>
 
 		<dependency>

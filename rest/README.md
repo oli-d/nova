@@ -105,7 +105,7 @@ As a bit more complete example, here's how you would create a simple echo server
    * Running ```curl -X POST http://localhost:10000/echo -d "data3" -H "Content-Type:text/plain"```
     will invoke ```echoRequestObject()``` and return ```data3```
      
-### Mixing rest-annotations and http
+### Mixing rest and http
 
 Using the ```@OnRestRequest``` annotation is very convenient and enables you to expose your server
 side functionality in a very simple way, requiring almost no additional code. 
@@ -113,7 +113,7 @@ side functionality in a very simple way, requiring almost no additional code.
 Unfortunately, you do not have much control over how the requests get processed, e.g. you are
 not able to control threading or apply a specific backpressure strategy.
 
-For that reason, it might be desirable to mix the convenience of the rest-annotations package with 
+For that reason, it might be desirable to mix the convenience of the rest package with
 the control of the [http](../http/README-md) communication package. Since both make use of the same 
 ```HttpServer```, this is totally possible. However, there's one gotcha you need to be aware of:
 

@@ -104,8 +104,8 @@ public class TimeRequestHandler {
 }
 ```
 
-Nothing fancy here (for details regarding the ```@OnRestRequest``` annotation, check out
-the [rest-annotations](../rest-annotations/README.md) module), so let's move on and make this
+Nothing fancy here (for details regarding the ```@GET``` annotation, check out
+the [rest](../rest/README.md) module), so let's move on and make this
 a real service.
 
 First thing we need is an appropriate "main" or "starter" class, let's call it ```TimeService```:

@@ -6,9 +6,10 @@
  * obtain a copy of the license at
  *
  *   https://squaredesk.ch/license/oss/LICENSE
+ *
  */
 
-package ch.squaredesk.nova.comm.rest.annotation;
+package ch.squaredesk.nova.comm.rest;
 
 import ch.squaredesk.nova.Nova;
 import ch.squaredesk.nova.comm.http.HttpServerConfiguration;
@@ -16,6 +17,7 @@ import ch.squaredesk.nova.comm.http.spring.HttpServerConfigurationProvidingConfi
 import io.dropwizard.metrics5.Timer;
 import org.glassfish.grizzly.http.server.HttpServer;
 import org.glassfish.jersey.grizzly2.httpserver.GrizzlyHttpServerFactory;
+import org.glassfish.jersey.jackson.JacksonFeature;
 import org.glassfish.jersey.media.multipart.MultiPartFeature;
 import org.glassfish.jersey.server.ResourceConfig;
 import org.glassfish.jersey.server.monitoring.ApplicationEvent;
@@ -66,7 +68,7 @@ public class RestEnablingConfiguration {
 
 
     @Bean
-    ch.squaredesk.nova.comm.rest.annotation.RestServerStarter restServerStarter() {
+    RestServerStarter restServerStarter() {
         return new RestServerStarter();
     }
 
@@ -76,7 +78,39 @@ public class RestEnablingConfiguration {
         RestBeanPostprocessor restBeanPostprocessor = applicationContext.getBean(RestBeanPostprocessor.class);
         ResourceConfig resourceConfig = new ResourceConfig()
             .register(MultiPartFeature.class)
-            .registerInstances(restBeanPostprocessor.handlerBeans.toArray());
+            .register(JacksonFeature.class);
+
+        // do we have a specific ObjectMapper?
+        if (1==2) {
+            /*
+            @Provider
+            public class MyObjectMapperProvider implements ContextResolver<ObjectMapper> {
+
+                final ObjectMapper defaultObjectMapper;
+
+                public MyObjectMapperProvider() {
+                    defaultObjectMapper = createDefaultMapper();
+                }
+
+                @Override
+                public ObjectMapper getContext(Class<?> type) {
+                        return defaultObjectMapper;
+                    }
+                }
+
+                private static ObjectMapper createDefaultMapper() {
+                    final ObjectMapper result = new ObjectMapper();
+                    result.configure(Feature.INDENT_OUTPUT, true);
+
+                    return result;
+                }
+
+                // ...
+            }
+            resourceConfig.register(MyObjectMapperProvider.class);
+             */
+        }
+        resourceConfig.registerInstances(restBeanPostprocessor.handlerBeans.toArray());
 
         if (captureRestMetrics() && nova != null) {
             RequestEventListener requestEventListener = event -> {

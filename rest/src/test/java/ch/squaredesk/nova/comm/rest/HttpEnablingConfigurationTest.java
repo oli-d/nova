@@ -6,9 +6,10 @@
  * obtain a copy of the license at
  *
  *   https://squaredesk.ch/license/oss/LICENSE
+ *
  */
 
-package ch.squaredesk.nova.comm.rest.annotation;
+package ch.squaredesk.nova.comm.rest;
 
 import ch.squaredesk.nova.comm.http.HttpServerConfiguration;
 import ch.squaredesk.nova.spring.NovaProvidingConfiguration;

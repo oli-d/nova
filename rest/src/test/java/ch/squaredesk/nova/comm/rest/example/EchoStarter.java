@@ -6,8 +6,9 @@
  * obtain a copy of the license at
  *
  *   https://squaredesk.ch/license/oss/LICENSE
+ *
  */
-package ch.squaredesk.nova.comm.rest.annotation.example;
+package ch.squaredesk.nova.comm.rest.example;
 
 import org.glassfish.grizzly.http.server.HttpServer;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
