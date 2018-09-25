@@ -7,22 +7,20 @@
   ~ obtain a copy of the license at
   ~
   ~   https://squaredesk.ch/license/oss/LICENSE
-  ~
   -->
-
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
     <parent>
         <groupId>ch.squaredesk.nova</groupId>
         <artifactId>parentpom</artifactId>
-        <version>5.3.1</version>
-        <relativePath>../parentpom/pom.xml</relativePath>
+        <version>6.0.0</version>
+        <relativePath>../parentpom</relativePath>
     </parent>
-    <modelVersion>4.0.0</modelVersion>
 
     <artifactId>http-test-utils</artifactId>
-    <version>5.3.1</version>
-
+    <version>6.0.0</version>
 
 </project>
