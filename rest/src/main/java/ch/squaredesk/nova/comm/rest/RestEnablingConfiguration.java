@@ -14,6 +14,7 @@ package ch.squaredesk.nova.comm.rest;
 import ch.squaredesk.nova.Nova;
 import ch.squaredesk.nova.comm.http.HttpServerConfiguration;
 import ch.squaredesk.nova.comm.http.spring.HttpServerConfigurationProvidingConfiguration;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.dropwizard.metrics5.Timer;
 import org.glassfish.grizzly.http.server.HttpServer;
 import org.glassfish.jersey.grizzly2.httpserver.GrizzlyHttpServerFactory;
@@ -32,8 +33,12 @@ import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.core.annotation.Order;
 import org.springframework.core.env.Environment;
+import org.springframework.lang.Nullable;
 
+import javax.inject.Named;
 import javax.ws.rs.core.UriBuilder;
+import javax.ws.rs.ext.ContextResolver;
+import javax.ws.rs.ext.Provider;
 import java.net.URI;
 
 @Configuration
@@ -48,6 +53,10 @@ public class RestEnablingConfiguration {
     Nova nova;
     @Autowired
     HttpServerConfiguration httpServerConfiguration;
+    @Autowired
+    @Named("restObjectMapper")
+    @Nullable
+    ObjectMapper restObjectMapper;
 
     @Bean
     public static RestBeanPostprocessor restBeanPostProcessor() {
@@ -81,34 +90,10 @@ public class RestEnablingConfiguration {
             .register(JacksonFeature.class);
 
         // do we have a specific ObjectMapper?
-        if (1==2) {
-            /*
-            @Provider
-            public class MyObjectMapperProvider implements ContextResolver<ObjectMapper> {
-
-                final ObjectMapper defaultObjectMapper;
-
-                public MyObjectMapperProvider() {
-                    defaultObjectMapper = createDefaultMapper();
-                }
-
-                @Override
-                public ObjectMapper getContext(Class<?> type) {
-                        return defaultObjectMapper;
-                    }
-                }
-
-                private static ObjectMapper createDefaultMapper() {
-                    final ObjectMapper result = new ObjectMapper();
-                    result.configure(Feature.INDENT_OUTPUT, true);
-
-                    return result;
-                }
-
-                // ...
-            }
-            resourceConfig.register(MyObjectMapperProvider.class);
-             */
+        if (restObjectMapper!=null) {
+            // super ugly hack, but Jersey needs public static providers :-(
+            SpecificRestObjectMapperProvider.STATIC_OBJECT_MAPPER = restObjectMapper;
+            resourceConfig.register(SpecificRestObjectMapperProvider.class);
         }
         resourceConfig.registerInstances(restBeanPostprocessor.handlerBeans.toArray());
 
@@ -143,4 +128,16 @@ public class RestEnablingConfiguration {
                 httpServerConfiguration.port).build();
         return GrizzlyHttpServerFactory.createHttpServer(serverAddress, resourceConfig, false);
     }
+
+    @Provider
+    public static class SpecificRestObjectMapperProvider implements ContextResolver<ObjectMapper> {
+        public static ObjectMapper STATIC_OBJECT_MAPPER = new ObjectMapper().findAndRegisterModules();
+
+        @Override
+        public ObjectMapper getContext(Class<?> type) {
+            return STATIC_OBJECT_MAPPER;
+        }
+    }
+
+
 }
