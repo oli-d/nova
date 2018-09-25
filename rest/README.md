@@ -14,7 +14,6 @@ The server is created with the default settings described in the [http-spring](.
 package.
 
 
-
 So, as an example, if you write the following bean:
 
 ```Java
@@ -30,7 +29,25 @@ public class MyRestHandlerBean {
 and include it in the Spring application context, clients are able to send a REST request
 to ```"http://<your server>/foo"``` and will receive the String "MyBean says foo" in the response body.
 
-For detailed usage and enhanced features like async request processing, check the JAX-RS documentation.
+For detailed usage and enhanced features like async request processing, please refer to the
+[Jersey](http://jersey.github.io/) documentation, which is used as the underlying implementation.
+
+### Configuration
+
+There's not much you need to configure. Just import ```RestEnablingConfiguration.class``` and you are
+ready to go.
+
+Out of the box, JSON marshalling will be supported using Jackson. The default ObjectMapper
+that is used for that will register all modules it can find on your classpath. If you need
+a specifically configured ObjectMapper for the marshalling of your entities, you can provide
+one in your Spring application context. Make sure that it is named "restObjectMapper", e.g.:
+
+```Java
+    @Bean("restObjectMapper")
+    public ObjectMapper restObjectMapper() {
+        return ...
+    }
+```
 
 ### Example: A Simple Echo Server
 
@@ -67,7 +84,7 @@ As a bit more complete example, here's how you would create a simple echo server
     
     ```Java
     @Configuration
-    @Import(RestServerProvidingConfiguration.class)
+    @Import(RestEnablingConfiguration.class)
     public class EchoConfiguration {
         @Bean
         public EchoHandler echoHandler() {

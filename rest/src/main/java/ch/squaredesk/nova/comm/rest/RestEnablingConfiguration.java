@@ -53,9 +53,7 @@ public class RestEnablingConfiguration {
     Nova nova;
     @Autowired
     HttpServerConfiguration httpServerConfiguration;
-    @Autowired
-    @Named("restObjectMapper")
-    @Nullable
+    @Autowired(required = false)
     ObjectMapper restObjectMapper;
 
     @Bean
@@ -93,8 +91,10 @@ public class RestEnablingConfiguration {
         if (restObjectMapper!=null) {
             // super ugly hack, but Jersey needs public static providers :-(
             SpecificRestObjectMapperProvider.STATIC_OBJECT_MAPPER = restObjectMapper;
-            resourceConfig.register(SpecificRestObjectMapperProvider.class);
+        } else {
+            SpecificRestObjectMapperProvider.STATIC_OBJECT_MAPPER = new ObjectMapper().findAndRegisterModules();
         }
+        resourceConfig.register(SpecificRestObjectMapperProvider.class);
         resourceConfig.registerInstances(restBeanPostprocessor.handlerBeans.toArray());
 
         if (captureRestMetrics() && nova != null) {
@@ -131,7 +131,7 @@ public class RestEnablingConfiguration {
 
     @Provider
     public static class SpecificRestObjectMapperProvider implements ContextResolver<ObjectMapper> {
-        public static ObjectMapper STATIC_OBJECT_MAPPER = new ObjectMapper().findAndRegisterModules();
+        public static ObjectMapper STATIC_OBJECT_MAPPER;
 
         @Override
         public ObjectMapper getContext(Class<?> type) {
