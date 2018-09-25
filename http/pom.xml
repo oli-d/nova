@@ -35,6 +35,12 @@
             <version>6.0.0</version>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>ch.squaredesk.nova</groupId>
+            <artifactId>test-utils</artifactId>
+            <version>6.0.0</version>
+            <scope>test</scope>
+        </dependency>
 
 
         <dependency>

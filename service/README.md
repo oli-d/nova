@@ -90,6 +90,7 @@ So let's start with implementing the business logic. For that, we create the new
 ```TimeRequestHandler```:
 
 ```Java
+@Path("/time")
 public class TimeRequestHandler {
     public final String messagePrefix;
 
@@ -97,16 +98,16 @@ public class TimeRequestHandler {
         this.messagePrefix = messagePrefix;
     }
 
-    @OnRestRequest("/time")
+    @GET
     public String time() {
         return messagePrefix + " " + LocalDateTime.now() + "\n";
     }
 }
 ```
 
-Nothing fancy here (for details regarding the ```@GET``` annotation, check out
-the [rest](../rest/README.md) module), so let's move on and make this
-a real service.
+Nothing fancy here (for details regarding the ```@Path``` and ```@GET```
+annotations, check out JAX-RS and the [rest](../rest/README.md) module),
+so let's move on and make this a real service.
 
 First thing we need is an appropriate "main" or "starter" class, let's call it ```TimeService```:
 
