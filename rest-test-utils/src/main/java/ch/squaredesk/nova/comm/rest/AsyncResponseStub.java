@@ -13,7 +13,6 @@ package ch.squaredesk.nova.comm.rest;
 
 import javax.ws.rs.container.AsyncResponse;
 import javax.ws.rs.container.TimeoutHandler;
-import javax.ws.rs.core.Response;
 import java.util.Collection;
 import java.util.Date;
 import java.util.Map;
@@ -21,27 +20,26 @@ import java.util.concurrent.TimeUnit;
 
 public class AsyncResponseStub implements AsyncResponse {
     private boolean suspended;
-    public Response entityAsResponse;
-    public String entityAsString;
-    public Throwable entityAsError;
+    public Object entity;
     public boolean cancelled;
     public long timeout;
     public TimeUnit timeUnit;
     public TimeoutHandler timeoutHandler;
 
+    public <T> T castEntity (Class<T> classToCastTo) {
+        return (T) entity;
+    }
+
     @Override
     public boolean resume(Object response) {
-        if (response != null) {
-            if (response instanceof Response) entityAsResponse = (Response)response;
-            else entityAsString = String.valueOf(response);
-        }
+        entity = response;
         suspended = false;
         return true;
     }
 
     @Override
     public boolean resume(Throwable response) {
-        entityAsError = response;
+        entity = response;
         suspended = false;
         return true;
     }
