@@ -124,6 +124,11 @@
             </dependency>
             <dependency>
                 <groupId>ch.squaredesk.nova</groupId>
+                <artifactId>rest-test-utils</artifactId>
+                <version>6.0.0</version>
+            </dependency>
+            <dependency>
+                <groupId>ch.squaredesk.nova</groupId>
                 <artifactId>websockets</artifactId>
                 <version>6.0.0</version>
             </dependency>
