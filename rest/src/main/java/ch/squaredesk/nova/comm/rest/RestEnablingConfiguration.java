@@ -27,10 +27,7 @@ import org.glassfish.jersey.server.monitoring.RequestEvent;
 import org.glassfish.jersey.server.monitoring.RequestEventListener;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Import;
-import org.springframework.context.annotation.Lazy;
+import org.springframework.context.annotation.*;
 import org.springframework.core.annotation.Order;
 import org.springframework.core.env.Environment;
 import org.springframework.lang.Nullable;
@@ -75,6 +72,7 @@ public class RestEnablingConfiguration {
 
 
     @Bean
+    @Conditional(HttpServerAutostartCondition.class)
     RestServerStarter restServerStarter() {
         return new RestServerStarter();
     }

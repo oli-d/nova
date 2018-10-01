@@ -15,8 +15,10 @@ import ch.squaredesk.nova.comm.http.HttpServerConfiguration;
 import ch.squaredesk.nova.spring.NovaProvidingConfiguration;
 import org.glassfish.grizzly.http.server.HttpServer;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.context.annotation.Bean;
@@ -29,8 +31,10 @@ import java.util.Set;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.nullValue;
 
-class HttpEnablingConfigurationTest {
+class RestEnablingConfigurationTest {
     HttpServerConfiguration serverConfiguration;
     Set<Object> handlerBeans;
     AnnotationConfigApplicationContext ctx;
@@ -49,11 +53,27 @@ class HttpEnablingConfigurationTest {
         System.clearProperty("NOVA.HTTP.REST.INTERFACE_NAME");
         System.clearProperty("NOVA.HTTP.REST.PORT");
         System.clearProperty("NOVA.HTTP.REST.CAPTURE_METRICS");
+        System.clearProperty("NOVA.HTTP.REST.SERVER.AUTO_START");
     }
 
     @AfterEach
     void shutdown() throws Exception {
         ctx.getBean(HttpServer.class).shutdown().get();
+    }
+
+    @Test
+    void ifNothingSpecifiedRestServerIsStartedWhenTheApplicationContextIsInitialized() throws Exception{
+        ApplicationContext ctx = setupContext(MyConfig.class);
+        assertThat(ctx.getBean("restServerStarter"), not(is(nullValue())));
+    }
+
+    @Test
+    void autoRestServerStartingCanBeSwitchedOffWithEnvVariable() throws Exception{
+        System.setProperty("NOVA.HTTP.REST.SERVER.AUTO_START", "false");
+        ApplicationContext ctx = setupContext(MyConfig.class);
+        Assertions.assertThrows(NoSuchBeanDefinitionException.class,
+                () -> ctx.getBean("restServerStarter")
+        );
     }
 
     @Test
