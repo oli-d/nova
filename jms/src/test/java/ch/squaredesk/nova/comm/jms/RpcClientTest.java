@@ -34,7 +34,6 @@ import static org.hamcrest.Matchers.is;
 class RpcClientTest {
     private RpcClient<String> sut;
     private TestJmsHelper jmsHelper;
-    private ConnectionFactory connectionFactory;
     private JmsObjectRepository objectRepository;
 
     private EmbeddedActiveMQBroker broker;
@@ -45,7 +44,7 @@ class RpcClientTest {
         broker.start();
         if (!broker.brokerService.waitUntilStarted()) throw new RuntimeException("Unable to start embedded broker...");
 
-        connectionFactory = new ActiveMQConnectionFactory("vm://embedded-broker?create=false");
+        ConnectionFactory connectionFactory = new ActiveMQConnectionFactory("vm://embedded-broker?create=false");
 
         objectRepository = new JmsObjectRepository(
                 connectionFactory.createConnection(),

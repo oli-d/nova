@@ -33,14 +33,16 @@ class RequestSender {
     }
 
     void sendPostRestRequestInNewThread(String path, String payload) {
+        String pathToUse;
         if (path != null && !path.trim().startsWith("/")) {
-            path = "/" + path.trim();
+            pathToUse = "/" + path.trim();
+        } else {
+            pathToUse = path;
         }
-        String pathToUseForLambda = path;
         new Thread(() -> {
             try {
                 RequestMessageMetaData meta = new RequestMessageMetaData(
-                    new URL(baseUrl + pathToUseForLambda),
+                    new URL(baseUrl + pathToUse),
                     new RequestInfo(HttpRequestMethod.POST));
                 rpcClient.sendRequest(payload, meta, 15, SECONDS).blockingGet();
             } catch (Exception e) {

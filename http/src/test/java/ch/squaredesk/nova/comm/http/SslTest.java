@@ -18,7 +18,6 @@ import java.net.URL;
 import java.security.KeyStore;
 import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
-import java.util.concurrent.TimeUnit;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.awaitility.Awaitility.await;
@@ -35,7 +34,6 @@ class SslTest {
     private HttpServer httpServer = HttpServerFactory.serverFor(rsc);
     private RpcServer<String> sut;
     private RpcClient<String> rpcClient;
-    private RequestSender requestSender;
 
     @BeforeEach
     void setup() throws Exception {
@@ -49,14 +47,13 @@ class SslTest {
         AsyncHttpClientConfig asyncHttpClientConfig = new AsyncHttpClientConfig.Builder().setSSLContext(sslContext).build();
         AsyncHttpClient client = new AsyncHttpClient(asyncHttpClientConfig);
         rpcClient = new RpcClient<>(null, client, s -> s, s -> s, new Metrics());
-        requestSender = RequestSender.createFor("http://" + rsc.interfaceName + ":" + rsc.port, rpcClient);
         sut = new RpcServer<>(httpServer, s->s, s->s, new Metrics());
     }
 
     private KeyStore readKeyStore() throws Exception {
         KeyStore ks = KeyStore.getInstance(KeyStore.getDefaultType());
 
-        try (FileInputStream fis = new java.io.FileInputStream("src/test/resources/ssl/truststore.jks")) {
+        try (FileInputStream fis = new FileInputStream("src/test/resources/ssl/truststore.jks")) {
             ks.load(fis, "storepass".toCharArray());
         }
         return ks;
@@ -126,7 +123,7 @@ class SslTest {
                         new URL(urlAsString),
                         new RequestInfo(HttpRequestMethod.POST));
 
-                rpcClient.sendRequest("{}", meta, 15, TimeUnit.SECONDS);
+                rpcClient.sendRequest("{}", meta, 15, SECONDS);
             } catch (Exception e) {
                 e.printStackTrace();
             }

@@ -36,7 +36,6 @@ import static org.hamcrest.Matchers.is;
 class JmsAdapterIntegrationTest {
     private JmsAdapter<String> sut;
     private TestJmsHelper jmsHelper;
-    private ConnectionFactory connectionFactory;
     private MyCorrelationIdGenerator myCorrelationIdGenerator = new MyCorrelationIdGenerator();
 
     private EmbeddedActiveMQBroker broker;
@@ -47,7 +46,7 @@ class JmsAdapterIntegrationTest {
         broker.start();
         if (!broker.brokerService.waitUntilStarted()) throw new RuntimeException("Unable to start embedded broker...");
 
-        connectionFactory = new ActiveMQConnectionFactory("vm://embedded-broker?create=false");
+        ConnectionFactory connectionFactory = new ActiveMQConnectionFactory("vm://embedded-broker?create=false");
 
         Metrics metrics = new Metrics();
         sut = JmsAdapter.builder(String.class)

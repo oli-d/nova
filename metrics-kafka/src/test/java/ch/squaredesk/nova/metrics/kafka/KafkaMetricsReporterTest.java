@@ -14,7 +14,6 @@ import ch.qos.logback.classic.Level;
 import ch.squaredesk.nova.Nova;
 import ch.squaredesk.nova.comm.kafka.KafkaAdapter;
 import ch.squaredesk.nova.metrics.SerializableMetricsDump;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.charithe.kafka.EphemeralKafkaBroker;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.ProducerConfig;
@@ -56,7 +55,6 @@ class KafkaMetricsReporterTest {
         kafkaBroker = EphemeralKafkaBroker.create(KAFKA_PORT);
         kafkaBroker.start().get();
 
-        ObjectMapper om = new ObjectMapper();
         kafkaAdapter = KafkaAdapter.builder(SerializableMetricsDump.class)
                 .setServerAddress("127.0.0.1:" + KAFKA_PORT)
                 .setIdentifier("Test")

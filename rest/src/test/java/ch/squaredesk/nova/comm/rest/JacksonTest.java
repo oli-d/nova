@@ -67,7 +67,6 @@ public class JacksonTest {
     @Test
     void returnCode400IsSentByJerseyWhenObjectCantBeUnmarshalled() throws Exception {
         context = new AnnotationConfigApplicationContext(MyConfigForTest.class);
-        MyRestHandler myRestHandler = context.getBean(MyRestHandler.class);
         ObjectMapper om = new ObjectMapper();
         Person sentPerson = new Person("Lea", "Dotzauer", LocalDate.of(2005,9,16));
 

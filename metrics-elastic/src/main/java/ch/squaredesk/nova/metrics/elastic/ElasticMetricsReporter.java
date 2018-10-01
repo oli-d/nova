@@ -144,6 +144,7 @@ public class ElasticMetricsReporter implements Consumer<MetricsDump> {
                     metricAsMap.put("@timestamp", timestampInUtc);
                     metricAsMap.put("host", hostName);
                     metricAsMap.put("hostAddress", hostAddress);
+                    metricAsMap.putAll(additionalMetricAttributes);
                     return new IndexRequest()
                             .index(indexName)
                             .type("doc")

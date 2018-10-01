@@ -10,6 +10,8 @@
 
 package ch.squaredesk.nova.tuples;
 
+import java.util.Objects;
+
 public class Tuple6<T, U, V, W, X, Y> {
     public final T _1;
     public final U _2;
@@ -37,24 +39,17 @@ public class Tuple6<T, U, V, W, X, Y> {
         if (o == null || getClass() != o.getClass()) return false;
 
         Tuple6<?, ?, ?, ?, ?, ?> tuple6 = (Tuple6<?, ?, ?, ?, ?, ?>) o;
-
-        if (_1 != null ? !_1.equals(tuple6._1) : tuple6._1 != null) return false;
-        if (_2 != null ? !_2.equals(tuple6._2) : tuple6._2 != null) return false;
-        if (_3 != null ? !_3.equals(tuple6._3) : tuple6._3 != null) return false;
-        if (_4 != null ? !_4.equals(tuple6._4) : tuple6._4 != null) return false;
-        if (_5 != null ? !_5.equals(tuple6._5) : tuple6._5 != null) return false;
-        return _6 != null ? _6.equals(tuple6._6) : tuple6._6 == null;
+        return Objects.equals(_1, tuple6._1) &&
+                Objects.equals(_2, tuple6._2) &&
+                Objects.equals(_3, tuple6._3) &&
+                Objects.equals(_4, tuple6._4) &&
+                Objects.equals(_5, tuple6._5) &&
+                Objects.equals(_6, tuple6._6);
     }
 
     @Override
     public int hashCode() {
-        int result = _1 != null ? _1.hashCode() : 0;
-        result = 31 * result + (_2 != null ? _2.hashCode() : 0);
-        result = 31 * result + (_3 != null ? _3.hashCode() : 0);
-        result = 31 * result + (_4 != null ? _4.hashCode() : 0);
-        result = 31 * result + (_5 != null ? _5.hashCode() : 0);
-        result = 31 * result + (_6 != null ? _6.hashCode() : 0);
-        return result;
+        return Objects.hash(_1, _2, _3, _4, _5, _6);
     }
 
 }

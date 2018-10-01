@@ -159,7 +159,7 @@ class HttpAdapterTest {
 
             await().atMost(40, SECONDS).until(observer::valueCount, is(1));
             observer.assertComplete();
-            observer.assertValue(reply -> reply.result.equals("rpcResponse"));
+            observer.assertValue(reply -> "rpcResponse".equals(reply.result));
         } finally {
             serverPortPair._1.stop(0);
             xxx.shutdown();

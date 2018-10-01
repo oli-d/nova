@@ -2,7 +2,8 @@
 
 [![Maven Central](https://maven-badges.herokuapp.com/maven-central/ch.squaredesk.nova/bom/badge.svg?style=plastic)](https://maven-badges.herokuapp.com/maven-central/ch.squaredesk.nova/bom)
 [![Codeship Build Status](https://app.codeship.com/projects/2283d970-1edb-0135-0041-4ec1c01dd1d7/status?branch=master)](https://app.codeship.com/projects/220890)
- 
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/46d98c14e90b472b8bc550deb0869c72)](https://www.codacy.com/app/oli-d/nova?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=oli-d/nova&amp;utm_campaign=Badge_Grade)
+
 ### 1. Why?
 The goal of this project is to provide a small and easy-to-use 
 library that enables developers to rapidly build systems or 

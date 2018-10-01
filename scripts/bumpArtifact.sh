@@ -31,17 +31,17 @@ function map_keys
 }
 
 function determineReactorArtifactId() {
-  REACTOR_ARTIFACT_ID=`mvn --non-recursive -q -Dexec.executable="echo" -Dexec.args='${project.artifactId}' org.codehaus.mojo:exec-maven-plugin:1.3.1:exec`
+  REACTOR_ARTIFACT_ID=$(mvn --non-recursive -q -Dexec.executable="echo" -Dexec.args='${project.artifactId}' org.codehaus.mojo:exec-maven-plugin:1.3.1:exec)
   echo "  reactor artifactId = $REACTOR_ARTIFACT_ID"
 }
 
 function determineAllArtifactVersions() {
-  if [ "`map_keys versions`" == "" ]; then
+  if [ "$(map_keys versions)" == "" ]; then
     echo "  Getting all version numbers..."
-    ARTIFACT_VERSIONS=`mvn -o -q -Dexec.executable="echo" -Dexec.args='${project.artifactId}=${project.version}' org.codehaus.mojo:exec-maven-plugin:1.3.1:exec`
+    ARTIFACT_VERSIONS=$(mvn -o -q -Dexec.executable="echo" -Dexec.args='${project.artifactId}=${project.version}' org.codehaus.mojo:exec-maven-plugin:1.3.1:exec)
     for DEF in $ARTIFACT_VERSIONS; do
-        A=`echo ${DEF} | cut -d '=' -f 1`
-        V=`echo ${DEF} | cut -d '=' -f 2`
+        A=$(echo ${DEF} | cut -d '=' -f 1)
+        V=$(echo ${DEF} | cut -d '=' -f 2)
         map_put versions $A $V
         # echo "  $A: $V"
     done
@@ -50,7 +50,7 @@ function determineAllArtifactVersions() {
 
 
 function getArtifactVersion() {
-  echo `map_get versions $1`
+  echo $(map_get versions $1)
 }
 
 function bumpVersion() {
@@ -66,7 +66,7 @@ function getArtifactFromMavenVersionsOutput() {
 
 function updateArtifact() {
     echo "$3($1) Updating version of artifact \"$1\" to \"$2\"..."
-    OUTPUT=`bumpVersion $1 $2 | grep -v "Processing change of" | grep -i processing`
+    OUTPUT=$(bumpVersion $1 $2 | grep -v "Processing change of" | grep -i processing)
 
     # TODO: exit if mvn command was unsuccessful
     echo "$3($1) Update successful :-)"
@@ -75,7 +75,7 @@ function updateArtifact() {
     for ITEM in ${OUTPUT}; do
       # find all modified artifacts
       if [[ "$ITEM" == ch.squaredesk* ]]; then
-        ARTIFACT=`getArtifactFromMavenVersionsOutput ${ITEM}`
+        ARTIFACT=$(getArtifactFromMavenVersionsOutput ${ITEM})
         if [ "$ARTIFACT" != "$1" ] && [ "$ARTIFACT" != "$REACTOR_ARTIFACT_ID" ]; then
           CURRENT_VERSION=`getArtifactVersion ${ARTIFACT}`
           # TODO: check if artifact was already changed
@@ -103,7 +103,7 @@ echo ""
 updateArtifact $1 $2 $3
 
 echo ""
-REACTOR_VERSION=`getArtifactVersion ${REACTOR_ARTIFACT_ID}`
+REACTOR_VERSION=$(getArtifactVersion ${REACTOR_ARTIFACT_ID})
 echo "After those changes, reactor $REACTOR_ARTIFACT_ID:$CURRENT_VERSION should also be updated."
 read -p "Please specify the desired new version (leave blank to skip) > " NEW_VERSION
 if [ "$NEW_VERSION" != "" ]; then

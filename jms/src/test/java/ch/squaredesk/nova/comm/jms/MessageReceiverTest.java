@@ -95,7 +95,9 @@ class MessageReceiverTest {
                     cdl.countDown();
                 });
 
-        for (String msg: Arrays.asList("One", "Two", "3", "For", "Fve")) jmsHelper.sendMessage(destination, msg);
+        for (String msg: Arrays.asList("One", "Two", "3", "For", "Fve")) {
+            jmsHelper.sendMessage(destination, msg);
+        }
         cdl.await(5, TimeUnit.SECONDS);
 
         assertThat(cdl.getCount(), is(0L));
@@ -119,7 +121,9 @@ class MessageReceiverTest {
                     });
         }
 
-        for (String msg: Arrays.asList("One", "Two", "3", "For", "Fve")) jmsHelper.sendMessage(destination, msg);
+        for (String msg: Arrays.asList("One", "Two", "3", "For", "Fve")) {
+            jmsHelper.sendMessage(destination, msg);
+        }
         cdl.await(5, TimeUnit.SECONDS);
 
         assertThat(cdl.getCount(), is(0L));
