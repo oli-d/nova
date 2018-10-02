@@ -11,8 +11,6 @@
 package ch.squaredesk.nova.comm.rest;
 
 import org.glassfish.grizzly.http.server.HttpServer;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.event.ContextRefreshedEvent;
 
@@ -20,20 +18,28 @@ import javax.annotation.PreDestroy;
 import java.io.IOException;
 
 public class RestServerStarter implements ApplicationListener<ContextRefreshedEvent> {
-    private Logger logger = LoggerFactory.getLogger(RestServerStarter.class);
-
     private HttpServer httpServer;
+    private boolean autoStartServerWhenApplicationContextRefreshed;
+
+    public RestServerStarter(boolean autoStartServerWhenApplicationContextRefreshed) {
+        this.autoStartServerWhenApplicationContextRefreshed = autoStartServerWhenApplicationContextRefreshed;
+    }
 
     @Override
     public void onApplicationEvent(ContextRefreshedEvent event) {
         httpServer = event.getApplicationContext().getBean(HttpServer.class);
-
-        if (!httpServer.isStarted()) {
+        if (autoStartServerWhenApplicationContextRefreshed) {
             try {
-                httpServer.start();
+                start();
             } catch (IOException e) {
-                logger.error("Unable to start HttpServer", e);
+                throw new RuntimeException(e);
             }
+        }
+    }
+
+    public void start() throws IOException {
+        if (!httpServer.isStarted()) {
+            httpServer.start();
         }
     }
 

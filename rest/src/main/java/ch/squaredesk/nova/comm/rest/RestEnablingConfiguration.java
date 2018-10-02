@@ -30,6 +30,7 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.*;
 import org.springframework.core.annotation.Order;
 import org.springframework.core.env.Environment;
+import org.springframework.core.type.AnnotatedTypeMetadata;
 
 import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.ext.ContextResolver;
@@ -68,11 +69,14 @@ public class RestEnablingConfiguration {
         return captureMetrics;
     }
 
+    @Bean("autoStartRestServer")
+    public boolean autoStartRestServer() {
+        return environment.getProperty("NOVA.HTTP.REST.SERVER.AUTO_START", Boolean.class, true);
+    }
 
     @Bean
-    @Conditional(HttpServerAutostartCondition.class)
     RestServerStarter restServerStarter() {
-        return new RestServerStarter();
+        return new RestServerStarter(autoStartRestServer());
     }
 
     @Lazy // must be created after all other beans have been created (because of annotation processing)

@@ -15,10 +15,8 @@ import ch.squaredesk.nova.comm.http.HttpServerConfiguration;
 import ch.squaredesk.nova.spring.NovaProvidingConfiguration;
 import org.glassfish.grizzly.http.server.HttpServer;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.context.annotation.Bean;
@@ -69,9 +67,13 @@ class RestEnablingConfigurationTest {
     void autoRestServerStartingCanBeSwitchedOffWithEnvVariable() throws Exception{
         System.setProperty("NOVA.HTTP.REST.SERVER.AUTO_START", "false");
         ApplicationContext ctx = setupContext(MyConfig.class);
-        Assertions.assertThrows(NoSuchBeanDefinitionException.class,
-                () -> ctx.getBean("restServerStarter")
-        );
+        assertThat(ctx.getBean("autoStartRestServer"), is(false));
+    }
+
+    @Test
+    void autoRestServerStartingCanBeSwitchedOffWithCustomBean() throws Exception{
+        ApplicationContext ctx = setupContext(MyConfigWithNoAutostart.class);
+        assertThat(ctx.getBean("autoStartRestServer"), is(false));
     }
 
     @Test
@@ -103,6 +105,15 @@ class RestEnablingConfigurationTest {
     @Configuration
     @Import({RestEnablingConfiguration.class, NovaProvidingConfiguration.class })
     public static class MyConfig {
+    }
+
+    @Configuration
+    @Import({RestEnablingConfiguration.class, NovaProvidingConfiguration.class })
+    public static class MyConfigWithNoAutostart {
+        @Bean("autoStartRestServer")
+        boolean myAutoStartBean() {
+            return false;
+        }
     }
 
     @Configuration

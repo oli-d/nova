@@ -40,7 +40,7 @@ ready to go.
 By default, the REST server will be started as soon as the application context
 has been initialized. If you want to switch that feature off and start the
 httpServer manually at a later point in time, you can set the environment
-variable ```NOVA.HTTP.REST.SERVER.AUTO_START``` to false.
+variable ```NOVA.HTTP.REST.SERVER.AUTO_START``` to false or provide your own bean named ```autoStartRestServer```.
 
 Out of the box, JSON marshalling will be supported using Jackson. The default ObjectMapper
 that is used for that will register all modules it can find on your classpath. If you need
