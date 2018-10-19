@@ -119,6 +119,14 @@ public class HttpAdapter<MessageType> {
     Single<RpcReply<ReplyMessageType>> sendRequest (
                 String destination,
                 RequestMessageType request,
+                RequestInfo httpInfo) {
+        return sendRequest(destination, request, httpInfo, null, null);
+    }
+    
+    public <RequestMessageType extends MessageType, ReplyMessageType extends MessageType>
+    Single<RpcReply<ReplyMessageType>> sendRequest (
+                String destination,
+                RequestMessageType request,
                 RequestInfo httpInfo,
                 Long timeout, TimeUnit timeUnit) {
 

@@ -63,9 +63,14 @@ public class RpcClient<InternalMessageType> extends ch.squaredesk.nova.comm.rpc.
             requestBuilder = client.prepareGet(requestMessageMetaData.destination.toString());
         }
 
-        ListenableFuture<Response> resultFuture = requestBuilder
-                .addHeader("Content-Type", "application/json; charset=utf-8")
-                .execute();
+        if (requestMessageMetaData.details.headerParams == null || 
+            requestMessageMetaData.details.headerParams.isEmpty()) {
+            requestBuilder.addHeader("Content-Type", "application/json; charset=utf-8");
+        } else {
+            requestMessageMetaData.details.headerParams.forEach((key, value) -> requestBuilder.addHeader(key, value));
+        }
+            
+        ListenableFuture<Response> resultFuture = requestBuilder.execute();
 
         Single<RpcReply<ReplyType>> resultSingle = Single.fromFuture(resultFuture).map(response -> {
             int statusCode = response.getStatusCode();
