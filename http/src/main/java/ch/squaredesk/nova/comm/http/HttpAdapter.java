@@ -25,40 +25,40 @@ import java.util.concurrent.TimeUnit;
 
 import static java.util.Objects.requireNonNull;
 
-public class HttpAdapter<MessageType> {
-    private final RpcClient<MessageType> rpcClient;
-    private final RpcServer<MessageType> rpcServer;
+public class HttpAdapter {
+    private final RpcClient rpcClient;
+    private final RpcServer<Void> rpcServer;
     private final Long defaultRequestTimeout;
     private final TimeUnit defaultRequestTimeUnit;
 
 
-    private HttpAdapter(Builder<MessageType> builder) {
+    private HttpAdapter(Builder builder) {
         this.rpcClient = builder.rpcClient;
         this.rpcServer = builder.rpcServer;
         this.defaultRequestTimeout = builder.defaultRequestTimeout;
         this.defaultRequestTimeUnit = builder.defaultRequestTimeUnit;
     }
 
-    public <ReplyMessageType extends MessageType>
+    public <ReplyMessageType>
     Single<RpcReply<ReplyMessageType>> sendGetRequest(String destination) {
         return sendRequest(destination, null, new RequestInfo(HttpRequestMethod.GET), null, null );
     }
 
-    public <ReplyMessageType extends MessageType>
+    public <ReplyMessageType>
     Single<RpcReply<ReplyMessageType>> sendGetRequest(
                 String destination,
                 long timeout, TimeUnit timeUnit) {
         return sendRequest(destination, null, new RequestInfo(HttpRequestMethod.GET), timeout, timeUnit);
     }
 
-    public <RequestMessageType extends MessageType, ReplyMessageType extends MessageType>
+    public <RequestMessageType, ReplyMessageType>
     Single<RpcReply<ReplyMessageType>> sendPostRequest(
                 String destination,
                 RequestMessageType request) {
         return sendRequest(destination, request, new RequestInfo(HttpRequestMethod.POST), null, null);
     }
 
-    public <RequestMessageType extends MessageType, ReplyMessageType extends MessageType>
+    public <RequestMessageType, ReplyMessageType>
     Single<RpcReply<ReplyMessageType>> sendPostRequest(
                 String destination,
                 RequestMessageType request,
@@ -66,14 +66,14 @@ public class HttpAdapter<MessageType> {
         return sendRequest(destination, request, new RequestInfo(HttpRequestMethod.POST), timeout, timeUnit );
     }
 
-    public <RequestMessageType extends MessageType, ReplyMessageType extends MessageType>
+    public <RequestMessageType, ReplyMessageType>
     Single<RpcReply<ReplyMessageType>> sendPutRequest(
                 String destination,
                 RequestMessageType request) {
         return sendRequest(destination, request, new RequestInfo(HttpRequestMethod.PUT), null, null);
     }
 
-    public <RequestMessageType extends MessageType, ReplyMessageType extends MessageType>
+    public <RequestMessageType, ReplyMessageType>
     Single<RpcReply<ReplyMessageType>> sendPutRequest(
                 String destination,
                 RequestMessageType request,
@@ -81,14 +81,14 @@ public class HttpAdapter<MessageType> {
         return sendRequest(destination, request, new RequestInfo(HttpRequestMethod.PUT), timeout, timeUnit );
     }
 
-    public <RequestMessageType extends MessageType, ReplyMessageType extends MessageType>
+    public <RequestMessageType, ReplyMessageType>
     Single<RpcReply<ReplyMessageType>> sendRequest(
                 String destination,
                 RequestMessageType request) {
         return sendRequest(destination, request, null, null, null);
     }
 
-    public <RequestMessageType extends MessageType, ReplyMessageType extends MessageType>
+    public <RequestMessageType, ReplyMessageType>
     Single<RpcReply<ReplyMessageType>> sendRequest(
                 String destination,
                 RequestMessageType request,
@@ -97,7 +97,7 @@ public class HttpAdapter<MessageType> {
         return sendRequest(destination, request, null, timeout, timeUnit);
     }
 
-    public <RequestMessageType extends MessageType, ReplyMessageType extends MessageType>
+    public <RequestMessageType, ReplyMessageType>
     Single<RpcReply<ReplyMessageType>> sendRequest(
                 String destination,
                 RequestMessageType request,
@@ -105,7 +105,7 @@ public class HttpAdapter<MessageType> {
         return sendRequest(destination, request, new RequestInfo(requestMethod), null, null);
     }
 
-    public <RequestMessageType extends MessageType, ReplyMessageType extends MessageType>
+    public <RequestMessageType, ReplyMessageType>
     Single<RpcReply<ReplyMessageType>> sendRequest(
                 String destination,
                 RequestMessageType request,
@@ -115,11 +115,11 @@ public class HttpAdapter<MessageType> {
         return sendRequest(destination, request, new RequestInfo(requestMethod), timeout, timeUnit);
     }
 
-    public <RequestMessageType extends MessageType, ReplyMessageType extends MessageType>
-    Single<RpcReply<ReplyMessageType>> sendRequest (
+    public <RequestMessageType, ReplyMessageType> Single<RpcReply<ReplyMessageType>> sendRequest (
                 String destination,
                 RequestMessageType request,
                 RequestInfo httpInfo,
+                Class<ReplyMessageType> replyType,
                 Long timeout, TimeUnit timeUnit) {
 
         if (timeout!=null) {
@@ -138,10 +138,10 @@ public class HttpAdapter<MessageType> {
 
         RequestMessageMetaData sendingInfo = new RequestMessageMetaData(url, httpInfo);
 
-        return rpcClient.sendRequest(request, sendingInfo, timeout, timeUnit);
+        return rpcClient.sendRequest(request, sendingInfo, replyType, timeout, timeUnit);
     }
 
-    public Flowable<RpcInvocation<MessageType>> requests(String destination) {
+    public <MessageType> Flowable<RpcInvocation<MessageType>> requests(String destination) {
         return rpcServer.requests(destination);
     }
 

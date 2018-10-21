@@ -12,6 +12,7 @@ package ch.squaredesk.nova.comm.rpc;
 
 import ch.squaredesk.nova.comm.retrieving.IncomingMessage;
 import ch.squaredesk.nova.comm.retrieving.IncomingMessageMetaData;
+import ch.squaredesk.nova.comm.sending.MessageMarshaller;
 import ch.squaredesk.nova.tuples.Pair;
 
 import java.util.function.Consumer;
@@ -19,25 +20,26 @@ import java.util.function.Consumer;
 public class RpcInvocation<
         RequestType,
         IncomingMetaDataType extends IncomingMessageMetaData<?,?>,
-        ReplyType,
+        TransportMessageType,
         TransportSpecificReplyInfo>
-    implements RpcCompletor<ReplyType, TransportSpecificReplyInfo> {
+    implements RpcCompletor<TransportMessageType, TransportSpecificReplyInfo> {
 
     public final IncomingMessage<RequestType, IncomingMetaDataType> request;
 
-    private final Consumer<Pair<ReplyType, TransportSpecificReplyInfo>> replyConsumer;
+    private final Consumer<Pair<TransportMessageType, TransportSpecificReplyInfo>> replyConsumer;
     private final Consumer<Throwable> errorConsumer;
 
     public RpcInvocation(IncomingMessage<RequestType, IncomingMetaDataType> request,
-                         Consumer<Pair<ReplyType, TransportSpecificReplyInfo>> replyConsumer,
+                         Consumer<Pair<TransportMessageType, TransportSpecificReplyInfo>> replyConsumer,
                          Consumer<Throwable> errorConsumer) {
         this.request = request;
         this.replyConsumer = replyConsumer;
         this.errorConsumer = errorConsumer;
     }
 
-    public void complete(ReplyType reply, TransportSpecificReplyInfo replySpecificInfo) {
-        replyConsumer.accept(new Pair<>(reply, replySpecificInfo));
+    @Override
+    public <T> void complete(T reply, MessageMarshaller<T, TransportMessageType> messageMarshaller, TransportSpecificReplyInfo replySpecificInfo) throws Exception {
+        replyConsumer.accept(new Pair<>(messageMarshaller.marshal(reply), replySpecificInfo));
     }
 
     public void completeExceptionally(Throwable error) {

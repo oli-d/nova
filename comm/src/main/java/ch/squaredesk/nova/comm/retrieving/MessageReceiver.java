@@ -14,9 +14,9 @@ import io.reactivex.Flowable;
 
 public interface MessageReceiver<
         DestinationType,
-        InternalMessageType,
+        TransportMessageType,
         MetaDataType extends IncomingMessageMetaData<DestinationType, ?>> {
 
-    Flowable<IncomingMessage<InternalMessageType, MetaDataType>> messages(DestinationType destination);
+    <T> Flowable<IncomingMessage<T, MetaDataType>> messages(DestinationType destination, MessageUnmarshaller<TransportMessageType, T> messageUnmarshaller);
 
 }

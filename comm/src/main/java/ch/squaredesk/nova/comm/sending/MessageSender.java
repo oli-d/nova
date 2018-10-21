@@ -14,11 +14,11 @@ package ch.squaredesk.nova.comm.sending;
 import io.reactivex.Completable;
 
 
-public interface MessageSender<InternalMessageType, MetaDataType> {
+public interface MessageSender<TransportMessageType, MetaDataType> {
     /**
      * Protocol specific implementation of the sending the passed message using the passed (protocol specific) send
      * specs
      */
-    Completable doSend(InternalMessageType message, MetaDataType outgoingMessageMetaData);
+    <T> Completable doSend(T message, MessageMarshaller<T, TransportMessageType> marshaller, MetaDataType outgoingMessageMetaData);
 
 }

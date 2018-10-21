@@ -10,6 +10,7 @@
 
 package ch.squaredesk.nova.comm.http;
 
+import ch.squaredesk.nova.comm.MarshallerRegistry;
 import ch.squaredesk.nova.comm.retrieving.MessageUnmarshaller;
 import ch.squaredesk.nova.comm.sending.MessageMarshaller;
 import ch.squaredesk.nova.metrics.Metrics;
@@ -18,36 +19,56 @@ import com.ning.http.client.ListenableFuture;
 import com.ning.http.client.Response;
 import io.reactivex.Single;
 
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 import static java.util.Objects.requireNonNull;
 
-public class RpcClient<InternalMessageType> extends ch.squaredesk.nova.comm.rpc.RpcClient<InternalMessageType, RequestMessageMetaData, ReplyMessageMetaData> {
+public class RpcClient extends ch.squaredesk.nova.comm.rpc.RpcClient<String, RequestMessageMetaData, ReplyMessageMetaData> {
     private final AsyncHttpClient client;
-    private final MessageMarshaller<InternalMessageType, String> messageMarshaller;
-    private final MessageUnmarshaller<String, InternalMessageType> messageUnmarshaller;
+    private final Optional<MarshallerRegistry<String>> marshallerRegistry;
 
     protected RpcClient(String identifier,
                         AsyncHttpClient client,
-                        MessageMarshaller<InternalMessageType, String> messageMarshaller,
-                        MessageUnmarshaller<String, InternalMessageType> messageUnmarshaller,
+                        MarshallerRegistry<String> marshallerRegistry,
                         Metrics metrics) {
         super(identifier, metrics);
         this.client = client;
-        this.messageUnmarshaller = messageUnmarshaller;
-        this.messageMarshaller = messageMarshaller;
+        this.marshallerRegistry = Optional.ofNullable(marshallerRegistry);
     }
 
+    public <RequestType, ReplyType> Single<? extends ch.squaredesk.nova.comm.rpc.RpcReply<ReplyType, ReplyMessageMetaData>> sendRequest(
+            RequestType request, RequestMessageMetaData requestMessageMetaData,
+            Class<ReplyType> replyType,
+            long timeout, TimeUnit timeUnit) {
 
-    public <ReplyType extends InternalMessageType> Single<RpcReply<ReplyType>> sendRequest(
-            InternalMessageType request,
-            RequestMessageMetaData requestMessageMetaData,
+        MessageMarshaller<RequestType, String> requestMarshaller = null;
+        if (request != null) {
+            requestMarshaller = marshallerRegistry
+                    .map(registry -> {
+                        Class<RequestType> requestClass = (Class<RequestType>) request.getClass();
+                        return registry.getMarshallerForMessageType(requestClass);
+                    })
+                    .orElseThrow(() -> new IllegalArgumentException("Unable to find marshaller for type " + request.getClass()));
+        }
+        MessageUnmarshaller<String, ReplyType> replyUnmarshaller = marshallerRegistry
+                .map(registry -> registry.getUnmarshallerForMessageType(replyType))
+                .orElseThrow(() -> new IllegalArgumentException("Unable to find unmarshaller for reply type " + replyType));
+
+        return sendRequest(request, requestMessageMetaData, requestMarshaller, replyUnmarshaller, timeout, timeUnit);
+    }
+
+    @Override
+    public <RequestType, ReplyType> Single<? extends ch.squaredesk.nova.comm.rpc.RpcReply<ReplyType, ReplyMessageMetaData>> sendRequest(
+            RequestType request, RequestMessageMetaData requestMessageMetaData,
+            MessageMarshaller<RequestType, String> requestMarshaller,
+            MessageUnmarshaller<String, ReplyType> replyUnmarshaller,
             long timeout, TimeUnit timeUnit) {
         requireNonNull(timeUnit, "timeUnit must not be null");
 
         String requestAsString;
         try {
-            requestAsString = request != null ? messageMarshaller.marshal(request) : null;
+            requestAsString = request != null ? requestMarshaller.marshal(request) : null;
         } catch (Exception e) {
             return Single.error(e);
         }
@@ -74,7 +95,7 @@ public class RpcClient<InternalMessageType> extends ch.squaredesk.nova.comm.rpc.
                     new ReplyInfo(statusCode));
             String responseBody = response.getResponseBody();
             metricsCollector.rpcCompleted(requestMessageMetaData.destination, responseBody);
-            return new RpcReply<>((ReplyType) messageUnmarshaller.unmarshal(responseBody), metaData);
+            return new RpcReply<>(replyUnmarshaller.unmarshal(responseBody), metaData);
         });
 
         return resultSingle.timeout(timeout, timeUnit);

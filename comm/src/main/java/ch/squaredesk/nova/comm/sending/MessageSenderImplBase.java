@@ -12,30 +12,44 @@
 package ch.squaredesk.nova.comm.sending;
 
 
+import ch.squaredesk.nova.comm.MarshallerProvider;
 import ch.squaredesk.nova.metrics.Metrics;
+import io.reactivex.Completable;
+
+import java.util.Optional;
 
 import static java.util.Objects.requireNonNull;
 
 
 public abstract class MessageSenderImplBase<
         DestinationType,
-        InternalMessageType,
         TransportMessageType,
         MetaDataType extends OutgoingMessageMetaData<DestinationType, ?>>
-        implements MessageSender<InternalMessageType, MetaDataType> {
+        implements MessageSender<TransportMessageType, MetaDataType> {
 
-    protected final MessageMarshaller<InternalMessageType, TransportMessageType> messageMarshaller;
+    protected final Optional<MarshallerProvider<TransportMessageType>> marshallerProvider;
     protected final MetricsCollector metricsCollector;
 
-    protected MessageSenderImplBase(MessageMarshaller<InternalMessageType, TransportMessageType> messageMarshaller, Metrics metrics) {
-        this(null, messageMarshaller, metrics);
+    protected MessageSenderImplBase(MarshallerProvider<TransportMessageType> marshallerProvider, Metrics metrics) {
+        this(null, marshallerProvider, metrics);
     }
 
-    protected MessageSenderImplBase(String identifier, MessageMarshaller<InternalMessageType, TransportMessageType> messageMarshaller, Metrics metrics) {
+    protected MessageSenderImplBase(String identifier, MarshallerProvider<TransportMessageType> marshallerProvider, Metrics metrics) {
         requireNonNull(metrics, "metrics must not be null");
-        requireNonNull(messageMarshaller, "messageMarshaller instance must be provided");
-        this.messageMarshaller = messageMarshaller;
+        this.marshallerProvider = Optional.ofNullable(marshallerProvider);
         this.metricsCollector = new MetricsCollector(identifier, metrics);
     }
 
+    public <T> Completable send(T message, MetaDataType outgoingMessageMetaData) {
+        MessageMarshaller<T, TransportMessageType> marshaller =
+                marshallerProvider.map( provider -> {
+                    Class<T> messageType = (Class<T>) message.getClass();
+                    return provider.getMarshallerForMessageType(messageType);
+                })
+                .orElseThrow(() -> new IllegalArgumentException("Unable to find marshaller for type " + message.getClass()));
+
+        return doSend(message, marshaller, outgoingMessageMetaData);
+    }
+
 }
+

@@ -16,7 +16,7 @@
 
     <groupId>ch.squaredesk.nova</groupId>
     <artifactId>bom</artifactId>
-    <version>6.0.0</version>
+    <version>7.0.0</version>
     <packaging>pom</packaging>
 
     <name>Nova BOM</name>
@@ -62,101 +62,101 @@
             <dependency>
                 <groupId>ch.squaredesk.nova</groupId>
                 <artifactId>test-utils</artifactId>
-                <version>6.0.0</version>
+                <version>7.0.0</version>
             </dependency>
 
             <dependency>
                 <groupId>ch.squaredesk.nova</groupId>
                 <artifactId>core</artifactId>
-                <version>6.0.0</version>
+                <version>7.0.0</version>
             </dependency>
             <dependency>
                 <groupId>ch.squaredesk.nova</groupId>
                 <artifactId>spring-support</artifactId>
-                <version>6.0.0</version>
+                <version>7.0.0</version>
             </dependency>
             <dependency>
                 <groupId>ch.squaredesk.nova</groupId>
                 <artifactId>event-annotations</artifactId>
-                <version>6.0.0</version>
+                <version>7.0.0</version>
             </dependency>
 
             <dependency>
                 <groupId>ch.squaredesk.nova</groupId>
                 <artifactId>service</artifactId>
-                <version>6.0.0</version>
+                <version>7.0.0</version>
             </dependency>
 
             <dependency>
                 <groupId>ch.squaredesk.nova</groupId>
                 <artifactId>comm</artifactId>
-                <version>6.0.0</version>
+                <version>7.0.0</version>
             </dependency>
             <dependency>
                 <groupId>ch.squaredesk.nova</groupId>
                 <artifactId>comm-annotations</artifactId>
-                <version>6.0.0</version>
+                <version>7.0.0</version>
             </dependency>
             <dependency>
                 <groupId>ch.squaredesk.nova</groupId>
                 <artifactId>jms</artifactId>
-                <version>6.0.0</version>
+                <version>7.0.0</version>
             </dependency>
             <dependency>
                 <groupId>ch.squaredesk.nova</groupId>
                 <artifactId>http</artifactId>
-                <version>6.0.0</version>
+                <version>7.0.0</version>
             </dependency>
             <dependency>
                 <groupId>ch.squaredesk.nova</groupId>
                 <artifactId>http-test-utils</artifactId>
-                <version>6.0.0</version>
+                <version>7.0.0</version>
             </dependency>
             <dependency>
                 <groupId>ch.squaredesk.nova</groupId>
                 <artifactId>http-spring</artifactId>
-                <version>6.0.0</version>
+                <version>7.0.0</version>
             </dependency>
             <dependency>
                 <groupId>ch.squaredesk.nova</groupId>
                 <artifactId>rest</artifactId>
-                <version>6.0.0</version>
+                <version>7.0.0</version>
             </dependency>
             <dependency>
                 <groupId>ch.squaredesk.nova</groupId>
                 <artifactId>rest-test-utils</artifactId>
-                <version>6.0.0</version>
+                <version>7.0.0</version>
             </dependency>
             <dependency>
                 <groupId>ch.squaredesk.nova</groupId>
                 <artifactId>websockets</artifactId>
-                <version>6.0.0</version>
+                <version>7.0.0</version>
             </dependency>
             <dependency>
                 <groupId>ch.squaredesk.nova</groupId>
                 <artifactId>websockets-annotations</artifactId>
-                <version>6.0.0</version>
+                <version>7.0.0</version>
             </dependency>
             <dependency>
                 <groupId>ch.squaredesk.nova</groupId>
                 <artifactId>kafka</artifactId>
-                <version>6.0.0</version>
+                <version>7.0.0</version>
             </dependency>
 
             <dependency>
                 <groupId>ch.squaredesk.nova</groupId>
                 <artifactId>metrics-serialization</artifactId>
-                <version>6.0.0</version>
+                <version>7.0.0</version>
             </dependency>
             <dependency>
                 <groupId>ch.squaredesk.nova</groupId>
                 <artifactId>metrics-elastic</artifactId>
-                <version>6.0.0</version>
+                <version>7.0.0</version>
             </dependency>
             <dependency>
                 <groupId>ch.squaredesk.nova</groupId>
                 <artifactId>metrics-kafka</artifactId>
-                <version>6.0.0</version>
+                <version>7.0.0</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

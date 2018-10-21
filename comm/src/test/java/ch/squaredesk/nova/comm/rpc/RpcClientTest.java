@@ -11,6 +11,8 @@
 package ch.squaredesk.nova.comm.rpc;
 
 import ch.squaredesk.nova.comm.retrieving.IncomingMessageMetaData;
+import ch.squaredesk.nova.comm.retrieving.MessageUnmarshaller;
+import ch.squaredesk.nova.comm.sending.MessageMarshaller;
 import ch.squaredesk.nova.comm.sending.OutgoingMessageMetaData;
 import ch.squaredesk.nova.metrics.Metrics;
 import io.reactivex.Single;
@@ -29,7 +31,8 @@ class RpcClientTest {
         assertThat(t.getMessage(), containsString("metrics"));
     }
 
-    private class MyRpcClient extends RpcClient<String,
+    private class MyRpcClient extends RpcClient<
+            String,
             OutgoingMessageMetaData<String, Void>,
             IncomingMessageMetaData<String, Void>> {
         MyRpcClient(Metrics metrics) {
@@ -37,7 +40,7 @@ class RpcClientTest {
         }
 
         @Override
-        public <ReplyType extends String> Single<? extends RpcReply<ReplyType, IncomingMessageMetaData<String, Void>>> sendRequest(String request, OutgoingMessageMetaData<String, Void> outgoingMessageMetaData, long timeout, TimeUnit timeUnit) {
+        public <RequestType, ReplyType> Single<? extends RpcReply<ReplyType, IncomingMessageMetaData<String, Void>>> sendRequest(RequestType request, OutgoingMessageMetaData<String, Void> requestMetaData, MessageMarshaller<RequestType, String> requestMarshaller, MessageUnmarshaller<String, ReplyType> replyUnmarshaller, long timeout, TimeUnit timeUnit) {
             return Single.just(new RpcReply<>((ReplyType) request, null));
         }
     }

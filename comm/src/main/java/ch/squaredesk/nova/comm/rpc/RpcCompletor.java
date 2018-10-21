@@ -10,12 +10,14 @@
 
 package ch.squaredesk.nova.comm.rpc;
 
-public interface RpcCompletor<ReplyType, TransportSpecificReplyInfo> {
-    default void complete(ReplyType reply) {
-        complete(reply, null);
+import ch.squaredesk.nova.comm.sending.MessageMarshaller;
+
+public interface RpcCompletor<TransportMessageType, TransportSpecificReplyInfo> {
+    default <T> void complete(T reply, MessageMarshaller<T, TransportMessageType> messageMarshaller) throws Exception {
+        complete(reply, messageMarshaller, null);
     }
 
-    void complete(ReplyType reply, TransportSpecificReplyInfo replySpecificInfo);
+    <T> void  complete(T reply, MessageMarshaller<T, TransportMessageType> messageMarshaller, TransportSpecificReplyInfo replySpecificInfo) throws Exception;
 
     void completeExceptionally(Throwable error);
 }
