@@ -65,9 +65,12 @@ public class RpcClient<InternalMessageType> extends ch.squaredesk.nova.comm.rpc.
 
         if (requestMessageMetaData.details.headerParams == null || 
             requestMessageMetaData.details.headerParams.isEmpty()) {
-            requestBuilder.addHeader("Content-Type", "application/json; charset=utf-8");
+            addContentTypeJsonHeader(requestBuilder);
         } else {
             requestMessageMetaData.details.headerParams.forEach((key, value) -> requestBuilder.addHeader(key, value));
+            if (!requestMessageMetaData.details.headerParams.containsKey("Content-Type")) {
+                addContentTypeJsonHeader(requestBuilder);
+            }
         }
             
         ListenableFuture<Response> resultFuture = requestBuilder.execute();
@@ -85,6 +88,10 @@ public class RpcClient<InternalMessageType> extends ch.squaredesk.nova.comm.rpc.
         return resultSingle.timeout(timeout, timeUnit);
     }
 
+    private static void addContentTypeJsonHeader(AsyncHttpClient.BoundRequestBuilder requestBuilder) {
+        requestBuilder.addHeader("Content-Type", "application/json; charset=utf-8");
+    }
+    
     void shutdown() {
         client.close();
     }

@@ -182,6 +182,7 @@ class HttpAdapterTest {
         Map<String, String> headerParams = new HashMap<>();
         headerParams.put("X-test", "test");
         headerParams.put("Authorization", "Basic ZZZ");
+        headerParams.put("Content-Type", "application/xml");
         RequestInfo requestInfo = new RequestInfo(HttpRequestMethod.POST, headerParams);
         try {
             TestObserver<RpcReply<String>> observer = commAdapter
@@ -192,6 +193,34 @@ class HttpAdapterTest {
             assertNotNull(reply);
             assertThat(headerParams.get("Authorization"), is(expectedHeaders.get("Authorization").get(0)));
             assertThat(headerParams.get("X-test"), is(expectedHeaders.get("X-test").get(0)));
+            assertThat(headerParams.get("Content-Type"), is(expectedHeaders.get("Content-type").get(0)));
+            assertThat(reply.metaData.details.statusCode, is(200));
+            assertThat(reply.result, is("myPostResponse"));
+            assertThat(requestMethodHolder[0], is ("POST"));
+        } finally {
+            serverPortPair._1.stop(0);
+            commAdapter.shutdown();
+        }
+    }
+    
+    @Test
+    void defaultHeaderIsPutCorrectly() throws Exception {
+        HttpAdapter<String> commAdapter = HttpAdapter.builder(String.class).build();
+        String[] requestMethodHolder = new String[1];
+        Map<String, List<String>> expectedHeaders = new HashMap<>();
+        Pair<com.sun.net.httpserver.HttpServer, Integer> serverPortPair =
+                httpServer("/postTest", "myPostResponse", httpExchange -> {
+                    requestMethodHolder[0] = httpExchange.getRequestMethod();
+                    httpExchange.getRequestHeaders().forEach((key, value) -> expectedHeaders.put(key, value));
+                });
+        try {
+            TestObserver<RpcReply<String>> observer = commAdapter
+                    .sendPostRequest("http://localhost:"+ serverPortPair._2 + "/postTest", "{ myTest: \"value\"}")
+                    .test();
+            await().atMost(40, SECONDS).until(observer::valueCount, is(1));
+            RpcReply<String> reply = observer.values().get(0);
+            assertNotNull(reply);
+            assertThat("application/json; charset=utf-8", is(expectedHeaders.get("Content-type").get(0)));
             assertThat(reply.metaData.details.statusCode, is(200));
             assertThat(reply.result, is("myPostResponse"));
             assertThat(requestMethodHolder[0], is ("POST"));
