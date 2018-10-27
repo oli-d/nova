@@ -10,8 +10,7 @@
 
 package ch.squaredesk.nova.comm.rpc;
 
-import ch.squaredesk.nova.comm.retrieving.MessageUnmarshaller;
-import ch.squaredesk.nova.comm.sending.MessageMarshaller;
+import ch.squaredesk.nova.comm.MessageTranscriber;
 import ch.squaredesk.nova.metrics.Metrics;
 import io.reactivex.Single;
 
@@ -38,7 +37,7 @@ public abstract class RpcClient<
     public abstract <RequestType, ReplyType> Single<? extends RpcReply<ReplyType, ReplyMetaDataType>> sendRequest(
             RequestType request,
             RequestMetaDataType requestMetaData,
-            MessageMarshaller<RequestType, TransportMessageType> requestMarshaller,
-            MessageUnmarshaller<TransportMessageType, ReplyType> replyUnmarshaller,
+            Class<ReplyType> expectedReplyType,
+            MessageTranscriber<TransportMessageType> messageTranscriber,
             long timeout, TimeUnit timeUnit);
 }

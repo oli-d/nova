@@ -10,8 +10,9 @@
 
 package ch.squaredesk.nova.comm.rpc;
 
+import ch.squaredesk.nova.comm.MessageTranscriber;
 import ch.squaredesk.nova.comm.retrieving.IncomingMessageMetaData;
-import ch.squaredesk.nova.comm.retrieving.MessageUnmarshaller;
+import ch.squaredesk.nova.comm.retrieving.IncomingMessageTranscriber;
 import ch.squaredesk.nova.metrics.Metrics;
 import io.reactivex.Flowable;
 
@@ -31,10 +32,10 @@ public abstract class RpcServer<DestinationType,
     }
 
 
-        public abstract <T> Flowable<? extends RpcInvocation<
+    public abstract <T> Flowable<? extends RpcInvocation<
                                                         T,
                                                         ? extends IncomingMessageMetaData<?,?>,
                                                         TransportMessageType,
                                                         ?>>
-        requests(DestinationType destination, MessageUnmarshaller<TransportMessageType, T> requestUnmarshaller);
+        requests(DestinationType destination, MessageTranscriber<TransportMessageType> requestUnmarshaller, Class<T> targetType);
 }

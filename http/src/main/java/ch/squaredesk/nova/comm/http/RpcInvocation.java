@@ -12,7 +12,7 @@
 package ch.squaredesk.nova.comm.http;
 
 import ch.squaredesk.nova.comm.retrieving.IncomingMessage;
-import ch.squaredesk.nova.comm.sending.MessageMarshaller;
+import ch.squaredesk.nova.comm.sending.OutgoingMessageTranscriber;
 import ch.squaredesk.nova.tuples.Pair;
 
 import java.util.Map;
@@ -21,22 +21,31 @@ import java.util.function.Consumer;
 public class RpcInvocation<IncomingMessageType>
         extends ch.squaredesk.nova.comm.rpc.RpcInvocation<IncomingMessageType, RequestMessageMetaData, String, ReplyInfo> {
 
+    private final OutgoingMessageTranscriber<String> transcriber;
 
-    public RpcInvocation(IncomingMessage<IncomingMessageType, RequestMessageMetaData> request, Consumer<Pair<String, ReplyInfo>> replyConsumer, Consumer<Throwable> errorConsumer) {
+    public RpcInvocation(IncomingMessage<IncomingMessageType, RequestMessageMetaData> request,
+                         Consumer<Pair<String, ReplyInfo>> replyConsumer,
+                         Consumer<Throwable> errorConsumer,
+                         OutgoingMessageTranscriber<String> transcriber) {
         super(request, replyConsumer, errorConsumer);
+        this.transcriber = transcriber;
     }
 
-    <T> void complete(T reply, MessageMarshaller<T, String> marshaller, int statusCode) throws Exception {
-        complete(reply, marshaller, statusCode, null);
+    public <T> void complete(T reply) throws Exception {
+        complete(reply, 200, null);
+    }
+
+    public <T> void complete(T reply, int statusCode) throws Exception {
+        complete(reply, statusCode, null);
     }
 
 
-    <T> void complete(T reply, MessageMarshaller<T, String> marshaller, Map<String, String> replyHeaders) throws Exception {
-        complete(reply, marshaller, 200, replyHeaders);
+    public <T> void complete(T reply, Map<String, String> replyHeaders) throws Exception {
+        complete(reply, 200, replyHeaders);
     }
 
-    <T> void complete(T reply, MessageMarshaller<T, String> marshaller, int statusCode, Map<String, String> replyHeaders) throws Exception {
+    public <T> void complete(T reply, int statusCode, Map<String, String> replyHeaders) throws Exception {
         ReplyInfo replyInfo = new ReplyInfo(statusCode, replyHeaders);
-        complete(reply, marshaller, replyInfo);
+        complete(reply, replyInfo, transcriber);
     }
 }

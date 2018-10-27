@@ -10,10 +10,7 @@
 
 package ch.squaredesk.nova.comm.http;
 
-import ch.squaredesk.nova.comm.DefaultMarshallerRegistryForStringAsTransportType;
-import ch.squaredesk.nova.comm.MarshallerRegistry;
-import ch.squaredesk.nova.comm.retrieving.MessageUnmarshaller;
-import ch.squaredesk.nova.comm.sending.MessageMarshaller;
+import ch.squaredesk.nova.comm.MessageTranscriber;
 import ch.squaredesk.nova.metrics.Metrics;
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.ListenableFuture;
@@ -26,67 +23,26 @@ import static java.util.Objects.requireNonNull;
 
 public class RpcClient extends ch.squaredesk.nova.comm.rpc.RpcClient<String, RequestMessageMetaData, ReplyMessageMetaData> {
     private final AsyncHttpClient client;
-    private final MarshallerRegistry<String> marshallerRegistry;
 
     protected RpcClient(String identifier,
                         AsyncHttpClient client,
-                        Metrics metrics) {
-        this(identifier, client, new DefaultMarshallerRegistryForStringAsTransportType(), metrics);
-    }
-
-    protected RpcClient(String identifier,
-                        AsyncHttpClient client,
-                        MarshallerRegistry<String> marshallerRegistry,
                         Metrics metrics) {
         super(identifier, metrics);
         this.client = client;
-        this.marshallerRegistry = marshallerRegistry;
-    }
-
-    public <RequestType, ReplyType> Single<RpcReply<ReplyType>> sendRequest(
-            RequestType request, RequestMessageMetaData requestMessageMetaData,
-            Class<ReplyType> replyType,
-            long timeout, TimeUnit timeUnit) {
-
-        MessageMarshaller<RequestType, String> requestMarshaller = determineMarshallerFor(request);
-        MessageUnmarshaller<String, ReplyType> replyUnmarshaller = determineUnmarshallerFor(replyType);
-
-        return sendRequest(request, requestMessageMetaData, requestMarshaller, replyUnmarshaller, timeout, timeUnit);
-    }
-
-    private <T> MessageMarshaller<T, String> determineMarshallerFor (T request) {
-        MessageMarshaller<T, String> requestMarshaller = null;
-        if (request != null) {
-            requestMarshaller = null;
-            if (marshallerRegistry != null) {
-                requestMarshaller = marshallerRegistry.getMarshallerForMessageType((Class<T>) request.getClass());
-            }
-            if (requestMarshaller == null) {
-                throw new IllegalArgumentException("Unable to find marshaller for type " + request.getClass());
-            }
-        }
-        return requestMarshaller;
-    }
-
-    private <T> MessageUnmarshaller<String, T> determineUnmarshallerFor (Class<T> replyType) {
-        MessageUnmarshaller<String, T> replyUnmarshaller = marshallerRegistry.getUnmarshallerForMessageType(replyType);
-        if (replyUnmarshaller == null) {
-            throw new IllegalArgumentException("Unable to find unmarshaller for reply type " + replyType);
-        }
-        return replyUnmarshaller;
     }
 
     @Override
     public <T, U> Single<RpcReply<U>> sendRequest(
             T request,
             RequestMessageMetaData requestMessageMetaData,
-            MessageMarshaller<T, String> requestMarshaller,
-            MessageUnmarshaller<String, U> replyUnmarshaller, long timeout, TimeUnit timeUnit) {
+            Class<U> expectedReplyType,
+            MessageTranscriber<String> messageTranscriber,
+            long timeout, TimeUnit timeUnit) {
         requireNonNull(timeUnit, "timeUnit must not be null");
 
         String requestAsString;
         try {
-            requestAsString = request != null ? requestMarshaller.marshal(request) : null;
+            requestAsString = request != null ? messageTranscriber.transcribeOutgoingMessage(request) : null;
         } catch (Exception e) {
             return Single.error(e);
         }
@@ -113,7 +69,7 @@ public class RpcClient extends ch.squaredesk.nova.comm.rpc.RpcClient<String, Req
                     new ReplyInfo(statusCode));
             String responseBody = response.getResponseBody();
             metricsCollector.rpcCompleted(requestMessageMetaData.destination, responseBody);
-            return new RpcReply<>(replyUnmarshaller.unmarshal(responseBody), metaData);
+            return new RpcReply<>(messageTranscriber.transcribeIncomingMessage(responseBody, expectedReplyType), metaData);
         });
 
         return resultSingle.timeout(timeout, timeUnit);

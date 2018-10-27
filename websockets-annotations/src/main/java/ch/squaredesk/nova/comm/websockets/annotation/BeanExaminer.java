@@ -11,7 +11,7 @@
 
 package ch.squaredesk.nova.comm.websockets.annotation;
 
-import ch.squaredesk.nova.comm.DefaultMarshallerRegistryForStringAsTransportType;
+import ch.squaredesk.nova.comm.DefaultMessageTranscriberForStringAsTransportType;
 import ch.squaredesk.nova.comm.ReflectionHelper;
 import ch.squaredesk.nova.comm.retrieving.MessageUnmarshaller;
 import ch.squaredesk.nova.comm.sending.MessageMarshaller;
@@ -77,7 +77,7 @@ class BeanExaminer {
 //            Class<?> webSocketParamType = ReflectionHelper.getConcreteTypeOfGenericClassExtension(
 //                    method.getParameterTypes()[1],
 //                    0);
-            return DefaultMarshallerRegistryForStringAsTransportType.getMarshallerForMessageType(method.getParameterTypes()[0]);
+            return DefaultMessageTranscriberForStringAsTransportType.getMarshallerForMessageType(method.getParameterTypes()[0]);
         }
     }
 
@@ -85,7 +85,7 @@ class BeanExaminer {
         if (!annotation.messageUnmarshallerClassName().isEmpty()) {
             return instantiateUnmarshaller(method, annotation.messageUnmarshallerClassName());
         } else {
-            return DefaultMarshallerRegistryForStringAsTransportType.getUnmarshallerForMessageType(method.getParameterTypes()[0]);
+            return DefaultMessageTranscriberForStringAsTransportType.getUnmarshallerForMessageType(method.getParameterTypes()[0]);
         }
     }
 

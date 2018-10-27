@@ -8,9 +8,9 @@
  *   https://squaredesk.ch/license/oss/LICENSE
  */
 
-package ch.squaredesk.nova.comm.sending;
+package ch.squaredesk.nova.comm.retrieving;
 
 @FunctionalInterface
-public interface MessageMarshaller<T,R> {
-    R marshal(T t) throws Exception ;
+public interface IncomingMessageTranscriber<T> {
+    <U> U transcribeIncomingMessage (T anObject, Class<U> typeToUnmarshalTo) throws Exception ;
 }

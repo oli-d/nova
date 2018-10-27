@@ -1,5 +1,7 @@
 package ch.squaredesk.nova.comm.http;
 
+import ch.squaredesk.nova.comm.DefaultMessageTranscriberForStringAsTransportType;
+import ch.squaredesk.nova.comm.MessageTranscriber;
 import ch.squaredesk.nova.metrics.Metrics;
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.AsyncHttpClientConfig;
@@ -34,7 +36,7 @@ class SslTest {
     private HttpServer httpServer = HttpServerFactory.serverFor(rsc);
     private RpcServer sut;
     private RpcClient rpcClient;
-
+    private MessageTranscriber<String> messageTranscriber;
     @BeforeEach
     void setup() throws Exception {
         KeyStore keyStore = readKeyStore();
@@ -48,6 +50,7 @@ class SslTest {
         AsyncHttpClient client = new AsyncHttpClient(asyncHttpClientConfig);
         rpcClient = new RpcClient(null, client, new Metrics());
         sut = new RpcServer(httpServer, new Metrics());
+        messageTranscriber = new DefaultMessageTranscriberForStringAsTransportType();
     }
 
     private KeyStore readKeyStore() throws Exception {
@@ -103,9 +106,9 @@ class SslTest {
         sut.start();
         int numRequests = 5;
         String path = "/bla";
-        TestSubscriber<String> subscriber = sut.requests(path, s -> s)
+        TestSubscriber<String> subscriber = sut.requests(path, messageTranscriber, String.class)
                 .subscribeOn(Schedulers.io())
-                .map(rpcInvocation -> rpcInvocation.request.metaData.details.headerParams.get("p")
+                .map(rpcInvocation -> rpcInvocation.request.metaData.details.headers.get("p")
                 ).test();
 
         Observable.range(0, numRequests)
@@ -123,7 +126,7 @@ class SslTest {
                         new URL(urlAsString),
                         new RequestInfo(HttpRequestMethod.POST));
 
-                rpcClient.sendRequest("{}", meta, String.class, 15, SECONDS);
+                rpcClient.sendRequest("{}", meta, String.class, messageTranscriber, 15, SECONDS);
             } catch (Exception e) {
                 e.printStackTrace();
             }

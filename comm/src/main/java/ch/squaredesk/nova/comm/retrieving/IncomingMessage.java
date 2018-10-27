@@ -10,12 +10,12 @@
 
 package ch.squaredesk.nova.comm.retrieving;
 
-public class IncomingMessage<InternalMessageType, MetaDataType extends IncomingMessageMetaData<?,?>> {
-    public final InternalMessageType message;
+public class IncomingMessage<MessageType, MetaDataType extends IncomingMessageMetaData<?,?>> {
+    public final MessageType message;
     public final MetaDataType metaData;
 
 
-    public IncomingMessage(InternalMessageType message, MetaDataType metaData) {
+    public IncomingMessage(MessageType message, MetaDataType metaData) {
         this.message = message;
         this.metaData = metaData;
     }

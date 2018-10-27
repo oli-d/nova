@@ -10,8 +10,7 @@
 
 package ch.squaredesk.nova.comm.sending;
 
-import ch.squaredesk.nova.comm.MarshallerRegistry;
-import ch.squaredesk.nova.comm.retrieving.MessageUnmarshaller;
+import ch.squaredesk.nova.comm.MessageTranscriber;
 import ch.squaredesk.nova.metrics.Metrics;
 import io.reactivex.Completable;
 import org.junit.jupiter.api.Test;
@@ -21,14 +20,14 @@ import static org.hamcrest.Matchers.containsString;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-class MessageSenderImplBaseTest {
+class MessageSenderTest {
 
     @Test
     void instanceCanBeCreatedWithoutMarshallerProvider() {
-        MessageSenderImplBase<Object, Object, OutgoingMessageMetaData<Object, Object>> impl =
-                new MessageSenderImplBase<Object, Object, OutgoingMessageMetaData<Object, Object>>(null, new Metrics()) {
+        MessageSender<Object, Object, OutgoingMessageMetaData<Object, Object>> impl =
+                new MessageSender<Object, Object, OutgoingMessageMetaData<Object, Object>>(null, new Metrics()) {
                     @Override
-                    public <T> Completable doSend(T message, MessageMarshaller<T, Object> marshaller, OutgoingMessageMetaData<Object, Object> outgoingMessageMetaData) {
+                    public <T> Completable doSend(T message, OutgoingMessageMetaData<Object, Object> outgoingMessageMetaData) {
                         return null;
                     }
                 }
@@ -38,21 +37,11 @@ class MessageSenderImplBaseTest {
 
     @Test
     void instanceCannotBeCreatedWithoutMetrics() {
-        MarshallerRegistry<Object> marshallerRegistry = new MarshallerRegistry<Object>() {
-            @Override
-            public <U> MessageUnmarshaller<Object, U> getUnmarshallerForMessageType(Class<U> tClass) {
-                return null;
-            }
-            @Override
-            public <T> MessageMarshaller<T, Object> getMarshallerForMessageType(Class<T> tClass) {
-                return null;
-            }
-        };
         Throwable t = assertThrows(NullPointerException.class,
                 () -> {
-                    new MessageSenderImplBase<Object, Object, OutgoingMessageMetaData<Object, Object>>(marshallerRegistry, null) {
+                    new MessageSender<Object, Object, OutgoingMessageMetaData<Object, Object>>(new MessageTranscriber<>(null, null), null) {
                         @Override
-                        public <T> Completable doSend(T message, MessageMarshaller<T, Object> marshaller, OutgoingMessageMetaData<Object, Object> outgoingMessageMetaData) {
+                        public <T> Completable doSend(T message, OutgoingMessageMetaData<Object, Object> outgoingMessageMetaData) {
                             return null;
                         }
                     };

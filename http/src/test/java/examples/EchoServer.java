@@ -13,13 +13,11 @@ public class EchoServer {
         new EchoServer().go();
     }
 
-    private HttpAdapter<String> httpAdapter() {
+    private HttpAdapter httpAdapter() {
         HttpServer httpServer = httpServer();
 
-        HttpAdapter<String> httpAdapter = HttpAdapter.builder(String.class)
+        HttpAdapter httpAdapter = HttpAdapter.builder()
                 .setHttpServer(httpServer)
-                .setMessageMarshaller(Object::toString)
-                .setMessageUnmarshaller(String::valueOf)
                 .setMetrics(metrics())
                 .build();
 
@@ -42,10 +40,10 @@ public class EchoServer {
 
     private void go() throws Exception {
         // Instantiate the HttpAdapter
-        HttpAdapter<String> httpAdapter = httpAdapter();
+        HttpAdapter httpAdapter = httpAdapter();
 
         // Subscribe to incoming echo requests
-        httpAdapter.requests("/echo")
+        httpAdapter.requests("/echo", String.class)
                 .subscribeOn(Schedulers.io())
                 .subscribe(
                         incomingMessage -> {
@@ -59,7 +57,7 @@ public class EchoServer {
         CountDownLatch cdl = new CountDownLatch(numMessages);
         for (int i = 0; i < numMessages; i++) {
             String message = "message #" + i;
-            httpAdapter.sendPostRequest("http://127.0.0.1:10000/echo", message)
+            httpAdapter.sendPostRequest("http://127.0.0.1:10000/echo", message, String.class)
                     .subscribe(response -> {
                         System.out.println("Response for message >>" + message + "<< received: " + response);
                         cdl.countDown();

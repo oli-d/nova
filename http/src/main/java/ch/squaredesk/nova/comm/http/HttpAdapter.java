@@ -13,9 +13,8 @@ package ch.squaredesk.nova.comm.http;
 
 import ch.squaredesk.nova.comm.CommAdapter;
 import ch.squaredesk.nova.comm.CommAdapterBuilder;
-import ch.squaredesk.nova.comm.DefaultMarshallerRegistryForStringAsTransportType;
-import ch.squaredesk.nova.comm.MarshallerRegistry;
-import ch.squaredesk.nova.comm.retrieving.MessageUnmarshaller;
+import ch.squaredesk.nova.comm.DefaultMessageTranscriberForStringAsTransportType;
+import ch.squaredesk.nova.comm.MessageTranscriber;
 import com.ning.http.client.AsyncHttpClient;
 import io.reactivex.Flowable;
 import io.reactivex.Single;
@@ -37,95 +36,106 @@ public class HttpAdapter extends CommAdapter<String> {
 
 
     private HttpAdapter(Builder builder) {
-        super(builder.marshallerRegistry, builder.metrics);
+        super(builder.messageTranscriber, builder.metrics);
         this.rpcClient = builder.rpcClient;
         this.rpcServer = builder.rpcServer;
         this.defaultRequestTimeout = builder.defaultRequestTimeout;
         this.defaultRequestTimeUnit = builder.defaultRequestTimeUnit;
     }
 
-    /*
-    public <ReplyMessageType>
-    Single<RpcReply<ReplyMessageType>> sendGetRequest(String destination) {
-        return sendRequest(destination, null, new RequestInfo(HttpRequestMethod.GET), null, null );
+    public <T> FrozenHttpAdapter<T> freeze (Class<T> typeClass) {
+        return new FrozenHttpAdapter<>(this, typeClass);
     }
 
-    public <ReplyMessageType>
-    Single<RpcReply<ReplyMessageType>> sendGetRequest(
+    ///////// The client side
+    /////////
+    /////////
+    /////////////////// GET convenience methods
+    public <U> Single<RpcReply<U>> sendGetRequest(String destination, Class<U> replyType) {
+        return sendRequest(destination, null, new RequestInfo(HttpRequestMethod.GET), replyType, null, null );
+    }
+
+    public <U> Single<RpcReply<U>> sendGetRequest(
                 String destination,
+                Class<U> replyType,
                 long timeout, TimeUnit timeUnit) {
-        return sendRequest(destination, null, new RequestInfo(HttpRequestMethod.GET), timeout, timeUnit);
+        return sendRequest(destination, null, new RequestInfo(HttpRequestMethod.GET), replyType, timeout, timeUnit);
     }
 
-    public <RequestMessageType, ReplyMessageType>
-    Single<RpcReply<ReplyMessageType>> sendPostRequest(
+    /////////////////// POST convenience methods
+    public <T, U> Single<RpcReply<U>> sendPostRequest(
                 String destination,
-                RequestMessageType request) {
-        return sendRequest(destination, request, new RequestInfo(HttpRequestMethod.POST), null, null);
+                T request,
+                Class<U> replyType) {
+        return sendRequest(destination, request, new RequestInfo(HttpRequestMethod.POST), replyType, null, null);
     }
 
-    public <RequestMessageType, ReplyMessageType>
-    Single<RpcReply<ReplyMessageType>> sendPostRequest(
+    public <T, U> Single<RpcReply<U>> sendPostRequest(
                 String destination,
-                RequestMessageType request,
+                T request,
+                Class<U> replyType,
                 long timeout, TimeUnit timeUnit) {
-        return sendRequest(destination, request, new RequestInfo(HttpRequestMethod.POST), timeout, timeUnit );
+        return sendRequest(destination, request, new RequestInfo(HttpRequestMethod.POST), replyType, timeout, timeUnit );
     }
 
-    public <RequestMessageType, ReplyMessageType>
-    Single<RpcReply<ReplyMessageType>> sendPutRequest(
+    /////////////////// PUT convenience methods
+    public <T, U> Single<RpcReply<U>> sendPutRequest(
                 String destination,
-                RequestMessageType request) {
-        return sendRequest(destination, request, new RequestInfo(HttpRequestMethod.PUT), null, null);
+                T request,
+                Class<U> replyType) {
+        return sendRequest(destination, request, new RequestInfo(HttpRequestMethod.PUT), replyType, null, null);
     }
 
-    public <RequestMessageType, ReplyMessageType>
-    Single<RpcReply<ReplyMessageType>> sendPutRequest(
+    public <T, U> Single<RpcReply<U>> sendPutRequest(
                 String destination,
-                RequestMessageType request,
+                T request,
+                Class<U> replyType,
                 long timeout, TimeUnit timeUnit) {
-        return sendRequest(destination, request, new RequestInfo(HttpRequestMethod.PUT), timeout, timeUnit );
+        return sendRequest(destination, request, new RequestInfo(HttpRequestMethod.PUT), replyType, timeout, timeUnit );
     }
 
-    public <RequestMessageType, ReplyMessageType>
-    Single<RpcReply<ReplyMessageType>> sendRequest(
+    /////////////////// DELETE convenience methods
+    public <T, U> Single<RpcReply<U>> sendDeleteRequest(
                 String destination,
-                RequestMessageType request) {
-        return sendRequest(destination, request, null, null, null);
+                T request,
+                Class<U> replyType) {
+        return sendRequest(destination, request, new RequestInfo(HttpRequestMethod.DELETE), replyType, null, null);
     }
 
-    public <RequestMessageType, ReplyMessageType>
-    Single<RpcReply<ReplyMessageType>> sendRequest(
+    public <T, U> Single<RpcReply<U>> sendDeleteRequest(
                 String destination,
-                RequestMessageType request,
-                long timeout,
-                TimeUnit timeUnit) {
-        return sendRequest(destination, request, null, timeout, timeUnit);
+                T request,
+                Class<U> replyType,
+                long timeout, TimeUnit timeUnit) {
+        return sendRequest(destination, request, new RequestInfo(HttpRequestMethod.DELETE), replyType, timeout, timeUnit );
     }
 
-    public <RequestMessageType, ReplyMessageType>
-    Single<RpcReply<ReplyMessageType>> sendRequest(
+    /////////////////// convenience methods
+    public <T, U> Single<RpcReply<U>> sendRequest(
                 String destination,
-                RequestMessageType request,
-                HttpRequestMethod requestMethod) {
-        return sendRequest(destination, request, new RequestInfo(requestMethod), null, null);
-    }
-
-*/
-    public <RequestMessageType, ReplyMessageType> Single<RpcReply<ReplyMessageType>> sendRequest(
-                String destination,
-                RequestMessageType request,
+                T request,
                 HttpRequestMethod requestMethod,
-                Class<ReplyMessageType> replyType,
+                Class<U>replyType) {
+        return sendRequest(destination, request, new RequestInfo(requestMethod), replyType, null, null);
+    }
+
+
+    public <T, U> Single<RpcReply<U>> sendRequest(
+                String destination,
+                T request,
+                HttpRequestMethod requestMethod,
+                Class<U> replyType,
                 long timeout,
                 TimeUnit timeUnit) {
         return sendRequest(destination, request, new RequestInfo(requestMethod), replyType, timeout, timeUnit);
     }
-    public <RequestMessageType, ReplyMessageType> Single<RpcReply<ReplyMessageType>> sendRequest (
+
+    /////////////////// finally, the implementation
+    public <T, U> Single<RpcReply<U>> sendRequest (
                 String destination,
-                RequestMessageType request,
+                T request,
                 RequestInfo httpInfo,
-                Class<ReplyMessageType> replyType,
+                Class<U> replyType,
                 Long timeout, TimeUnit timeUnit) {
 
         if (timeout!=null) {
@@ -144,12 +154,14 @@ public class HttpAdapter extends CommAdapter<String> {
 
         RequestMessageMetaData sendingInfo = new RequestMessageMetaData(url, httpInfo);
 
-        return (Single<RpcReply<ReplyMessageType>>) rpcClient.sendRequest(request, sendingInfo, replyType, timeout, timeUnit);
+        return rpcClient.sendRequest(request, sendingInfo, replyType, messageTranscriber, timeout, timeUnit);
     }
 
-
-    public <RequestType> Flowable<RpcInvocation<RequestType>> requests(String destination, MessageUnmarshaller<String, RequestType> requestUnmarshaller) {
-        return (Flowable<RpcInvocation<RequestType>>) rpcServer.requests(destination, requestUnmarshaller);
+    ///////// The server side
+    /////////
+    /////////
+    public <T> Flowable<RpcInvocation<T>> requests(String destination, Class<T> requestType) {
+        return rpcServer.requests(destination, messageTranscriber, requestType);
     }
 
     public void start() throws Exception {
@@ -163,6 +175,9 @@ public class HttpAdapter extends CommAdapter<String> {
         rpcClient.shutdown();
     }
 
+    ///////// The builder
+    /////////
+    /////////
     public static Builder builder() {
         return new Builder();
     }
@@ -194,6 +209,11 @@ public class HttpAdapter extends CommAdapter<String> {
             return this;
         }
 
+        public Builder setMessageTranscriber(MessageTranscriber<String> val) {
+            super.setMessageTranscriber(val);
+            return this;
+        }
+
         public Builder setRpcServer(RpcServer rpcServer) {
             this.rpcServer = rpcServer;
             return this;
@@ -214,14 +234,16 @@ public class HttpAdapter extends CommAdapter<String> {
 
         protected HttpAdapter createInstance() {
             validate();
-            MarshallerRegistry<String> marshallerRegistry = new DefaultMarshallerRegistryForStringAsTransportType();
+            if (messageTranscriber == null) {
+                messageTranscriber = new DefaultMessageTranscriberForStringAsTransportType();
+            }
             if (defaultRequestTimeout==null) {
                 defaultRequestTimeout = 15L;
                 defaultRequestTimeUnit = TimeUnit.SECONDS;
             }
             if (rpcClient == null) {
                 AsyncHttpClient httpClient = new AsyncHttpClient();
-                rpcClient = new RpcClient(identifier, httpClient, marshallerRegistry, metrics);
+                rpcClient = new RpcClient(identifier, httpClient, metrics);
             }
             if (rpcServer == null) {
                 if (httpServer == null) {

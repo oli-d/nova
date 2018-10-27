@@ -1,7 +1,8 @@
 package ch.squaredesk.nova.comm.http;
 
+import ch.squaredesk.nova.comm.MessageTranscriber;
 import ch.squaredesk.nova.comm.retrieving.IncomingMessage;
-import ch.squaredesk.nova.comm.retrieving.MessageUnmarshaller;
+import ch.squaredesk.nova.comm.retrieving.IncomingMessageTranscriber;
 import ch.squaredesk.nova.metrics.Metrics;
 import io.reactivex.BackpressureStrategy;
 import io.reactivex.Flowable;
@@ -51,7 +52,8 @@ public class RpcServer extends ch.squaredesk.nova.comm.rpc.RpcServer<String, Str
 
     @Override
     public <T> Flowable<RpcInvocation<T>> requests(String destination,
-                                                   MessageUnmarshaller<String, T> requestUnmarshaller) {
+                                                   MessageTranscriber<String> messageTranscriber,
+                                                   Class<T> targetType) {
         URL destinationAsLocalUrl;
         try {
             destinationAsLocalUrl = new URL("http", "localhost", destination);
@@ -64,7 +66,7 @@ public class RpcServer extends ch.squaredesk.nova.comm.rpc.RpcServer<String, Str
 
                     Subject<RpcInvocation> stream = PublishSubject.create();
                     stream = stream.toSerialized();
-                    NonBlockingHttpHandler httpHandler = new NonBlockingHttpHandler(destinationAsLocalUrl, requestUnmarshaller, stream);
+                    NonBlockingHttpHandler httpHandler = new NonBlockingHttpHandler(destinationAsLocalUrl, messageTranscriber, targetType, stream);
 
                     httpServer.getServerConfiguration().addHttpHandler(httpHandler, destination);
 
@@ -120,10 +122,6 @@ public class RpcServer extends ch.squaredesk.nova.comm.rpc.RpcServer<String, Str
         }
     }
 
-    private static <T> T convertIncomingData(String objectAsString, MessageUnmarshaller<String, T> unmarshaller) throws Exception {
-        return unmarshaller.unmarshal(objectAsString);
-    }
-
     /**
      * writes reply Object to response body. Assumes that the marshaller creates a String that is a JSON
      * representation of the reply object
@@ -166,15 +164,18 @@ public class RpcServer extends ch.squaredesk.nova.comm.rpc.RpcServer<String, Str
 
     private class NonBlockingHttpHandler<IncomingMessageType> extends HttpHandler {
         private final URL destination;
-        private final MessageUnmarshaller<String, IncomingMessageType> messageUnmarshaller;
+        private final MessageTranscriber<String> messageTranscriber;
+        private final Class<IncomingMessageType> targetType;
         private final Subject<RpcInvocation> stream;
 
         private NonBlockingHttpHandler(
                 URL destination,
-                MessageUnmarshaller<String, IncomingMessageType> messageUnmarshaller,
+                MessageTranscriber<String> messageTranscriber,
+                Class<IncomingMessageType> targetType,
                 Subject<RpcInvocation> stream) {
             this.destination = destination;
-            this.messageUnmarshaller = messageUnmarshaller;
+            this.messageTranscriber = messageTranscriber;
+            this.targetType = targetType;
             this.stream = stream;
         }
 
@@ -210,11 +211,11 @@ public class RpcServer extends ch.squaredesk.nova.comm.rpc.RpcServer<String, Str
 
                     IncomingMessageType incomingMessage = incomingMessageAsString.trim().isEmpty() ?
                             null :
-                            convertIncomingData(incomingMessageAsString, messageUnmarshaller);
+                            messageTranscriber.transcribeIncomingMessage(incomingMessageAsString, targetType);
                     RequestInfo requestInfo = httpSpecificInfoFrom(request);
                     RequestMessageMetaData metaData = new RequestMessageMetaData(destination, requestInfo);
 
-                    RpcInvocation rpci =
+                    RpcInvocation<IncomingMessageType> rpci =
                             new RpcInvocation<>(
                                     new IncomingMessage<>(incomingMessage, metaData),
                                     replyInfo -> {
@@ -254,7 +255,8 @@ public class RpcServer extends ch.squaredesk.nova.comm.rpc.RpcServer<String, Str
                                         } catch (Exception any) {
                                             logger.error("Failed to send error 500 back to client", any);
                                         }
-                                    }
+                                    },
+                                    messageTranscriber
                             );
 
                     metricsCollector.requestReceived(rpci.request);

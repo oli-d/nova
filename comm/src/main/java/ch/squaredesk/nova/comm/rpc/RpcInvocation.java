@@ -12,7 +12,7 @@ package ch.squaredesk.nova.comm.rpc;
 
 import ch.squaredesk.nova.comm.retrieving.IncomingMessage;
 import ch.squaredesk.nova.comm.retrieving.IncomingMessageMetaData;
-import ch.squaredesk.nova.comm.sending.MessageMarshaller;
+import ch.squaredesk.nova.comm.sending.OutgoingMessageTranscriber;
 import ch.squaredesk.nova.tuples.Pair;
 
 import java.util.function.Consumer;
@@ -38,8 +38,9 @@ public class RpcInvocation<
     }
 
     @Override
-    public <T> void complete(T reply, MessageMarshaller<T, TransportMessageType> messageMarshaller, TransportSpecificReplyInfo replySpecificInfo) throws Exception {
-        replyConsumer.accept(new Pair<>(messageMarshaller.marshal(reply), replySpecificInfo));
+    public <T> void complete(T reply, TransportSpecificReplyInfo replySpecificInfo, OutgoingMessageTranscriber<TransportMessageType> transcriber) throws Exception {
+        replyConsumer.accept(new Pair<>(transcriber.transcribeOutgoingMessage(reply), replySpecificInfo));
+
     }
 
     public void completeExceptionally(Throwable error) {

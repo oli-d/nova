@@ -8,17 +8,16 @@
  *   https://squaredesk.ch/license/oss/LICENSE
  *
  */
-
 package ch.squaredesk.nova.comm;
 
 import ch.squaredesk.nova.metrics.Metrics;
 
 public abstract class CommAdapter<TransportMessageType> {
-    protected MarshallerRegistry<TransportMessageType> marshallerRegistry;
+    protected MessageTranscriber<TransportMessageType> messageTranscriber;
     protected Metrics metrics;
 
-    protected CommAdapter(MarshallerRegistry<TransportMessageType> marshallerRegistry, Metrics metrics) {
-        this.marshallerRegistry = marshallerRegistry;
+    protected CommAdapter(MessageTranscriber<TransportMessageType> messageTranscriber, Metrics metrics) {
+        this.messageTranscriber = messageTranscriber;
         this.metrics = metrics;
     }
 }

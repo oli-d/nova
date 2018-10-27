@@ -6,10 +6,11 @@
  * obtain a copy of the license at
  *
  *   https://squaredesk.ch/license/oss/LICENSE
- *
  */
 
-package ch.squaredesk.nova.comm;
+package ch.squaredesk.nova.comm.sending;
 
-public interface MarshallerRegistry<TransportMessageType> extends MarshallerProvider<TransportMessageType>, UnmarshallerProvider<TransportMessageType> {
+@FunctionalInterface
+public interface OutgoingMessageTranscriber<T> {
+    <U> T transcribeOutgoingMessage(U anObject) throws Exception ;
 }

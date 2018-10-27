@@ -35,7 +35,7 @@ public class ReplyInfo {
         StringBuilder sb = new StringBuilder()
             .append("{\n")
             .append("\tstatusCode: ").append(statusCode).append('\n')
-            .append("\theaderParams: {\n");
+            .append("\theaders: {\n");
         for (Map.Entry<String, String> entry: headerParams.entrySet()) {
             sb.append("\t\t").append(entry.getKey()).append(": ").append(entry.getValue()).append('\n');
         }

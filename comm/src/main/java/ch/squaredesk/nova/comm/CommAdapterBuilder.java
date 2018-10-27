@@ -14,14 +14,14 @@ package ch.squaredesk.nova.comm;
 import ch.squaredesk.nova.metrics.Metrics;
 
 public abstract class CommAdapterBuilder<TransportMessageType, CommAdapterType extends CommAdapter<TransportMessageType>> {
-    public MarshallerRegistry<TransportMessageType> marshallerRegistry;
+    public MessageTranscriber<TransportMessageType> messageTranscriber;
     public Metrics metrics;
 
     protected CommAdapterBuilder() {
     }
 
-    public CommAdapterBuilder<TransportMessageType, CommAdapterType> setMarshallerRegistry(MarshallerRegistry<TransportMessageType> registry) {
-        this.marshallerRegistry = registry;
+    public CommAdapterBuilder<TransportMessageType, CommAdapterType> setMessageTranscriber(MessageTranscriber<TransportMessageType> registry) {
+        this.messageTranscriber = registry;
         return this;
     }
 
