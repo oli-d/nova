@@ -11,7 +11,11 @@
 
 package ch.squaredesk.nova.comm.http;
 
+import ch.squaredesk.nova.comm.CommAdapter;
 import ch.squaredesk.nova.comm.CommAdapterBuilder;
+import ch.squaredesk.nova.comm.DefaultMarshallerRegistryForStringAsTransportType;
+import ch.squaredesk.nova.comm.MarshallerRegistry;
+import ch.squaredesk.nova.comm.retrieving.MessageUnmarshaller;
 import com.ning.http.client.AsyncHttpClient;
 import io.reactivex.Flowable;
 import io.reactivex.Single;
@@ -25,20 +29,22 @@ import java.util.concurrent.TimeUnit;
 
 import static java.util.Objects.requireNonNull;
 
-public class HttpAdapter {
+public class HttpAdapter extends CommAdapter<String> {
     private final RpcClient rpcClient;
-    private final RpcServer<Void> rpcServer;
+    private final RpcServer rpcServer;
     private final Long defaultRequestTimeout;
     private final TimeUnit defaultRequestTimeUnit;
 
 
     private HttpAdapter(Builder builder) {
+        super(builder.marshallerRegistry, builder.metrics);
         this.rpcClient = builder.rpcClient;
         this.rpcServer = builder.rpcServer;
         this.defaultRequestTimeout = builder.defaultRequestTimeout;
         this.defaultRequestTimeUnit = builder.defaultRequestTimeUnit;
     }
 
+    /*
     public <ReplyMessageType>
     Single<RpcReply<ReplyMessageType>> sendGetRequest(String destination) {
         return sendRequest(destination, null, new RequestInfo(HttpRequestMethod.GET), null, null );
@@ -105,16 +111,16 @@ public class HttpAdapter {
         return sendRequest(destination, request, new RequestInfo(requestMethod), null, null);
     }
 
-    public <RequestMessageType, ReplyMessageType>
-    Single<RpcReply<ReplyMessageType>> sendRequest(
+*/
+    public <RequestMessageType, ReplyMessageType> Single<RpcReply<ReplyMessageType>> sendRequest(
                 String destination,
                 RequestMessageType request,
                 HttpRequestMethod requestMethod,
+                Class<ReplyMessageType> replyType,
                 long timeout,
                 TimeUnit timeUnit) {
-        return sendRequest(destination, request, new RequestInfo(requestMethod), timeout, timeUnit);
+        return sendRequest(destination, request, new RequestInfo(requestMethod), replyType, timeout, timeUnit);
     }
-
     public <RequestMessageType, ReplyMessageType> Single<RpcReply<ReplyMessageType>> sendRequest (
                 String destination,
                 RequestMessageType request,
@@ -138,11 +144,12 @@ public class HttpAdapter {
 
         RequestMessageMetaData sendingInfo = new RequestMessageMetaData(url, httpInfo);
 
-        return rpcClient.sendRequest(request, sendingInfo, replyType, timeout, timeUnit);
+        return (Single<RpcReply<ReplyMessageType>>) rpcClient.sendRequest(request, sendingInfo, replyType, timeout, timeUnit);
     }
 
-    public <MessageType> Flowable<RpcInvocation<MessageType>> requests(String destination) {
-        return rpcServer.requests(destination);
+
+    public <RequestType> Flowable<RpcInvocation<RequestType>> requests(String destination, MessageUnmarshaller<String, RequestType> requestUnmarshaller) {
+        return (Flowable<RpcInvocation<RequestType>>) rpcServer.requests(destination, requestUnmarshaller);
     }
 
     public void start() throws Exception {
@@ -156,25 +163,24 @@ public class HttpAdapter {
         rpcClient.shutdown();
     }
 
-    public static <MessageType> Builder<MessageType> builder(Class<MessageType> messageTypeClass) {
-        return new Builder<>(messageTypeClass);
+    public static Builder builder() {
+        return new Builder();
     }
 
-    public static class Builder<MessageType> extends CommAdapterBuilder<MessageType, HttpAdapter<MessageType>>{
+    public static class Builder extends CommAdapterBuilder<String, HttpAdapter>{
         private static Logger logger = LoggerFactory.getLogger(Builder.class);
 
         private String identifier;
         private HttpServer httpServer;
-        private RpcClient<MessageType> rpcClient;
-        private RpcServer<MessageType> rpcServer;
+        private RpcClient rpcClient;
+        private RpcServer rpcServer;
         private Long defaultRequestTimeout;
         private TimeUnit defaultRequestTimeUnit;
 
-        private Builder(Class<MessageType> messageTypeClass) {
-            super(messageTypeClass);
+        private Builder() {
         }
 
-        public Builder<MessageType> setDefaultRequestTimeout(long timeout, TimeUnit timeUnit) {
+        public Builder setDefaultRequestTimeout(long timeout, TimeUnit timeUnit) {
             requireNonNull(timeUnit);
             if (timeout>0) {
                 defaultRequestTimeout = timeout;
@@ -183,22 +189,22 @@ public class HttpAdapter {
             return this;
         }
 
-        public Builder<MessageType> setHttpServer(HttpServer httpServer) {
+        public Builder setHttpServer(HttpServer httpServer) {
             this.httpServer = httpServer;
             return this;
         }
 
-        public Builder<MessageType> setRpcServer(RpcServer<MessageType> rpcServer) {
+        public Builder setRpcServer(RpcServer rpcServer) {
             this.rpcServer = rpcServer;
             return this;
         }
 
-        public Builder<MessageType> setRpcClient(RpcClient<MessageType> rpcClient) {
+        public Builder setRpcClient(RpcClient rpcClient) {
             this.rpcClient = rpcClient;
             return this;
         }
 
-        public Builder<MessageType> setIdentifier(String identifier) {
+        public Builder setIdentifier(String identifier) {
             this.identifier = identifier;
             return this;
         }
@@ -206,24 +212,25 @@ public class HttpAdapter {
         protected void validate() {
         }
 
-        protected HttpAdapter<MessageType> createInstance() {
+        protected HttpAdapter createInstance() {
             validate();
+            MarshallerRegistry<String> marshallerRegistry = new DefaultMarshallerRegistryForStringAsTransportType();
             if (defaultRequestTimeout==null) {
                 defaultRequestTimeout = 15L;
                 defaultRequestTimeUnit = TimeUnit.SECONDS;
             }
             if (rpcClient == null) {
                 AsyncHttpClient httpClient = new AsyncHttpClient();
-                rpcClient = new RpcClient<>(identifier, httpClient, messageMarshaller, messageUnmarshaller, metrics);
+                rpcClient = new RpcClient(identifier, httpClient, marshallerRegistry, metrics);
             }
             if (rpcServer == null) {
                 if (httpServer == null) {
                     logger.info("No httpServer provided, HTTP Adapter will only be usable in client mode!!!");
                 } else {
-                    rpcServer = new RpcServer<>(identifier, httpServer, messageMarshaller, messageUnmarshaller, metrics);
+                    rpcServer = new RpcServer(identifier, httpServer, metrics);
                 }
             }
-            return new HttpAdapter<>(this);
+            return new HttpAdapter(this);
         }
     }
 

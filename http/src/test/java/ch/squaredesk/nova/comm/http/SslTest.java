@@ -32,8 +32,8 @@ class SslTest {
             .sslKeyStorePass("storepass") // also the keypass
             .build();
     private HttpServer httpServer = HttpServerFactory.serverFor(rsc);
-    private RpcServer<String> sut;
-    private RpcClient<String> rpcClient;
+    private RpcServer sut;
+    private RpcClient rpcClient;
 
     @BeforeEach
     void setup() throws Exception {
@@ -46,8 +46,8 @@ class SslTest {
         sslContext.init(keyManagerFactory.getKeyManagers(),trustManagerFactory.getTrustManagers(), new SecureRandom());
         AsyncHttpClientConfig asyncHttpClientConfig = new AsyncHttpClientConfig.Builder().setSSLContext(sslContext).build();
         AsyncHttpClient client = new AsyncHttpClient(asyncHttpClientConfig);
-        rpcClient = new RpcClient<>(null, client, s -> s, s -> s, new Metrics());
-        sut = new RpcServer<>(httpServer, s->s, s->s, new Metrics());
+        rpcClient = new RpcClient(null, client, new Metrics());
+        sut = new RpcServer(httpServer, new Metrics());
     }
 
     private KeyStore readKeyStore() throws Exception {
@@ -103,7 +103,7 @@ class SslTest {
         sut.start();
         int numRequests = 5;
         String path = "/bla";
-        TestSubscriber<String> subscriber = sut.requests(path)
+        TestSubscriber<String> subscriber = sut.requests(path, s -> s)
                 .subscribeOn(Schedulers.io())
                 .map(rpcInvocation -> rpcInvocation.request.metaData.details.headerParams.get("p")
                 ).test();
@@ -123,7 +123,7 @@ class SslTest {
                         new URL(urlAsString),
                         new RequestInfo(HttpRequestMethod.POST));
 
-                rpcClient.sendRequest("{}", meta, 15, SECONDS);
+                rpcClient.sendRequest("{}", meta, String.class, 15, SECONDS);
             } catch (Exception e) {
                 e.printStackTrace();
             }

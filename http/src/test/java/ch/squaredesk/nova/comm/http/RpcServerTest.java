@@ -30,13 +30,13 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 class RpcServerTest {
     private HttpServerConfiguration rsc = HttpServerConfiguration.builder().interfaceName("localhost").port(10000).build();
     private HttpServer httpServer = HttpServerFactory.serverFor(rsc);
-    private RpcServer<String> sut;
-    private RpcClient<String> rpcClient;
+    private RpcServer sut;
+    private RpcClient rpcClient;
 
     @BeforeEach
     void setup() {
-        sut = new RpcServer<>(httpServer, s -> s, s -> s, new Metrics());
-        rpcClient = new RpcClient<>(null, new AsyncHttpClient(), s -> s, s -> s, new Metrics());
+        sut = new RpcServer(httpServer, new Metrics());
+        rpcClient = new RpcClient(null, new AsyncHttpClient(), new Metrics());
     }
 
     @AfterEach
@@ -48,29 +48,15 @@ class RpcServerTest {
     @Test
     void sutCannotBeCreatedWithoutConfigs() {
         NullPointerException npe = assertThrows(NullPointerException.class,
-                () -> new RpcServer<>(null, s -> s, s -> s, new Metrics()));
+                () -> new RpcServer(null, new Metrics()));
         assertThat(npe.getMessage(), is("httpServer must not be null"));
     }
 
     @Test
-    void sutCannotBeCreatedWithoutMarshaller() {
-        NullPointerException npe = assertThrows(NullPointerException.class,
-                () -> new RpcServer<>(httpServer, null, s -> s, new Metrics()));
-        assertThat(npe.getMessage(), is("messageMarshaller must not be null"));
-    }
-
-    @Test
-    void sutCannotBeCreatedWithoutUnmarshaller() {
-        NullPointerException npe = assertThrows(NullPointerException.class,
-                () -> new RpcServer<String>(httpServer, s -> s, null, new Metrics()));
-        assertThat(npe.getMessage(), is("messageUnmarshaller must not be null"));
-    }
-
-    @Test
     void subscriptionsCanBeMadeAfterServerStarted() throws Exception {
-        assertNotNull(sut.requests("/requests"));
+        assertNotNull(sut.requests("/requests", s -> s));
         sut.start();
-        sut.requests("/failing");
+        sut.requests("/failing", s -> s);
     }
 
     @Test
@@ -80,7 +66,7 @@ class RpcServerTest {
         String path = "/bla";
         List<String> responses = new ArrayList<>();
 
-        sut.requests(path)
+        sut.requests(path, s -> s)
             .subscribe(rpcInvocation -> {
                 rpcInvocation.complete(" description " + rpcInvocation.request.metaData.details.headerParams.get("p"));
             });
@@ -116,7 +102,7 @@ class RpcServerTest {
         String urlAsString = "http://" + rsc.interfaceName + ":" + rsc.port + path;
         URL url = new URL(urlAsString);
         String hugeRequest = createStringOfLength(5 * 1024 * 1024);
-        Flowable<RpcInvocation<String>> requests = sut.requests(path);
+        Flowable<RpcInvocation<String>> requests = sut.requests(path, s -> s);
         requests.subscribeOn(Schedulers.io()).subscribe(rpcInvocation -> {
             rpcInvocation.complete(rpcInvocation.request.message);
         });
@@ -132,7 +118,7 @@ class RpcServerTest {
         String urlAsString = "http://" + rsc.interfaceName + ":" + rsc.port + path;
         URL url = new URL(urlAsString);
         String hugeReply = createStringOfLength(15 * 1024 * 1024);
-        Flowable<RpcInvocation<String>> requests = sut.requests(path);
+        Flowable<RpcInvocation<String>> requests = sut.requests(path, s -> s);
         requests.subscribeOn(Schedulers.io()).subscribe(rpcInvocation -> {
             rpcInvocation.complete(hugeReply);
         });

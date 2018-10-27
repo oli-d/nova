@@ -19,8 +19,7 @@ import java.util.Map;
 import java.util.function.Consumer;
 
 public class RpcInvocation<IncomingMessageType>
-        extends ch.squaredesk.nova.comm.rpc.RpcInvocation<IncomingMessageType, RequestMessageMetaData, String, ReplyInfo>
-        implements RpcCompletor {
+        extends ch.squaredesk.nova.comm.rpc.RpcInvocation<IncomingMessageType, RequestMessageMetaData, String, ReplyInfo> {
 
 
     public RpcInvocation(IncomingMessage<IncomingMessageType, RequestMessageMetaData> request, Consumer<Pair<String, ReplyInfo>> replyConsumer, Consumer<Throwable> errorConsumer) {
@@ -40,17 +39,4 @@ public class RpcInvocation<IncomingMessageType>
         ReplyInfo replyInfo = new ReplyInfo(statusCode, replyHeaders);
         complete(reply, marshaller, replyInfo);
     }
-
-    <T> void complete(T reply, MessageMarshaller<T, String> marshaller, ReplyInfo replySpecificInfo) throws Exception;
-
-    //    protected RpcInvocation(IncomingMessage<InternalMessageType,RequestMessageMetaData> request,
-//                            Consumer<Pair<InternalMessageType, ReplyInfo>> replyConsumer,
-//                            Consumer<Throwable> errorConsumer) {
-//        super(request, replyConsumer, errorConsumer);
-//    }
-//
-//    public void complete(int statusCode, InternalMessageType reply) {
-//        ReplyInfo replyInfo = new ReplyInfo(statusCode);
-//        complete(reply, replyInfo);
-//    }
 }

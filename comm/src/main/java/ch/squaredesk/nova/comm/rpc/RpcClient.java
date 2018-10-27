@@ -35,8 +35,7 @@ public abstract class RpcClient<
         this.metricsCollector = new RpcClientMetricsCollector(identifier, metrics);
     }
 
-    public abstract <RequestType, ReplyType>
-        Single<? extends RpcReply<ReplyType, ReplyMetaDataType>> sendRequest(
+    public abstract <RequestType, ReplyType> Single<? extends RpcReply<ReplyType, ReplyMetaDataType>> sendRequest(
             RequestType request,
             RequestMetaDataType requestMetaData,
             MessageMarshaller<RequestType, TransportMessageType> requestMarshaller,

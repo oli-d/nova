@@ -13,30 +13,24 @@ package ch.squaredesk.nova.comm;
 
 import ch.squaredesk.nova.metrics.Metrics;
 
-public abstract class CommAdapterBuilder<MessageType, CommAdapterType> {
-    private final Class<MessageType> messageTypeClass;
-
-    public DefaultMarshallerRegistryForStringAsTransportType marshallerRegistry;
+public abstract class CommAdapterBuilder<TransportMessageType, CommAdapterType extends CommAdapter<TransportMessageType>> {
+    public MarshallerRegistry<TransportMessageType> marshallerRegistry;
     public Metrics metrics;
 
-    protected CommAdapterBuilder(Class<MessageType> messageTypeClass) {
-        this.messageTypeClass = messageTypeClass;
+    protected CommAdapterBuilder() {
     }
 
-    public CommAdapterBuilder<MessageType, CommAdapterType> setMarshallerRegistry(DefaultMarshallerRegistryForStringAsTransportType registry) {
+    public CommAdapterBuilder<TransportMessageType, CommAdapterType> setMarshallerRegistry(MarshallerRegistry<TransportMessageType> registry) {
         this.marshallerRegistry = registry;
         return this;
     }
 
-    public CommAdapterBuilder<MessageType, CommAdapterType> setMetrics(Metrics metrics) {
+    public CommAdapterBuilder<TransportMessageType, CommAdapterType> setMetrics(Metrics metrics) {
         this.metrics = metrics;
         return this;
     }
 
     private void baseValidate() {
-        if (marshallerRegistry == null) {
-            marshallerRegistry = new DefaultMarshallerRegistryForStringAsTransportType();
-        }
         if (metrics == null) {
             metrics = new Metrics();
         }

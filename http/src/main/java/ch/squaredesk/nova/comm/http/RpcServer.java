@@ -2,7 +2,6 @@ package ch.squaredesk.nova.comm.http;
 
 import ch.squaredesk.nova.comm.retrieving.IncomingMessage;
 import ch.squaredesk.nova.comm.retrieving.MessageUnmarshaller;
-import ch.squaredesk.nova.comm.sending.MessageMarshaller;
 import ch.squaredesk.nova.metrics.Metrics;
 import io.reactivex.BackpressureStrategy;
 import io.reactivex.Flowable;
@@ -29,7 +28,7 @@ import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
-public class RpcServer extends ch.squaredesk.nova.comm.rpc.RpcServer<String, RpcInvocation> {
+public class RpcServer extends ch.squaredesk.nova.comm.rpc.RpcServer<String, String> {
     private static final Logger logger = LoggerFactory.getLogger(RpcServer.class);
 
     private final Map<String, Flowable<RpcInvocation>> mapDestinationToIncomingMessages = new ConcurrentHashMap<>();
@@ -49,13 +48,10 @@ public class RpcServer extends ch.squaredesk.nova.comm.rpc.RpcServer<String, Rpc
         this.httpServer = httpServer;
     }
 
-//    FIXME
-//    public <T> Flowable<RpcInvocation> requests(String destination, Class<T> incomingMessageType) {
-//
-//    }
 
     @Override
-    public <T> Flowable<RpcInvocation> requests(String destination, MessageUnmarshaller<String, T> messageUnmarshaller) {
+    public <T> Flowable<RpcInvocation<T>> requests(String destination,
+                                                   MessageUnmarshaller<String, T> requestUnmarshaller) {
         URL destinationAsLocalUrl;
         try {
             destinationAsLocalUrl = new URL("http", "localhost", destination);
@@ -68,7 +64,7 @@ public class RpcServer extends ch.squaredesk.nova.comm.rpc.RpcServer<String, Rpc
 
                     Subject<RpcInvocation> stream = PublishSubject.create();
                     stream = stream.toSerialized();
-                    NonBlockingHttpHandler httpHandler = new NonBlockingHttpHandler(destinationAsLocalUrl, messageUnmarshaller, stream);
+                    NonBlockingHttpHandler httpHandler = new NonBlockingHttpHandler(destinationAsLocalUrl, requestUnmarshaller, stream);
 
                     httpServer.getServerConfiguration().addHttpHandler(httpHandler, destination);
 
@@ -128,10 +124,6 @@ public class RpcServer extends ch.squaredesk.nova.comm.rpc.RpcServer<String, Rpc
         return unmarshaller.unmarshal(objectAsString);
     }
 
-    private static <T> String convertOutgoingMessage(T replyObject, MessageMarshaller<T, String> marshaller) throws Exception {
-        return marshaller.marshal(replyObject);
-    }
-
     /**
      * writes reply Object to response body. Assumes that the marshaller creates a String that is a JSON
      * representation of the reply object
@@ -171,7 +163,6 @@ public class RpcServer extends ch.squaredesk.nova.comm.rpc.RpcServer<String, Rpc
             logger.info("An error occurred, trying to shutdown REST HTTP server", e);
         }
     }
-
 
     private class NonBlockingHttpHandler<IncomingMessageType> extends HttpHandler {
         private final URL destination;
@@ -229,9 +220,8 @@ public class RpcServer extends ch.squaredesk.nova.comm.rpc.RpcServer<String, Rpc
                                     replyInfo -> {
                                         response.setCharacterEncoding("utf-8");
                                         try (NIOWriter out = response.getNIOWriter()) {
-                                            String outgoingMessageAsString = convertOutgoingMessage(replyInfo._1, messageMarshaller);
                                             response.setContentType("application/json");
-                                            response.setContentLength(outgoingMessageAsString.length());
+                                            response.setContentLength(replyInfo._1.length());
                                             int statusCode;
                                             if (replyInfo._2 == null) {
                                                 statusCode = 200;
@@ -242,8 +232,8 @@ public class RpcServer extends ch.squaredesk.nova.comm.rpc.RpcServer<String, Rpc
                                                 statusCode = replyInfo._2.statusCode;
                                             }
                                             response.setStatus(statusCode);
-                                            writeResponse(outgoingMessageAsString, out);
-                                            metricsCollector.requestCompleted(incomingMessage, outgoingMessageAsString);
+                                            writeResponse(replyInfo._1, out);
+                                            metricsCollector.requestCompleted(incomingMessage, replyInfo._1);
                                         } catch (Exception e) {
                                             metricsCollector.requestCompletedExceptionally(incomingMessage, e);
                                             logger.error("An error occurred trying to send HTTP response " + replyInfo, e);
