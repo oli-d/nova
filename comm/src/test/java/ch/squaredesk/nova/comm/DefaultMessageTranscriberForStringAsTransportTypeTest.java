@@ -1,5 +1,7 @@
 package ch.squaredesk.nova.comm;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -18,29 +20,40 @@ class DefaultMessageTranscriberForStringAsTransportTypeTest {
 
     @Test
     void defaultTranscribersAreSet() throws Exception {
-        assertThat(sut.transcribeOutgoingMessage("a String"), is("a String"));
-        assertThat(sut.transcribeOutgoingMessage(1), is("1"));
-        assertThat(sut.transcribeOutgoingMessage(1.0), is("1.0"));
-        assertThat(sut.transcribeOutgoingMessage(new BigDecimal("1.0")), is("1.0"));
-        assertThat(sut.transcribeOutgoingMessage(new MessageTranscriberTest.MyClass("xxx")), is("{\"field\":\"xxx\"}"));
+        assertThat(sut.getOutgoingMessageTranscriber(String.class).apply("a String"), is("a String"));
+        assertThat(sut.getOutgoingMessageTranscriber(Integer.class).apply(1), is("1"));
+        assertThat(sut.getOutgoingMessageTranscriber(Double.class).apply(1.0), is("1.0"));
+        assertThat(sut.getOutgoingMessageTranscriber(BigDecimal.class).apply(new BigDecimal("1.0")), is("1.0"));
+        assertThat(sut.getOutgoingMessageTranscriber(MyClass.class).apply(new MyClass("xxx")), is("{\"field\":\"xxx\"}"));
 
-        assertThat(sut.transcribeIncomingMessage("a String", String.class), is("a String"));
-        assertThat(sut.transcribeIncomingMessage("1", Integer.class), is(1));
-        assertThat(sut.transcribeIncomingMessage("1", Double.class), is(1.0));
-        assertThat(sut.transcribeIncomingMessage("1", BigDecimal.class), is(BigDecimal.ONE));
-        assertThat(sut.transcribeIncomingMessage("{\"field\":\"xxx\"}", MessageTranscriberTest.MyClass.class), is(new MessageTranscriberTest.MyClass("xxx")));
+        assertThat(sut.getIncomingMessageTranscriber(String.class).apply("a String"), is("a String"));
+        assertThat(sut.getIncomingMessageTranscriber(Integer.class).apply("1"), is(1));
+        assertThat(sut.getIncomingMessageTranscriber(Double.class).apply("1"), is(1.0));
+        assertThat(sut.getIncomingMessageTranscriber(BigDecimal.class).apply("1"), is(BigDecimal.ONE));
+        assertThat(sut.getIncomingMessageTranscriber(MyClass.class).apply("{\"field\":\"xxx\"}"), is(new MyClass("xxx")));
     }
 
-    @Test
-    void typeSpecificTranscribersCanBeDeegistered() throws Exception {
-        sut.registerClassSpecificTranscribers(Integer.class, s -> "Integer", s -> 5);
-        assertThat(sut.transcribeIncomingMessage("a String", Integer.class), is(5));
-        assertThat(sut.transcribeOutgoingMessage(1), is("Integer"));
+    public static class MyClass {
+        public final String field;
 
-        sut.registerClassSpecificTranscribers(Integer.class, null, null);
-        assertThat(sut.transcribeIncomingMessage("1", Integer.class), is(1));
-        assertThat(sut.transcribeOutgoingMessage(1), is("1"));
+        @JsonCreator
+        public MyClass(@JsonProperty("field") String field) {
+            this.field = field;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            MyClass myClass = (MyClass) o;
+
+            return field != null ? field.equals(myClass.field) : myClass.field == null;
+        }
+
+        @Override
+        public int hashCode() {
+            return field != null ? field.hashCode() : 0;
+        }
     }
-
-
 }

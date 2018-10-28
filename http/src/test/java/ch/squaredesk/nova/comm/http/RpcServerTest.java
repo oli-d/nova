@@ -68,7 +68,7 @@ class RpcServerTest {
 
         sut.requests(path, messageTranscriber, String.class)
             .subscribe(rpcInvocation -> {
-                rpcInvocation.complete(" description " + rpcInvocation.request.metaData.details.headers.get("p"), messageTranscriber);
+                rpcInvocation.complete(" description " + rpcInvocation.request.metaData.details.headers.get("p"));
             });
 
         IntStream.range(0, numRequests).forEach(i -> {
@@ -105,7 +105,7 @@ class RpcServerTest {
         String hugeRequest = createStringOfLength(5 * 1024 * 1024);
         Flowable<RpcInvocation<String>> requests = sut.requests(path, messageTranscriber, String.class);
         requests.subscribeOn(Schedulers.io()).subscribe(rpcInvocation -> {
-            rpcInvocation.complete(rpcInvocation.request.message, messageTranscriber);
+            rpcInvocation.complete(rpcInvocation.request.message);
         });
 
         HttpRequestSender.HttpResponse response = HttpRequestSender.sendPostRequest(url, hugeRequest);
@@ -121,7 +121,7 @@ class RpcServerTest {
         String hugeReply = createStringOfLength(15 * 1024 * 1024);
         Flowable<RpcInvocation<String>> requests = sut.requests(path, messageTranscriber, String.class);
         requests.subscribeOn(Schedulers.io()).subscribe(rpcInvocation -> {
-            rpcInvocation.complete(hugeReply, messageTranscriber);
+            rpcInvocation.complete(hugeReply);
         });
 
         HttpRequestSender.HttpResponse response = HttpRequestSender.sendPostRequest(url, "request");

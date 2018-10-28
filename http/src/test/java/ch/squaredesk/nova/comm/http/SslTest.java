@@ -126,7 +126,7 @@ class SslTest {
                         new URL(urlAsString),
                         new RequestInfo(HttpRequestMethod.POST));
 
-                rpcClient.sendRequest("{}", meta, String.class, messageTranscriber, 15, SECONDS);
+                rpcClient.sendRequest("{}", meta, messageTranscriber.getOutgoingMessageTranscriber(String.class), messageTranscriber.getIncomingMessageTranscriber(String.class), 15, SECONDS);
             } catch (Exception e) {
                 e.printStackTrace();
             }

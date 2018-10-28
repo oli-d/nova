@@ -211,7 +211,7 @@ public class RpcServer extends ch.squaredesk.nova.comm.rpc.RpcServer<String, Str
 
                     IncomingMessageType incomingMessage = incomingMessageAsString.trim().isEmpty() ?
                             null :
-                            messageTranscriber.transcribeIncomingMessage(incomingMessageAsString, targetType);
+                            messageTranscriber.getIncomingMessageTranscriber(targetType).apply(incomingMessageAsString);
                     RequestInfo requestInfo = httpSpecificInfoFrom(request);
                     RequestMessageMetaData metaData = new RequestMessageMetaData(destination, requestInfo);
 

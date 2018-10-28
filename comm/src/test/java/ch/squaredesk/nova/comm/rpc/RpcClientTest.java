@@ -10,11 +10,11 @@
 
 package ch.squaredesk.nova.comm.rpc;
 
-import ch.squaredesk.nova.comm.MessageTranscriber;
 import ch.squaredesk.nova.comm.retrieving.IncomingMessageMetaData;
 import ch.squaredesk.nova.comm.sending.OutgoingMessageMetaData;
 import ch.squaredesk.nova.metrics.Metrics;
 import io.reactivex.Single;
+import io.reactivex.functions.Function;
 import org.junit.jupiter.api.Test;
 
 import java.util.concurrent.TimeUnit;
@@ -39,8 +39,8 @@ class RpcClientTest {
         }
 
         @Override
-        public <RequestType, ReplyType> Single<? extends RpcReply<ReplyType, IncomingMessageMetaData<String, Void>>> sendRequest(RequestType request, OutgoingMessageMetaData<String, Void> requestMetaData, Class<ReplyType> expectedReplyType, MessageTranscriber<String> messageTranscriber, long timeout, TimeUnit timeUnit) {
-            return Single.just(new RpcReply<>((ReplyType) request, null));
+        public <RequestType, ReplyType> Single<? extends RpcReply<ReplyType, IncomingMessageMetaData<String, Void>>> sendRequest(RequestType request, OutgoingMessageMetaData<String, Void> requestMetaData, Function<RequestType, String> requestTranscriber, Function<String, ReplyType> replyTranscriber, long timeout, TimeUnit timeUnit) {
+            return null;
         }
     }
 

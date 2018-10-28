@@ -18,12 +18,14 @@ import ch.squaredesk.nova.comm.MessageTranscriber;
 import com.ning.http.client.AsyncHttpClient;
 import io.reactivex.Flowable;
 import io.reactivex.Single;
+import io.reactivex.functions.Function;
 import org.glassfish.grizzly.http.server.HttpServer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import static java.util.Objects.requireNonNull;
@@ -55,11 +57,46 @@ public class HttpAdapter extends CommAdapter<String> {
         return sendRequest(destination, null, new RequestInfo(HttpRequestMethod.GET), replyType, null, null );
     }
 
+    public <U> Single<RpcReply<U>> sendGetRequest(String destination, Map<String, String> headers, Class<U> replyType) {
+        return sendRequest(destination, null, new RequestInfo(HttpRequestMethod.GET, headers), replyType, null, null );
+    }
+
     public <U> Single<RpcReply<U>> sendGetRequest(
                 String destination,
                 Class<U> replyType,
                 long timeout, TimeUnit timeUnit) {
         return sendRequest(destination, null, new RequestInfo(HttpRequestMethod.GET), replyType, timeout, timeUnit);
+    }
+
+    public <U> Single<RpcReply<U>> sendGetRequest(
+                String destination,
+                Map<String, String> headers,
+                Class<U> replyType,
+                long timeout, TimeUnit timeUnit) {
+        return sendRequest(destination, null, new RequestInfo(HttpRequestMethod.GET, headers), replyType, timeout, timeUnit);
+    }
+
+    public <U> Single<RpcReply<U>> sendGetRequest(String destination, Function<String, U> replyTranscriber) {
+        return sendRequest(destination, null, new RequestInfo(HttpRequestMethod.GET), replyTranscriber, null, null );
+    }
+
+    public <U> Single<RpcReply<U>> sendGetRequest(String destination, Map<String, String> headers, Function<String, U> replyTranscriber) {
+        return sendRequest(destination, null, new RequestInfo(HttpRequestMethod.GET, headers), replyTranscriber, null, null );
+    }
+
+    public <U> Single<RpcReply<U>> sendGetRequest(
+                String destination,
+                Function<String, U> replyTranscriber,
+                long timeout, TimeUnit timeUnit) {
+        return sendRequest(destination, null, new RequestInfo(HttpRequestMethod.GET), replyTranscriber, timeout, timeUnit);
+    }
+
+    public <U> Single<RpcReply<U>> sendGetRequest(
+                String destination,
+                Map<String, String> headers,
+                Function<String, U> replyTranscriber,
+                long timeout, TimeUnit timeUnit) {
+        return sendRequest(destination, null, new RequestInfo(HttpRequestMethod.GET, headers), replyTranscriber, timeout, timeUnit);
     }
 
     /////////////////// POST convenience methods
@@ -73,9 +110,58 @@ public class HttpAdapter extends CommAdapter<String> {
     public <T, U> Single<RpcReply<U>> sendPostRequest(
                 String destination,
                 T request,
+                Map<String, String> headers,
+                Class<U> replyType) {
+        return sendRequest(destination, request, new RequestInfo(HttpRequestMethod.POST, headers), replyType, null, null);
+    }
+
+    public <T, U> Single<RpcReply<U>> sendPostRequest(
+                String destination,
+                T request,
                 Class<U> replyType,
                 long timeout, TimeUnit timeUnit) {
         return sendRequest(destination, request, new RequestInfo(HttpRequestMethod.POST), replyType, timeout, timeUnit );
+    }
+
+    public <T, U> Single<RpcReply<U>> sendPostRequest(
+                String destination,
+                T request,
+                Map<String, String> headers,
+                Class<U> replyType,
+                long timeout, TimeUnit timeUnit) {
+        return sendRequest(destination, request, new RequestInfo(HttpRequestMethod.POST, headers), replyType, timeout, timeUnit );
+    }
+
+    public <T, U> Single<RpcReply<U>> sendPostRequest(
+                String destination,
+                T request,
+                Function<String, U> replyTranscriber) {
+        return sendRequest(destination, request, new RequestInfo(HttpRequestMethod.POST), replyTranscriber, null, null);
+    }
+
+    public <T, U> Single<RpcReply<U>> sendPostRequest(
+                String destination,
+                T request,
+                Map<String, String> headers,
+                Function<String, U> replyTranscriber) {
+        return sendRequest(destination, request, new RequestInfo(HttpRequestMethod.POST, headers), replyTranscriber, null, null);
+    }
+
+    public <T, U> Single<RpcReply<U>> sendPostRequest(
+                String destination,
+                T request,
+                Function<String, U> replyTranscriber,
+                long timeout, TimeUnit timeUnit) {
+        return sendRequest(destination, request, new RequestInfo(HttpRequestMethod.POST), replyTranscriber, timeout, timeUnit );
+    }
+
+    public <T, U> Single<RpcReply<U>> sendPostRequest(
+                String destination,
+                T request,
+                Map<String, String> headers,
+                Function<String, U> replyTranscriber,
+                long timeout, TimeUnit timeUnit) {
+        return sendRequest(destination, request, new RequestInfo(HttpRequestMethod.POST, headers), replyTranscriber, timeout, timeUnit );
     }
 
     /////////////////// PUT convenience methods
@@ -89,9 +175,58 @@ public class HttpAdapter extends CommAdapter<String> {
     public <T, U> Single<RpcReply<U>> sendPutRequest(
                 String destination,
                 T request,
+                Map<String, String> headers,
+                Class<U> replyType) {
+        return sendRequest(destination, request, new RequestInfo(HttpRequestMethod.PUT, headers), replyType, null, null);
+    }
+
+    public <T, U> Single<RpcReply<U>> sendPutRequest(
+                String destination,
+                T request,
                 Class<U> replyType,
                 long timeout, TimeUnit timeUnit) {
         return sendRequest(destination, request, new RequestInfo(HttpRequestMethod.PUT), replyType, timeout, timeUnit );
+    }
+
+    public <T, U> Single<RpcReply<U>> sendPutRequest(
+                String destination,
+                T request,
+                Map<String, String> headers,
+                Class<U> replyType,
+                long timeout, TimeUnit timeUnit) {
+        return sendRequest(destination, request, new RequestInfo(HttpRequestMethod.PUT, headers), replyType, timeout, timeUnit );
+    }
+
+    public <T, U> Single<RpcReply<U>> sendPutRequest(
+                String destination,
+                T request,
+                Function<String, U> replyTranscriber) {
+        return sendRequest(destination, request, new RequestInfo(HttpRequestMethod.PUT), replyTranscriber, null, null);
+    }
+
+    public <T, U> Single<RpcReply<U>> sendPutRequest(
+                String destination,
+                T request,
+                Map<String, String> headers,
+                Function<String, U> replyTranscriber) {
+        return sendRequest(destination, request, new RequestInfo(HttpRequestMethod.PUT, headers), replyTranscriber, null, null);
+    }
+
+    public <T, U> Single<RpcReply<U>> sendPutRequest(
+                String destination,
+                T request,
+                Function<String, U> replyTranscriber,
+                long timeout, TimeUnit timeUnit) {
+        return sendRequest(destination, request, new RequestInfo(HttpRequestMethod.PUT), replyTranscriber, timeout, timeUnit );
+    }
+
+    public <T, U> Single<RpcReply<U>> sendPutRequest(
+                String destination,
+                T request,
+                Map<String, String> headers,
+                Function<String, U> replyTranscriber,
+                long timeout, TimeUnit timeUnit) {
+        return sendRequest(destination, request, new RequestInfo(HttpRequestMethod.PUT, headers), replyTranscriber, timeout, timeUnit );
     }
 
     /////////////////// DELETE convenience methods
@@ -105,9 +240,58 @@ public class HttpAdapter extends CommAdapter<String> {
     public <T, U> Single<RpcReply<U>> sendDeleteRequest(
                 String destination,
                 T request,
+                Map<String, String> headers,
+                Class<U> replyType) {
+        return sendRequest(destination, request, new RequestInfo(HttpRequestMethod.DELETE, headers), replyType, null, null);
+    }
+
+    public <T, U> Single<RpcReply<U>> sendDeleteRequest(
+                String destination,
+                T request,
                 Class<U> replyType,
                 long timeout, TimeUnit timeUnit) {
         return sendRequest(destination, request, new RequestInfo(HttpRequestMethod.DELETE), replyType, timeout, timeUnit );
+    }
+
+    public <T, U> Single<RpcReply<U>> sendDeleteRequest(
+                String destination,
+                T request,
+                Map<String, String> headers,
+                Class<U> replyType,
+                long timeout, TimeUnit timeUnit) {
+        return sendRequest(destination, request, new RequestInfo(HttpRequestMethod.DELETE, headers), replyType, timeout, timeUnit );
+    }
+
+    public <T, U> Single<RpcReply<U>> sendDeleteRequest(
+                String destination,
+                T request,
+                Function<String, U> replyTranscriber) {
+        return sendRequest(destination, request, new RequestInfo(HttpRequestMethod.DELETE), replyTranscriber, null, null);
+    }
+
+    public <T, U> Single<RpcReply<U>> sendDeleteRequest(
+                String destination,
+                T request,
+                Map<String, String> headers,
+                Function<String, U> replyTranscriber) {
+        return sendRequest(destination, request, new RequestInfo(HttpRequestMethod.DELETE, headers), replyTranscriber, null, null);
+    }
+
+    public <T, U> Single<RpcReply<U>> sendDeleteRequest(
+                String destination,
+                T request,
+                Function<String, U> replyTranscriber,
+                long timeout, TimeUnit timeUnit) {
+        return sendRequest(destination, request, new RequestInfo(HttpRequestMethod.DELETE), replyTranscriber, timeout, timeUnit );
+    }
+
+    public <T, U> Single<RpcReply<U>> sendDeleteRequest(
+                String destination,
+                T request,
+                Map<String, String> headers,
+                Function<String, U> replyTranscriber,
+                long timeout, TimeUnit timeUnit) {
+        return sendRequest(destination, request, new RequestInfo(HttpRequestMethod.DELETE, headers), replyTranscriber, timeout, timeUnit );
     }
 
     /////////////////// convenience methods
@@ -117,6 +301,15 @@ public class HttpAdapter extends CommAdapter<String> {
                 HttpRequestMethod requestMethod,
                 Class<U>replyType) {
         return sendRequest(destination, request, new RequestInfo(requestMethod), replyType, null, null);
+    }
+
+    public <T, U> Single<RpcReply<U>> sendRequest(
+                String destination,
+                T request,
+                HttpRequestMethod requestMethod,
+                Map<String, String> headers,
+                Class<U>replyType) {
+        return sendRequest(destination, request, new RequestInfo(requestMethod, headers), replyType, null, null);
     }
 
 
@@ -130,12 +323,76 @@ public class HttpAdapter extends CommAdapter<String> {
         return sendRequest(destination, request, new RequestInfo(requestMethod), replyType, timeout, timeUnit);
     }
 
+    public <T, U> Single<RpcReply<U>> sendRequest(
+                String destination,
+                T request,
+                HttpRequestMethod requestMethod,
+                Map<String, String> headers,
+                Class<U> replyType,
+                long timeout,
+                TimeUnit timeUnit) {
+        return sendRequest(destination, request, new RequestInfo(requestMethod, headers), replyType, timeout, timeUnit);
+    }
+
+    public <T, U> Single<RpcReply<U>> sendRequest(
+                String destination,
+                T request,
+                HttpRequestMethod requestMethod,
+                Function<String, U> replyTranscriber) {
+        return sendRequest(destination, request, new RequestInfo(requestMethod), replyTranscriber, null, null);
+    }
+
+    public <T, U> Single<RpcReply<U>> sendRequest(
+                String destination,
+                T request,
+                HttpRequestMethod requestMethod,
+                Map<String, String> headers,
+                Function<String, U> replyTranscriber) {
+        return sendRequest(destination, request, new RequestInfo(requestMethod, headers), replyTranscriber, null, null);
+    }
+
+    public <T, U> Single<RpcReply<U>> sendRequest(
+                String destination,
+                T request,
+                HttpRequestMethod requestMethod,
+                Function<String, U> replyTranscriber,
+                long timeout,
+                TimeUnit timeUnit) {
+        return sendRequest(destination, request, new RequestInfo(requestMethod), replyTranscriber, timeout, timeUnit);
+    }
+
+    public <T, U> Single<RpcReply<U>> sendRequest(
+                String destination,
+                T request,
+                HttpRequestMethod requestMethod,
+                Map<String, String> headers,
+                Function<String, U> replyTranscriber,
+                long timeout,
+                TimeUnit timeUnit) {
+        return sendRequest(destination, request, new RequestInfo(requestMethod, headers), replyTranscriber, timeout, timeUnit);
+    }
+
     /////////////////// finally, the implementation
     public <T, U> Single<RpcReply<U>> sendRequest (
                 String destination,
                 T request,
-                RequestInfo httpInfo,
+                RequestInfo sendingInfo,
                 Class<U> replyType,
+                Long timeout, TimeUnit timeUnit) {
+
+        return sendRequest(
+                destination,
+                request,
+                sendingInfo,
+                messageTranscriber.getIncomingMessageTranscriber(replyType),
+                timeout, timeUnit);
+    }
+
+    public <T, U> Single<RpcReply<U>> sendRequest (
+                String destination,
+                T request,
+                RequestInfo httpInfo,
+                Function<String, U> replyTranscriber,
                 Long timeout, TimeUnit timeUnit) {
 
         if (timeout!=null) {
@@ -154,7 +411,12 @@ public class HttpAdapter extends CommAdapter<String> {
 
         RequestMessageMetaData sendingInfo = new RequestMessageMetaData(url, httpInfo);
 
-        return rpcClient.sendRequest(request, sendingInfo, replyType, messageTranscriber, timeout, timeUnit);
+        return rpcClient.sendRequest(
+                request,
+                sendingInfo,
+                messageTranscriber.getOutgoingMessageTranscriber(request),
+                replyTranscriber,
+                timeout, timeUnit);
     }
 
     ///////// The server side

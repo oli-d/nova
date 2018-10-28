@@ -11,14 +11,14 @@
 
 package ch.squaredesk.nova.comm;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonProperty;
+import io.reactivex.functions.Function;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.sameInstance;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class MessageTranscriberTest {
@@ -30,14 +30,19 @@ public class MessageTranscriberTest {
     }
 
     @Test
-    void typeSpecificTranscribersCanBeRegistered() throws Exception {
-        sut.registerClassSpecificTranscribers(String.class, s -> "Outgoing", s -> "Incoming");
-        sut.registerClassSpecificTranscribers(Integer.class, s -> "Integer", s -> 1);
+    void typeSpecificTranscribersCanBeRegistered() {
+        Function<String, String> outgoingStringFunction = s -> "Outgoing";
+        Function<String, String> incomingStringFunction = s -> "Incoming";
+        Function<Integer, String> outgoingIntegerFunction = s -> "Integer";
+        Function<String, Integer> incomingIntegerFunction = s -> 1;
 
-        assertThat(sut.transcribeOutgoingMessage("a String"), is("Outgoing"));
-        assertThat(sut.transcribeIncomingMessage("a String", String.class), is("Incoming"));
-        assertThat(sut.transcribeOutgoingMessage(1), is("Integer"));
-        assertThat(sut.transcribeIncomingMessage("a String", Integer.class), is(1));
+        sut.registerClassSpecificTranscribers(String.class, outgoingStringFunction, incomingStringFunction);
+        sut.registerClassSpecificTranscribers(Integer.class, outgoingIntegerFunction, incomingIntegerFunction);
+
+        assertThat(sut.getOutgoingMessageTranscriber(String.class), sameInstance(outgoingStringFunction));
+        assertThat(sut.getIncomingMessageTranscriber(String.class), sameInstance(incomingStringFunction));
+        assertThat(sut.getOutgoingMessageTranscriber(Integer.class), sameInstance(outgoingIntegerFunction));
+        assertThat(sut.getIncomingMessageTranscriber(Integer.class), sameInstance(incomingIntegerFunction));
     }
 
     @Test
@@ -59,27 +64,22 @@ public class MessageTranscriberTest {
         assertThat(ex.getMessage(), Matchers.endsWith("not supported"));
     }
 
-    public static class MyClass {
-        public final String field;
+    @Test
+    void typeSpecificTranscribersCanBeDeregistered() {
+        sut.registerClassSpecificTranscribers(Integer.class, s -> "Integer", s -> 5);
+        assertNotNull(sut.getOutgoingMessageTranscriber(Integer.class));
+        assertNotNull(sut.getIncomingMessageTranscriber(Integer.class));
 
-        @JsonCreator
-        public MyClass(@JsonProperty("field") String  field) {
-            this.field = field;
-        }
+        sut.registerClassSpecificTranscribers(Integer.class, s -> "Integer", null);
+        assertNotNull(sut.getOutgoingMessageTranscriber(Integer.class));
+        assertThrows(RuntimeException.class, () -> sut.getIncomingMessageTranscriber(Integer.class));
 
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
+        sut.registerClassSpecificTranscribers(Integer.class, null, s -> 5);
+        assertThrows(RuntimeException.class, () -> sut.getOutgoingMessageTranscriber(Integer.class));
+        assertNotNull(sut.getIncomingMessageTranscriber(Integer.class));
 
-            MyClass myClass = (MyClass) o;
-
-            return field != null ? field.equals(myClass.field) : myClass.field == null;
-        }
-
-        @Override
-        public int hashCode() {
-            return field != null ? field.hashCode() : 0;
-        }
+        sut.registerClassSpecificTranscribers(Integer.class, null, null);
+        assertThrows(RuntimeException.class, () -> sut.getOutgoingMessageTranscriber(Integer.class));
+        assertThrows(RuntimeException.class, () -> sut.getIncomingMessageTranscriber(Integer.class));
     }
 }

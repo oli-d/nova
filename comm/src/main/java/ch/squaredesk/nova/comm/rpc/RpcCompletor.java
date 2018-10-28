@@ -10,14 +10,14 @@
 
 package ch.squaredesk.nova.comm.rpc;
 
-import ch.squaredesk.nova.comm.sending.OutgoingMessageTranscriber;
+import io.reactivex.functions.Function;
 
 public interface RpcCompletor<TransportMessageType, TransportSpecificReplyInfo> {
-    default <T> void complete(T reply, OutgoingMessageTranscriber<TransportMessageType> messageTranscriber) throws Exception {
+    default <T> void complete(T reply, Function<T, TransportMessageType> messageTranscriber) throws Exception {
         complete(reply, null, messageTranscriber);
     }
 
-    <T> void  complete(T reply, TransportSpecificReplyInfo replySpecificInfo, OutgoingMessageTranscriber<TransportMessageType> transcriber) throws Exception;
+    <T> void  complete(T reply, TransportSpecificReplyInfo replySpecificInfo, Function<T, TransportMessageType> transcriber) throws Exception;
 
     void completeExceptionally(Throwable error);
 }

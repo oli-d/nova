@@ -13,9 +13,11 @@ package ch.squaredesk.nova.comm.http;
 
 import ch.squaredesk.net.PortFinder;
 import ch.squaredesk.nova.tuples.Pair;
+import com.sun.net.httpserver.Headers;
 import com.sun.net.httpserver.HttpExchange;
 import io.reactivex.observers.TestObserver;
 import org.glassfish.grizzly.http.server.HttpServer;
+import org.hamcrest.MatcherAssert;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
@@ -25,12 +27,18 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.math.BigDecimal;
 import java.net.InetSocketAddress;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Objects;
 import java.util.function.Consumer;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.awaitility.Awaitility.await;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.nullValue;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
 
 @Tag("medium")
@@ -79,15 +87,34 @@ class HttpAdapterTest {
         Pair<com.sun.net.httpserver.HttpServer, Integer> serverPortPair = httpServer(path, "xxx");
         String url = "http://localhost:" + serverPortPair._2 + path;
 
-        TestObserver<RpcReply<MyType1>> type1Observer = sut.sendGetRequest(url, s -> new MyType1(s)).test();
+        TestObserver<RpcReply<MyType1>> type1Observer = sut.sendGetRequest(url, MyType1::new).test();
         await().atMost(10, SECONDS).until(type1Observer::isTerminated, is(true));
         type1Observer.assertValue(reply -> new MyType1("xxx").equals(reply.result));
 
-        type1Observer = sut.sendGetRequest(url, MyType1.class).test();
+        assertThrows(
+                IllegalArgumentException.class, () -> sut.sendGetRequest(url, MyType1.class));
     }
 
     @Test
     void parametersGetProperlyTransmitted() {
+        Map<String, String> headers = new HashMap<>();
+        headers.put("h1", "v1");
+        headers.put("h2", "v2");
+        Headers[] headersContainer = new Headers[1];
+        String path = "/paramTest";
+        Pair<com.sun.net.httpserver.HttpServer, Integer> serverPortPair = httpServer(
+                path,
+                "xxx",
+                httpExchange -> {
+                    headersContainer[0] = httpExchange.getRequestHeaders();
+                });
+        String url = "http://localhost:" + serverPortPair._2 + path;
+
+        sut.sendGetRequest(url, headers, String.class);
+
+        await().atMost(10, SECONDS).until(() -> headersContainer[0], not(nullValue()));
+        MatcherAssert.assertThat(headersContainer[0].getFirst("h1"), is("v1"));
+        MatcherAssert.assertThat(headersContainer[0].getFirst("h2"), is("v2"));
     }
 
     private Pair<com.sun.net.httpserver.HttpServer, Integer> httpServer(String path,

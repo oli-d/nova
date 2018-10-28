@@ -48,7 +48,7 @@ class RequestSender {
                 RequestMessageMetaData meta = new RequestMessageMetaData(
                     new URL(baseUrl + pathToUse),
                     new RequestInfo(HttpRequestMethod.POST));
-                rpcClient.sendRequest(payload, meta, String.class, messageTranscriber, 15, SECONDS).blockingGet();
+                rpcClient.sendRequest(payload, meta, messageTranscriber.getOutgoingMessageTranscriber(String.class), messageTranscriber.getIncomingMessageTranscriber(String.class), 15, SECONDS).blockingGet();
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }

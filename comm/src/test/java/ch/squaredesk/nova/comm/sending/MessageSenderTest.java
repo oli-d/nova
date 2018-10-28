@@ -10,7 +10,6 @@
 
 package ch.squaredesk.nova.comm.sending;
 
-import ch.squaredesk.nova.comm.MessageTranscriber;
 import ch.squaredesk.nova.metrics.Metrics;
 import io.reactivex.Completable;
 import org.junit.jupiter.api.Test;
@@ -39,7 +38,12 @@ class MessageSenderTest {
     void instanceCannotBeCreatedWithoutMetrics() {
         Throwable t = assertThrows(NullPointerException.class,
                 () -> {
-                    new MessageSender<Object, Object, OutgoingMessageMetaData<Object, Object>>(new MessageTranscriber<>(null, null), null) {
+                    new MessageSender<Object, Object, OutgoingMessageMetaData<Object, Object>>(new OutgoingMessageTranscriber<Object>() {
+                        @Override
+                        public <U> Object transcribeOutgoingMessage(U anObject) throws Exception {
+                            return null;
+                        }
+                    }, null) {
                         @Override
                         public <T> Completable doSend(T message, OutgoingMessageMetaData<Object, Object> outgoingMessageMetaData) {
                             return null;

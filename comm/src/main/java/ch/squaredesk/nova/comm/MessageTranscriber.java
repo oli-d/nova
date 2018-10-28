@@ -18,7 +18,7 @@ import io.reactivex.functions.Function;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class MessageTranscriber<TransportMessageType> implements IncomingMessageTranscriber<TransportMessageType>, OutgoingMessageTranscriber<TransportMessageType> {
+public class MessageTranscriber<TransportMessageType>  {
     private Map<Class<?>, Function<?, TransportMessageType>> specificOutgoingTranscribers = new ConcurrentHashMap<>();
     private Map<Class<?>, Function<TransportMessageType, ?>> specificIncomingTranscribers = new ConcurrentHashMap<>();
     private OutgoingMessageTranscriber<TransportMessageType> defaultOutgoingMessageTranscriber;
@@ -30,26 +30,31 @@ public class MessageTranscriber<TransportMessageType> implements IncomingMessage
         this.defaultOutgoingMessageTranscriber = defaultOutgoingMessageTranscriber;
     }
 
-    @Override
-    public <T> TransportMessageType transcribeOutgoingMessage(T anObject) throws Exception {
+    public <T> Function<T, TransportMessageType> getOutgoingMessageTranscriber(T anObject) {
+        if (anObject == null) {
+            return null;
+        }
         Class<T> specificType = (Class<T>) anObject.getClass();
-        Function<T, TransportMessageType> specificTranscriber = getSpecificOutgoingTranscriber(specificType);
+        return getOutgoingMessageTranscriber(specificType);
+    }
+
+    public <T> Function<T, TransportMessageType> getOutgoingMessageTranscriber(Class<T> typeToMarshal) {
+        Function<T, TransportMessageType> specificTranscriber = getSpecificOutgoingTranscriber(typeToMarshal);
         if (specificTranscriber != null) {
-            return specificTranscriber.apply(anObject);
+            return specificTranscriber;
         } else if (defaultOutgoingMessageTranscriber != null) {
-            return defaultOutgoingMessageTranscriber.transcribeOutgoingMessage(anObject);
+            return defaultOutgoingMessageTranscriber.castToFunction(typeToMarshal);
         } else {
             throw new IllegalArgumentException("Unable to find an appropriate message transcriber");
         }
     }
 
-    @Override
-    public <T> T transcribeIncomingMessage(TransportMessageType anObject, Class<T> typeToUnmarshalTo) throws Exception {
+    public <T> Function<TransportMessageType, T> getIncomingMessageTranscriber(Class<T> typeToUnmarshalTo) {
         Function<TransportMessageType, T> specificTranscriber = getSpecificIncomingTranscriber(typeToUnmarshalTo);
         if (specificTranscriber != null) {
-            return specificTranscriber.apply(anObject);
+            return specificTranscriber;
         } else if (defaultIncomingMessageTranscriber != null) {
-            return defaultIncomingMessageTranscriber.transcribeIncomingMessage(anObject, typeToUnmarshalTo);
+            return defaultIncomingMessageTranscriber.castToFunction(typeToUnmarshalTo);
         } else {
             throw new IllegalArgumentException("Unable to find an appropriate message transcriber");
         }

@@ -10,9 +10,9 @@
 
 package ch.squaredesk.nova.comm.rpc;
 
-import ch.squaredesk.nova.comm.MessageTranscriber;
 import ch.squaredesk.nova.metrics.Metrics;
 import io.reactivex.Single;
+import io.reactivex.functions.Function;
 
 import java.util.concurrent.TimeUnit;
 
@@ -37,7 +37,7 @@ public abstract class RpcClient<
     public abstract <RequestType, ReplyType> Single<? extends RpcReply<ReplyType, ReplyMetaDataType>> sendRequest(
             RequestType request,
             RequestMetaDataType requestMetaData,
-            Class<ReplyType> expectedReplyType,
-            MessageTranscriber<TransportMessageType> messageTranscriber,
+            Function<RequestType, TransportMessageType> requestTranscriber,
+            Function<TransportMessageType, ReplyType> replyTranscriber,
             long timeout, TimeUnit timeUnit);
 }
