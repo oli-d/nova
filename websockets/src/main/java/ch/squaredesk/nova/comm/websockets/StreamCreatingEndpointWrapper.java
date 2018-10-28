@@ -12,8 +12,8 @@ package ch.squaredesk.nova.comm.websockets;
 import ch.squaredesk.nova.tuples.Pair;
 import io.reactivex.Flowable;
 
-public interface StreamCreatingEndpointWrapper<WebsocketType, MessageType>  {
-    Flowable<Pair<WebsocketType, MessageType>> messages();
+public interface StreamCreatingEndpointWrapper<WebsocketType>  {
+    Flowable<Pair<WebsocketType, String>> messages();
     Flowable<WebsocketType> connectingSockets();
     Flowable<Pair<WebsocketType, CloseReason>> closingSockets();
     Flowable<Pair<WebsocketType, Throwable>> errors();

@@ -11,10 +11,10 @@
 package ch.squaredesk.nova.comm.websockets;
 
 
-public class RetrieveInfo<MessageType> {
-    public final WebSocket<MessageType> webSocket;
+public class RetrieveInfo {
+    public final WebSocket webSocket;
 
-    public RetrieveInfo(WebSocket<MessageType> webSocket) {
+    public RetrieveInfo(WebSocket webSocket) {
         this.webSocket = webSocket;
     }
 }

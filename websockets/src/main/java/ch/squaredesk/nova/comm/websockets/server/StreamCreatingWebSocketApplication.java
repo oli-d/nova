@@ -23,23 +23,18 @@ import org.glassfish.grizzly.websockets.WebSocketApplication;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.function.Function;
-
-public class StreamCreatingWebSocketApplication<MessageType>
+public class StreamCreatingWebSocketApplication
         extends WebSocketApplication
-        implements StreamCreatingEndpointWrapper<WebSocket, MessageType> {
+        implements StreamCreatingEndpointWrapper<WebSocket> {
 
     private static final Logger logger = LoggerFactory.getLogger(StreamCreatingWebSocketApplication.class);
 
-    private final Subject<Pair<WebSocket, MessageType>> messages = PublishSubject.<Pair<WebSocket, MessageType>>create().toSerialized();
+    private final Subject<Pair<WebSocket, String>> messages = PublishSubject.<Pair<WebSocket, String>>create().toSerialized();
     private final Subject<WebSocket> connectedSockets = PublishSubject.create();
     private final Subject<Pair<WebSocket, CloseReason>> closedSockets = PublishSubject.create();
     private final Subject<Pair<WebSocket, Throwable>> errors = PublishSubject.create();
 
-    private final Function<String, MessageType> messageUnmarshaller;
-
-    StreamCreatingWebSocketApplication(Function<String, MessageType> messageUnmarshaller) {
-        this.messageUnmarshaller = messageUnmarshaller;
+    StreamCreatingWebSocketApplication() {
     }
 
     @Override
@@ -68,8 +63,7 @@ public class StreamCreatingWebSocketApplication<MessageType>
 
     @Override
     public void onMessage(WebSocket socket, String text) {
-        try {
-            messages.onNext(new Pair<>(socket, messageUnmarshaller.apply(text)));
+            messages.onNext(new Pair<>(socket, text));
             /**
              * One comment regarding backpressure: if the stream subscribers are too slow,
              * backpressure will be applied here. So if e.g. the subscriber need one hour
@@ -79,14 +73,10 @@ public class StreamCreatingWebSocketApplication<MessageType>
              * was not yet read from the wire is lost.
              * TL;DR: backpressure is applied, but it does not prevent from loss of messages
              */
-        } catch (Exception e) {
-            // must be caught to keep the Observable functional
-            logger.info("", e);
-        }
     }
 
     @Override
-    public Flowable<Pair<WebSocket, MessageType>> messages() {
+    public Flowable<Pair<WebSocket, String>> messages() {
         return messages.toFlowable(BackpressureStrategy.BUFFER);
     }
 

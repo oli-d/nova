@@ -25,7 +25,7 @@ public class WebSocketBeanPostprocessor implements BeanPostProcessor {
     private final MessageMarshaller messageMarshaller;
     private final MessageUnmarshaller messageUnmarshaller;
     private final MetricsCollector metricsCollector;
-    private final ServerEndpointFactory serverEndpointFactory = new ServerEndpointFactory();
+    private final ServerEndpointFactory serverEndpointFactory = new ServerEndpointFactory(messageTranscriber);
 
     public WebSocketBeanPostprocessor(MessageMarshaller<?, String> messageMarshaller, MessageUnmarshaller<String, ?> messageUnmarshaller, MetricsCollector metricsCollector) {
         this.messageMarshaller = messageMarshaller;

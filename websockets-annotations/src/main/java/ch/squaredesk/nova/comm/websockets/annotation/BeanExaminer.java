@@ -13,8 +13,6 @@ package ch.squaredesk.nova.comm.websockets.annotation;
 
 import ch.squaredesk.nova.comm.DefaultMessageTranscriberForStringAsTransportType;
 import ch.squaredesk.nova.comm.ReflectionHelper;
-import ch.squaredesk.nova.comm.retrieving.MessageUnmarshaller;
-import ch.squaredesk.nova.comm.sending.MessageMarshaller;
 import ch.squaredesk.nova.comm.websockets.WebSocket;
 
 import java.lang.annotation.Annotation;

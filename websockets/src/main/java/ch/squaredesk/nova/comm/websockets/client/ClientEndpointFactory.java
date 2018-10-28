@@ -9,37 +9,37 @@
  */
 package ch.squaredesk.nova.comm.websockets.client;
 
-import ch.squaredesk.nova.comm.retrieving.MessageUnmarshaller;
-import ch.squaredesk.nova.comm.sending.MessageMarshaller;
+import ch.squaredesk.nova.comm.MessageTranscriber;
 import ch.squaredesk.nova.comm.websockets.*;
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.providers.grizzly.websocket.GrizzlyWebSocketAdapter;
 import com.ning.http.client.ws.WebSocketUpgradeHandler;
+import io.reactivex.functions.Function;
 
 import java.util.function.Consumer;
-import java.util.function.Function;
 
 public class ClientEndpointFactory {
-    private ClientEndpointFactory() {
+    private final MessageTranscriber<String> messageTranscriber;
+
+    public ClientEndpointFactory(MessageTranscriber<String> messageTranscriber) {
+        this.messageTranscriber = messageTranscriber;
     }
 
-    public static <MessageType> ClientEndpoint<MessageType> createFor (
+    public ClientEndpoint createFor (
             AsyncHttpClient httpClient,
             String destination,
-            MessageMarshaller<MessageType, String> messageMarshaller,
-            MessageUnmarshaller<String, MessageType> messageUnmarshaller,
             MetricsCollector metricsCollector)  {
-        StreamCreatingWebSocketTextListener<MessageType> listener =
-                new StreamCreatingWebSocketTextListener<>(text -> unmarshal(destination, text, messageUnmarshaller, metricsCollector));
+
+        StreamCreatingWebSocketTextListener listener = new StreamCreatingWebSocketTextListener();
         WebSocketUpgradeHandler webSocketUpgradeHandler =new WebSocketUpgradeHandler.Builder()
                 .addWebSocketListener(listener)
                 .build();
         com.ning.http.client.ws.WebSocket underlyingWebSocket = openConnection(httpClient, destination, webSocketUpgradeHandler);
 
-        WebSocket<MessageType> webSocket = createWebSocket(destination, underlyingWebSocket, messageMarshaller, metricsCollector);
-        Function<com.ning.http.client.ws.WebSocket, WebSocket<MessageType>> webSocketFactory = rawSocket -> webSocket;
+        WebSocket webSocket = createWebSocket(destination, underlyingWebSocket, metricsCollector);
+        Function<com.ning.http.client.ws.WebSocket, WebSocket> webSocketFactory = rawSocket -> webSocket;
 
-        EndpointStreamSource<MessageType> endpointStreamSource =
+        EndpointStreamSource endpointStreamSource =
                 EndpointStreamSourceFactory.createStreamSourceFor(destination, webSocketFactory, listener, metricsCollector);
 
         Consumer<CloseReason> closeAction = closeReason -> {
@@ -51,7 +51,7 @@ public class ClientEndpointFactory {
             }
             listener.close();
         };
-        return new ClientEndpoint<>(endpointStreamSource, webSocket, closeAction);
+        return new ClientEndpoint(destination, endpointStreamSource, webSocket, closeAction, messageTranscriber, metricsCollector);
     }
 
     private static com.ning.http.client.ws.WebSocket openConnection(
@@ -65,39 +65,31 @@ public class ClientEndpointFactory {
         }
     }
 
-    private static <MessageType> WebSocket<MessageType> createWebSocket(
+    private WebSocket createWebSocket(
             String destination,
             com.ning.http.client.ws.WebSocket webSocket,
-            MessageMarshaller<MessageType, String> messageMarshaller,
             MetricsCollector metricsCollector) {
 
-        return new WebSocket<>(
-                message -> {
-                    String messageAsString = marshal(message, messageMarshaller);
-                    webSocket.sendMessage(messageAsString);
-                    metricsCollector.messageSent(destination);
-                },
-                () -> {
-                    metricsCollector.subscriptionDestroyed(destination);
-                });
-    }
+        SendAction sendAction = new SendAction() {
+            @Override
+            public <T> void accept(T message) throws Exception {
+                String messageAsString = messageTranscriber.getOutgoingMessageTranscriber(message).apply(message);
+                webSocket.sendMessage(messageAsString);
+                metricsCollector.messageSent(destination);
+            }
+        };
+        Runnable closeAction = () -> metricsCollector.subscriptionDestroyed(destination);
 
-    private static <MessageType> String marshal (MessageType message, MessageMarshaller<MessageType, String> messageMarshaller) {
-        try {
-            return messageMarshaller.marshal(message);
-        } catch (Exception e) {
-            // TODO: metric?
-            throw new RuntimeException("Unable to marshal message " + message, e);
-        }
+        return new WebSocket(sendAction, closeAction);
     }
 
     private static <MessageType> MessageType unmarshal (
             String destination,
             String message,
-            MessageUnmarshaller<String, MessageType> messageUnmarshaller,
+            Function<String, MessageType> messageUnmarshaller,
             MetricsCollector metricsCollector) {
         try {
-            return messageUnmarshaller.unmarshal(message);
+            return messageUnmarshaller.apply(message);
         } catch (Exception e) {
             metricsCollector.unparsableMessageReceived(destination);
             throw new RuntimeException("Unable to unmarshal incoming message " + message + " on destination " + destination, e);

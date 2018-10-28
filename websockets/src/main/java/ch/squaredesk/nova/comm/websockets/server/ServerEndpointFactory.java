@@ -9,86 +9,55 @@
  */
 package ch.squaredesk.nova.comm.websockets.server;
 
-import ch.squaredesk.nova.comm.retrieving.MessageUnmarshaller;
-import ch.squaredesk.nova.comm.sending.MessageMarshaller;
+import ch.squaredesk.nova.comm.MessageTranscriber;
 import ch.squaredesk.nova.comm.websockets.*;
 import io.reactivex.Scheduler;
 import io.reactivex.disposables.Disposable;
+import io.reactivex.functions.Function;
 import io.reactivex.schedulers.Schedulers;
 import org.glassfish.grizzly.websockets.WebSocketEngine;
 
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
-import java.util.function.Function;
 
 public class ServerEndpointFactory {
     private static final Scheduler lifecycleEventScheduler = Schedulers.io();
-    private final ConcurrentHashMap<org.glassfish.grizzly.websockets.WebSocket, WebSocket<?>> webSockets = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<org.glassfish.grizzly.websockets.WebSocket, WebSocket> webSockets = new ConcurrentHashMap<>();
+    private final MessageTranscriber<String> messageTranscriber;
 
-    private <MessageType> WebSocket<MessageType> instantiateNewWebSocket(
-            org.glassfish.grizzly.websockets.WebSocket webSocket,
-            MessageMarshaller<MessageType, String> messageMarshaller) {
-
-            return new WebSocket<>(
-                    message -> {
-                        String messageAsString = marshal(message, messageMarshaller);
-                        webSocket.send(messageAsString);
-                    },
-                    webSocket::close);
+    public ServerEndpointFactory(MessageTranscriber<String> messageTranscriber) {
+        this.messageTranscriber = messageTranscriber;
     }
 
-    private <MessageType> WebSocket<MessageType> createWebSocket(
-            org.glassfish.grizzly.websockets.WebSocket webSocket,
-            MessageMarshaller<MessageType, String> messageMarshaller) {
-
-            WebSocket<?> retVal = webSockets.computeIfAbsent(
-                    webSocket,
-                    key -> instantiateNewWebSocket(key, messageMarshaller));
-            return (WebSocket<MessageType>) retVal;
-    }
-
-    private <MessageType> String marshal (MessageType message, MessageMarshaller<MessageType, String> messageMarshaller) {
-        try {
-            return messageMarshaller.marshal(message);
-        } catch (Exception e) {
-            // TODO: metric?
-            throw new RuntimeException("Unable to marshal message " + message, e);
-        }
-    }
-
-    private <MessageType> MessageType unmarshal (
-            String destination,
-            String message,
-            MessageUnmarshaller<String, MessageType> messageUnmarshaller,
-            MetricsCollector metricsCollector) {
-        try {
-            return messageUnmarshaller.unmarshal(message);
-        } catch (Exception e) {
-            if (metricsCollector != null) {
-                metricsCollector.unparsableMessageReceived(destination);
+    private WebSocket instantiateNewWebSocket(org.glassfish.grizzly.websockets.WebSocket webSocket) {
+        SendAction sendAction = new SendAction() {
+            @Override
+            public <T> void accept(T message) throws Exception {
+                String messageAsString = messageTranscriber.getOutgoingMessageTranscriber(message).apply(message);
+                webSocket.send(messageAsString);
             }
-            throw new RuntimeException("Unable to unmarshal incoming message " + message + " on destination " + destination, e);
-        }
+        };
+        return new WebSocket(sendAction, webSocket::close);
     }
 
-    public <MessageType> ServerEndpoint<MessageType> createFor(
+    private WebSocket createWebSocket(org.glassfish.grizzly.websockets.WebSocket webSocket) {
+        return webSockets.computeIfAbsent(webSocket, this::instantiateNewWebSocket);
+    }
+
+    public ServerEndpoint createFor(
             String destination,
-            MessageMarshaller<MessageType, String> messageMarshaller,
-            MessageUnmarshaller<String, MessageType> messageUnmarshaller,
             MetricsCollector metricsCollector)  {
 
         String destinationForSubscription = destination.startsWith("/") ? destination : "/" + destination;
         String destinationForMetrics = destination.startsWith("/") ? destination.substring(1) : destination;
 
-        StreamCreatingWebSocketApplication<MessageType> app =
-                new StreamCreatingWebSocketApplication<>(text -> unmarshal(destinationForMetrics, text, messageUnmarshaller, metricsCollector));
+        StreamCreatingWebSocketApplication app = new StreamCreatingWebSocketApplication();
         WebSocketEngine.getEngine().register("", destinationForSubscription, app);
 
-        Function<org.glassfish.grizzly.websockets.WebSocket, WebSocket<MessageType>> webSocketCreator =
-                socket -> createWebSocket(socket, messageMarshaller);
+        Function<org.glassfish.grizzly.websockets.WebSocket, WebSocket> webSocketCreator = this::createWebSocket;
 
-        EndpointStreamSource<MessageType> endpointStreamSource =
+        EndpointStreamSource endpointStreamSource =
                 EndpointStreamSourceFactory.createStreamSourceFor(destinationForMetrics, webSocketCreator, app, metricsCollector);
 
         // register all connecting WebSockets
@@ -97,23 +66,26 @@ public class ServerEndpointFactory {
         // unregister all disconnecting WebSockets
         Disposable subscriptionDisconnections = app.closingSockets()
                 .subscribeOn(lifecycleEventScheduler).subscribe(pair -> webSockets.remove(pair._1));
-        Consumer<MessageType> broadcastAction = message -> {
-            String messageAsString = marshal(message, messageMarshaller);
+        SendAction broadcastAction = new SendAction() {
+            @Override
+            public <T> void accept(T message) throws Exception {
+                String messageAsString = messageTranscriber.getOutgoingMessageTranscriber(message).apply(message);
 
-            Set<org.glassfish.grizzly.websockets.WebSocket> allSockets = webSockets.keySet();
-            allSockets.stream()
-                .filter(socket -> {
-                    // verify that the socket was not just closed in the meantime...
-                    try {
-                        socket.broadcast(allSockets, messageAsString);
-                        return true;
-                    } catch (Exception ex) {
-                        // arrg, looks like the socket was just closed. So we fail silently and hope for the next one
-                    }
-                    return false;
-                })
-                .findAny();
+                Set<org.glassfish.grizzly.websockets.WebSocket> allSockets = webSockets.keySet();
+                allSockets.stream()
+                    .filter(socket -> {
+                        // verify that the socket was not just closed in the meantime...
+                        try {
+                            socket.broadcast(allSockets, messageAsString);
+                            return true;
+                        } catch (Exception ex) {
+                            // arrg, looks like the socket was just closed. So we fail silently and hope for the next one
+                        }
+                        return false;
+                    })
+                    .findAny();
                 // System.out.println("Successfully broadcast? " + broadcastSocket.isPresent());
+            }
         };
 
         Consumer<CloseReason> closeAction = closeReason -> {
@@ -124,6 +96,6 @@ public class ServerEndpointFactory {
             webSockets.clear();
             app.close();
         };
-        return new ServerEndpoint<>(endpointStreamSource, broadcastAction, closeAction);
+        return new ServerEndpoint(destination, endpointStreamSource, broadcastAction, closeAction, messageTranscriber, metricsCollector);
     }
 }

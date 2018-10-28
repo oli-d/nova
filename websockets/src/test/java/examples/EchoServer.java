@@ -13,18 +13,16 @@ import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
 public class EchoServer {
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception {
         new EchoServer().go();
     }
 
-    private WebSocketAdapter<String> webSocketAdapter() {
+    private WebSocketAdapter webSocketAdapter() {
         HttpServer httpServer = httpServer();
 
-        WebSocketAdapter<String> webSocketAdapter = WebSocketAdapter.builder(String.class)
+        WebSocketAdapter webSocketAdapter = WebSocketAdapter.builder()
                 .setHttpServer(httpServer)
                 .setHttpClient(httpClient())
-                .setMessageMarshaller(Object::toString)
-                .setMessageUnmarshaller(String::valueOf)
                 .setMetrics(metrics())
                 .build();
 
@@ -50,27 +48,27 @@ public class EchoServer {
         return new Metrics();
     }
 
-    private void go() {
+    private void go() throws Exception {
         // Instantiate the WebSocketAdapter
-        WebSocketAdapter<String> webSocketAdapter = webSocketAdapter();
+        WebSocketAdapter webSocketAdapter = webSocketAdapter();
 
         // Get the "server side" endpoint
-        ServerEndpoint<String> acceptingEndpoint = webSocketAdapter.acceptConnections("/echo");
+        ServerEndpoint acceptingEndpoint = webSocketAdapter.acceptConnections("/echo");
         // Subscribe to incoming messages
-        acceptingEndpoint.messages()
+        acceptingEndpoint.messages(String.class)
                 .subscribe(
                     incomingMessage -> {
                         // Get the WebSocket that represents the connection to the sender
-                        WebSocket<String> webSocket = incomingMessage.metaData.details.webSocket;
+                        WebSocket webSocket = incomingMessage.metaData.details.webSocket;
                         // and just send the message back to the sender
                         webSocket.send(incomingMessage.message);
                     }
                 );
 
         // Connect to the "server side" endpoint
-        ClientEndpoint<String> initiatingEndpoint = webSocketAdapter.connectTo("ws://127.0.0.1:10000/echo");
+        ClientEndpoint initiatingEndpoint = webSocketAdapter.connectTo("ws://127.0.0.1:10000/echo");
         // Subscribe to messages returned from the echo server
-        initiatingEndpoint.messages().subscribe(
+        initiatingEndpoint.messages(String.class).subscribe(
                 incomingMessage -> {
                     System.out.println("Echo server returned " + incomingMessage.message);
                 });
