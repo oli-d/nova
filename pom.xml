@@ -92,13 +92,6 @@
                 <artifactId>comm</artifactId>
                 <version>7.0.0</version>
             </dependency>
-            <!--
-            <dependency>
-                <groupId>ch.squaredesk.nova</groupId>
-                <artifactId>comm-annotations</artifactId>
-                <version>7.0.0</version>
-            </dependency>
-            -->
             <dependency>
                 <groupId>ch.squaredesk.nova</groupId>
                 <artifactId>jms</artifactId>
@@ -175,7 +168,6 @@
         <module>service</module>
 
         <module>comm</module>
-        <!--<module>comm-annotations</module>-->
         <module>jms</module>
         <module>http</module>
         <module>http-test-utils</module>
