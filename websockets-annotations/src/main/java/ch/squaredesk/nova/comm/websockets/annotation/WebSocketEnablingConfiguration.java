@@ -12,10 +12,10 @@
 package ch.squaredesk.nova.comm.websockets.annotation;
 
 import ch.squaredesk.nova.Nova;
+import ch.squaredesk.nova.comm.DefaultMessageTranscriberForStringAsTransportType;
+import ch.squaredesk.nova.comm.MessageTranscriber;
 import ch.squaredesk.nova.comm.http.spring.HttpServerProvidingConfiguration;
 import ch.squaredesk.nova.comm.http.spring.HttpServerStarter;
-import ch.squaredesk.nova.comm.retrieving.MessageUnmarshaller;
-import ch.squaredesk.nova.comm.sending.MessageMarshaller;
 import ch.squaredesk.nova.comm.websockets.MetricsCollector;
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.AsyncHttpClientConfig;
@@ -38,14 +38,9 @@ public class WebSocketEnablingConfiguration {
     @Autowired
     HttpServer httpServer;
 
-    @Bean
-    public MessageMarshaller<Integer, String> messageMarshaller() {
-        return integer -> String.valueOf(integer);
-    }
-
-    @Bean
-    public MessageUnmarshaller<String, Integer> messageUnmarshaller() {
-        return string -> Integer.parseInt(string);
+    @Bean("defaultWebsocketMessageTranscriber")
+    MessageTranscriber<String> defaultWebsocketMessageTranscriber() {
+        return new DefaultMessageTranscriberForStringAsTransportType();
     }
 
     @Bean
@@ -57,7 +52,7 @@ public class WebSocketEnablingConfiguration {
             listener.registerAddOn(addon);
         }
 
-        return new WebSocketBeanPostprocessor(messageMarshaller(), messageUnmarshaller(), new MetricsCollector(nova.metrics));
+        return new WebSocketBeanPostprocessor(defaultWebsocketMessageTranscriber(), new MetricsCollector(nova.metrics));
     }
 
     @Bean

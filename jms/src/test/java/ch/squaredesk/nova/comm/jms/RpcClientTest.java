@@ -32,7 +32,7 @@ import static org.hamcrest.Matchers.is;
 
 @Tag("medium")
 class RpcClientTest {
-    private RpcClient<String> sut;
+    private RpcClient sut;
     private TestJmsHelper jmsHelper;
     private JmsObjectRepository objectRepository;
 
@@ -55,15 +55,13 @@ class RpcClientTest {
         objectRepository.start();
 
         Metrics metrics = new Metrics();
-        MessageReceiver<String> messageReceiver = new MessageReceiver<>("RpcClientTest",
+        MessageReceiver messageReceiver = new MessageReceiver("RpcClientTest",
                 objectRepository,
-                s -> s,
                 metrics);
         MessageSender<String> messageSender = new MessageSender<>("RpcClientTest",
                 objectRepository,
-                s -> s,
                 metrics);
-        sut = new RpcClient<>("id", messageSender, messageReceiver, metrics);
+        sut = new RpcClient("id", messageSender, messageReceiver, metrics);
 
         jmsHelper = new TestJmsHelper(connectionFactory);
         jmsHelper.start();

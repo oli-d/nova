@@ -11,14 +11,12 @@
 package ch.squaredesk.nova.comm.kafka;
 
 import ch.squaredesk.nova.comm.retrieving.IncomingMessage;
-import ch.squaredesk.nova.comm.retrieving.MessageReceiverImplBase;
-import ch.squaredesk.nova.comm.retrieving.MessageUnmarshaller;
 import ch.squaredesk.nova.metrics.Metrics;
 import ch.squaredesk.nova.tuples.Pair;
-import io.reactivex.BackpressureStrategy;
 import io.reactivex.Flowable;
 import io.reactivex.Scheduler;
 import io.reactivex.schedulers.Schedulers;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.slf4j.Logger;
@@ -32,20 +30,19 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
-public class KafkaMessageReceiver<InternalMessageType>
-        extends MessageReceiverImplBase<String, InternalMessageType, String, IncomingMessageMetaData> {
+public class MessageReceiver
+        extends ch.squaredesk.nova.comm.retrieving.MessageReceiver<String, String, IncomingMessageMetaData> {
 
-    private final Logger logger = LoggerFactory.getLogger(KafkaMessageReceiver.class);
-    private final Flowable<IncomingMessage<InternalMessageType, IncomingMessageMetaData>> allMessagesStream;
+    private final Logger logger = LoggerFactory.getLogger(MessageReceiver.class);
+    private final Flowable<IncomingMessage<String, IncomingMessageMetaData>> allMessagesStream;
     private final Scheduler scheduler = Schedulers.io();
     private final Map<String, AtomicInteger> topicToSubscriptionCount = new ConcurrentHashMap<>();
 
-    protected KafkaMessageReceiver(String identifier,
-                                   Properties consumerProperties,
-                                   MessageUnmarshaller<String, InternalMessageType> messageUnmarshaller,
-                                   long pollTimeout, TimeUnit pollTimeUnit,
-                                   Metrics metrics) {
-        super(identifier, messageUnmarshaller, metrics);
+    protected MessageReceiver(String identifier,
+                              Properties consumerProperties,
+                              long pollTimeout, TimeUnit pollTimeUnit,
+                              Metrics metrics) {
+        super(identifier, metrics);
 
         AtomicBoolean shutdown = new AtomicBoolean(false);
 
@@ -113,36 +110,34 @@ public class KafkaMessageReceiver<InternalMessageType>
                     }
                 }
         );
+
         allMessagesStream = consumerRecordsStream
                 .subscribeOn(scheduler)
-                .concatMap(this::unmarshall)
-                .map(topicAndMessage -> {
+                .flatMap(MessageReceiver::observableFor)
+                .map(record -> {
                     RetrieveInfo kafkaSpecificInfo = new RetrieveInfo();
-                    IncomingMessageMetaData metaData = new IncomingMessageMetaData(topicAndMessage._1, kafkaSpecificInfo);
-                    return new IncomingMessage<>(topicAndMessage._2, metaData);
+                    IncomingMessageMetaData metaData = new IncomingMessageMetaData(record.topic(), kafkaSpecificInfo);
+                    return new IncomingMessage<>(record.value(), metaData);
                 })
                 .share();
     }
 
-    Flowable<Pair<String, InternalMessageType>> unmarshall(ConsumerRecords<String, String> consumerRecords) {
-        return Flowable.create(s -> {
-            consumerRecords.forEach(record -> {
-                try {
-                    InternalMessageType internalMessage = messageUnmarshaller.unmarshal(record.value());
-                    s.onNext(new Pair<>(record.topic(), internalMessage));
-                } catch (Exception e) {
-                    metricsCollector.unparsableMessageReceived(record.topic());
-                    logger.error("Unable to parse incoming message {}", record, e);
+    private static Flowable<ConsumerRecord<String, String>> observableFor (ConsumerRecords<String, String> records) {
+        return Flowable.generate(
+                () -> records.iterator(),
+                (iterator, emitter) -> {
+                    if (iterator.hasNext()) {
+                        emitter.onNext(iterator.next());
+                    } else {
+                        emitter.onComplete();
+                    }
                 }
-            });
-            s.onComplete();
-        }, BackpressureStrategy.BUFFER);
+        );
     }
 
     @Override
-    public Flowable<IncomingMessage<InternalMessageType, IncomingMessageMetaData>> messages(String destination) {
+    public Flowable<IncomingMessage<String, IncomingMessageMetaData>> messages(String destination) {
         Objects.requireNonNull(destination, "destination must not be null");
-        Objects.requireNonNull(messageUnmarshaller, "unmarshaller must not be null");
 
         return allMessagesStream
                 .filter(incomingMessage -> destination.equals(incomingMessage.metaData.destination))

@@ -17,10 +17,11 @@ import ch.squaredesk.nova.tuples.Pair;
 import java.util.function.Consumer;
 
 public class RpcInvocation<MessageType> extends
-        ch.squaredesk.nova.comm.rpc.RpcInvocation<MessageType, IncomingMessageMetaData, MessageType, SendInfo>
-        implements RpcCompletor<MessageType> {
+        ch.squaredesk.nova.comm.rpc.RpcInvocation<MessageType, IncomingMessageMetaData, String, SendInfo> {
 
-    public RpcInvocation(IncomingMessage<MessageType, IncomingMessageMetaData> request, Consumer<Pair<MessageType, SendInfo>> replyConsumer, Consumer<Throwable> errorConsumer) {
+    public RpcInvocation(IncomingMessage<MessageType, IncomingMessageMetaData> request,
+                         Consumer<Pair<String, SendInfo>> replyConsumer,
+                         Consumer<Throwable> errorConsumer) {
         super(request, replyConsumer, errorConsumer);
     }
 }

@@ -99,8 +99,8 @@ class WebsocketAdapterTest {
 
         Counter totalSubscriptions = metrics.getCounter("websocket", "subscriptions", "total");
         Counter specificSubscriptions = metrics.getCounter("websocket", "subscriptions", destinationUri);
-        assertThat(totalSubscriptions.getCount(), is(0l));
-        assertThat(specificSubscriptions.getCount(), is(0l));
+        assertThat(totalSubscriptions.getCount(), is(0L));
+        assertThat(specificSubscriptions.getCount(), is(0L));
 
         ClientEndpoint endpoint = sut.connectTo(destinationUri);
         endpoint.connectedWebSockets().subscribe( socket -> connectionLatch.countDown() );
@@ -116,8 +116,8 @@ class WebsocketAdapterTest {
 
         closeLatch.await(10, TimeUnit.SECONDS);
         assertThat(closeLatch.getCount(), is(0L));
-        assertThat(totalSubscriptions.getCount(), is(0l));
-        assertThat(specificSubscriptions.getCount(), is(0l));
+        assertThat(totalSubscriptions.getCount(), is(0L));
+        assertThat(specificSubscriptions.getCount(), is(0L));
     }
 
     @Test
@@ -130,8 +130,8 @@ class WebsocketAdapterTest {
 
         Counter totalSubscriptions = metrics.getCounter("websocket", "subscriptions", "total");
         Counter specificSubscriptions = metrics.getCounter("websocket", "subscriptions", serverDestination);
-        assertThat(totalSubscriptions.getCount(), is(0l));
-        assertThat(specificSubscriptions.getCount(), is(0l));
+        assertThat(totalSubscriptions.getCount(), is(0L));
+        assertThat(specificSubscriptions.getCount(), is(0L));
 
         ServerEndpoint endpointAccepting = null;
         ClientEndpoint endpointInitiating = null;
@@ -153,8 +153,8 @@ class WebsocketAdapterTest {
                 endpointInitiating.close();
                 closeLatch.await(10, TimeUnit.SECONDS);
                 assertThat(closeLatch.getCount(), is(0L));
-                assertThat(totalSubscriptions.getCount(), is(0l));
-                assertThat(specificSubscriptions.getCount(), is(0l));
+                assertThat(totalSubscriptions.getCount(), is(0L));
+                assertThat(specificSubscriptions.getCount(), is(0L));
             }
 
             if (endpointAccepting != null) endpointAccepting.close();
@@ -177,6 +177,12 @@ class WebsocketAdapterTest {
                         incomingMessage.metaData.details.webSocket.send(incomingMessage.message);
                     });
 
+            Meter totalMessagesReceived = metrics.getMeter("websocket", "received", "total");
+            Meter totalUnparsable = metrics.getMeter("websocket", "received", "unparsable", "total");
+            Meter specificUnparsable = metrics.getMeter("websocket", "received", "unparsable", serverDestination);
+            assertThat(totalUnparsable.getCount(), is(0L));
+            assertThat(specificUnparsable.getCount(), is(0L));
+
             WebSocket[] sendSocketHolder = new WebSocket[1];
             CountDownLatch sendSocketLatch = new CountDownLatch(1);
             clientEndpoint = sut.connectTo(clientDestination);
@@ -186,7 +192,14 @@ class WebsocketAdapterTest {
             });
             sendSocketLatch.await(2, TimeUnit.SECONDS);
             assertNotNull(sendSocketHolder[0]);
-            testEchoWithUnparsableMessages(serverDestination, serverEndpoint, sendSocketHolder[0]);
+
+            clientEndpoint.send("One");
+            clientEndpoint.send("Two");
+            clientEndpoint.send("33");
+
+            Awaitility.await().atMost(10, TimeUnit.SECONDS).until(totalMessagesReceived::getCount, is(1L));
+            assertThat(totalUnparsable.getCount(), is(2l));
+            assertThat(specificUnparsable.getCount(), is(2l));
         } finally {
             if (clientEndpoint != null) {
                 clientEndpoint.close();
@@ -232,10 +245,10 @@ class WebsocketAdapterTest {
         Meter specificSent = metrics.getMeter("websocket", "sent", destination);
         Meter totalReceived = metrics.getMeter("websocket", "received", "total");
         Meter specificReceived = metrics.getMeter("websocket", "received", destination);
-        assertThat(totalReceived.getCount(), is(0l));
-        assertThat(specificReceived.getCount(), is(0l));
-        assertThat(totalSent.getCount(), is(0l));
-        assertThat(specificSent.getCount(), is(0l));
+        assertThat(totalReceived.getCount(), is(0L));
+        assertThat(specificReceived.getCount(), is(0L));
+        assertThat(totalSent.getCount(), is(0L));
+        assertThat(specificSent.getCount(), is(0L));
 
         Flowable<IncomingMessage<Integer, IncomingMessageMetaData>> messages = endpoint.messages(Integer::parseInt);
         TestSubscriber<IncomingMessage<Integer, IncomingMessageMetaData>> testSubscriber = messages.test();
@@ -268,11 +281,9 @@ class WebsocketAdapterTest {
     void testEchoWithUnparsableMessages(String destination, Endpoint receivingEndpoint, WebSocket sendSocket) throws Exception {
         Meter totalUnparsable = metrics.getMeter("websocket", "received", "unparsable", "total");
         Meter specificUnparsable = metrics.getMeter("websocket", "received", "unparsable", destination);
-        assertThat(totalUnparsable.getCount(), is(0l));
-        assertThat(specificUnparsable.getCount(), is(0l));
+        assertThat(totalUnparsable.getCount(), is(0L));
+        assertThat(specificUnparsable.getCount(), is(0L));
 
-        here, we subscribe a second time to the messages (the first time in the trigerring test), therefore the
-                asserts fail, since the numbers are all twice as high
         Flowable<IncomingMessage<Integer, IncomingMessageMetaData>> messages = receivingEndpoint.messages(Integer.class);
         TestSubscriber<IncomingMessage<Integer, IncomingMessageMetaData>> testSubscriber = messages.test();
 
@@ -321,15 +332,15 @@ class WebsocketAdapterTest {
             assertThat(connectionLatch.getCount(), is(0L));
 
             serverEndpoint.broadcast(1);
-            messageLatch1.await(2, TimeUnit.SECONDS); assertThat(messageLatch1.getCount(), is(0l));
+            messageLatch1.await(2, TimeUnit.SECONDS); assertThat(messageLatch1.getCount(), is(0L));
             webSockets.remove(0).close();
 
             serverEndpoint.broadcast(2);
-            messageLatch2.await(2, TimeUnit.SECONDS); assertThat(messageLatch2.getCount(), is(0l));
+            messageLatch2.await(2, TimeUnit.SECONDS); assertThat(messageLatch2.getCount(), is(0L));
             webSockets.remove(0).close();
 
             serverEndpoint.broadcast(3);
-            messageLatch3.await(2, TimeUnit.SECONDS); assertThat(messageLatch3.getCount(), is(0l));
+            messageLatch3.await(2, TimeUnit.SECONDS); assertThat(messageLatch3.getCount(), is(0L));
 
             testSubscriber1.assertValueCount(1);
             assertThat(testSubscriber1.values().get(0).message, is(1));

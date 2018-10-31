@@ -31,7 +31,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 
 @Tag("large")
 class RpcServerTest {
-    private RpcServer<String> sut;
+    private RpcServer sut;
     private TestJmsHelper jmsHelper;
     private MySender mySender;
 
@@ -49,15 +49,13 @@ class RpcServerTest {
         JmsSessionDescriptor producerSessionDescriptor = new JmsSessionDescriptor(false, Session.AUTO_ACKNOWLEDGE);
         JmsSessionDescriptor consumerSessionDescriptor = new JmsSessionDescriptor(false, Session.AUTO_ACKNOWLEDGE);
         JmsObjectRepository jmsObjectRepository = new JmsObjectRepository(connection, producerSessionDescriptor, consumerSessionDescriptor, String::valueOf);
-        MessageReceiver<String> messageReceiver = new MessageReceiver<>(
+        MessageReceiver messageReceiver = new MessageReceiver<>(
                 identifier,
                 jmsObjectRepository,
-                s -> s,
                 metrics);
         mySender = new MySender(
                 identifier,
                 jmsObjectRepository,
-                s -> s,
                 metrics);
 
         sut = new RpcServer<>(identifier, messageReceiver, mySender, Throwable::getMessage, metrics);
@@ -131,20 +129,20 @@ class RpcServerTest {
     }
 
 
-    private class MySender extends MessageSender<String> {
+    private class MySender extends MessageSender {
         private String message;
         private OutgoingMessageMetaData sendingInfo;
 
-        MySender(String identifier, JmsObjectRepository jmsObjectRepository, MessageMarshaller<String, String> messageMarshaller, Metrics metrics) {
-            super(identifier, jmsObjectRepository, messageMarshaller, metrics);
+        MySender(String identifier, JmsObjectRepository jmsObjectRepository, Metrics metrics) {
+            super(identifier, jmsObjectRepository, metrics);
         }
 
 
         @Override
-        public Completable doSend(String message, OutgoingMessageMetaData meta) {
+        public Completable send(String message, OutgoingMessageMetaData meta) {
             this.message = message;
             this.sendingInfo = meta;
-            return super.doSend(message, meta);
+            return super.send(message, meta);
         }
     }
 }

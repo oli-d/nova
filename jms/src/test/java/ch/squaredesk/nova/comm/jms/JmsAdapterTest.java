@@ -45,7 +45,7 @@ class JmsAdapterTest {
     private MyMessageReceiver myMessageReceiver;
     private MyMessageSender myMessageSender;
     private MyRpcClient myRpcClient;
-    private JmsAdapter<String> sut;
+    private JmsAdapter sut;
 
     @BeforeEach
     void setUp() throws Exception {
@@ -53,13 +53,12 @@ class JmsAdapterTest {
         myMessageSender = new MyMessageSender();
         myRpcClient = new MyRpcClient();
 
-        sut = JmsAdapter.builder(String.class)
+        sut = JmsAdapter.builder()
                 .setJmsObjectRepository(new MyJmsObjectRepository())
                 .setMessageReceiver(myMessageReceiver)
                 .setMessageSender(myMessageSender)
                 .setRpcClient(myRpcClient)
                 .setRpcServer(null)
-                .setErrorReplyFactory(error -> "Error")
                 .setDefaultMessageDeliveryMode(defaultDeliveryMode)
                 .setDefaultMessageTimeToLive(defaultTtl)
                 .setDefaultMessagePriority(defaultPriority)
@@ -70,9 +69,8 @@ class JmsAdapterTest {
     @Test
     void instanceCannotBeCreatedWithoutConnectionFactory() {
         Throwable t = assertThrows(NullPointerException.class,
-                () -> JmsAdapter.builder(String.class)
+                () -> JmsAdapter.builder()
                 .setRpcClient(null)
-                .setErrorReplyFactory(error -> "Error")
                 .build());
         assertThat(t.getMessage(),containsString("connectionFactory"));
     }

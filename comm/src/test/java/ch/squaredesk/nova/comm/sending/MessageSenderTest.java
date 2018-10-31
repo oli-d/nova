@@ -26,7 +26,7 @@ class MessageSenderTest {
         MessageSender<Object, Object, OutgoingMessageMetaData<Object, Object>> impl =
                 new MessageSender<Object, Object, OutgoingMessageMetaData<Object, Object>>(null, new Metrics()) {
                     @Override
-                    public <T> Completable doSend(T message, OutgoingMessageMetaData<Object, Object> outgoingMessageMetaData) {
+                    public Completable send(Object message, OutgoingMessageMetaData<Object, Object> sendingInfo) {
                         return null;
                     }
                 }
@@ -38,14 +38,9 @@ class MessageSenderTest {
     void instanceCannotBeCreatedWithoutMetrics() {
         Throwable t = assertThrows(NullPointerException.class,
                 () -> {
-                    new MessageSender<Object, Object, OutgoingMessageMetaData<Object, Object>>(new OutgoingMessageTranscriber<Object>() {
+                    new MessageSender<Object, Object, OutgoingMessageMetaData<Object, Object>>(null) {
                         @Override
-                        public <U> Object transcribeOutgoingMessage(U anObject) throws Exception {
-                            return null;
-                        }
-                    }, null) {
-                        @Override
-                        public <T> Completable doSend(T message, OutgoingMessageMetaData<Object, Object> outgoingMessageMetaData) {
+                        public Completable send(Object message, OutgoingMessageMetaData<Object, Object> sendingInfo) {
                             return null;
                         }
                     };

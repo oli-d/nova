@@ -59,11 +59,11 @@ public class SpringWiringTest {
         Metrics metrics = ctx.getBean(Nova.class).metrics;
         assertThat(metrics.getMeter("websocket", "received", "echo").getCount(), is(0L));
 
-        WebSocketAdapter<Integer> webSocketAdapter = ctx.getBean(WebSocketAdapter.class);
-        ClientEndpoint<Integer> clientSideSocket = webSocketAdapter.connectTo(serverUrl+"/echo");
+        WebSocketAdapter webSocketAdapter = ctx.getBean(WebSocketAdapter.class);
+        ClientEndpoint clientSideSocket = webSocketAdapter.connectTo(serverUrl+"/echo");
         CountDownLatch cdl = new CountDownLatch(1);
         Integer[] resultHolder = new Integer[1];
-        clientSideSocket.messages().subscribe(msg -> {
+        clientSideSocket.messages(Integer.class).subscribe(msg -> {
             resultHolder[0] = msg.message;
             cdl.countDown();
         });
@@ -93,8 +93,8 @@ public class SpringWiringTest {
         }
 
         @Bean
-        public WebSocketAdapter<Integer> webSocketAdapter() {
-            return WebSocketAdapter.builder(Integer.class)
+        public WebSocketAdapter webSocketAdapter() {
+            return WebSocketAdapter.builder()
                     .setHttpServer(httpServer)
                     .setHttpClient(httpClient)
                     .setMetrics(nova.metrics)
@@ -105,7 +105,7 @@ public class SpringWiringTest {
 
     public static class MyBean {
         @OnMessage("echo")
-        public void websocketEchoInteger(Integer message, WebSocket<Integer> webSocket)  {
+        public void websocketEchoInteger(Integer message, WebSocket webSocket) throws Exception {
             webSocket.send(message);
         }
     }

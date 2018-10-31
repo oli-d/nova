@@ -19,11 +19,11 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class KafkaAdapterCreationTest {
-    private KafkaAdapter.Builder<String> sutBuilder;
+    private KafkaAdapter.Builder sutBuilder;
 
     @BeforeEach
-    void setUp() throws IllegalAccessException, NoSuchFieldException {
-        this.sutBuilder = KafkaAdapter.builder(String.class)
+    void setUp() {
+        this.sutBuilder = KafkaAdapter.builder()
                 .setServerAddress("127.0.0.1:11000")
         ;
     }
