@@ -33,7 +33,6 @@ public abstract class RpcServer<DestinationType,
     }
 
 
-    // FIXME: just like the rpc client, it should only need Function<>s instead of the full transcriber
     public abstract <T> Flowable<? extends RpcInvocation<
                                                         T,
                                                         ? extends IncomingMessageMetaData<?,?>,
