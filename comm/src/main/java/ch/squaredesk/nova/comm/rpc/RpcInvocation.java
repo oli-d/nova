@@ -12,7 +12,6 @@ package ch.squaredesk.nova.comm.rpc;
 
 import ch.squaredesk.nova.comm.retrieving.IncomingMessage;
 import ch.squaredesk.nova.comm.retrieving.IncomingMessageMetaData;
-import ch.squaredesk.nova.comm.sending.OutgoingMessageTranscriber;
 import ch.squaredesk.nova.tuples.Pair;
 import io.reactivex.functions.Function;
 
@@ -43,6 +42,18 @@ public class RpcInvocation<
         replyConsumer.accept(new Pair<>(transcriber.apply(reply), replySpecificInfo));
     }
 
+    public <T> void complete(T reply, Function<T, TransportMessageType> transcriber) throws Exception {
+        replyConsumer.accept(new Pair<>(transcriber.apply(reply), null));
+    }
+
+    public void complete(TransportMessageType reply, TransportSpecificReplyInfo replySpecificInfo) {
+        replyConsumer.accept(new Pair<>(reply, replySpecificInfo));
+    }
+/*
+    public void complete(TransportMessageType reply) {
+        replyConsumer.accept(new Pair<>(reply, null));
+    }
+*/
     public void completeExceptionally(Throwable error) {
         errorConsumer.accept(error);
     }

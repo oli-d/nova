@@ -10,7 +10,6 @@
 
 package ch.squaredesk.nova.comm.jms;
 
-import ch.squaredesk.nova.comm.sending.MessageMarshaller;
 import ch.squaredesk.nova.metrics.Metrics;
 import io.reactivex.Completable;
 import io.reactivex.subscribers.TestSubscriber;
@@ -49,7 +48,7 @@ class RpcServerTest {
         JmsSessionDescriptor producerSessionDescriptor = new JmsSessionDescriptor(false, Session.AUTO_ACKNOWLEDGE);
         JmsSessionDescriptor consumerSessionDescriptor = new JmsSessionDescriptor(false, Session.AUTO_ACKNOWLEDGE);
         JmsObjectRepository jmsObjectRepository = new JmsObjectRepository(connection, producerSessionDescriptor, consumerSessionDescriptor, String::valueOf);
-        MessageReceiver messageReceiver = new MessageReceiver<>(
+        MessageReceiver messageReceiver = new MessageReceiver(
                 identifier,
                 jmsObjectRepository,
                 metrics);
@@ -58,7 +57,7 @@ class RpcServerTest {
                 jmsObjectRepository,
                 metrics);
 
-        sut = new RpcServer<>(identifier, messageReceiver, mySender, Throwable::getMessage, metrics);
+        sut = new RpcServer(identifier, messageReceiver, mySender, metrics);
         jmsObjectRepository.start();
 
         jmsHelper = new TestJmsHelper(connectionFactory);
@@ -73,7 +72,7 @@ class RpcServerTest {
     @Test
     void subribeToIncomingRequests() throws Exception {
         Destination queue = jmsHelper.createQueue("subscribeToRequests");
-        TestSubscriber<RpcInvocation<String>> testSubscriber = sut.requests(queue).test();
+        TestSubscriber<RpcInvocation<String>> testSubscriber = sut.requests(queue, String.class).test();
 
         jmsHelper.sendMessage(queue,"One");
         jmsHelper.sendRequest(queue,"Two");
@@ -91,14 +90,14 @@ class RpcServerTest {
     @Test
     void completingRpcInvocationProperlyTriggersReplySending() throws Exception {
         Destination queue = jmsHelper.createQueue("completeRpc");
-        TestSubscriber<RpcInvocation<String>> testSubscriber = sut.requests(queue).test();
+        TestSubscriber<RpcInvocation<String>> testSubscriber = sut.requests(queue, String.class).test();
         Message requestMessage = jmsHelper.sendRequest(queue, "Two");
 
         int maxLoops = 10;
         for (int i = 0; i < maxLoops && testSubscriber.valueCount()==0; i++) {
             TimeUnit.MILLISECONDS.sleep(1000);
         }
-        testSubscriber.values().iterator().next().complete("reply");
+        testSubscriber.values().iterator().next().complete("reply", s->s);
 
         assertThat(mySender.message, is("reply"));
         assertNotNull(mySender.sendingInfo);
@@ -108,10 +107,12 @@ class RpcServerTest {
         assertNotNull(mySender.sendingInfo.details.correlationId);
     }
 
+    /** TODO: this was valid when we were returning an error message for server side errors. Keeping it in here
+     * since we're are not sure, whether it should be re-introduced
     @Test
     void completingRpcInvocationExceptionallyTriggersReplySending() throws Exception {
         Destination queue = jmsHelper.createQueue("completeRpcExceptionally");
-        TestSubscriber<RpcInvocation<String>> testSubscriber = sut.requests(queue).test();
+        TestSubscriber<RpcInvocation<String>> testSubscriber = sut.requests(queue, String.class).test();
         Message requestMessage = jmsHelper.sendRequest(queue, "Boom");
 
         int maxLoops = 10;
@@ -127,7 +128,7 @@ class RpcServerTest {
         assertNull(mySender.sendingInfo.details.replyDestination);
         assertNotNull(mySender.sendingInfo.details.correlationId);
     }
-
+    **/
 
     private class MySender extends MessageSender {
         private String message;

@@ -37,6 +37,7 @@ class SslTest {
     private RpcServer sut;
     private RpcClient rpcClient;
     private MessageTranscriber<String> messageTranscriber;
+
     @BeforeEach
     void setup() throws Exception {
         KeyStore keyStore = readKeyStore();
@@ -49,8 +50,7 @@ class SslTest {
         AsyncHttpClientConfig asyncHttpClientConfig = new AsyncHttpClientConfig.Builder().setSSLContext(sslContext).build();
         AsyncHttpClient client = new AsyncHttpClient(asyncHttpClientConfig);
         rpcClient = new RpcClient(null, client, new Metrics());
-        sut = new RpcServer(httpServer, new Metrics());
-        messageTranscriber = new DefaultMessageTranscriberForStringAsTransportType();
+        sut = new RpcServer(httpServer, new DefaultMessageTranscriberForStringAsTransportType(), new Metrics());
     }
 
     private KeyStore readKeyStore() throws Exception {
@@ -106,7 +106,7 @@ class SslTest {
         sut.start();
         int numRequests = 5;
         String path = "/bla";
-        TestSubscriber<String> subscriber = sut.requests(path, messageTranscriber, String.class)
+        TestSubscriber<String> subscriber = sut.requests(path, String.class)
                 .subscribeOn(Schedulers.io())
                 .map(rpcInvocation -> rpcInvocation.request.metaData.details.headers.get("p")
                 ).test();
@@ -126,7 +126,7 @@ class SslTest {
                         new URL(urlAsString),
                         new RequestInfo(HttpRequestMethod.POST));
 
-                rpcClient.sendRequest("{}", meta, messageTranscriber.getOutgoingMessageTranscriber(String.class), messageTranscriber.getIncomingMessageTranscriber(String.class), 15, SECONDS);
+                rpcClient.sendRequest("{}", meta, s->s, s->s, 15, SECONDS);
             } catch (Exception e) {
                 e.printStackTrace();
             }

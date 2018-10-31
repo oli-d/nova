@@ -423,7 +423,7 @@ public class HttpAdapter extends CommAdapter<String> {
     /////////
     /////////
     public <T> Flowable<RpcInvocation<T>> requests(String destination, Class<T> requestType) {
-        return rpcServer.requests(destination, messageTranscriber, requestType);
+        return rpcServer.requests(destination, requestType);
     }
 
     public void start() throws Exception {
@@ -511,7 +511,7 @@ public class HttpAdapter extends CommAdapter<String> {
                 if (httpServer == null) {
                     logger.info("No httpServer provided, HTTP Adapter will only be usable in client mode!!!");
                 } else {
-                    rpcServer = new RpcServer(identifier, httpServer, metrics);
+                    rpcServer = new RpcServer(identifier, httpServer, messageTranscriber, metrics);
                 }
             }
             return new HttpAdapter(this);

@@ -1,7 +1,5 @@
 package ch.squaredesk.nova.comm.http;
 
-import ch.squaredesk.nova.comm.DefaultMessageTranscriberForStringAsTransportType;
-import ch.squaredesk.nova.comm.MessageTranscriber;
 import ch.squaredesk.nova.metrics.Metrics;
 import io.reactivex.Flowable;
 import io.reactivex.schedulers.Schedulers;
@@ -31,13 +29,11 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 class RpcServerTest {
     private HttpServerConfiguration rsc = HttpServerConfiguration.builder().interfaceName("localhost").port(10000).build();
     private HttpServer httpServer = HttpServerFactory.serverFor(rsc);
-    private MessageTranscriber<String> messageTranscriber;
     private RpcServer sut;
 
     @BeforeEach
     void setup() {
         sut = new RpcServer(httpServer, new Metrics());
-        messageTranscriber = new DefaultMessageTranscriberForStringAsTransportType();
     }
 
     @AfterEach
@@ -54,9 +50,9 @@ class RpcServerTest {
 
     @Test
     void subscriptionsCanBeMadeAfterServerStarted() throws Exception {
-        assertNotNull(sut.requests("/requests", messageTranscriber, String.class));
+        assertNotNull(sut.requests("/requests", String.class));
         sut.start();
-        sut.requests("/failing", messageTranscriber, String.class);
+        sut.requests("/failing", String.class);
     }
 
     @Test
@@ -66,7 +62,7 @@ class RpcServerTest {
         String path = "/bla";
         List<String> responses = new ArrayList<>();
 
-        sut.requests(path, messageTranscriber, String.class)
+        sut.requests(path, String.class)
             .subscribe(rpcInvocation -> {
                 rpcInvocation.complete(" description " + rpcInvocation.request.metaData.details.headers.get("p"));
             });
@@ -103,7 +99,7 @@ class RpcServerTest {
         String urlAsString = "http://" + rsc.interfaceName + ":" + rsc.port + path;
         URL url = new URL(urlAsString);
         String hugeRequest = createStringOfLength(5 * 1024 * 1024);
-        Flowable<RpcInvocation<String>> requests = sut.requests(path, messageTranscriber, String.class);
+        Flowable<RpcInvocation<String>> requests = sut.requests(path, String.class);
         requests.subscribeOn(Schedulers.io()).subscribe(rpcInvocation -> {
             rpcInvocation.complete(rpcInvocation.request.message);
         });
@@ -119,7 +115,7 @@ class RpcServerTest {
         String urlAsString = "http://" + rsc.interfaceName + ":" + rsc.port + path;
         URL url = new URL(urlAsString);
         String hugeReply = createStringOfLength(15 * 1024 * 1024);
-        Flowable<RpcInvocation<String>> requests = sut.requests(path, messageTranscriber, String.class);
+        Flowable<RpcInvocation<String>> requests = sut.requests(path, String.class);
         requests.subscribeOn(Schedulers.io()).subscribe(rpcInvocation -> {
             rpcInvocation.complete(hugeReply);
         });
@@ -136,7 +132,7 @@ class RpcServerTest {
         URL url = new URL(urlAsString);
         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
 
-        Flowable<RpcInvocation<String>> requests = sut.requests(path, messageTranscriber, String.class);
+        Flowable<RpcInvocation<String>> requests = sut.requests(path, String.class);
         requests.subscribeOn(Schedulers.io()).subscribe(rpcInvocation -> {
             rpcInvocation.complete("someReply", 555);
         });
@@ -155,7 +151,7 @@ class RpcServerTest {
         Map<String,String> customHeaders = new HashMap<>();
         customHeaders.put("myParam", "myValue");
 
-        Flowable<RpcInvocation<String>> requests = sut.requests(path, messageTranscriber, String.class);
+        Flowable<RpcInvocation<String>> requests = sut.requests(path, String.class);
         requests.subscribeOn(Schedulers.io()).subscribe(rpcInvocation -> {
             rpcInvocation.complete("someReply", customHeaders);
         });
@@ -168,7 +164,7 @@ class RpcServerTest {
     void requestProcessingFailsOnServerSideAndErrorIsDispatched() throws Exception {
         sut.start();
         String path = "/fail";
-        Flowable<RpcInvocation<String>> requests = sut.requests(path, messageTranscriber, String.class);
+        Flowable<RpcInvocation<String>> requests = sut.requests(path, String.class);
         requests.subscribe(rpcInvocation -> rpcInvocation.completeExceptionally(new Exception("no content")));
 
         String url = "http://" + rsc.interfaceName + ":" + rsc.port + path + "?p=";

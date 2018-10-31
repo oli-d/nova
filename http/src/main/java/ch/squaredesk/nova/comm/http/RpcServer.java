@@ -1,8 +1,8 @@
 package ch.squaredesk.nova.comm.http;
 
+import ch.squaredesk.nova.comm.DefaultMessageTranscriberForStringAsTransportType;
 import ch.squaredesk.nova.comm.MessageTranscriber;
 import ch.squaredesk.nova.comm.retrieving.IncomingMessage;
-import ch.squaredesk.nova.comm.retrieving.IncomingMessageTranscriber;
 import ch.squaredesk.nova.metrics.Metrics;
 import io.reactivex.BackpressureStrategy;
 import io.reactivex.Flowable;
@@ -36,24 +36,26 @@ public class RpcServer extends ch.squaredesk.nova.comm.rpc.RpcServer<String, Str
 
     private final HttpServer httpServer;
 
-    public RpcServer(HttpServer httpServer,
-                        Metrics metrics) {
-        this(null, httpServer, metrics);
+    public RpcServer(HttpServer httpServer, MessageTranscriber<String> messageTranscriber, Metrics metrics) {
+        this(null, httpServer, messageTranscriber, metrics);
     }
 
-    public RpcServer(String identifier,
-                        HttpServer httpServer,
-                        Metrics metrics) {
-        super(identifier, metrics);
+    public RpcServer(HttpServer httpServer, Metrics metrics) {
+        this(null, httpServer, new DefaultMessageTranscriberForStringAsTransportType(), metrics);
+    }
+
+    public RpcServer(String identifier, HttpServer httpServer, Metrics metrics) {
+        this(identifier, httpServer, new DefaultMessageTranscriberForStringAsTransportType(), metrics);
+    }
+    public RpcServer(String identifier, HttpServer httpServer, MessageTranscriber<String> messageTranscriber, Metrics metrics) {
+        super(identifier, messageTranscriber, metrics);
         Objects.requireNonNull(httpServer, "httpServer must not be null");
         this.httpServer = httpServer;
     }
 
 
     @Override
-    public <T> Flowable<RpcInvocation<T>> requests(String destination,
-                                                   MessageTranscriber<String> messageTranscriber,
-                                                   Class<T> targetType) {
+    public <T> Flowable<RpcInvocation<T>> requests(String destination, Class<T> targetType) {
         URL destinationAsLocalUrl;
         try {
             destinationAsLocalUrl = new URL("http", "localhost", destination);

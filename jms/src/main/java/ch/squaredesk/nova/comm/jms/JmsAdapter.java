@@ -169,7 +169,7 @@ public class JmsAdapter extends CommAdapter<String> {
     ////////////////////////
     public <T> Flowable<RpcInvocation<T>> requests(Destination destination, Class<T> requestType) {
         requireNonNull(destination, "destination must not be null");
-        return rpcServer.requests(destination, messageTranscriber, requestType);
+        return rpcServer.requests(destination, requestType);
     }
 
     ////////////////////////

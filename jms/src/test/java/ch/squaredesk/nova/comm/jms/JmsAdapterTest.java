@@ -16,6 +16,7 @@ import io.reactivex.BackpressureStrategy;
 import io.reactivex.Completable;
 import io.reactivex.Flowable;
 import io.reactivex.Single;
+import io.reactivex.functions.Function;
 import io.reactivex.subjects.PublishSubject;
 import io.reactivex.subjects.Subject;
 import io.reactivex.subscribers.TestSubscriber;
@@ -48,7 +49,7 @@ class JmsAdapterTest {
     private JmsAdapter sut;
 
     @BeforeEach
-    void setUp() throws Exception {
+    void setUp() {
         myMessageReceiver = new MyMessageReceiver();
         myMessageSender = new MyMessageSender();
         myRpcClient = new MyRpcClient();
@@ -76,18 +77,9 @@ class JmsAdapterTest {
     }
 
     @Test
-    void instanceCannotBeCreatedWithoutErrorReplyFactory() {
-        Throwable t = assertThrows(NullPointerException.class,
-                () -> JmsAdapter.builder(String.class)
-                        .setRpcClient(null)
-                        .build());
-        assertThat(t.getMessage(), containsString("errorReplyFactory"));
-    }
-
-    @Test
     void nullDestinationThrows() {
         assertThrows(NullPointerException.class,
-                ()-> sut.sendRequest(null, "some request"));
+                ()-> sut.sendRequest(null, "some request", String.class));
     }
 
     @Test
@@ -141,13 +133,13 @@ class JmsAdapterTest {
 
     @Test
     void subscribingToRequestsCannotBeDoneWithNullDestination() {
-        NullPointerException npe = assertThrows(NullPointerException.class, () -> sut.requests(null));
+        NullPointerException npe = assertThrows(NullPointerException.class, () -> sut.requests(null, String.class));
         assertThat(npe.getMessage(), containsString("destination must not be null"));
     }
 
     @Test
     void jmsReplyToAddedToRequestSendingInfo() {
-        sut.sendRequest(new MyDestination(), "message");
+        sut.sendRequest(new MyDestination(), "message", String.class);
 
         assertNotNull(myRpcClient.outgoingMessageMetaData.details.replyDestination);
     }
@@ -156,7 +148,7 @@ class JmsAdapterTest {
     void jmsReplyToCanBeSpecified() {
         MyDestination destination = new MyDestination();
         MyDestination replyToDestination = new MyDestination();
-        sut.sendRequest(destination, replyToDestination, "message", null, 1, SECONDS);
+        sut.sendRequest(destination, replyToDestination, "message", null, String.class, 1, SECONDS);
 
         assertThat(myRpcClient.outgoingMessageMetaData.details.replyDestination, is(replyToDestination));
     }
@@ -164,18 +156,18 @@ class JmsAdapterTest {
     @Test
     void destinationMustBeProvidedOnRpc() {
         assertThrows(NullPointerException.class,
-                () -> sut.sendRequest(null, "message", null, 100L, MILLISECONDS));
+                () -> sut.sendRequest(null, "message", null, String.class, 100L, MILLISECONDS));
     }
 
     @Test
     void timeUnitMustBeProvidedIfTimeoutIsNotNull() {
         assertThrows(NullPointerException.class,
-                () -> sut.sendRequest(new MyDestination(), "message", 1777L, null));
+                () -> sut.sendRequest(new MyDestination(), "message", String.class, 1777L, null));
     }
 
     @Test
     void defaultTimeoutUsedForRpcIfNoTimeoutProvided()  {
-        sut.sendRequest(new MyDestination(), "message");
+        sut.sendRequest(new MyDestination(), "message", String.class);
 
         assertThat(myRpcClient.timeout, is(defaultRpcTimeout));
         assertThat(myRpcClient.timeUnit, is(defaultRpcTimeoutUnit));
@@ -183,7 +175,7 @@ class JmsAdapterTest {
 
     @Test
     void correlationIdGeneratedForRpcs() throws Exception {
-        sut.sendRequest(new MyDestination(), "message");
+        sut.sendRequest(new MyDestination(), "message", String.class);
 
         assertNotNull(myRpcClient.outgoingMessageMetaData.details.correlationId);
     }
@@ -202,18 +194,18 @@ class JmsAdapterTest {
     void destinationAndMessagePassedUnchangedForRpc() {
         MyDestination destination = new MyDestination();
 
-        sut.sendRequest(destination, "some message");
+        sut.sendRequest(destination, "some message", String.class);
 
         assertThat(myRpcClient.request, is("some message"));
         assertThat(myRpcClient.outgoingMessageMetaData.destination, is(destination));
     }
 
-    private class MyMessageReceiver extends MessageReceiver<String> {
+    private class MyMessageReceiver extends MessageReceiver {
         private Subject<IncomingMessage<String, IncomingMessageMetaData>> publishSubject = PublishSubject.create();
         private Destination destination;
 
         MyMessageReceiver() {
-            super("", null, s -> s, new Metrics());
+            super("", null, new Metrics());
         }
 
         @Override
@@ -223,24 +215,24 @@ class JmsAdapterTest {
         }
     }
 
-    private class MyMessageSender extends MessageSender<String> {
+    private class MyMessageSender extends MessageSender {
         private String message;
         private OutgoingMessageMetaData metaData;
 
         MyMessageSender() {
-            super("", null, s -> s, new Metrics());
+            super("", null, new Metrics());
         }
 
         @Override
-        public Completable doSend(String message, OutgoingMessageMetaData meta) {
+        public Completable send(String message, OutgoingMessageMetaData meta) {
             this.message = message;
             this.metaData = meta;
             return Completable.complete();
         }
     }
 
-    private class MyRpcClient extends RpcClient<String> {
-        private String request;
+    private class MyRpcClient extends RpcClient {
+        private Object request;
         private long timeout;
         private TimeUnit timeUnit;
         private OutgoingMessageMetaData outgoingMessageMetaData;
@@ -250,14 +242,11 @@ class JmsAdapterTest {
         }
 
         @Override
-        public <ReplyType extends String> Single<RpcReply<ReplyType>> sendRequest(
-                String request,
-                OutgoingMessageMetaData outgoingMessageMetaData,
-                long timeout, TimeUnit timeUnit) {
+        public <RequestType, ReplyType> Single<RpcReply<ReplyType>> sendRequest(RequestType request, OutgoingMessageMetaData requestMetaData, Function<RequestType, String> requestTranscriber, Function<String, ReplyType> replyTranscriber, long timeout, TimeUnit timeUnit) {
             this.request = request;
             this.timeout = timeout;
             this.timeUnit = timeUnit;
-            this.outgoingMessageMetaData = outgoingMessageMetaData;
+            this.outgoingMessageMetaData = requestMetaData;
             return Single.never();
         }
     }

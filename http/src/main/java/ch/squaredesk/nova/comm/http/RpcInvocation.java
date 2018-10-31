@@ -13,7 +13,6 @@ package ch.squaredesk.nova.comm.http;
 
 import ch.squaredesk.nova.comm.MessageTranscriber;
 import ch.squaredesk.nova.comm.retrieving.IncomingMessage;
-import ch.squaredesk.nova.comm.sending.OutgoingMessageTranscriber;
 import ch.squaredesk.nova.tuples.Pair;
 
 import java.util.Map;
@@ -48,5 +47,23 @@ public class RpcInvocation<IncomingMessageType>
     public <T> void complete(T reply, int statusCode, Map<String, String> replyHeaders) throws Exception {
         ReplyInfo replyInfo = new ReplyInfo(statusCode, replyHeaders);
         complete(reply, replyInfo, transcriber.getOutgoingMessageTranscriber(reply));
+    }
+
+    public void complete(String reply) {
+        complete(reply, 200, null);
+    }
+
+    public void complete(String reply, int statusCode) {
+        complete(reply, statusCode, null);
+    }
+
+
+    public void complete(String reply, Map<String, String> replyHeaders) {
+        complete(reply, 200, replyHeaders);
+    }
+
+    public void complete(String reply, int statusCode, Map<String, String> replyHeaders) {
+        ReplyInfo replyInfo = new ReplyInfo(statusCode, replyHeaders);
+        complete(reply, replyInfo);
     }
 }

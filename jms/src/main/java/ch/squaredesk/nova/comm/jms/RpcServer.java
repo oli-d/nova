@@ -10,6 +10,7 @@
 
 package ch.squaredesk.nova.comm.jms;
 
+import ch.squaredesk.nova.comm.DefaultMessageTranscriberForStringAsTransportType;
 import ch.squaredesk.nova.comm.MessageTranscriber;
 import ch.squaredesk.nova.comm.retrieving.IncomingMessage;
 import ch.squaredesk.nova.metrics.Metrics;
@@ -28,7 +29,15 @@ public class RpcServer extends ch.squaredesk.nova.comm.rpc.RpcServer<Destination
               MessageReceiver messageReceiver,
               MessageSender messageSender,
               Metrics metrics) {
-        super(identifier, metrics);
+        this(identifier, messageReceiver, messageSender, new DefaultMessageTranscriberForStringAsTransportType(), metrics);
+    }
+
+    RpcServer(String identifier,
+              MessageReceiver messageReceiver,
+              MessageSender messageSender,
+              MessageTranscriber<String> messageTranscriber,
+              Metrics metrics) {
+        super(identifier, messageTranscriber, metrics);
 
         requireNonNull(messageSender, "messageSender must not be null");
         requireNonNull(messageReceiver, "messageReceiver must not be null");
@@ -37,9 +46,7 @@ public class RpcServer extends ch.squaredesk.nova.comm.rpc.RpcServer<Destination
     }
 
     @Override
-    public <T> Flowable<RpcInvocation<T>> requests(Destination destination,
-                                                   MessageTranscriber<String> messageTranscriber,
-                                                   Class<T> requestType) {
+    public <T> Flowable<RpcInvocation<T>> requests(Destination destination, Class<T> requestType) {
         return messageReceiver.messages(destination, messageTranscriber.getIncomingMessageTranscriber(requestType))
                 .filter(this::isRpcRequest)
                 .map(incomingRequest -> {

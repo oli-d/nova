@@ -58,7 +58,7 @@ class RpcClientTest {
         MessageReceiver messageReceiver = new MessageReceiver("RpcClientTest",
                 objectRepository,
                 metrics);
-        MessageSender<String> messageSender = new MessageSender<>("RpcClientTest",
+        MessageSender messageSender = new MessageSender("RpcClientTest",
                 objectRepository,
                 metrics);
         sut = new RpcClient("id", messageSender, messageReceiver, metrics);
@@ -98,7 +98,7 @@ class RpcClientTest {
                 Message.DEFAULT_TIME_TO_LIVE);
         OutgoingMessageMetaData metaData = new OutgoingMessageMetaData(queue, sendingDetails);
 
-        TestObserver<RpcReply<String>> replyObserver = sut.sendRequest("aRequest", metaData, 250, MILLISECONDS).test().await();
+        TestObserver<RpcReply<String>> replyObserver = sut.sendRequest("aRequest", metaData, s -> s, s -> s, 250, MILLISECONDS).test().await();
 
         replyObserver.assertError(TimeoutException.class);
     }
@@ -115,7 +115,7 @@ class RpcClientTest {
                 Message.DEFAULT_TIME_TO_LIVE);
         OutgoingMessageMetaData metaData = new OutgoingMessageMetaData(queue, sendingDetails);
 
-        TestObserver<RpcReply<String>> replyObserver = sut.sendRequest("aRequest", metaData, 20, SECONDS).test();
+        TestObserver<RpcReply<String>> replyObserver = sut.sendRequest("aRequest", metaData, s -> s, s -> s, 20, SECONDS).test();
         jmsHelper.sendReply(replyTo, "aReply", "c2");
 
         replyObserver.await(21, SECONDS);
@@ -136,7 +136,7 @@ class RpcClientTest {
                 Message.DEFAULT_TIME_TO_LIVE);
         OutgoingMessageMetaData metaData = new OutgoingMessageMetaData(queue, sendingDetails);
 
-        TestObserver<RpcReply<String>> replyObserver = sut.sendRequest("aRequest", metaData, 20, SECONDS).test();
+        TestObserver<RpcReply<String>> replyObserver = sut.sendRequest("aRequest", metaData, s -> s, s -> s, 20, SECONDS).test();
         jmsHelper.sendReply(sharedQueue, "aReply1", null);
         jmsHelper.sendReply(sharedQueue, "aReply2", "c3");
         jmsHelper.sendReply(sharedQueue, "aReply3", null);

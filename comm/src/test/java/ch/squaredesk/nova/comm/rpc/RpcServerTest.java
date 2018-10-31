@@ -10,9 +10,8 @@
 
 package ch.squaredesk.nova.comm.rpc;
 
-import ch.squaredesk.nova.comm.MessageTranscriber;
+import ch.squaredesk.nova.comm.DefaultMessageTranscriberForStringAsTransportType;
 import ch.squaredesk.nova.comm.retrieving.IncomingMessageMetaData;
-import ch.squaredesk.nova.comm.retrieving.IncomingMessageTranscriber;
 import ch.squaredesk.nova.metrics.Metrics;
 import io.reactivex.Flowable;
 import org.junit.jupiter.api.Test;
@@ -32,11 +31,11 @@ class RpcServerTest {
     private class MyRpcServer extends RpcServer<String, String> {
 
         MyRpcServer(Metrics metrics) {
-            super(metrics);
+            super(metrics, new DefaultMessageTranscriberForStringAsTransportType());
         }
 
         @Override
-        public <T> Flowable<? extends RpcInvocation<T, ? extends IncomingMessageMetaData<?, ?>, String, ?>> requests(String destination, MessageTranscriber<String> requestUnmarshaller, Class<T> targetType) {
+        public <T> Flowable<? extends RpcInvocation<T, ? extends IncomingMessageMetaData<?, ?>, String, ?>> requests(String destination, Class<T> targetType) {
             return Flowable.empty();
         }
     }

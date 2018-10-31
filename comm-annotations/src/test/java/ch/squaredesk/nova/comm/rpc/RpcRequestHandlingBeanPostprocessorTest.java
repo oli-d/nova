@@ -14,6 +14,7 @@ package ch.squaredesk.nova.comm.rpc;
 import ch.squaredesk.nova.Nova;
 import ch.squaredesk.nova.comm.retrieving.IncomingMessage;
 import ch.squaredesk.nova.comm.retrieving.IncomingMessageMetaData;
+import io.reactivex.functions.Function;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -75,28 +76,29 @@ class RpcRequestHandlingBeanPostprocessorTest {
     }
 
     public static class StringRequestRpcInvocation extends RpcInvocation<String, IncomingMessageMetaData<?,?>, Integer, Integer> {
-        Integer result;
+        Object result;
 
         public StringRequestRpcInvocation(String request) {
             super(new IncomingMessage<>(request, new IncomingMessageMetaData<>(new Object(), null)), null, null);
         }
 
         @Override
-        public void complete(Integer result) {
-            this.result = result;
+        public <T> void complete(T reply, Integer replySpecificInfo, Function<T, Integer> transcriber) throws Exception {
+            this.result = reply;
         }
     }
 
     public static class IntegerRequestRpcInvocation extends RpcInvocation<Integer, IncomingMessageMetaData<?,?>, String, String> {
-        String result;
+        Object result;
 
         public IntegerRequestRpcInvocation(Integer request) {
             super(new IncomingMessage<>(request, new IncomingMessageMetaData<>(new Object(), null)), null, null);
         }
 
         @Override
-        public void complete(String result) {
-            this.result = result;
+        public <T> void complete(T reply, String replySpecificInfo, Function<T, String> transcriber) throws Exception {
+            super.complete(reply, replySpecificInfo, transcriber);
+            this.result = reply;
         }
     }
 }
