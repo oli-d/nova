@@ -10,23 +10,33 @@
 
 package ch.squaredesk.nova.comm.rpc;
 
+import ch.squaredesk.nova.comm.MessageTranscriber;
+import ch.squaredesk.nova.comm.retrieving.IncomingMessageMetaData;
 import ch.squaredesk.nova.metrics.Metrics;
 import io.reactivex.Flowable;
 
 import static java.util.Objects.requireNonNull;
 
-public abstract class RpcServer<DestinationType, RpcInvocationType> {
+public abstract class RpcServer<DestinationType,
+                                TransportMessageType> {
 
+    protected final MessageTranscriber<TransportMessageType> messageTranscriber;
     protected final RpcServerMetricsCollector metricsCollector;
 
-    protected RpcServer(Metrics metrics) {
-        this(null, metrics);
+    protected RpcServer(Metrics metrics, MessageTranscriber<TransportMessageType> messageTranscriber) {
+        this(null, messageTranscriber, metrics);
     }
-    protected RpcServer(String identifier, Metrics metrics) {
+    protected RpcServer(String identifier, MessageTranscriber<TransportMessageType> messageTranscriber, Metrics metrics) {
         requireNonNull(metrics, "metrics must not be null");
+        this.messageTranscriber = messageTranscriber;
         this.metricsCollector = new RpcServerMetricsCollector(identifier, metrics);
     }
 
 
-    public abstract Flowable<RpcInvocationType> requests(DestinationType destination);
+    public abstract <T> Flowable<? extends RpcInvocation<
+                                                        T,
+                                                        ? extends IncomingMessageMetaData<?,?>,
+                                                        TransportMessageType,
+                                                        ?>>
+        requests(DestinationType destination, Class<T> targetType);
 }

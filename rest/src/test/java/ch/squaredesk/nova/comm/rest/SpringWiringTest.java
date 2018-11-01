@@ -62,8 +62,8 @@ class SpringWiringTest {
     void restAnnotationsCanBeMixedWithHttpRpcServer() throws Exception {
         setupContext(MyMixedConfig.class);
         ctx.getBean(HttpServer.class).start();
-        RpcServer<String> rpcServer = ctx.getBean(RpcServer.class);
-        rpcServer.requests("/bar").subscribe(
+        RpcServer rpcServer = ctx.getBean(RpcServer.class);
+        rpcServer.requests("/bar", String.class).subscribe(
                 rpcInvocation -> {
                     rpcInvocation.complete("bar");
                 }
@@ -92,9 +92,9 @@ class SpringWiringTest {
 
         @Bean
         @Lazy
-        public RpcServer<String> rpcServer() {
+        public RpcServer rpcServer() {
             HttpServer httpServer = applicationContext.getBean(HttpServer.class);
-            return new RpcServer<>("SWT", httpServer, s->s, s->s, nova.metrics );
+            return new RpcServer("SWT", httpServer, nova.metrics );
         }
     }
 

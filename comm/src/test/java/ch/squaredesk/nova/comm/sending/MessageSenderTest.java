@@ -16,30 +16,34 @@ import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-class MessageSenderImplBaseTest {
+class MessageSenderTest {
 
     @Test
-    void instanceCannotBeCreatedWithoutMarshaller() {
-        Throwable t = assertThrows(NullPointerException.class,
-                () -> new MessageSenderImplBase<Object,Object, Object, OutgoingMessageMetaData<Object, Object>>(null, new Metrics()) {
+    void instanceCanBeCreatedWithoutMarshallerProvider() {
+        MessageSender<Object, Object, OutgoingMessageMetaData<Object, Object>> impl =
+                new MessageSender<Object, Object, OutgoingMessageMetaData<Object, Object>>(null, new Metrics()) {
                     @Override
-                    public Completable doSend(Object transportMessage, OutgoingMessageMetaData messageSendingInfo) {
+                    public Completable send(Object message, OutgoingMessageMetaData<Object, Object> sendingInfo) {
                         return null;
                     }
-                });
-        assertThat(t.getMessage(), containsString("messageMarshaller"));
+                }
+        ;
+        assertNotNull(impl);
     }
 
     @Test
     void instanceCannotBeCreatedWithoutMetrics() {
         Throwable t = assertThrows(NullPointerException.class,
-                () -> new MessageSenderImplBase<Object,Object, Object, OutgoingMessageMetaData<Object, Object>>(x -> x, null) {
-                    @Override
-                    public Completable doSend(Object transportMessage, OutgoingMessageMetaData messageSendingInfo) {
-                        return null;
-                    }
+                () -> {
+                    new MessageSender<Object, Object, OutgoingMessageMetaData<Object, Object>>(null) {
+                        @Override
+                        public Completable send(Object message, OutgoingMessageMetaData<Object, Object> sendingInfo) {
+                            return null;
+                        }
+                    };
                 });
         assertThat(t.getMessage(), containsString("metrics"));
     }

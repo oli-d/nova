@@ -48,7 +48,7 @@ import static org.hamcrest.Matchers.*;
 class KafkaAdapterTest {
     private static Logger logger = LoggerFactory.getLogger(KafkaAdapterTest.class);
 
-    private KafkaAdapter<String> sut;
+    private KafkaAdapter sut;
     private AdminClient adminClient;
 
 
@@ -65,7 +65,7 @@ class KafkaAdapterTest {
 //        setPropertyIfNotPresent(consumerProperties, ConsumerConfig.GROUP_ID_CONFIG, groupId);
         adminClient = AdminClient.create(adminClientProps);
 
-        sut = KafkaAdapter.builder(String.class)
+        sut = KafkaAdapter.builder()
                 .setServerAddress("127.0.0.1:" + kafkaHelper.kafkaPort())
                 .setIdentifier("Test" + UUID.randomUUID())
                 .addProducerProperty(ProducerConfig.BATCH_SIZE_CONFIG, "1")
@@ -289,18 +289,9 @@ class KafkaAdapterTest {
 
     @Test
     void messageMarshallingErrorOnSendForwardedToSubscriber(KafkaHelper kafkaHelper) throws Exception {
-        sut = KafkaAdapter.builder(String.class)
-                .setServerAddress("127.0.0.1:" + kafkaHelper.kafkaPort())
-                .setIdentifier("Test")
-                .addProducerProperty(ProducerConfig.BATCH_SIZE_CONFIG, "1")
-                .addConsumerProperty(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest")
-                .addConsumerProperty(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "true")
-                .setMessageMarshaller(s -> {
-                    throw new RuntimeException("for test");
-                })
-                .build();
-
-        Completable completable = sut.sendMessage("dest", "myMessage");
+        Completable completable = sut.sendMessage("dest", "myMessage", s -> {
+            throw new RuntimeException("for test");
+        });
         TestObserver<Void> observer = completable.test();
         observer.await();
         observer.assertError(RuntimeException.class);
@@ -335,9 +326,13 @@ class KafkaAdapterTest {
 
             @Override
             public void run() {
-                sut.sendMessage(topic, "One-" + id).blockingAwait();
-                sut.sendMessage(topic, "Two-" + id).blockingAwait();
-                sut.sendMessage(topic, "Three-" + id).blockingAwait();
+                try {
+                    sut.sendMessage(topic, "One-" + id).blockingAwait();
+                    sut.sendMessage(topic, "Two-" + id).blockingAwait();
+                    sut.sendMessage(topic, "Three-" + id).blockingAwait();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
             }
         }
         Sender sender1 = new Sender("1");

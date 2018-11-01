@@ -14,25 +14,14 @@ the WebSocket has been created, both ends are equal peers.
 
 * ```metrics``` - The ```Metrics``` instance used to capture communication metrics. **Mandatory**
 
-* ```messageMarshaller``` - The function used to transform your messages to the wire format (always ```String```)
-before they are sent out. If you do not specify your own marshaller, the
-system tries to instantiate a default one. Default marshallers can be created
+* ```messageTranscriber``` - Responsible to transform your messages from and to the wire format (```String```).
+If you do not provide your own transcriber, the
+system tries to instantiate a default one. Default transcribers can be created
 for ```String```, ```Integer```, ```Double``` and ```BigDecimal``` message types. For
 all other message types, the implementation checks, whether the ```ObjectMapper``` from
 the ```com.fasterxml.jackson``` library can be found on the classpath. If so,
-all messages will be marshalled to a JSON string before sent. If the ```ObjectMapper```
-cannot be found, the system gives up and throws an error. All default marshallers
-transform the messages to a String.
-
-* ```messageUnmarshaller``` - The function used to transform incoming messages (```String```) to your internal 
-representation. If you do not specify your own unmarshaller, the
-system tries to instantiate a default one. Default unmarshallers can be created
-for ```String```, ```Integer```, ```Double``` and ```BigDecimal``` message types. For
-all other message types, the implementation checks, whether the ```ObjectMapper``` from
-the ```com.fasterxml.jackson``` library can be found on the classpath. If so,
-all messages will be unmarshalled from a JSON string to the specific type. If the ```ObjectMapper```
-cannot be found, the system gives up and throws an error. All default unmarshallers
-expect the incoming messages to be represented as a String.
+all messages will be transcribed to/from a JSON string using a new instance of the ```ObjectMapper```. If ```ObjectMapper```
+cannot be found, the system will only be able to automatically transcribe the above mentioned message types. For
 
 * ```httpServer``` - The ```HttpServer``` instance used to listen for incoming connections. Can be null, but
 in that case, connections cannot be accepted. The adapter will throw a ```RuntimeException``` if
@@ -59,27 +48,29 @@ To see this in real life, here's how the implementation of an EchoServer would l
 
 ```Java
         // Instantiate the WebSocketAdapter
-        WebSocketAdapter<String> webSocketAdapter = webSocketAdapter();
+        WebSocketAdapter webSocketAdapter = webSocketAdapter();
 
         // Get the "server side" endpoint
-        ServerEndpoint<String> acceptingEndpoint = webSocketAdapter.acceptConnections("/echo");
+        ServerEndpoint acceptingEndpoint = webSocketAdapter.acceptConnections("/echo");
         // Subscribe to incoming messages
-        acceptingEndpoint.messages(BackpressureStrategy.BUFFER).subscribe(
-                incomingMessage -> {
-                    // Get the WebSocket that represents the connection to the sender
-                    WebSocket<String> webSocket = incomingMessage.details.transportSpecificDetails.webSocket;
-                    // and just send the message back to the sender
-                    webSocket.send(incomingMessage.message);
-                });
+        acceptingEndpoint.messages(String.class)
+                .subscribe(
+                    incomingMessage -> {
+                        // Get the WebSocket that represents the connection to the sender
+                        WebSocket webSocket = incomingMessage.metaData.details.webSocket;
+                        // and just send the message back to the sender
+                        webSocket.send(incomingMessage.message);
+                    }
+                );
 ```
 
 The code to connect to that server and send a few messages would look like that:
 
 ```Java
         // Connect to the "server side" endpoint
-        ClientEndpoint<String> initiatingEndpoint = webSocketAdapter.connectTo("ws://127.0.0.1:10000/echo");
+        ClientEndpoint initiatingEndpoint = webSocketAdapter.connectTo("ws://127.0.0.1:10000/echo");
         // Subscribe to messages returned from the echo server
-        initiatingEndpoint.messages(BackpressureStrategy.BUFFER).subscribe(
+        initiatingEndpoint.messages(String.class).subscribe(
                 incomingMessage -> {
                     System.out.println("Echo server returned " + incomingMessage.message);
                 });

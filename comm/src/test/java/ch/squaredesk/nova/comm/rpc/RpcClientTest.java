@@ -14,6 +14,7 @@ import ch.squaredesk.nova.comm.retrieving.IncomingMessageMetaData;
 import ch.squaredesk.nova.comm.sending.OutgoingMessageMetaData;
 import ch.squaredesk.nova.metrics.Metrics;
 import io.reactivex.Single;
+import io.reactivex.functions.Function;
 import org.junit.jupiter.api.Test;
 
 import java.util.concurrent.TimeUnit;
@@ -29,7 +30,8 @@ class RpcClientTest {
         assertThat(t.getMessage(), containsString("metrics"));
     }
 
-    private class MyRpcClient extends RpcClient<String,
+    private class MyRpcClient extends RpcClient<
+            String,
             OutgoingMessageMetaData<String, Void>,
             IncomingMessageMetaData<String, Void>> {
         MyRpcClient(Metrics metrics) {
@@ -37,8 +39,8 @@ class RpcClientTest {
         }
 
         @Override
-        public <ReplyType extends String> Single<? extends RpcReply<ReplyType, IncomingMessageMetaData<String, Void>>> sendRequest(String request, OutgoingMessageMetaData<String, Void> outgoingMessageMetaData, long timeout, TimeUnit timeUnit) {
-            return Single.just(new RpcReply<>((ReplyType) request, null));
+        public <RequestType, ReplyType> Single<? extends RpcReply<ReplyType, IncomingMessageMetaData<String, Void>>> sendRequest(RequestType request, OutgoingMessageMetaData<String, Void> requestMetaData, Function<RequestType, String> requestTranscriber, Function<String, ReplyType> replyTranscriber, long timeout, TimeUnit timeUnit) {
+            return null;
         }
     }
 

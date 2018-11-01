@@ -11,8 +11,7 @@
 
 package ch.squaredesk.nova.comm.websockets.annotation;
 
-import ch.squaredesk.nova.comm.retrieving.MessageUnmarshaller;
-import ch.squaredesk.nova.comm.sending.MessageMarshaller;
+import ch.squaredesk.nova.comm.MessageTranscriber;
 import ch.squaredesk.nova.comm.websockets.MetricsCollector;
 import ch.squaredesk.nova.comm.websockets.server.ServerEndpoint;
 import ch.squaredesk.nova.comm.websockets.server.ServerEndpointFactory;
@@ -21,16 +20,16 @@ import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.config.BeanPostProcessor;
 
 
-public class WebSocketBeanPostprocessor implements BeanPostProcessor {
-    private final MessageMarshaller messageMarshaller;
-    private final MessageUnmarshaller messageUnmarshaller;
-    private final MetricsCollector metricsCollector;
-    private final ServerEndpointFactory serverEndpointFactory = new ServerEndpointFactory();
 
-    public WebSocketBeanPostprocessor(MessageMarshaller<?, String> messageMarshaller, MessageUnmarshaller<String, ?> messageUnmarshaller, MetricsCollector metricsCollector) {
-        this.messageMarshaller = messageMarshaller;
-        this.messageUnmarshaller = messageUnmarshaller;
+public class WebSocketBeanPostprocessor implements BeanPostProcessor {
+    private final MetricsCollector metricsCollector;
+    private final ServerEndpointFactory serverEndpointFactory;
+    private final BeanExaminer beanExaminer;
+
+    public WebSocketBeanPostprocessor(MessageTranscriber<String> messageTranscriber, MetricsCollector metricsCollector) {
         this.metricsCollector = metricsCollector;
+        this.serverEndpointFactory = new ServerEndpointFactory(messageTranscriber);
+        beanExaminer = new BeanExaminer(messageTranscriber);
     }
 
 
@@ -41,16 +40,14 @@ public class WebSocketBeanPostprocessor implements BeanPostProcessor {
 
     @Override
     public Object postProcessAfterInitialization(Object bean, String beanName) throws BeansException {
-        EndpointDescriptor[] endpoints = BeanExaminer.websocketEndpointsIn(bean);
+        EndpointDescriptor[] endpoints = beanExaminer.websocketEndpointsIn(bean);
         for (EndpointDescriptor endpointDescriptor: endpoints) {
             ServerEndpoint se =
                 serverEndpointFactory.createFor(
                         endpointDescriptor.destination,
-                        messageMarshaller,
-                        messageUnmarshaller,
                         endpointDescriptor.captureTimings ? metricsCollector : null);
 
-            Flowable messages = se.messages();
+            Flowable messages = se.messages(endpointDescriptor.messageType);
             if (endpointDescriptor.backpressureStrategy!=null) {
                 switch (endpointDescriptor.backpressureStrategy) {
                     case BUFFER:

@@ -23,32 +23,22 @@ import io.reactivex.subjects.Subject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.function.Function;
-
-public class StreamCreatingWebSocketTextListener<MessageType>
-        implements WebSocketTextListener, WebSocketCloseCodeReasonListener, StreamCreatingEndpointWrapper<WebSocket, MessageType> {
+public class StreamCreatingWebSocketTextListener
+        implements WebSocketTextListener, WebSocketCloseCodeReasonListener, StreamCreatingEndpointWrapper<WebSocket> {
 
     private static final Logger logger = LoggerFactory.getLogger(StreamCreatingEndpointWrapper.class);
 
-    private final Subject<Pair<WebSocket, MessageType>> messages = PublishSubject.create();
+    private final Subject<Pair<WebSocket, String>> messages = PublishSubject.create();
     private final Subject<WebSocket> connectedSockets = BehaviorSubject.create();
     private final Subject<Pair<WebSocket, CloseReason>> closedSockets = PublishSubject.create();
     private final Subject<Pair<WebSocket, Throwable>> errors = PublishSubject.create();
 
-    private final Function<String, MessageType> messageUnmarshaller;
-
-    StreamCreatingWebSocketTextListener(Function<String, MessageType> messageUnmarshaller) {
-        this.messageUnmarshaller = messageUnmarshaller;
+    StreamCreatingWebSocketTextListener() {
     }
 
     @Override
     public void onMessage(String messageText) {
-        try {
-            messages.onNext(new Pair<>(null, messageUnmarshaller.apply(messageText)));
-        } catch (Exception e) {
-            // must be caught to keep the Observable functional
-            logger.info("Unable to unmarshal incoming message " + messageText, e);
-        }
+        messages.onNext(new Pair<>(null, messageText));
     }
 
     @Override
@@ -79,7 +69,7 @@ public class StreamCreatingWebSocketTextListener<MessageType>
     }
 
     @Override
-    public Flowable<Pair<WebSocket, MessageType>> messages() {
+    public Flowable<Pair<WebSocket, String>> messages() {
         return messages.toFlowable(BackpressureStrategy.BUFFER);
     }
 

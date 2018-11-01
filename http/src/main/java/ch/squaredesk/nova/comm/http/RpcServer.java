@@ -1,8 +1,8 @@
 package ch.squaredesk.nova.comm.http;
 
+import ch.squaredesk.nova.comm.DefaultMessageTranscriberForStringAsTransportType;
+import ch.squaredesk.nova.comm.MessageTranscriber;
 import ch.squaredesk.nova.comm.retrieving.IncomingMessage;
-import ch.squaredesk.nova.comm.retrieving.MessageUnmarshaller;
-import ch.squaredesk.nova.comm.sending.MessageMarshaller;
 import ch.squaredesk.nova.metrics.Metrics;
 import io.reactivex.BackpressureStrategy;
 import io.reactivex.Flowable;
@@ -29,38 +29,33 @@ import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
-public class RpcServer<InternalMessageType> extends ch.squaredesk.nova.comm.rpc.RpcServer<String, RpcInvocation<InternalMessageType>> {
+public class RpcServer extends ch.squaredesk.nova.comm.rpc.RpcServer<String, String> {
     private static final Logger logger = LoggerFactory.getLogger(RpcServer.class);
 
-    private final MessageMarshaller<InternalMessageType, String> messageMarshaller;
-    private final MessageUnmarshaller<String, InternalMessageType> messageUnmarshaller;
-    private final Map<String, Flowable<RpcInvocation<? extends InternalMessageType>>> mapDestinationToIncomingMessages = new ConcurrentHashMap<>();
+    private final Map<String, Flowable<RpcInvocation>> mapDestinationToIncomingMessages = new ConcurrentHashMap<>();
 
     private final HttpServer httpServer;
 
-    public RpcServer(HttpServer httpServer,
-                        MessageMarshaller<InternalMessageType, String> messageMarshaller,
-                        MessageUnmarshaller<String, InternalMessageType> messageUnmarshaller,
-                        Metrics metrics) {
-        this(null, httpServer, messageMarshaller, messageUnmarshaller, metrics);
+    public RpcServer(HttpServer httpServer, MessageTranscriber<String> messageTranscriber, Metrics metrics) {
+        this(null, httpServer, messageTranscriber, metrics);
     }
 
-    public RpcServer(String identifier,
-                        HttpServer httpServer,
-                        MessageMarshaller<InternalMessageType, String> messageMarshaller,
-                        MessageUnmarshaller<String, InternalMessageType> messageUnmarshaller,
-                        Metrics metrics) {
-        super(identifier, metrics);
-        Objects.requireNonNull(httpServer, "httpServer must not be null");
-        Objects.requireNonNull(messageMarshaller, "messageMarshaller must not be null");
-        Objects.requireNonNull(messageUnmarshaller, "messageUnmarshaller must not be null");
-        this.httpServer = httpServer;
-        this.messageUnmarshaller = messageUnmarshaller;
-        this.messageMarshaller = messageMarshaller;
+    public RpcServer(HttpServer httpServer, Metrics metrics) {
+        this(null, httpServer, new DefaultMessageTranscriberForStringAsTransportType(), metrics);
     }
+
+    public RpcServer(String identifier, HttpServer httpServer, Metrics metrics) {
+        this(identifier, httpServer, new DefaultMessageTranscriberForStringAsTransportType(), metrics);
+    }
+    public RpcServer(String identifier, HttpServer httpServer, MessageTranscriber<String> messageTranscriber, Metrics metrics) {
+        super(identifier, messageTranscriber, metrics);
+        Objects.requireNonNull(httpServer, "httpServer must not be null");
+        this.httpServer = httpServer;
+    }
+
 
     @Override
-    public Flowable<RpcInvocation<InternalMessageType>> requests(String destination) {
+    public <T> Flowable<RpcInvocation<T>> requests(String destination, Class<T> targetType) {
         URL destinationAsLocalUrl;
         try {
             destinationAsLocalUrl = new URL("http", "localhost", destination);
@@ -71,9 +66,9 @@ public class RpcServer<InternalMessageType> extends ch.squaredesk.nova.comm.rpc.
                 .computeIfAbsent(destination, key -> {
                     logger.info("Listening to requests on " + destination);
 
-                    Subject<RpcInvocation<? extends InternalMessageType>> stream = PublishSubject.create();
+                    Subject<RpcInvocation> stream = PublishSubject.create();
                     stream = stream.toSerialized();
-                    NonBlockingHttpHandler httpHandler = new NonBlockingHttpHandler(destinationAsLocalUrl, stream);
+                    NonBlockingHttpHandler httpHandler = new NonBlockingHttpHandler(destinationAsLocalUrl, messageTranscriber, targetType, stream);
 
                     httpServer.getServerConfiguration().addHttpHandler(httpHandler, destination);
 
@@ -129,14 +124,6 @@ public class RpcServer<InternalMessageType> extends ch.squaredesk.nova.comm.rpc.
         }
     }
 
-    private static <T> T convertRequestData(String objectAsString, MessageUnmarshaller<String, T> unmarshaller) throws Exception {
-        return unmarshaller.unmarshal(objectAsString);
-    }
-
-    private static <T> String convertResponseData(T replyObject, MessageMarshaller<T, String> marshaller) throws Exception {
-        return marshaller.marshal(replyObject);
-    }
-
     /**
      * writes reply Object to response body. Assumes that the marshaller creates a String that is a JSON
      * representation of the reply object
@@ -177,21 +164,20 @@ public class RpcServer<InternalMessageType> extends ch.squaredesk.nova.comm.rpc.
         }
     }
 
-
-    /**
-     * This class implements the non-blocking http handler. It takes the incoming requests and puts them into
-     * a blocking(!) queue to be processed by interested consumers.
-     * <p>
-     * Blocking? Yes, because this way we apply backpressure and only read those messages from the wire that we are
-     * able to process. The size of the queue defines, how many requests we are willing to lose in the worst case
-     */
-    private class NonBlockingHttpHandler extends HttpHandler {
+    private class NonBlockingHttpHandler<IncomingMessageType> extends HttpHandler {
         private final URL destination;
-        private final Subject<RpcInvocation<? extends InternalMessageType>> stream;
+        private final MessageTranscriber<String> messageTranscriber;
+        private final Class<IncomingMessageType> targetType;
+        private final Subject<RpcInvocation> stream;
 
         private NonBlockingHttpHandler(
-                URL destination, Subject<RpcInvocation<? extends InternalMessageType>> stream) {
+                URL destination,
+                MessageTranscriber<String> messageTranscriber,
+                Class<IncomingMessageType> targetType,
+                Subject<RpcInvocation> stream) {
             this.destination = destination;
+            this.messageTranscriber = messageTranscriber;
+            this.targetType = targetType;
             this.stream = stream;
         }
 
@@ -218,28 +204,27 @@ public class RpcServer<InternalMessageType> extends ch.squaredesk.nova.comm.rpc.
                 @Override
                 public void onAllDataRead() throws Exception {
                     inputBuffer = appendAvailableDataToBuffer(in, inputBuffer);
-                    String requestAsString = new String(inputBuffer);
+                    String incomingMessageAsString = new String(inputBuffer);
                     try {
                         in.close();
                     } catch (Exception ignored) {
                         // TODO - this is from the example. Do we want to do something here?
                     }
 
-                    InternalMessageType requestObject = requestAsString.trim().isEmpty() ?
+                    IncomingMessageType incomingMessage = incomingMessageAsString.trim().isEmpty() ?
                             null :
-                            convertRequestData(requestAsString, messageUnmarshaller);
+                            messageTranscriber.getIncomingMessageTranscriber(targetType).apply(incomingMessageAsString);
                     RequestInfo requestInfo = httpSpecificInfoFrom(request);
                     RequestMessageMetaData metaData = new RequestMessageMetaData(destination, requestInfo);
 
-                    RpcInvocation<? extends InternalMessageType> rpci =
+                    RpcInvocation<IncomingMessageType> rpci =
                             new RpcInvocation<>(
-                                    new IncomingMessage<>(requestObject, metaData),
+                                    new IncomingMessage<>(incomingMessage, metaData),
                                     replyInfo -> {
                                         response.setCharacterEncoding("utf-8");
                                         try (NIOWriter out = response.getNIOWriter()) {
-                                            String responseAsString = convertResponseData(replyInfo._1, messageMarshaller);
                                             response.setContentType("application/json");
-                                            response.setContentLength(responseAsString.length());
+                                            response.setContentLength(replyInfo._1.length());
                                             int statusCode;
                                             if (replyInfo._2 == null) {
                                                 statusCode = 200;
@@ -250,10 +235,10 @@ public class RpcServer<InternalMessageType> extends ch.squaredesk.nova.comm.rpc.
                                                 statusCode = replyInfo._2.statusCode;
                                             }
                                             response.setStatus(statusCode);
-                                            writeResponse(responseAsString, out);
-                                            metricsCollector.requestCompleted(requestObject, responseAsString);
+                                            writeResponse(replyInfo._1, out);
+                                            metricsCollector.requestCompleted(incomingMessage, replyInfo._1);
                                         } catch (Exception e) {
-                                            metricsCollector.requestCompletedExceptionally(requestObject, e);
+                                            metricsCollector.requestCompletedExceptionally(incomingMessage, e);
                                             logger.error("An error occurred trying to send HTTP response " + replyInfo, e);
                                             try {
                                                 response.sendError(500, "Internal server error");
@@ -266,13 +251,14 @@ public class RpcServer<InternalMessageType> extends ch.squaredesk.nova.comm.rpc.
                                         }
                                     },
                                     error -> {
-                                        logger.error("An error occurred trying to process HTTP request " + requestAsString, error);
+                                        logger.error("An error occurred trying to process HTTP request " + incomingMessageAsString, error);
                                         try {
                                             response.sendError(500, "Internal server error");
                                         } catch (Exception any) {
                                             logger.error("Failed to send error 500 back to client", any);
                                         }
-                                    }
+                                    },
+                                    messageTranscriber
                             );
 
                     metricsCollector.requestReceived(rpci.request);

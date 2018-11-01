@@ -10,44 +10,43 @@
 
 package ch.squaredesk.nova.comm.http;
 
-import ch.squaredesk.nova.comm.retrieving.MessageUnmarshaller;
-import ch.squaredesk.nova.comm.sending.MessageMarshaller;
 import ch.squaredesk.nova.metrics.Metrics;
+import io.reactivex.Single;
+import io.reactivex.functions.Function;
+
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
+
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.ListenableFuture;
 import com.ning.http.client.Response;
-import io.reactivex.Single;
-
-import java.util.concurrent.TimeUnit;
 
 import static java.util.Objects.requireNonNull;
 
-public class RpcClient<InternalMessageType> extends ch.squaredesk.nova.comm.rpc.RpcClient<InternalMessageType, RequestMessageMetaData, ReplyMessageMetaData> {
+public class RpcClient extends ch.squaredesk.nova.comm.rpc.RpcClient<String, RequestMessageMetaData, ReplyMessageMetaData> {
     private final AsyncHttpClient client;
-    private final MessageMarshaller<InternalMessageType, String> messageMarshaller;
-    private final MessageUnmarshaller<String, InternalMessageType> messageUnmarshaller;
+    private Map<String, String> standardHeadersForAllRequests;
+    private boolean contentTypeInStandardHeaders;
 
-    protected RpcClient(String identifier,
+    RpcClient(String identifier,
                         AsyncHttpClient client,
-                        MessageMarshaller<InternalMessageType, String> messageMarshaller,
-                        MessageUnmarshaller<String, InternalMessageType> messageUnmarshaller,
                         Metrics metrics) {
         super(identifier, metrics);
         this.client = client;
-        this.messageUnmarshaller = messageUnmarshaller;
-        this.messageMarshaller = messageMarshaller;
     }
 
-
-    public <ReplyType extends InternalMessageType> Single<RpcReply<ReplyType>> sendRequest(
-            InternalMessageType request,
+    @Override
+    public <T, U> Single<RpcReply<U>> sendRequest(
+            T request,
             RequestMessageMetaData requestMessageMetaData,
+            Function<T, String> requestTranscriber,
+            Function<String, U> replyTranscriber,
             long timeout, TimeUnit timeUnit) {
         requireNonNull(timeUnit, "timeUnit must not be null");
 
         String requestAsString;
         try {
-            requestAsString = request != null ? messageMarshaller.marshal(request) : null;
+            requestAsString = request != null ? requestTranscriber.apply(request) : null;
         } catch (Exception e) {
             return Single.error(e);
         }
@@ -63,18 +62,22 @@ public class RpcClient<InternalMessageType> extends ch.squaredesk.nova.comm.rpc.
             requestBuilder = client.prepareGet(requestMessageMetaData.destination.toString());
         }
 
-        ListenableFuture<Response> resultFuture = requestBuilder
-                .addHeader("Content-Type", "application/json; charset=utf-8")
-                .execute();
+        addHeadersToRequest(standardHeadersForAllRequests, requestBuilder);
+        addHeadersToRequest(requestMessageMetaData.details.headers, requestBuilder);
+        if (!contentTypeInStandardHeaders && !headersContainContentType(requestMessageMetaData.details.headers)) {
+            requestBuilder.addHeader("Content-Type", "application/json; charset=utf-8");
+        }
 
-        Single<RpcReply<ReplyType>> resultSingle = Single.fromFuture(resultFuture).map(response -> {
-            int statusCode = response.getStatusCode();
+        ListenableFuture<Response> resultFuture = requestBuilder.execute();
+
+        Single<RpcReply<U>> resultSingle = Single.fromFuture(resultFuture).map(response -> {
             ReplyMessageMetaData metaData = new ReplyMessageMetaData(
                     requestMessageMetaData.destination,
-                    new ReplyInfo(statusCode));
+                    new ReplyInfo(response.getStatusCode()));
             String responseBody = response.getResponseBody();
+            U replyObject = responseBody == null || responseBody.trim().isEmpty() ? null : replyTranscriber.apply(responseBody);
             metricsCollector.rpcCompleted(requestMessageMetaData.destination, responseBody);
-            return new RpcReply<>((ReplyType) messageUnmarshaller.unmarshal(responseBody), metaData);
+            return new RpcReply<>(replyObject, metaData);
         });
 
         return resultSingle.timeout(timeout, timeUnit);
@@ -84,4 +87,22 @@ public class RpcClient<InternalMessageType> extends ch.squaredesk.nova.comm.rpc.
         client.close();
     }
 
+    public Map<String, String> getStandardHeadersForAllRequests() {
+        return standardHeadersForAllRequests;
+    }
+
+    public void setStandardHeadersForAllRequests(Map<String, String> standardHeadersForAllRequests) {
+        this.standardHeadersForAllRequests = standardHeadersForAllRequests;
+        this.contentTypeInStandardHeaders = headersContainContentType(standardHeadersForAllRequests);
+    }
+
+    private static boolean headersContainContentType (Map<String, String> headersToCheck) {
+        return headersToCheck!= null && headersToCheck.containsKey("Content-Type");
+    }
+
+    private static void addHeadersToRequest (Map<String, String> headersToAdd, AsyncHttpClient.BoundRequestBuilder requestBuilder) {
+        if (headersToAdd != null) {
+            headersToAdd.entrySet().forEach(entry -> requestBuilder.addHeader(entry.getKey(), entry.getValue()));
+        }
+    }
 }

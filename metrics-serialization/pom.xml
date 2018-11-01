@@ -15,17 +15,17 @@
 	<parent>
 		<groupId>ch.squaredesk.nova</groupId>
 		<artifactId>parentpom</artifactId>
-		<version>6.0.0</version>
+		<version>7.0.0</version>
 		<relativePath>../parentpom</relativePath>
 	</parent>
 
 	<artifactId>metrics-serialization</artifactId>
-	<version>6.0.0</version>
+	<version>7.0.0</version>
 	<dependencies>
 		<dependency>
 			<groupId>ch.squaredesk.nova</groupId>
 			<artifactId>core</artifactId>
-			<version>6.0.0</version>
+			<version>7.0.0</version>
 		</dependency>
 		<dependency>
 			<groupId>com.fasterxml.jackson.core</groupId>

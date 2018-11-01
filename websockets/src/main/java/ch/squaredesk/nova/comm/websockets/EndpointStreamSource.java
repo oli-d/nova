@@ -13,17 +13,17 @@ import ch.squaredesk.nova.tuples.Pair;
 import ch.squaredesk.nova.tuples.Tuple3;
 import io.reactivex.Flowable;
 
-public class EndpointStreamSource<MessageType>  {
-    final Flowable<Tuple3<MessageType, String, WebSocket<MessageType>>> messages;
-    final Flowable<WebSocket<MessageType>> connectingSockets;
-    final Flowable<Pair<WebSocket<MessageType>, CloseReason>> closingSockets;
-    final Flowable<Pair<WebSocket<MessageType>, Throwable>> errors;
+public class EndpointStreamSource  {
+    final Flowable<Tuple3<String, String, WebSocket>> messages;
+    final Flowable<WebSocket> connectingSockets;
+    final Flowable<Pair<WebSocket, CloseReason>> closingSockets;
+    final Flowable<Pair<WebSocket, Throwable>> errors;
 
 
-    EndpointStreamSource(Flowable<Tuple3<MessageType, String, WebSocket<MessageType>>> messages,
-                         Flowable<WebSocket<MessageType>> connectingSockets,
-                         Flowable<Pair<WebSocket<MessageType>, CloseReason>> closingSockets,
-                         Flowable<Pair<WebSocket<MessageType>, Throwable>> errors) {
+    EndpointStreamSource(Flowable<Tuple3<String, String, WebSocket>> messages,
+                         Flowable<WebSocket> connectingSockets,
+                         Flowable<Pair<WebSocket, CloseReason>> closingSockets,
+                         Flowable<Pair<WebSocket, Throwable>> errors) {
         this.messages = messages;
         this.connectingSockets = connectingSockets;
         this.closingSockets = closingSockets;

@@ -25,9 +25,9 @@ import java.util.UUID;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
-class KafkaMessageSenderTest {
+class MessageSenderTest {
     Properties producerProps;
-    KafkaMessageSender<String> sut;
+    MessageSender sut;
 
     @BeforeEach
     void setup() {
@@ -37,7 +37,7 @@ class KafkaMessageSenderTest {
         producerProps.put("value.serializer", StringSerializer.class.getName());
         producerProps.put("client.id", UUID.randomUUID().toString());
 
-        sut = new KafkaMessageSender<>("ID", producerProps, s->s, new Metrics());
+        sut = new MessageSender("ID", producerProps, new Metrics());
     }
 
     @Test
@@ -46,10 +46,10 @@ class KafkaMessageSenderTest {
         assertThat(producerConfig.getString("client.id"), is(producerProps.get("client.id")));
     }
 
-    private static ProducerConfig getProducerConfigFrom (KafkaMessageSender<?> kafkaMessageSender) throws Exception {
-        Field f = KafkaMessageSender.class.getDeclaredField("producer");
+    private static ProducerConfig getProducerConfigFrom (MessageSender messageSender) throws Exception {
+        Field f = MessageSender.class.getDeclaredField("producer");
         f.setAccessible(true);
-        Producer p = (Producer)f.get(kafkaMessageSender);
+        Producer p = (Producer)f.get(messageSender);
 
         f = KafkaProducer.class.getDeclaredField("producerConfig");
         f.setAccessible(true);

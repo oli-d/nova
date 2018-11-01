@@ -11,8 +11,6 @@
 package ch.squaredesk.nova.comm.jms;
 
 import ch.squaredesk.nova.comm.retrieving.IncomingMessage;
-import ch.squaredesk.nova.comm.retrieving.MessageReceiverImplBase;
-import ch.squaredesk.nova.comm.retrieving.MessageUnmarshaller;
 import ch.squaredesk.nova.metrics.Metrics;
 import io.reactivex.Flowable;
 import io.reactivex.schedulers.Schedulers;
@@ -26,39 +24,38 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
-class MessageReceiver<InternalMessageType>
-        extends MessageReceiverImplBase<Destination, InternalMessageType, String, IncomingMessageMetaData> {
+class MessageReceiver
+        extends ch.squaredesk.nova.comm.retrieving.MessageReceiver<Destination, String, IncomingMessageMetaData> {
 
     private static final Logger logger = LoggerFactory.getLogger(MessageReceiver.class);
 
     private final JmsObjectRepository jmsObjectRepository;
 
-    private final Map<String, Flowable<IncomingMessage<InternalMessageType, IncomingMessageMetaData>>>
+    private final Map<String, Flowable<IncomingMessage<String, IncomingMessageMetaData>>>
             mapDestinationIdToMessageStream = new ConcurrentHashMap<>();
     private final JmsMessageMetaDataCreator messageDetailsCreator = new JmsMessageMetaDataCreator();
 
     MessageReceiver(String identifier,
-                              JmsObjectRepository jmsObjectRepository,
-                              MessageUnmarshaller<String, InternalMessageType> messageUnmarshaller,
-                              Metrics metrics) {
-        super(identifier, messageUnmarshaller, metrics);
+                    JmsObjectRepository jmsObjectRepository,
+                    Metrics metrics) {
+        super(identifier, metrics);
         this.jmsObjectRepository = jmsObjectRepository;
     }
 
     @Override
-    public Flowable<IncomingMessage<InternalMessageType, IncomingMessageMetaData>> messages(Destination destination) {
+    public Flowable<IncomingMessage<String, IncomingMessageMetaData>> messages(Destination destination) {
         Objects.requireNonNull(destination, "destination must not ne bull");
-
+        Objects.requireNonNull(destination, "unmarshaller must not ne bull");
         String destinationId = jmsObjectRepository.idFor(destination);
         return mapDestinationIdToMessageStream.computeIfAbsent(destinationId, key -> {
-            Flowable<IncomingMessage<InternalMessageType, IncomingMessageMetaData>> f = Flowable.generate(
+            Flowable<IncomingMessage<String, IncomingMessageMetaData>> f = Flowable.generate(
                     () -> {
                         logger.info("Opening connection to destination " + destinationId);
                         metricsCollector.subscriptionCreated(destinationId);
                         return jmsObjectRepository.createMessageConsumer(destination);
                     },
                     (consumer, emitter) -> {
-                        IncomingMessage<InternalMessageType, IncomingMessageMetaData> incomingMessage = null;
+                        IncomingMessage<String, IncomingMessageMetaData> incomingMessage = null;
                         while (incomingMessage == null) {
                             Message m = null;
                             try {
@@ -88,17 +85,8 @@ class MessageReceiver<InternalMessageType>
                                 continue;
                             }
 
-                            InternalMessageType internalMessage;
-                            try {
-                                internalMessage = messageUnmarshaller.unmarshal(transportMessage);
-                            } catch (Exception e) {
-                                logger.error("Unable to unmarshal incoming message " + transportMessage, e);
-                                metricsCollector.unparsableMessageReceived(destinationId);
-                                continue;
-                            }
-
                             IncomingMessageMetaData meta = messageDetailsCreator.createIncomingMessageMetaData(m);
-                            incomingMessage = new IncomingMessage<>(internalMessage, meta);
+                            incomingMessage = new IncomingMessage<>(transportMessage, meta);
                             metricsCollector.messageReceived(destinationId);
                         }
                         emitter.onNext(incomingMessage);

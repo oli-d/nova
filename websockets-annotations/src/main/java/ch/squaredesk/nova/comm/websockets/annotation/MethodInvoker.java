@@ -21,7 +21,7 @@ import org.slf4j.LoggerFactory;
 import java.lang.reflect.Method;
 
 
-class MethodInvoker<MessageType> implements Consumer<IncomingMessage<MessageType, IncomingMessageMetaData<MessageType>>> {
+class MethodInvoker<MessageType> implements Consumer<IncomingMessage<MessageType, IncomingMessageMetaData>> {
     private final static Logger LOGGER = LoggerFactory.getLogger(MethodInvoker.class);
     private final Object objectToInvokeMethodOn;
     private final Method methodToInvoke;
@@ -34,7 +34,7 @@ class MethodInvoker<MessageType> implements Consumer<IncomingMessage<MessageType
     }
 
     @Override
-    public void accept(IncomingMessage<MessageType, IncomingMessageMetaData<MessageType>> message) throws Exception {
+    public void accept(IncomingMessage<MessageType, IncomingMessageMetaData> message) throws Exception {
         // FIXME: timing metrics
         try {
             methodToInvoke.invoke(objectToInvokeMethodOn, message.message, message.metaData.details.webSocket);

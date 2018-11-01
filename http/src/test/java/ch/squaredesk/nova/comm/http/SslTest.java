@@ -1,5 +1,7 @@
 package ch.squaredesk.nova.comm.http;
 
+import ch.squaredesk.nova.comm.DefaultMessageTranscriberForStringAsTransportType;
+import ch.squaredesk.nova.comm.MessageTranscriber;
 import ch.squaredesk.nova.metrics.Metrics;
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.AsyncHttpClientConfig;
@@ -32,8 +34,9 @@ class SslTest {
             .sslKeyStorePass("storepass") // also the keypass
             .build();
     private HttpServer httpServer = HttpServerFactory.serverFor(rsc);
-    private RpcServer<String> sut;
-    private RpcClient<String> rpcClient;
+    private RpcServer sut;
+    private RpcClient rpcClient;
+    private MessageTranscriber<String> messageTranscriber;
 
     @BeforeEach
     void setup() throws Exception {
@@ -46,8 +49,8 @@ class SslTest {
         sslContext.init(keyManagerFactory.getKeyManagers(),trustManagerFactory.getTrustManagers(), new SecureRandom());
         AsyncHttpClientConfig asyncHttpClientConfig = new AsyncHttpClientConfig.Builder().setSSLContext(sslContext).build();
         AsyncHttpClient client = new AsyncHttpClient(asyncHttpClientConfig);
-        rpcClient = new RpcClient<>(null, client, s -> s, s -> s, new Metrics());
-        sut = new RpcServer<>(httpServer, s->s, s->s, new Metrics());
+        rpcClient = new RpcClient(null, client, new Metrics());
+        sut = new RpcServer(httpServer, new DefaultMessageTranscriberForStringAsTransportType(), new Metrics());
     }
 
     private KeyStore readKeyStore() throws Exception {
@@ -103,9 +106,9 @@ class SslTest {
         sut.start();
         int numRequests = 5;
         String path = "/bla";
-        TestSubscriber<String> subscriber = sut.requests(path)
+        TestSubscriber<String> subscriber = sut.requests(path, String.class)
                 .subscribeOn(Schedulers.io())
-                .map(rpcInvocation -> rpcInvocation.request.metaData.details.headerParams.get("p")
+                .map(rpcInvocation -> rpcInvocation.request.metaData.details.headers.get("p")
                 ).test();
 
         Observable.range(0, numRequests)
@@ -123,7 +126,7 @@ class SslTest {
                         new URL(urlAsString),
                         new RequestInfo(HttpRequestMethod.POST));
 
-                rpcClient.sendRequest("{}", meta, 15, SECONDS);
+                rpcClient.sendRequest("{}", meta, s->s, s->s, 15, SECONDS);
             } catch (Exception e) {
                 e.printStackTrace();
             }

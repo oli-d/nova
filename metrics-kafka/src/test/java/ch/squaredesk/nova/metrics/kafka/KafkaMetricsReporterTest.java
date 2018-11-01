@@ -13,7 +13,6 @@ package ch.squaredesk.nova.metrics.kafka;
 import ch.qos.logback.classic.Level;
 import ch.squaredesk.nova.Nova;
 import ch.squaredesk.nova.comm.kafka.KafkaAdapter;
-import ch.squaredesk.nova.metrics.SerializableMetricsDump;
 import com.github.charithe.kafka.EphemeralKafkaBroker;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.ProducerConfig;
@@ -34,7 +33,7 @@ class KafkaMetricsReporterTest {
     private static final int KAFKA_PORT = 11_000;
 
     private EphemeralKafkaBroker kafkaBroker;
-    private KafkaAdapter<SerializableMetricsDump> kafkaAdapter;
+    private KafkaAdapter kafkaAdapter;
     private KafkaMetricsReporter sut;
 
     @BeforeAll
@@ -55,7 +54,7 @@ class KafkaMetricsReporterTest {
         kafkaBroker = EphemeralKafkaBroker.create(KAFKA_PORT);
         kafkaBroker.start().get();
 
-        kafkaAdapter = KafkaAdapter.builder(SerializableMetricsDump.class)
+        kafkaAdapter = KafkaAdapter.builder()
                 .setServerAddress("127.0.0.1:" + KAFKA_PORT)
                 .setIdentifier("Test")
                 .addProducerProperty(ProducerConfig.BATCH_SIZE_CONFIG, "1")

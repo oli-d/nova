@@ -10,7 +10,13 @@
 
 package ch.squaredesk.nova.comm.sending;
 
+import io.reactivex.functions.Function;
+
 @FunctionalInterface
-public interface MessageMarshaller<T,R> {
-    R marshal(T t) throws Exception ;
+public interface OutgoingMessageTranscriber<T> {
+    <U> T transcribeOutgoingMessage(U anObject) throws Exception ;
+
+    default <U> Function<U, T> castToFunction(Class<U> requestType) {
+        return this::transcribeOutgoingMessage;
+    }
 }

@@ -36,6 +36,6 @@
     <logger name="org.apache.kafka.common.utils.AppInfoParser" level="ERROR"/>
     <logger name="com.yammer.metrics.reporting.JmxReporter" level="ERROR"/>
 <!--
-    <logger name="ch.squaredesk.nova.comm.kafka.KafkaMessageReceiver" level="DEBUG"/>
+    <logger name="ch.squaredesk.nova.comm.kafka.MessageReceiverel="DEBUG"/>
 -->
 </configuration>

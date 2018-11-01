@@ -9,24 +9,25 @@
  */
 package ch.squaredesk.nova.comm.websockets.client;
 
-import ch.squaredesk.nova.comm.websockets.CloseReason;
-import ch.squaredesk.nova.comm.websockets.Endpoint;
-import ch.squaredesk.nova.comm.websockets.EndpointStreamSource;
-import ch.squaredesk.nova.comm.websockets.WebSocket;
+import ch.squaredesk.nova.comm.MessageTranscriber;
+import ch.squaredesk.nova.comm.websockets.*;
 
 import java.util.function.Consumer;
 
-public class ClientEndpoint<MessageType> extends Endpoint<MessageType> {
-    private final WebSocket<MessageType> webSocket;
+public class ClientEndpoint extends Endpoint {
+    private final WebSocket webSocket;
 
-    public ClientEndpoint(EndpointStreamSource<MessageType> endpointStreamSource,
-                          WebSocket<MessageType> webSocket,
-                          Consumer<CloseReason> closeAction) {
-        super(endpointStreamSource, closeAction);
+    public ClientEndpoint(String destination,
+                          EndpointStreamSource endpointStreamSource,
+                          WebSocket webSocket,
+                          Consumer<CloseReason> closeAction,
+                          MessageTranscriber<String> messageTranscriber,
+                          MetricsCollector metricsCollector) {
+        super(destination, endpointStreamSource, closeAction, messageTranscriber, metricsCollector);
         this.webSocket = webSocket;
     }
 
-    public void send(MessageType message) {
+    public <T> void send(T message) throws Exception {
         webSocket.send(message);
     }
 

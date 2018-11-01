@@ -11,11 +11,10 @@
 
 package ch.squaredesk.nova.comm.websockets.annotation;
 
-import ch.squaredesk.nova.comm.DefaultMarshallerFactory;
+import ch.squaredesk.nova.comm.MessageTranscriber;
 import ch.squaredesk.nova.comm.ReflectionHelper;
-import ch.squaredesk.nova.comm.retrieving.MessageUnmarshaller;
-import ch.squaredesk.nova.comm.sending.MessageMarshaller;
 import ch.squaredesk.nova.comm.websockets.WebSocket;
+import io.reactivex.functions.Function;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
@@ -28,10 +27,13 @@ import static java.util.Objects.requireNonNull;
 class BeanExaminer {
     private static final Predicate<Annotation> interestingAnnotation = anno -> anno instanceof OnMessage;
 
-    private BeanExaminer() {
+    private final MessageTranscriber<String> defaultMessageTranscriber;
+
+    BeanExaminer(MessageTranscriber<String> messageTranscriber) {
+        this.defaultMessageTranscriber = messageTranscriber;
     }
 
-    static EndpointDescriptor[] websocketEndpointsIn(Object bean) {
+    EndpointDescriptor[] websocketEndpointsIn(Object bean) {
         requireNonNull(bean, "bean to examine must not be null");
 
         return stream(bean.getClass().getDeclaredMethods())
@@ -49,13 +51,15 @@ class BeanExaminer {
                             .map(anno -> (OnMessage) anno)
                             .get();
 
-                    MessageMarshaller marshaller = instantiateMarshaller(method, annotation);
-                    MessageUnmarshaller unmarshaller = instantiateUnmarshaller(method, annotation);
+                    Class<?> messageType = getMessageTypeFromHandlerMethod(method);
+                    Function<?, String> marshaller = instantiateMarshaller(method, annotation, messageType);
+                    Function<String, ?> unmarshaller = instantiateUnmarshaller(method, annotation, messageType);
 
                     return new EndpointDescriptor(
                             bean,
                             method,
                             annotation.value(),
+                            messageType,
                             marshaller,
                             unmarshaller,
                             annotation.captureTimings(),
@@ -70,49 +74,50 @@ class BeanExaminer {
                 m.getParameterTypes()[1].isAssignableFrom(WebSocket.class);
     }
 
-    private static MessageMarshaller instantiateMarshaller(Method method, OnMessage annotation) {
+    private static Class<?> getMessageTypeFromHandlerMethod (Method method) {
+        return method.getParameterTypes()[0];
+    }
+
+    private Function<?, String> instantiateMarshaller(Method method, OnMessage annotation, Class<?> messageType) {
         if (!annotation.messageMarshallerClassName().isEmpty()) {
             return instantiateMarshaller(method, annotation.messageMarshallerClassName());
         } else {
-//            Class<?> webSocketParamType = ReflectionHelper.getConcreteTypeOfGenericClassExtension(
-//                    method.getParameterTypes()[1],
-//                    0);
-            return DefaultMarshallerFactory.getMarshallerForMessageType(method.getParameterTypes()[0]);
+            return defaultMessageTranscriber.getOutgoingMessageTranscriber(messageType);
         }
     }
 
-    private static MessageUnmarshaller instantiateUnmarshaller(Method method, OnMessage annotation) {
+    private Function<String, ?> instantiateUnmarshaller(Method method, OnMessage annotation, Class<?> messageType) {
         if (!annotation.messageUnmarshallerClassName().isEmpty()) {
             return instantiateUnmarshaller(method, annotation.messageUnmarshallerClassName());
         } else {
-            return DefaultMarshallerFactory.getUnmarshallerForMessageType(method.getParameterTypes()[0]);
+            return defaultMessageTranscriber.getIncomingMessageTranscriber(messageType);
         }
     }
 
-    private static boolean marshallerAcceptsType(MessageMarshaller<?, String> marshaller, Class paramTypeToCheckFor) {
+    private static boolean marshallerAcceptsType(Function<?, String> marshaller, Class paramTypeToCheckFor) {
         Class<?> concreteClass = ReflectionHelper.getConcreteTypeOfGenericInterfaceImplementation(
                 marshaller,
-                MessageMarshaller.class,
+                Function.class,
                 0);
 
         return concreteClass != null && concreteClass.isAssignableFrom(paramTypeToCheckFor);
     }
 
-    private static boolean unmarshallerReturnsType(MessageUnmarshaller unmarshaller, Class returnTypeToCheckFor) {
+    private static boolean unmarshallerReturnsType(Function<String, ?> unmarshaller, Class returnTypeToCheckFor) {
         Class<?> concreteClass = ReflectionHelper.getConcreteTypeOfGenericInterfaceImplementation(
                 unmarshaller,
-                MessageUnmarshaller.class,
+                Function.class,
                 1);
 
         return concreteClass != null && concreteClass.isAssignableFrom(returnTypeToCheckFor);
     }
 
-    private static MessageMarshaller instantiateMarshaller(Method method, String className) {
+    private static Function<?, String> instantiateMarshaller(Method method, String className) {
         Object instance = ReflectionHelper.instanceFromClassName(className);
-        if (!(instance instanceof MessageMarshaller)) {
+        if (!(instance instanceof Function)) {
             throw new IllegalArgumentException("Class " + className + " is not a valid MessageMarshaller");
         }
-        MessageMarshaller<?, String> messageMarshaller = (MessageMarshaller) instance;
+        Function<?, String> messageMarshaller = (Function<?, String>) instance;
         if (!marshallerAcceptsType(messageMarshaller, method.getParameterTypes()[0])) {
             throw new IllegalArgumentException("Class " + className + " is not a valid MessageMarshaller for method "
                     + method.getName());
@@ -120,12 +125,12 @@ class BeanExaminer {
         return messageMarshaller;
     }
 
-    private static MessageUnmarshaller instantiateUnmarshaller(Method method, String className) {
+    private static Function<String, ?> instantiateUnmarshaller(Method method, String className) {
         Object instance = ReflectionHelper.instanceFromClassName(className);
-        if (!(instance instanceof MessageUnmarshaller)) {
+        if (!(instance instanceof Function)) {
             throw new IllegalArgumentException("Class " + className + " is not a valid MessageUnmarshaller");
         }
-        MessageUnmarshaller<String, ?> messageUnmarshaller = (MessageUnmarshaller) instance;
+        Function<String, ?> messageUnmarshaller = (Function<String, ?>) instance;
         if (!unmarshallerReturnsType(messageUnmarshaller, method.getParameterTypes()[0])) {
             throw new IllegalArgumentException("Class " + className + " is not a valid MessageUnmarshaller for method "
                     + method.getName());

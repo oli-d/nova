@@ -19,6 +19,7 @@ import io.dropwizard.metrics5.Counter;
 import io.dropwizard.metrics5.Meter;
 import io.reactivex.Flowable;
 import io.reactivex.subscribers.TestSubscriber;
+import org.awaitility.Awaitility;
 import org.glassfish.grizzly.http.server.HttpServer;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -45,13 +46,13 @@ class WebsocketAdapterTest {
 
     Metrics metrics;
 
-    WebSocketAdapter<Integer> sut;
+    WebSocketAdapter sut;
 
     @BeforeEach
     void setup() throws Exception {
         metrics = new Metrics();
 
-        sut = WebSocketAdapter.builder(Integer.class)
+        sut = WebSocketAdapter.builder()
                 .setHttpServer(httpServer)
                 .setHttpClient(httpClient)
                 .setMetrics(metrics)
@@ -68,7 +69,7 @@ class WebsocketAdapterTest {
 
     @Test
     void serverFunctionsCannotBeInvokedIfNotProperlySetup() {
-        sut = WebSocketAdapter.builder(Integer.class)
+        sut = WebSocketAdapter.builder()
                 .setMetrics(new Metrics())
                 .build();
 
@@ -80,7 +81,7 @@ class WebsocketAdapterTest {
 
     @Test
     void clientFunctionsCannotBeInvokedIfNotProperlySetup() {
-        sut = WebSocketAdapter.builder(Integer.class)
+        sut = WebSocketAdapter.builder()
                 .setMetrics(new Metrics())
                 .build();
 
@@ -98,10 +99,10 @@ class WebsocketAdapterTest {
 
         Counter totalSubscriptions = metrics.getCounter("websocket", "subscriptions", "total");
         Counter specificSubscriptions = metrics.getCounter("websocket", "subscriptions", destinationUri);
-        assertThat(totalSubscriptions.getCount(), is(0l));
-        assertThat(specificSubscriptions.getCount(), is(0l));
+        assertThat(totalSubscriptions.getCount(), is(0L));
+        assertThat(specificSubscriptions.getCount(), is(0L));
 
-        ClientEndpoint<Integer> endpoint = sut.connectTo(destinationUri);
+        ClientEndpoint endpoint = sut.connectTo(destinationUri);
         endpoint.connectedWebSockets().subscribe( socket -> connectionLatch.countDown() );
         endpoint.closedWebSockets().subscribe( socket -> closeLatch.countDown() );
         connectionLatch.await(2, TimeUnit.SECONDS);
@@ -115,8 +116,8 @@ class WebsocketAdapterTest {
 
         closeLatch.await(10, TimeUnit.SECONDS);
         assertThat(closeLatch.getCount(), is(0L));
-        assertThat(totalSubscriptions.getCount(), is(0l));
-        assertThat(specificSubscriptions.getCount(), is(0l));
+        assertThat(totalSubscriptions.getCount(), is(0L));
+        assertThat(specificSubscriptions.getCount(), is(0L));
     }
 
     @Test
@@ -129,16 +130,16 @@ class WebsocketAdapterTest {
 
         Counter totalSubscriptions = metrics.getCounter("websocket", "subscriptions", "total");
         Counter specificSubscriptions = metrics.getCounter("websocket", "subscriptions", serverDestination);
-        assertThat(totalSubscriptions.getCount(), is(0l));
-        assertThat(specificSubscriptions.getCount(), is(0l));
+        assertThat(totalSubscriptions.getCount(), is(0L));
+        assertThat(specificSubscriptions.getCount(), is(0L));
 
-        ServerEndpoint<Integer> endpointAccepting = null;
-        ClientEndpoint<Integer> endpointInitiating = null;
+        ServerEndpoint endpointAccepting = null;
+        ClientEndpoint endpointInitiating = null;
         try {
             endpointAccepting = sut.acceptConnections(serverDestination);
             endpointAccepting.connectedWebSockets().subscribe(socket -> connectionLatch.countDown());
             endpointAccepting.closedWebSockets().subscribe(socket -> closeLatch.countDown());
-            endpointAccepting.messages().subscribe(
+            endpointAccepting.messages(s -> s).subscribe(
                     incomingMessage -> incomingMessage.metaData.details.webSocket.send(incomingMessage.message));
             endpointInitiating = sut.connectTo(clientDestination);
 
@@ -152,8 +153,8 @@ class WebsocketAdapterTest {
                 endpointInitiating.close();
                 closeLatch.await(10, TimeUnit.SECONDS);
                 assertThat(closeLatch.getCount(), is(0L));
-                assertThat(totalSubscriptions.getCount(), is(0l));
-                assertThat(specificSubscriptions.getCount(), is(0l));
+                assertThat(totalSubscriptions.getCount(), is(0L));
+                assertThat(specificSubscriptions.getCount(), is(0L));
             }
 
             if (endpointAccepting != null) endpointAccepting.close();
@@ -163,38 +164,42 @@ class WebsocketAdapterTest {
 
     @Test
     void receiveUnparsableMessagesServerSide() throws Exception {
-        WebSocketAdapter<Integer> sutInteger = WebSocketAdapter.builder(Integer.class)
-                .setHttpServer(httpServer)
-                .setMetrics(metrics)
-                .build();
-        WebSocketAdapter<String> sutString = WebSocketAdapter.builder(String.class)
-                .setHttpClient(httpClient)
-                .setMetrics(metrics)
-                .build();
-
         String serverDestination = "echoBroken";
         String clientDestination = "ws://127.0.0.1:7777/" + serverDestination;
 
 
-        ServerEndpoint<Integer> serverEndpoint = null;
-        ClientEndpoint<String> clientEndpoint = null;
+        ServerEndpoint serverEndpoint = null;
+        ClientEndpoint clientEndpoint = null;
         try {
-            serverEndpoint = sutInteger.acceptConnections(serverDestination);
-            serverEndpoint.messages().subscribe(
+            serverEndpoint = sut.acceptConnections(serverDestination);
+            serverEndpoint.messages(Integer.class).subscribe(
                     incomingMessage -> {
                         incomingMessage.metaData.details.webSocket.send(incomingMessage.message);
                     });
 
-            WebSocket<String>[] sendSocketHolder = new WebSocket[1];
+            Meter totalMessagesReceived = metrics.getMeter("websocket", "received", "total");
+            Meter totalUnparsable = metrics.getMeter("websocket", "received", "unparsable", "total");
+            Meter specificUnparsable = metrics.getMeter("websocket", "received", "unparsable", serverDestination);
+            assertThat(totalUnparsable.getCount(), is(0L));
+            assertThat(specificUnparsable.getCount(), is(0L));
+
+            WebSocket[] sendSocketHolder = new WebSocket[1];
             CountDownLatch sendSocketLatch = new CountDownLatch(1);
-            clientEndpoint = sutString.connectTo(clientDestination);
+            clientEndpoint = sut.connectTo(clientDestination);
             clientEndpoint.connectedWebSockets().subscribe(socket -> {
                 sendSocketHolder[0] = socket;
                 sendSocketLatch.countDown();
             });
             sendSocketLatch.await(2, TimeUnit.SECONDS);
             assertNotNull(sendSocketHolder[0]);
-            testEchoWithUnparsableMessages(serverDestination, serverEndpoint, sendSocketHolder[0]);
+
+            clientEndpoint.send("One");
+            clientEndpoint.send("Two");
+            clientEndpoint.send("33");
+
+            Awaitility.await().atMost(10, TimeUnit.SECONDS).until(totalMessagesReceived::getCount, is(1L));
+            assertThat(totalUnparsable.getCount(), is(2l));
+            assertThat(specificUnparsable.getCount(), is(2l));
         } finally {
             if (clientEndpoint != null) {
                 clientEndpoint.close();
@@ -206,31 +211,22 @@ class WebsocketAdapterTest {
 
     @Test
     void receiveUnparsableMessagesClientSide() throws Exception {
-        WebSocketAdapter<Integer> sutInteger = WebSocketAdapter.builder(Integer.class)
-                .setHttpClient(httpClient)
-                .setMetrics(metrics)
-                .build();
-        WebSocketAdapter<String> sutString = WebSocketAdapter.builder(String.class)
-                .setHttpServer(httpServer)
-                .setMetrics(metrics)
-                .build();
-
         String serverDestination = "echoBroken";
         String clientDestination = "ws://127.0.0.1:7777/" + serverDestination;
 
 
-        ServerEndpoint<String> serverEndpoint = null;
-        ClientEndpoint<Integer> clientEndpoint = null;
+        ServerEndpoint serverEndpoint = null;
+        ClientEndpoint clientEndpoint = null;
         try {
-            serverEndpoint = sutString.acceptConnections(serverDestination);
+            serverEndpoint = sut.acceptConnections(serverDestination);
             CountDownLatch sendSocketLatch = new CountDownLatch(1);
-            WebSocket<String>[] sendSocketHolder = new WebSocket[1];
+            WebSocket[] sendSocketHolder = new WebSocket[1];
             serverEndpoint.connectedWebSockets().subscribe(socket -> {
                 sendSocketHolder[0] = socket;
                 sendSocketLatch.countDown();
             });
 
-            clientEndpoint = sutInteger.connectTo(clientDestination);
+            clientEndpoint = sut.connectTo(clientDestination);
             sendSocketLatch.await(2, TimeUnit.SECONDS);
             assertNotNull(sendSocketHolder[0]);
             testEchoWithUnparsableMessages(clientDestination, clientEndpoint, sendSocketHolder[0]);
@@ -244,18 +240,18 @@ class WebsocketAdapterTest {
 
     }
 
-    void testEchoFromClientPerspective(String destination, ClientEndpoint<Integer> endpoint) throws Exception {
+    void testEchoFromClientPerspective(String destination, ClientEndpoint endpoint) throws Exception {
         Meter totalSent = metrics.getMeter("websocket", "sent", "total");
         Meter specificSent = metrics.getMeter("websocket", "sent", destination);
         Meter totalReceived = metrics.getMeter("websocket", "received", "total");
         Meter specificReceived = metrics.getMeter("websocket", "received", destination);
-        assertThat(totalReceived.getCount(), is(0l));
-        assertThat(specificReceived.getCount(), is(0l));
-        assertThat(totalSent.getCount(), is(0l));
-        assertThat(specificSent.getCount(), is(0l));
+        assertThat(totalReceived.getCount(), is(0L));
+        assertThat(specificReceived.getCount(), is(0L));
+        assertThat(totalSent.getCount(), is(0L));
+        assertThat(specificSent.getCount(), is(0L));
 
-        Flowable<IncomingMessage<Integer, IncomingMessageMetaData<Integer>>> messages = endpoint.messages();
-        TestSubscriber<IncomingMessage<Integer, IncomingMessageMetaData<Integer>>> testSubscriber = messages.test();
+        Flowable<IncomingMessage<Integer, IncomingMessageMetaData>> messages = endpoint.messages(Integer::parseInt);
+        TestSubscriber<IncomingMessage<Integer, IncomingMessageMetaData>> testSubscriber = messages.test();
 
         endpoint.send(1);
         endpoint.send(2);
@@ -282,23 +278,20 @@ class WebsocketAdapterTest {
         testSubscriber.dispose();
     }
 
-    void testEchoWithUnparsableMessages(String destination, Endpoint<Integer> receivingEndpoint, WebSocket<String> sendSocket) throws Exception {
+    void testEchoWithUnparsableMessages(String destination, Endpoint receivingEndpoint, WebSocket sendSocket) throws Exception {
         Meter totalUnparsable = metrics.getMeter("websocket", "received", "unparsable", "total");
         Meter specificUnparsable = metrics.getMeter("websocket", "received", "unparsable", destination);
-        assertThat(totalUnparsable.getCount(), is(0l));
-        assertThat(specificUnparsable.getCount(), is(0l));
+        assertThat(totalUnparsable.getCount(), is(0L));
+        assertThat(specificUnparsable.getCount(), is(0L));
 
-        Flowable<IncomingMessage<Integer, IncomingMessageMetaData<Integer>>> messages = receivingEndpoint.messages();
-        TestSubscriber<IncomingMessage<Integer, IncomingMessageMetaData<Integer>>> testSubscriber = messages.test();
+        Flowable<IncomingMessage<Integer, IncomingMessageMetaData>> messages = receivingEndpoint.messages(Integer.class);
+        TestSubscriber<IncomingMessage<Integer, IncomingMessageMetaData>> testSubscriber = messages.test();
 
         sendSocket.send("One");
         sendSocket.send("Two");
         sendSocket.send("33");
 
-        long maxWaitTime = System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(20);
-        while (testSubscriber.valueCount() < 1 && System.currentTimeMillis() < maxWaitTime) {
-            TimeUnit.MILLISECONDS.sleep(500);
-        }
+        Awaitility.await().atMost(20, TimeUnit.SECONDS).until(testSubscriber::valueCount, is(1));
         testSubscriber.assertValueCount(1);
         assertThat(testSubscriber.values().get(0).message, is(33));
         assertThat(totalUnparsable.getCount(), is(2l));
@@ -312,12 +305,12 @@ class WebsocketAdapterTest {
         String clientDestination = "ws://127.0.0.1:7777/" + serverDestination;
 
         CountDownLatch connectionLatch = new CountDownLatch(3);
-        List<WebSocket<Integer>> webSockets = new ArrayList<>();
+        List<WebSocket> webSockets = new ArrayList<>();
         CountDownLatch messageLatch1 = new CountDownLatch(1);
         CountDownLatch messageLatch2 = new CountDownLatch(2);
         CountDownLatch messageLatch3 = new CountDownLatch(3);
 
-        ServerEndpoint<Integer> serverEndpoint = null;
+        ServerEndpoint serverEndpoint = null;
         try {
             serverEndpoint = sut.acceptConnections(serverDestination);
             serverEndpoint.connectedWebSockets().subscribe(socket -> {
@@ -325,11 +318,11 @@ class WebsocketAdapterTest {
                 connectionLatch.countDown();
             });
 
-            TestSubscriber<IncomingMessage<Integer, IncomingMessageMetaData<Integer>>> testSubscriber1 =
-                    sut.connectTo(clientDestination).messages().test();
-            TestSubscriber<IncomingMessage<Integer, IncomingMessageMetaData<Integer>>> testSubscriber2 =
-                    sut.connectTo(clientDestination).messages().test();
-            sut.connectTo(clientDestination).messages().subscribe(message -> {
+            TestSubscriber<IncomingMessage<Integer, IncomingMessageMetaData>> testSubscriber1 =
+                    sut.connectTo(clientDestination).messages(Integer::parseInt).test();
+            TestSubscriber<IncomingMessage<Integer, IncomingMessageMetaData>> testSubscriber2 =
+                    sut.connectTo(clientDestination).messages(Integer::parseInt).test();
+            sut.connectTo(clientDestination).messages(Integer::parseInt).subscribe(message -> {
                 messageLatch1.countDown();
                 messageLatch2.countDown();
                 messageLatch3.countDown();
@@ -339,15 +332,15 @@ class WebsocketAdapterTest {
             assertThat(connectionLatch.getCount(), is(0L));
 
             serverEndpoint.broadcast(1);
-            messageLatch1.await(2, TimeUnit.SECONDS); assertThat(messageLatch1.getCount(), is(0l));
+            messageLatch1.await(2, TimeUnit.SECONDS); assertThat(messageLatch1.getCount(), is(0L));
             webSockets.remove(0).close();
 
             serverEndpoint.broadcast(2);
-            messageLatch2.await(2, TimeUnit.SECONDS); assertThat(messageLatch2.getCount(), is(0l));
+            messageLatch2.await(2, TimeUnit.SECONDS); assertThat(messageLatch2.getCount(), is(0L));
             webSockets.remove(0).close();
 
             serverEndpoint.broadcast(3);
-            messageLatch3.await(2, TimeUnit.SECONDS); assertThat(messageLatch3.getCount(), is(0l));
+            messageLatch3.await(2, TimeUnit.SECONDS); assertThat(messageLatch3.getCount(), is(0L));
 
             testSubscriber1.assertValueCount(1);
             assertThat(testSubscriber1.values().get(0).message, is(1));
@@ -367,7 +360,7 @@ class WebsocketAdapterTest {
     void specificCloseReasonMustNotBeUsedByServerEndpoint() throws Exception {
         String serverDestination = "forbiddenServerCloseReason";
 
-        ServerEndpoint<Integer> serverEndpoint = sut.acceptConnections(serverDestination);
+        ServerEndpoint serverEndpoint = sut.acceptConnections(serverDestination);
         assertThrows(IllegalArgumentException.class,
                 () -> serverEndpoint.close(CloseReason.CLOSED_ABNORMALLY));
         assertThrows(IllegalArgumentException.class,
@@ -380,7 +373,7 @@ class WebsocketAdapterTest {
         String clientDestination = "ws://127.0.0.1:7777/" + serverDestination;
 
         sut.acceptConnections(serverDestination);
-        ClientEndpoint<Integer> clientEndpoint = sut.connectTo(clientDestination);
+        ClientEndpoint clientEndpoint = sut.connectTo(clientDestination);
         assertThrows(IllegalArgumentException.class,
                 () -> clientEndpoint.close(CloseReason.CLOSED_ABNORMALLY));
         assertThrows(IllegalArgumentException.class,
@@ -395,14 +388,14 @@ class WebsocketAdapterTest {
         String serverDestination = "clientCloseReason";
         String clientDestination = "ws://127.0.0.1:7777/" + serverDestination;
 
-        ServerEndpoint<Integer> serverEndpoint = sut.acceptConnections(serverDestination);
+        ServerEndpoint serverEndpoint = sut.acceptConnections(serverDestination);
 
-        ClientEndpoint<Integer> clientEndpoint1 = sut.connectTo(clientDestination);
+        ClientEndpoint clientEndpoint1 = sut.connectTo(clientDestination);
         clientEndpoint1.closedWebSockets().subscribe(pair -> {
             closeReasons.add(pair._2);
             closeLatch.countDown();
         });
-        ClientEndpoint<Integer> clientEndpoint2 = sut.connectTo(clientDestination);
+        ClientEndpoint clientEndpoint2 = sut.connectTo(clientDestination);
         clientEndpoint2.closedWebSockets().subscribe(pair -> {
             closeReasons.add(pair._2);
             closeLatch.countDown();
@@ -428,15 +421,15 @@ class WebsocketAdapterTest {
         String serverDestination = "clientCloseReason";
         String clientDestination = "ws://127.0.0.1:7777/" + serverDestination;
 
-        ServerEndpoint<Integer> serverEndpoint = sut.acceptConnections(serverDestination);
+        ServerEndpoint serverEndpoint = sut.acceptConnections(serverDestination);
         serverEndpoint.closedWebSockets().subscribe(pair -> {
             closeReasons.add(pair._2);
             closeLatch.countDown();
         });
 
-        ClientEndpoint<Integer> clientEndpoint1 = sut.connectTo(clientDestination);
+        ClientEndpoint clientEndpoint1 = sut.connectTo(clientDestination);
         clientEndpoint1.close(CloseReason.TLS_HANDSHAKE_FAILURE);
-        ClientEndpoint<Integer> clientEndpoint2 = sut.connectTo(clientDestination);
+        ClientEndpoint clientEndpoint2 = sut.connectTo(clientDestination);
         clientEndpoint2.close(CloseReason.SERVICE_RESTART);
 
         closeLatch.await(2, TimeUnit.SECONDS);
@@ -448,7 +441,7 @@ class WebsocketAdapterTest {
     @Test
     void informationCanBeAppendedToWebSocket() throws Exception {
         Metrics metrics = new Metrics();
-        WebSocketAdapter<String> sut = WebSocketAdapter.builder(String.class)
+        WebSocketAdapter sut = WebSocketAdapter.builder()
                 .setHttpServer(httpServer)
                 .setHttpClient(httpClient)
                 .setMetrics(metrics)
@@ -465,10 +458,10 @@ class WebsocketAdapterTest {
         String clientDestination = "ws://127.0.0.1:7777/" + serverDestination;
 
         // create echo endpoint
-        ServerEndpoint<String> serverEndpoint = sut.acceptConnections(serverDestination);
+        ServerEndpoint serverEndpoint = sut.acceptConnections(serverDestination);
         // echo all incoming message and append the clientID
-        serverEndpoint.messages().subscribe(incomingMessage -> {
-            WebSocket<String> webSocket = incomingMessage.metaData.details.webSocket;
+        serverEndpoint.messages(s -> s).subscribe(incomingMessage -> {
+            WebSocket webSocket = incomingMessage.metaData.details.webSocket;
             if (incomingMessage.message.startsWith("ID=")) {
                 String id = incomingMessage.message.substring("ID=".length());
                 webSocket.setUserProperty("clientId", id);
@@ -481,12 +474,12 @@ class WebsocketAdapterTest {
 
 
         // connect multiple clients to server
-        ClientEndpoint<String>[] clientEndpoints = new ClientEndpoint[] {
+        ClientEndpoint[] clientEndpoints = new ClientEndpoint[] {
                 sut.connectTo(clientDestination),
                 sut.connectTo(clientDestination)
         };
         Arrays.stream(clientEndpoints).forEach(endpoint -> {
-            endpoint.messages().subscribe(incomingMessage -> {
+            endpoint.messages(s -> s).subscribe(incomingMessage -> {
                 if (incomingMessage.message.startsWith("ACK ")) {
                     String myId = endpoint.getUserProperty("myId");
                     String receivedId = incomingMessage.message.substring("ACK ".length());
@@ -515,15 +508,23 @@ class WebsocketAdapterTest {
         Arrays.stream(clientEndpoints).forEach(endpoint -> {
             String myId = String.valueOf(clientId.incrementAndGet());
             endpoint.setUserProperty("myId", myId);
-            endpoint.send("ID=" + myId);
+            try {
+                endpoint.send("ID=" + myId);
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
         });
         idLatch.await(5, TimeUnit.SECONDS);
         assertThat(idLatch.getCount(), is (0L));
 
         // and two more messages
         Arrays.stream(clientEndpoints).forEach(endpoint -> {
-            endpoint.send("xxx" + random.nextInt());
-            endpoint.send("xxx" + random.nextInt());
+            try {
+                endpoint.send("xxx" + random.nextInt());
+                endpoint.send("xxx" + random.nextInt());
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
         });
 
         latch.await(5, TimeUnit.SECONDS);

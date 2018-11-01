@@ -11,13 +11,14 @@
 
 package ch.squaredesk.nova.comm.websockets;
 
-public class IncomingMessageMetaData<MessageType>
-        extends ch.squaredesk.nova.comm.retrieving.IncomingMessageMetaData<String, RetrieveInfo<MessageType>> {
+public class IncomingMessageMetaData
+        extends ch.squaredesk.nova.comm.retrieving.IncomingMessageMetaData<String, RetrieveInfo> {
+
     public IncomingMessageMetaData(String origin) {
         this(origin, null);
     }
 
-    public IncomingMessageMetaData(String origin, RetrieveInfo<MessageType> sendDetails) {
+    public IncomingMessageMetaData(String origin, RetrieveInfo sendDetails) {
         super(origin, sendDetails);
     }
 }

@@ -81,7 +81,7 @@ you can be sure that all included modules properly work with each other:
         <dependency>
             <groupId>ch.squaredesk.nova</groupId>
             <artifactId>bom</artifactId>
-            <version>5.2.0</version>
+            <version>7.0.0</version>
             <scope>import</scope>
             <type>pom</type>
         </dependency>

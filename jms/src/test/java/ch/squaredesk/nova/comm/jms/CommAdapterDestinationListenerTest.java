@@ -27,7 +27,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 @Tag("large")
 class CommAdapterDestinationListenerTest {
-    private JmsAdapter<String> sut;
+    private JmsAdapter sut;
     private TestJmsHelper jmsHelper;
 
     private EmbeddedActiveMQBroker broker;
@@ -38,9 +38,8 @@ class CommAdapterDestinationListenerTest {
         broker.start();
 
         ConnectionFactory connectionFactory = new ActiveMQConnectionFactory("vm://embedded-broker?create=false");
-        sut = JmsAdapter.builder(String.class)
+        sut = JmsAdapter.builder()
                 .setConnectionFactory(connectionFactory)
-                .setErrorReplyFactory(error -> "Error")
                 .build();
         sut.start();
 
@@ -70,23 +69,15 @@ class CommAdapterDestinationListenerTest {
 
     @Test
     void testMessageSendingWithExceptionSignallingDestinationDownInExceptionChain() throws Exception {
-        ConnectionFactory connectionFactory = new ActiveMQConnectionFactory("vm://embedded-broker?create=false");
         RuntimeException myException = new RuntimeException("Outer", new InvalidDestinationException("for test"));
-        sut.shutdown();
-        sut = JmsAdapter.builder(String.class)
-                .setConnectionFactory(connectionFactory)
-                .setErrorReplyFactory(error -> "Error")
-                .setMessageMarshaller(message -> {
-                    throw myException;
-                })
-                .build();
-        sut.start();
 
         Destination queue = jmsHelper.createQueue("deadQueue");
         Destination deadDestinationHolder[] = new Destination[1];
         sut.addDestinationListener(destination -> deadDestinationHolder[0] = destination);
 
-        sut.sendMessage(queue, "Test").test().await(2, TimeUnit.SECONDS);
+        sut.sendMessage(queue, "Test", message -> {
+            throw myException;
+        }).test().await(2, TimeUnit.SECONDS);
         assertThat(deadDestinationHolder[0], Matchers.sameInstance(queue));
     }
 

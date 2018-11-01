@@ -64,7 +64,7 @@ the resulting document would look like in ElasticSearch (leaving out data added 
     "oneMinuteRate": 0,
     "meanRate": 0,
     "name": "myMetric",
-    "@timestamp": "2017-12-24T13:50:20.000",
+    "@timestamp": "123445567889",
     "host": "mymachine",
     "hostAddress": "192.168.0.2",
     "serviceName": "MyDemoService",

@@ -3,23 +3,23 @@ package examples;
 import ch.squaredesk.nova.comm.http.HttpAdapter;
 import ch.squaredesk.nova.metrics.Metrics;
 import io.reactivex.schedulers.Schedulers;
-import org.glassfish.grizzly.http.server.HttpServer;
 
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.util.concurrent.CountDownLatch;
+
+import org.glassfish.grizzly.http.server.HttpServer;
 
 public class EchoServer {
     public static void main(String[] args) throws Exception {
         new EchoServer().go();
     }
 
-    private HttpAdapter<String> httpAdapter() {
+    private HttpAdapter httpAdapter() {
         HttpServer httpServer = httpServer();
 
-        HttpAdapter<String> httpAdapter = HttpAdapter.builder(String.class)
+        HttpAdapter httpAdapter = HttpAdapter.builder()
                 .setHttpServer(httpServer)
-                .setMessageMarshaller(Object::toString)
-                .setMessageUnmarshaller(String::valueOf)
                 .setMetrics(metrics())
                 .build();
 
@@ -42,10 +42,10 @@ public class EchoServer {
 
     private void go() throws Exception {
         // Instantiate the HttpAdapter
-        HttpAdapter<String> httpAdapter = httpAdapter();
+        HttpAdapter httpAdapter = httpAdapter();
 
         // Subscribe to incoming echo requests
-        httpAdapter.requests("/echo")
+        httpAdapter.requests("/echo", String.class)
                 .subscribeOn(Schedulers.io())
                 .subscribe(
                         incomingMessage -> {
@@ -54,18 +54,18 @@ public class EchoServer {
                         }
                 );
 
-        // send a few messages and wait for the echo response
-        int numMessages = 3;
-        CountDownLatch cdl = new CountDownLatch(numMessages);
-        for (int i = 0; i < numMessages; i++) {
-            String message = "message #" + i;
-            httpAdapter.sendPostRequest("http://127.0.0.1:10000/echo", message)
-                    .subscribe(response -> {
-                        System.out.println("Response for message >>" + message + "<< received: " + response);
-                        cdl.countDown();
-                    });
-        }
+        // send a few messages and cast the response to the format we want
+        String destination = "http://127.0.0.1:10000/echo";
+        CountDownLatch cdl = new CountDownLatch(3);
+        httpAdapter
+                .sendPostRequest(destination, "One", String.class)
+                .subscribe(reply -> System.out.println("Received String response " + reply.result + " for message \"One\""));
+        httpAdapter
+                .sendPostRequest(destination, "2", Long.class)
+                .subscribe(reply -> System.out.println("Received Long response " + reply.result + " for message \"2\""));
+        httpAdapter
+                .sendPostRequest(destination, "3.5", BigDecimal.class)
+                .subscribe(reply -> System.out.println("Received BigDecimal response " + reply.result + " for message \"3.5\""));
 
-        cdl.await();
     }
 }

@@ -37,7 +37,7 @@ class MessageReceiverTest {
     private EmbeddedActiveMQBroker broker;
     private TestJmsHelper jmsHelper;
     private JmsObjectRepository objectRepository;
-    private MessageReceiver<String> sut;
+    private MessageReceiver sut;
 
     @BeforeEach
     void setup() throws Exception {
@@ -58,10 +58,7 @@ class MessageReceiverTest {
         jmsHelper = new TestJmsHelper(connectionFactory);
         jmsHelper.start();
 
-        sut = new MessageReceiver<>("MessageReceiverTest",
-                objectRepository,
-                s -> s,
-                new Metrics());
+        sut = new MessageReceiver("MessageReceiverTest", objectRepository, new Metrics());
     }
 
     @AfterEach

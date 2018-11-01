@@ -26,25 +26,25 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 @Tag("medium")
 class KafkaAdapterErrorTest {
     private static final int KAFKA_PORT = 11_000;
-    private KafkaAdapter<String> sut;
+    private KafkaAdapter sut;
 
     @BeforeEach
-    void setUp() throws Exception {
-        sut = KafkaAdapter.builder(String.class)
+    void setUp() {
+        sut = KafkaAdapter.builder()
                 .setServerAddress("127.0.0.1:" + KAFKA_PORT)
                 .setIdentifier("Test")
                 .build();
     }
 
     @AfterEach
-    void tearDown() throws Exception {
+    void tearDown() {
         sut.shutdown();
     }
 
     @Test
-    void subscribeWithNullDestinationEagerlyThrows() throws Exception {
+    void subscribeWithNullDestinationEagerlyThrows() {
         Throwable throwable = assertThrows(NullPointerException.class,
-                () -> sut.messages(null));
+                () -> sut.messages(null, s -> s));
         assertThat(throwable.getMessage(), is("destination must not be null"));
     }
 
@@ -64,13 +64,9 @@ class KafkaAdapterErrorTest {
 
     @Test
     void sendMessageWithException() throws Exception {
-        sut = KafkaAdapter.builder(String.class)
-                .setServerAddress("127.0.0.1:" + KAFKA_PORT)
-                .setIdentifier("Test")
-                .setMessageMarshaller(message -> { throw new MyException("4 test");})
-                .build();
-
-        TestObserver<Void> observer = sut.sendMessage("someTopic","Hallo").test();
+        TestObserver<Void> observer = sut.sendMessage("someTopic","Hallo", message -> {
+            throw new MyException("4 test");
+        }).test();
         observer.await(1, TimeUnit.SECONDS);
         observer.assertError(MyException.class);
     }

@@ -1,7 +1,6 @@
 package ch.squaredesk.nova.comm.http;
 
 import ch.squaredesk.nova.metrics.Metrics;
-import com.ning.http.client.AsyncHttpClient;
 import io.reactivex.Flowable;
 import io.reactivex.schedulers.Schedulers;
 import org.glassfish.grizzly.http.server.HttpServer;
@@ -30,47 +29,30 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 class RpcServerTest {
     private HttpServerConfiguration rsc = HttpServerConfiguration.builder().interfaceName("localhost").port(10000).build();
     private HttpServer httpServer = HttpServerFactory.serverFor(rsc);
-    private RpcServer<String> sut;
-    private RpcClient<String> rpcClient;
+    private RpcServer sut;
 
     @BeforeEach
     void setup() {
-        sut = new RpcServer<>(httpServer, s -> s, s -> s, new Metrics());
-        rpcClient = new RpcClient<>(null, new AsyncHttpClient(), s -> s, s -> s, new Metrics());
+        sut = new RpcServer(httpServer, new Metrics());
     }
 
     @AfterEach
     void tearDown() {
         if (sut != null) sut.shutdown();
-        if (rpcClient != null) rpcClient.shutdown();
     }
 
     @Test
     void sutCannotBeCreatedWithoutConfigs() {
         NullPointerException npe = assertThrows(NullPointerException.class,
-                () -> new RpcServer<>(null, s -> s, s -> s, new Metrics()));
+                () -> new RpcServer(null, new Metrics()));
         assertThat(npe.getMessage(), is("httpServer must not be null"));
     }
 
     @Test
-    void sutCannotBeCreatedWithoutMarshaller() {
-        NullPointerException npe = assertThrows(NullPointerException.class,
-                () -> new RpcServer<>(httpServer, null, s -> s, new Metrics()));
-        assertThat(npe.getMessage(), is("messageMarshaller must not be null"));
-    }
-
-    @Test
-    void sutCannotBeCreatedWithoutUnmarshaller() {
-        NullPointerException npe = assertThrows(NullPointerException.class,
-                () -> new RpcServer<String>(httpServer, s -> s, null, new Metrics()));
-        assertThat(npe.getMessage(), is("messageUnmarshaller must not be null"));
-    }
-
-    @Test
     void subscriptionsCanBeMadeAfterServerStarted() throws Exception {
-        assertNotNull(sut.requests("/requests"));
+        assertNotNull(sut.requests("/requests", String.class));
         sut.start();
-        sut.requests("/failing");
+        sut.requests("/failing", String.class);
     }
 
     @Test
@@ -80,13 +62,14 @@ class RpcServerTest {
         String path = "/bla";
         List<String> responses = new ArrayList<>();
 
-        sut.requests(path)
+        sut.requests(path, String.class)
             .subscribe(rpcInvocation -> {
-                rpcInvocation.complete(" description " + rpcInvocation.request.metaData.details.headerParams.get("p"));
+                rpcInvocation.complete(" description " + rpcInvocation.request.metaData.details.headers.get("p"));
             });
 
         IntStream.range(0, numRequests).forEach(i -> {
-            responses.add(sendRestRequest(path, i).result);
+            String url = "http://" + rsc.interfaceName + ":" + rsc.port + path + "?p=" + i;
+            responses.add(sendRestRequest(url, null).result);
         });
 
         await().atMost(20, TimeUnit.SECONDS).until(responses::size, is(numRequests));
@@ -116,7 +99,7 @@ class RpcServerTest {
         String urlAsString = "http://" + rsc.interfaceName + ":" + rsc.port + path;
         URL url = new URL(urlAsString);
         String hugeRequest = createStringOfLength(5 * 1024 * 1024);
-        Flowable<RpcInvocation<String>> requests = sut.requests(path);
+        Flowable<RpcInvocation<String>> requests = sut.requests(path, String.class);
         requests.subscribeOn(Schedulers.io()).subscribe(rpcInvocation -> {
             rpcInvocation.complete(rpcInvocation.request.message);
         });
@@ -132,7 +115,7 @@ class RpcServerTest {
         String urlAsString = "http://" + rsc.interfaceName + ":" + rsc.port + path;
         URL url = new URL(urlAsString);
         String hugeReply = createStringOfLength(15 * 1024 * 1024);
-        Flowable<RpcInvocation<String>> requests = sut.requests(path);
+        Flowable<RpcInvocation<String>> requests = sut.requests(path, String.class);
         requests.subscribeOn(Schedulers.io()).subscribe(rpcInvocation -> {
             rpcInvocation.complete(hugeReply);
         });
@@ -149,9 +132,9 @@ class RpcServerTest {
         URL url = new URL(urlAsString);
         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
 
-        Flowable<RpcInvocation<String>> requests = sut.requests(path);
+        Flowable<RpcInvocation<String>> requests = sut.requests(path, String.class);
         requests.subscribeOn(Schedulers.io()).subscribe(rpcInvocation -> {
-            rpcInvocation.complete(555, "someReply");
+            rpcInvocation.complete("someReply", 555);
         });
 
         connection.connect();
@@ -168,7 +151,7 @@ class RpcServerTest {
         Map<String,String> customHeaders = new HashMap<>();
         customHeaders.put("myParam", "myValue");
 
-        Flowable<RpcInvocation<String>> requests = sut.requests(path);
+        Flowable<RpcInvocation<String>> requests = sut.requests(path, String.class);
         requests.subscribeOn(Schedulers.io()).subscribe(rpcInvocation -> {
             rpcInvocation.complete("someReply", customHeaders);
         });
@@ -181,28 +164,21 @@ class RpcServerTest {
     void requestProcessingFailsOnServerSideAndErrorIsDispatched() throws Exception {
         sut.start();
         String path = "/fail";
-        Flowable<RpcInvocation<String>> requests = sut.requests(path);
+        Flowable<RpcInvocation<String>> requests = sut.requests(path, String.class);
         requests.subscribe(rpcInvocation -> rpcInvocation.completeExceptionally(new Exception("no content")));
 
-        String urlAsString = "http://" + rsc.interfaceName + ":" + rsc.port + path + "?p=";
-        RequestMessageMetaData meta = new RequestMessageMetaData(
-                new URL(urlAsString),
-                new RequestInfo(HttpRequestMethod.POST));
+        String url = "http://" + rsc.interfaceName + ":" + rsc.port + path + "?p=";
+        RpcReply<String> reply = sendRestRequest(url, null);
 
-        RpcReply<String> reply = rpcClient.sendRequest("{}", meta, 15, TimeUnit.SECONDS).blockingGet();
         assertThat(reply.result, containsString("Internal server error"));
         assertThat(reply.metaData.details.statusCode, is(500));
     }
 
-    private RpcReply<String> sendRestRequest(String path, int i) {
+    private RpcReply<String> sendRestRequest(String path, String request) {
         try {
-            String urlAsString = "http://" + rsc.interfaceName + ":" + rsc.port + path + "?p=" + i;
-
-            RequestMessageMetaData meta = new RequestMessageMetaData(
-                    new URL(urlAsString),
-                    new RequestInfo(HttpRequestMethod.POST));
-
-            return rpcClient.sendRequest("{}", meta, 15, TimeUnit.SECONDS).blockingGet();
+            URL url = new URL(path);
+            HttpRequestSender.HttpResponse httpResponse = HttpRequestSender.sendPostRequest(url, null);
+            return new RpcReply<>(httpResponse.replyMessage, new ReplyMessageMetaData(url, new ReplyInfo(httpResponse.returnCode, new HashMap<>())));
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

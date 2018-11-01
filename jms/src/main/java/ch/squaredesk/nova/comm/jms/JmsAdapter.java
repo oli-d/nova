@@ -10,10 +10,13 @@
 
 package ch.squaredesk.nova.comm.jms;
 
+import ch.squaredesk.nova.comm.CommAdapter;
 import ch.squaredesk.nova.comm.CommAdapterBuilder;
+import ch.squaredesk.nova.comm.DefaultMessageTranscriberForStringAsTransportType;
 import io.reactivex.Completable;
 import io.reactivex.Flowable;
 import io.reactivex.Single;
+import io.reactivex.functions.Function;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -22,18 +25,17 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
-import java.util.function.Function;
 import java.util.function.Supplier;
 
 import static java.util.Objects.requireNonNull;
 
-public class JmsAdapter<InternalMessageType> {
+public class JmsAdapter extends CommAdapter<String> {
     private static final Logger logger = LoggerFactory.getLogger(JmsAdapter.class);
 
-    private final ch.squaredesk.nova.comm.sending.MessageSender<InternalMessageType, OutgoingMessageMetaData> messageSender;
-    private final ch.squaredesk.nova.comm.retrieving.MessageReceiver<Destination, InternalMessageType, IncomingMessageMetaData> messageReceiver;
-    private final RpcClient<InternalMessageType> rpcClient;
-    private final RpcServer<InternalMessageType> rpcServer;
+    private final MessageSender messageSender;
+    private final MessageReceiver messageReceiver;
+    private final RpcClient rpcClient;
+    private final RpcServer rpcServer;
     private final JmsObjectRepository jmsObjectRepository;
     private final int defaultMessagePriority;
     private final long defaultMessageTimeToLive;
@@ -44,7 +46,8 @@ public class JmsAdapter<InternalMessageType> {
     private final TimeUnit defaultRpcTimeUnit;
 
 
-    JmsAdapter(Builder<InternalMessageType> builder) {
+    JmsAdapter(Builder builder) {
+        super(builder.messageTranscriber, builder.metrics);
         this.messageReceiver = builder.messageReceiver;
         this.messageSender = builder.messageSender;
         this.rpcServer = builder.rpcServer;
@@ -63,21 +66,35 @@ public class JmsAdapter<InternalMessageType> {
     // simple send related methods //
     //                             //
     /////////////////////////////////
-    public <ConcreteMessageType extends InternalMessageType> Completable sendMessage(
-            Destination destination, ConcreteMessageType message) {
-        return doSendMessage(destination, message, null, null, null, null);
+    public <T> Completable sendMessage(Destination destination, T message) throws Exception {
+        return sendMessage(destination, message, null, null, null, null);
     }
 
-    public <ConcreteMessageType extends InternalMessageType> Completable sendMessage(
-            Destination destination,
-            ConcreteMessageType message,
-            Map<String, Object> customHeaders) {
-        return doSendMessage(destination, message, customHeaders, null, null, null);
+    public <T> Completable sendMessage(Destination destination, T message, Map<String, Object> customHeaders) {
+        return sendMessage(destination, message, customHeaders, null, null, null);
     }
 
-    protected <ConcreteMessageType extends InternalMessageType> Completable doSendMessage(
+    public <T> Completable sendMessage(Destination destination, T message, Map<String, Object> customHeaders, Integer deliveryMode, Integer priority, Long timeToLive) {
+        Function<T, String> transcriber = messageTranscriber.getOutgoingMessageTranscriber((Class<T>) message.getClass());
+        return doSendMessage(destination, message, transcriber, customHeaders, deliveryMode, priority, timeToLive);
+    }
+
+    public <T> Completable sendMessage(Destination destination, T message, Function<T, String> transcriber) throws Exception {
+        return doSendMessage(destination, message, transcriber, null, null, null, null);
+    }
+
+    public <T> Completable sendMessage(Destination destination, T message, Function<T, String> transcriber, Map<String, Object> customHeaders) {
+        return doSendMessage(destination, message, transcriber, customHeaders, null, null, null);
+    }
+
+    public <T> Completable sendMessage(Destination destination, T message, Function<T, String> transcriber, Map<String, Object> customHeaders, Integer deliveryMode, Integer priority, Long timeToLive) {
+        return doSendMessage(destination, message, transcriber, customHeaders, deliveryMode, priority, timeToLive);
+    }
+
+    protected <T> Completable doSendMessage(
             Destination destination,
-            ConcreteMessageType message,
+            T message,
+            Function<T,String> transcriber,
             Map<String, Object> customHeaders,
             Integer deliveryMode,
             Integer priority,
@@ -92,7 +109,36 @@ public class JmsAdapter<InternalMessageType> {
                 priority == null ? defaultMessagePriority : priority,
                 timeToLive == null ? defaultMessageTimeToLive : timeToLive);
         OutgoingMessageMetaData meta = new OutgoingMessageMetaData(destination, jmsSpecificSendingInfo);
-        return this.messageSender.doSend(message, meta)
+        return this.messageSender.send(message, meta, transcriber)
+                .doOnError(t -> examineSendExceptionForDeadDestinationAndInformListener(t, destination));
+    }
+
+    public Completable sendMessage(Destination destination, String message) {
+        return doSendMessage(destination, message, null, null, null, null);
+    }
+
+    public Completable sendMessage(Destination destination, String message, Map<String, Object> customHeaders) {
+        return doSendMessage(destination, message, customHeaders, null, null, null);
+    }
+
+    protected Completable doSendMessage(
+            Destination destination,
+            String message,
+            Map<String, Object> customHeaders,
+            Integer deliveryMode,
+            Integer priority,
+            Long timeToLive) {
+
+        requireNonNull(message, "message must not be null");
+        SendInfo jmsSpecificSendingInfo = new SendInfo(
+                null,
+                null,
+                customHeaders,
+                deliveryMode == null ? defaultMessageDeliveryMode : deliveryMode,
+                priority == null ? defaultMessagePriority : priority,
+                timeToLive == null ? defaultMessageTimeToLive : timeToLive);
+        OutgoingMessageMetaData meta = new OutgoingMessageMetaData(destination, jmsSpecificSendingInfo);
+        return this.messageSender.send(message, meta)
                 .doOnError(t -> examineSendExceptionForDeadDestinationAndInformListener(t, destination));
     }
 
@@ -101,9 +147,18 @@ public class JmsAdapter<InternalMessageType> {
     // subscription related methods //
     //                              //
     //////////////////////////////////
-    public Flowable<InternalMessageType> messages (Destination destination) {
+    public Flowable<String> messages (Destination destination) {
         return this.messageReceiver.messages(destination)
                 .filter(incomingMessage -> !incomingMessage.metaData.details.isRpcReply())
+                .map(incomingMessage -> incomingMessage.message);
+    }
+
+    public <T> Flowable<T> messages(Destination destination, Class<T> messageType) {
+        return messages(destination, messageTranscriber.getIncomingMessageTranscriber(messageType));
+    }
+
+    public <T> Flowable<T> messages(Destination destination, Function<String, T> messageTranscriber) {
+        return messageReceiver.messages(destination, messageTranscriber)
                 .map(incomingMessage -> incomingMessage.message);
     }
 
@@ -112,9 +167,9 @@ public class JmsAdapter<InternalMessageType> {
     // RPC server methods //
     //                    //
     ////////////////////////
-    public Flowable<RpcInvocation<InternalMessageType>> requests(Destination destination) {
+    public <T> Flowable<RpcInvocation<T>> requests(Destination destination, Class<T> requestType) {
         requireNonNull(destination, "destination must not be null");
-        return rpcServer.requests(destination);
+        return rpcServer.requests(destination, requestType);
     }
 
     ////////////////////////
@@ -122,11 +177,12 @@ public class JmsAdapter<InternalMessageType> {
     // RPC client methods //
     //                    //
     ////////////////////////
-    private <ReplyType extends InternalMessageType> Single<RpcReply<ReplyType>> sendRequest(
+    public <T,U> Single<RpcReply<U>> sendRequest(
             Destination destination,
             Destination replyDestination,
-            InternalMessageType request,
+            T request,
             Map<String, Object> customHeaders,
+            Function<String, U> replyTranscriber,
             Integer deliveryMode, Integer priority, Long timeToLive,
             Long timeout, TimeUnit timeUnit) {
 
@@ -148,46 +204,109 @@ public class JmsAdapter<InternalMessageType> {
                 correlationId, replyDestination, customHeaders, deliveryModeToUse, priorityToUse, timeToLiveToUse);
         OutgoingMessageMetaData sendingInfo = new OutgoingMessageMetaData(destination, jmsSpecificInfo);
 
-        return rpcClient.<ReplyType>sendRequest(request, sendingInfo, timeout, timeUnit)
+        return rpcClient.sendRequest(
+                request,
+                sendingInfo,
+                messageTranscriber.getOutgoingMessageTranscriber(request),
+                replyTranscriber,
+                timeout, timeUnit)
                 .doOnError(t -> examineSendExceptionForDeadDestinationAndInformListener(t, destination));
     }
 
-    public <ReplyType extends InternalMessageType> Single<RpcReply<ReplyType>> sendRequest(
+    public <T,U> Single<RpcReply<U>> sendRequest(
             Destination destination,
             Destination replyDestination,
-            InternalMessageType message,
+            T message,
             Map<String, Object> customHeaders,
+            Function<String, U> replyTranscriber,
             long timeout, TimeUnit timeUnit) {
 
-        return sendRequest(destination, replyDestination, message, customHeaders, null, null, null,timeout, timeUnit);
+        return sendRequest(destination, replyDestination, message, customHeaders, replyTranscriber, null, null, null,timeout, timeUnit);
     }
 
-    public <ReplyType extends InternalMessageType> Single<RpcReply<ReplyType>> sendRequest(
+    public <T,U> Single<RpcReply<U>> sendRequest(
             Destination destination,
-            InternalMessageType message,
+            T message,
             Map<String, Object> customHeaders,
+            Function<String, U> replyTranscriber,
             Long timeout, TimeUnit timeUnit) {
 
-        return sendRequest(destination, jmsObjectRepository.getPrivateTempQueue(), message, customHeaders, null, null, null, timeout, timeUnit);
+        return sendRequest(destination, jmsObjectRepository.getPrivateTempQueue(), message, customHeaders, replyTranscriber, null, null, null, timeout, timeUnit);
     }
 
-    public <ReplyType extends InternalMessageType> Single<RpcReply<ReplyType>> sendRequest(
+    public <T,U> Single<RpcReply<U>> sendRequest(
             Destination destination,
-            InternalMessageType message,
-            Map<String, Object> customHeaders) {
-        return sendRequest(destination, jmsObjectRepository.getPrivateTempQueue(), message, customHeaders, null, null, null, null, null);
+            T message,
+            Map<String, Object> customHeaders,
+            Function<String, U> replyTranscriber) {
+        return sendRequest(destination, jmsObjectRepository.getPrivateTempQueue(), message, customHeaders, replyTranscriber, null, null, null, null, null);
     }
 
-    public <ReplyType extends InternalMessageType> Single<RpcReply<ReplyType>> sendRequest(
+    public <T,U> Single<RpcReply<U>> sendRequest(
             Destination destination,
-            InternalMessageType message,
+            T message,
+            Function<String, U> replyTranscriber,
             long timeout, TimeUnit timeUnit) {
-        return sendRequest(destination, jmsObjectRepository.getPrivateTempQueue(), message, null, null, null, null, timeout, timeUnit);
+        return sendRequest(destination, jmsObjectRepository.getPrivateTempQueue(), message, null, replyTranscriber, null, null, null, timeout, timeUnit);
     }
-    public <ReplyType extends InternalMessageType> Single<RpcReply<ReplyType>> sendRequest(
+    public <T,U> Single<RpcReply<U>> sendRequest(
             Destination destination,
-            InternalMessageType message) {
-        return sendRequest(destination, jmsObjectRepository.getPrivateTempQueue(), message, null, null, null, null, null, null);
+            T message,
+            Function<String, U> replyTranscriber) {
+        return sendRequest(destination, jmsObjectRepository.getPrivateTempQueue(), message, null, replyTranscriber, null, null, null, null, null);
+    }
+
+    public <T, U> Single<RpcReply<U>> sendRequest(
+            Destination destination,
+            Destination replyDestination,
+            T request,
+            Map<String, Object> customHeaders,
+            Class<U> replyType,
+            Integer deliveryMode, Integer priority, Long timeToLive,
+            Long timeout, TimeUnit timeUnit) {
+        return sendRequest(destination, replyDestination, request, customHeaders, messageTranscriber.getIncomingMessageTranscriber(replyType), deliveryMode, priority, timeToLive, timeout, timeUnit);
+    }
+        public <T,U> Single<RpcReply<U>> sendRequest(
+            Destination destination,
+            Destination replyDestination,
+            T message,
+            Map<String, Object> customHeaders,
+            Class<U> replyType,
+            long timeout, TimeUnit timeUnit) {
+
+        return sendRequest(destination, replyDestination, message, customHeaders, messageTranscriber.getIncomingMessageTranscriber(replyType), null, null, null,timeout, timeUnit);
+    }
+
+    public <T,U> Single<RpcReply<U>> sendRequest(
+            Destination destination,
+            T message,
+            Map<String, Object> customHeaders,
+            Class<U> replyType,
+            Long timeout, TimeUnit timeUnit) {
+
+        return sendRequest(destination, jmsObjectRepository.getPrivateTempQueue(), message, customHeaders, messageTranscriber.getIncomingMessageTranscriber(replyType), null, null, null, timeout, timeUnit);
+    }
+
+    public <T,U> Single<RpcReply<U>> sendRequest(
+            Destination destination,
+            T message,
+            Map<String, Object> customHeaders,
+            Class<U> replyType) {
+        return sendRequest(destination, jmsObjectRepository.getPrivateTempQueue(), message, customHeaders, messageTranscriber.getIncomingMessageTranscriber(replyType), null, null, null, null, null);
+    }
+
+    public <T,U> Single<RpcReply<U>> sendRequest(
+            Destination destination,
+            T message,
+            Class<U> replyType,
+            long timeout, TimeUnit timeUnit) {
+        return sendRequest(destination, jmsObjectRepository.getPrivateTempQueue(), message, null, messageTranscriber.getIncomingMessageTranscriber(replyType), null, null, null, timeout, timeUnit);
+    }
+    public <T,U> Single<RpcReply<U>> sendRequest(
+            Destination destination,
+            T message,
+            Class<U> replyType) {
+        return sendRequest(destination, jmsObjectRepository.getPrivateTempQueue(), message, null, messageTranscriber.getIncomingMessageTranscriber(replyType), null, null, null, null, null);
     }
 
     /////////////////////////////////////////
@@ -221,7 +340,7 @@ public class JmsAdapter<InternalMessageType> {
 
     private static boolean exceptionSignalsDestinationDown(Throwable errorToExamine) {
         // TODO: is there a proper way to determine this???!?!?!?! Works for ActiveMQ, but how do other brokers behave?
-        Function<Throwable, Boolean> testFunc = ex ->
+        java.util.function.Function<Throwable, Boolean> testFunc = ex ->
                 (ex instanceof InvalidDestinationException) ||
                         (String.valueOf(ex).contains("does not exist"));
 
@@ -254,15 +373,14 @@ public class JmsAdapter<InternalMessageType> {
     //    the  Builder     //
     //                     //
     /////////////////////////
-    public static <InternalMessageType> Builder<InternalMessageType> builder(Class<InternalMessageType> messageTypeClass) {
-        return new Builder<>(messageTypeClass);
+    public static Builder builder() {
+        return new Builder();
     }
 
-    public static class Builder<InternalMessageType> extends CommAdapterBuilder<InternalMessageType, JmsAdapter<InternalMessageType>>{
+    public static class Builder extends CommAdapterBuilder<String, JmsAdapter>{
         private String identifier;
         private Supplier<String> correlationIdGenerator;
-        private Function<Throwable, InternalMessageType> errorReplyFactory;
-        private Function<Destination, String> destinationIdGenerator;
+        private java.util.function.Function<Destination, String> destinationIdGenerator;
         private ConnectionFactory connectionFactory;
         private boolean consumerSessionTransacted = false;
         private int consumerSessionAckMode = Session.AUTO_ACKNOWLEDGE;
@@ -272,115 +390,109 @@ public class JmsAdapter<InternalMessageType> {
         private long defaultTimeToLive = Message.DEFAULT_TIME_TO_LIVE;
         private int defaultDeliveryMode = DeliveryMode.NON_PERSISTENT;
         private JmsObjectRepository jmsObjectRepository;
-        private ch.squaredesk.nova.comm.sending.MessageSender<InternalMessageType, OutgoingMessageMetaData> messageSender;
-        private ch.squaredesk.nova.comm.retrieving.MessageReceiver<Destination, InternalMessageType, IncomingMessageMetaData> messageReceiver;
-        private RpcServer<InternalMessageType> rpcServer;
-        private RpcClient<InternalMessageType> rpcClient;
+        private MessageSender messageSender;
+        private MessageReceiver messageReceiver;
+        private RpcServer rpcServer;
+        private RpcClient rpcClient;
         private long defaultRpcTimeout;
         private TimeUnit defaultRpcTimeUnit;
 
-        private Builder(Class<InternalMessageType> messageTypeClass) {
-            super(messageTypeClass);
+        private Builder() {
         }
 
-        public Builder<InternalMessageType> setIdentifier(String identifier) {
+        public Builder setIdentifier(String identifier) {
             this.identifier = identifier;
             return this;
         }
 
-        public Builder<InternalMessageType> setDefaultRpcTimeout(long defaultRpcTimeout, TimeUnit timeUnit) {
+        public Builder setDefaultRpcTimeout(long defaultRpcTimeout, TimeUnit timeUnit) {
             this.defaultRpcTimeout = defaultRpcTimeout;
             this.defaultRpcTimeUnit = timeUnit;
             return this;
         }
 
-        public Builder<InternalMessageType> setDefaultMessagePriority(int priority) {
+        public Builder setDefaultMessagePriority(int priority) {
             this.defaultPriority = priority;
             return this;
         }
 
-        public Builder<InternalMessageType> setDefaultMessageTimeToLive(long timeToLive) {
+        public Builder setDefaultMessageTimeToLive(long timeToLive) {
             this.defaultTimeToLive = timeToLive;
             return this;
         }
 
-        public Builder<InternalMessageType> setDefaultMessageDeliveryMode(int deliveryMode) {
+        public Builder setDefaultMessageDeliveryMode(int deliveryMode) {
             this.defaultDeliveryMode = deliveryMode;
             return this;
         }
 
-        public Builder<InternalMessageType> setConnectionFactory(ConnectionFactory connectionFactory) {
+        public Builder setConnectionFactory(ConnectionFactory connectionFactory) {
             this.connectionFactory = connectionFactory;
             return this;
         }
 
-        public Builder<InternalMessageType> setProducerSessionTransacted(boolean sessionTransacted) {
+        public Builder setProducerSessionTransacted(boolean sessionTransacted) {
             this.producerSessionTransacted = sessionTransacted;
             return this;
         }
 
-        public Builder<InternalMessageType> setProducerSessionAckMode(int sessionAckMode) {
+        public Builder setProducerSessionAckMode(int sessionAckMode) {
             this.producerSessionAckMode = sessionAckMode;
             return this;
         }
 
-        public Builder<InternalMessageType> setConsumerSessionTransacted(boolean sessionTransacted) {
+        public Builder setConsumerSessionTransacted(boolean sessionTransacted) {
             this.consumerSessionTransacted = sessionTransacted;
             return this;
         }
 
-        public Builder<InternalMessageType> setConsumerSessionAckMode(int sessionAckMode) {
+        public Builder setConsumerSessionAckMode(int sessionAckMode) {
             this.consumerSessionAckMode = sessionAckMode;
             return this;
         }
 
-        public Builder<InternalMessageType> setCorrelationIdGenerator(Supplier<String> correlationIdGenerator) {
+        public Builder setCorrelationIdGenerator(Supplier<String> correlationIdGenerator) {
             this.correlationIdGenerator = correlationIdGenerator;
             return this;
         }
 
-        public Builder<InternalMessageType> setDestinationIdGenerator(Function<Destination, String> destinationIdGenerator) {
+        public Builder setDestinationIdGenerator(java.util.function.Function<Destination, String> destinationIdGenerator) {
             this.destinationIdGenerator = destinationIdGenerator;
             return this;
         }
 
-        public Builder<InternalMessageType> setErrorReplyFactory(Function<Throwable, InternalMessageType> errorReplyFactory) {
-            this.errorReplyFactory = errorReplyFactory;
-            return this;
-        }
-
-
         // for testing
-        public Builder<InternalMessageType> setJmsObjectRepository(JmsObjectRepository jmsObjectRepository) {
+        public Builder setJmsObjectRepository(JmsObjectRepository jmsObjectRepository) {
             this.jmsObjectRepository = jmsObjectRepository;
             return this;
         }
 
-        public Builder<InternalMessageType> setRpcClient(RpcClient<InternalMessageType> rpcClient) {
+        public Builder setRpcClient(RpcClient rpcClient) {
             this.rpcClient = rpcClient;
             return this;
         }
 
-        public Builder<InternalMessageType> setRpcServer(RpcServer<InternalMessageType> rpcServer) {
+        public Builder setRpcServer(RpcServer rpcServer) {
             this.rpcServer = rpcServer;
             return this;
         }
 
-        public Builder<InternalMessageType> setMessageReceiver(ch.squaredesk.nova.comm.retrieving.MessageReceiver<Destination, InternalMessageType, IncomingMessageMetaData> messageReceiver) {
+        public Builder setMessageReceiver(MessageReceiver messageReceiver) {
             this.messageReceiver = messageReceiver;
             return this;
         }
 
-        public Builder<InternalMessageType> setMessageSender(ch.squaredesk.nova.comm.sending.MessageSender<InternalMessageType, OutgoingMessageMetaData> messageSender) {
+        public Builder setMessageSender(MessageSender messageSender) {
             this.messageSender = messageSender;
             return this;
         }
 
         protected void validate() {
             requireNonNull(metrics,"metrics must be provided");
-            requireNonNull(messageUnmarshaller,"messageUnmarshaller must be provided");
-            requireNonNull(messageMarshaller,"messageMarshaller must be provided");
-            requireNonNull(errorReplyFactory,"errorReplyFactory must be provided");
+
+            if (messageTranscriber == null) {
+                messageTranscriber = new DefaultMessageTranscriberForStringAsTransportType();
+            }
 
             if (messageSender == null || messageReceiver == null) {
                 requireNonNull(connectionFactory, "connectionFactory must be provided");
@@ -399,7 +511,7 @@ public class JmsAdapter<InternalMessageType> {
             }
         }
 
-        public JmsAdapter<InternalMessageType> createInstance() {
+        public JmsAdapter createInstance() {
             if (messageSender==null || messageReceiver == null) {
                 Connection connection;
                 try {
@@ -415,18 +527,18 @@ public class JmsAdapter<InternalMessageType> {
             }
 
             if (messageSender == null) {
-                messageSender = new MessageSender<>(identifier, jmsObjectRepository, messageMarshaller, metrics);
+                messageSender = new MessageSender(identifier, jmsObjectRepository, metrics);
             }
             if (messageReceiver == null) {
-                messageReceiver = new MessageReceiver<>(identifier, jmsObjectRepository, messageUnmarshaller, metrics);
+                messageReceiver = new MessageReceiver(identifier, jmsObjectRepository, metrics);
             }
             if (rpcServer == null) {
-                rpcServer = new RpcServer<>(identifier, messageReceiver, messageSender, errorReplyFactory, metrics);
+                rpcServer = new RpcServer(identifier, messageReceiver, messageSender, metrics);
             }
             if (rpcClient==null) {
-                rpcClient = new RpcClient<>(identifier, messageSender, messageReceiver, metrics);
+                rpcClient = new RpcClient(identifier, messageSender, messageReceiver, metrics);
             }
-            return new JmsAdapter<>(this);
+            return new JmsAdapter(this);
         }
     }
 }

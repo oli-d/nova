@@ -12,20 +12,20 @@ package ch.squaredesk.nova.comm.jms;
 
 import ch.squaredesk.nova.metrics.Metrics;
 import io.reactivex.Single;
+import io.reactivex.functions.Function;
 
-import javax.jms.Destination;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import static java.util.Objects.requireNonNull;
 
-public class RpcClient<InternalMessageType> extends ch.squaredesk.nova.comm.rpc.RpcClient<InternalMessageType, OutgoingMessageMetaData, IncomingMessageMetaData> {
-    private final ch.squaredesk.nova.comm.sending.MessageSender<InternalMessageType, OutgoingMessageMetaData> messageSender;
-    private final ch.squaredesk.nova.comm.retrieving.MessageReceiver<Destination, InternalMessageType, IncomingMessageMetaData> messageReceiver;
+public class RpcClient extends ch.squaredesk.nova.comm.rpc.RpcClient<String, OutgoingMessageMetaData, IncomingMessageMetaData> {
+    private final MessageSender messageSender;
+    private final MessageReceiver messageReceiver;
 
-    public RpcClient(String identifier,
-                     ch.squaredesk.nova.comm.sending.MessageSender<InternalMessageType, OutgoingMessageMetaData> messageSender,
-                     ch.squaredesk.nova.comm.retrieving.MessageReceiver<Destination, InternalMessageType, IncomingMessageMetaData> messageReceiver,
+    RpcClient(String identifier,
+                     MessageSender messageSender,
+                     MessageReceiver messageReceiver,
                      Metrics metrics) {
         super(identifier, metrics);
         this.messageSender = messageSender;
@@ -33,30 +33,35 @@ public class RpcClient<InternalMessageType> extends ch.squaredesk.nova.comm.rpc.
     }
 
     @Override
-    public <ReplyType extends InternalMessageType> Single<RpcReply<ReplyType>> sendRequest(
-            InternalMessageType request,
-            OutgoingMessageMetaData outgoingMessageMetaData,
+    public <RequestType, ReplyType> Single<RpcReply<ReplyType>> sendRequest(
+            RequestType request,
+            OutgoingMessageMetaData requestMetaData,
+            Function<RequestType, String> requestTranscriber,
+            Function<String, ReplyType> replyTranscriber,
             long timeout, TimeUnit timeUnit) {
+
         requireNonNull(timeUnit, "timeUnit must not be null");
-        requireNonNull(outgoingMessageMetaData, "metaData must not be null");
-        requireNonNull(outgoingMessageMetaData.details, "metaData.details must not be null");
-        requireNonNull(outgoingMessageMetaData.details.correlationId, "correlationId must not be null");
-        requireNonNull(outgoingMessageMetaData.details.replyDestination, "replyDestination must not be null");
+        requireNonNull(requestMetaData, "metaData must not be null");
+        requireNonNull(requestMetaData.details, "metaData.details must not be null");
+        requireNonNull(requestMetaData.details.correlationId, "correlationId must not be null");
+        requireNonNull(requestMetaData.details.replyDestination, "replyDestination must not be null");
 
         // listen to RPC reply. This must be done BEFORE sending the request, otherwise we could miss a very fast response
         // if the Observable is hot
         Single<RpcReply<ReplyType>> replySingle =
-                messageReceiver.messages(outgoingMessageMetaData.details.replyDestination)
+                messageReceiver.messages(requestMetaData.details.replyDestination, replyTranscriber)
                 .filter(incomingMessage ->
                         incomingMessage.metaData.details != null &&
-                        outgoingMessageMetaData.details.correlationId.equals(incomingMessage.metaData.details.correlationId))
+                                requestMetaData.details.correlationId.equals(incomingMessage.metaData.details.correlationId))
                 .take(1)
                 .doOnNext(reply -> metricsCollector.rpcCompleted(request, reply))
-                .map(incomingMessage -> new RpcReply<>((ReplyType)incomingMessage.message, incomingMessage.metaData))
+                .map(incomingMessage -> new RpcReply<>(incomingMessage.message, incomingMessage.metaData))
                 .singleOrError();
 
         // send message sync
-        Throwable sendError = messageSender.doSend(request, outgoingMessageMetaData).blockingGet();
+        Throwable sendError = messageSender
+                .send(request, requestMetaData, requestTranscriber)
+                .blockingGet();
         if (sendError != null) {
             return Single.error(sendError);
         }

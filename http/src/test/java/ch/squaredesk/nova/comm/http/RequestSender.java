@@ -11,20 +11,24 @@
 
 package ch.squaredesk.nova.comm.http;
 
+import ch.squaredesk.nova.comm.DefaultMessageTranscriberForStringAsTransportType;
+import ch.squaredesk.nova.comm.MessageTranscriber;
+
 import java.net.URL;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 class RequestSender {
     private final String baseUrl;
-    private final RpcClient<String> rpcClient;
+    private final RpcClient rpcClient;
+    private final MessageTranscriber<String> messageTranscriber = new DefaultMessageTranscriberForStringAsTransportType();
 
-    private RequestSender(String baseUrl, RpcClient<String> rpcClient) {
+    private RequestSender(String baseUrl, RpcClient rpcClient) {
         this.baseUrl = baseUrl;
         this.rpcClient = rpcClient;
     }
 
-    static RequestSender createFor (String baseUrl, RpcClient<String> rpcClient) {
+    static RequestSender createFor (String baseUrl, RpcClient rpcClient) {
         return new RequestSender(baseUrl, rpcClient);
     }
 
@@ -44,7 +48,7 @@ class RequestSender {
                 RequestMessageMetaData meta = new RequestMessageMetaData(
                     new URL(baseUrl + pathToUse),
                     new RequestInfo(HttpRequestMethod.POST));
-                rpcClient.sendRequest(payload, meta, 15, SECONDS).blockingGet();
+                rpcClient.sendRequest(payload, meta, messageTranscriber.getOutgoingMessageTranscriber(String.class), messageTranscriber.getIncomingMessageTranscriber(String.class), 15, SECONDS).blockingGet();
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }

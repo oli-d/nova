@@ -9,9 +9,9 @@
  */
 package ch.squaredesk.nova.comm.websockets;
 
+import ch.squaredesk.nova.comm.CommAdapter;
 import ch.squaredesk.nova.comm.CommAdapterBuilder;
-import ch.squaredesk.nova.comm.retrieving.MessageUnmarshaller;
-import ch.squaredesk.nova.comm.sending.MessageMarshaller;
+import ch.squaredesk.nova.comm.DefaultMessageTranscriberForStringAsTransportType;
 import ch.squaredesk.nova.comm.websockets.client.ClientEndpoint;
 import ch.squaredesk.nova.comm.websockets.client.ClientEndpointFactory;
 import ch.squaredesk.nova.comm.websockets.server.ServerEndpoint;
@@ -21,18 +21,16 @@ import org.glassfish.grizzly.http.server.HttpServer;
 import org.glassfish.grizzly.http.server.NetworkListener;
 import org.glassfish.grizzly.websockets.WebSocketAddOn;
 
-public class WebSocketAdapter<MessageType> {
+public class WebSocketAdapter extends CommAdapter<String> {
     private final HttpServer httpServer;
     private final AsyncHttpClient httpClient;
 
-    private final MessageMarshaller<MessageType, String> messageMarshaller;
-    private final MessageUnmarshaller<String, MessageType> messageUnmarshaller;
     private final MetricsCollector metricsCollector;
-    private final ServerEndpointFactory serverEndpointFactory = new ServerEndpointFactory();
+    private final ServerEndpointFactory serverEndpointFactory;
+    private final ClientEndpointFactory clientEndpointFactory;
 
-    private WebSocketAdapter(Builder<MessageType> builder) {
-        this.messageMarshaller = builder.messageMarshaller;
-        this.messageUnmarshaller = builder.messageUnmarshaller;
+    private WebSocketAdapter(Builder builder) {
+        super(builder.messageTranscriber, builder.metrics);
         this.metricsCollector = new MetricsCollector(builder.metrics);
         this.httpServer = builder.httpServer;
         if (httpServer !=null) {
@@ -46,62 +44,52 @@ public class WebSocketAdapter<MessageType> {
             }
         }
         this.httpClient = builder.httpClient;
+        this.serverEndpointFactory = new ServerEndpointFactory(builder.messageTranscriber);
+        this.clientEndpointFactory = new ClientEndpointFactory(builder.messageTranscriber);
     }
 
-
-
-    public ClientEndpoint<MessageType> connectTo (String destination)  {
+    public ClientEndpoint connectTo (String destination)  {
         if (httpClient==null) {
             throw new IllegalStateException("Adapter not initialized properly for client mode");
         }
-
-        return ClientEndpointFactory.createFor(
-                httpClient,
-                destination,
-                messageMarshaller,
-                messageUnmarshaller,
-                metricsCollector);
+        return clientEndpointFactory.createFor(httpClient, destination, metricsCollector);
     }
 
-    public ServerEndpoint<MessageType> acceptConnections(String destination)  {
+    public ServerEndpoint acceptConnections(String destination)  {
         if (httpServer == null) {
             throw new IllegalStateException("Adapter not initialized properly for server mode");
         }
-
-        return serverEndpointFactory.createFor(
-                destination,
-                messageMarshaller,
-                messageUnmarshaller,
-                metricsCollector
-        );
+        return serverEndpointFactory.createFor(destination, metricsCollector);
     }
 
 
-    public static <MessageType> Builder<MessageType> builder(Class<MessageType> messageTypeClass) {
-        return new Builder<>(messageTypeClass);
+    public static Builder builder() {
+        return new Builder();
     }
 
-    public static class Builder<MessageType> extends CommAdapterBuilder<MessageType, WebSocketAdapter<MessageType>>{
+    public static class Builder extends CommAdapterBuilder<String, WebSocketAdapter>{
         private HttpServer httpServer;
         private AsyncHttpClient httpClient;
 
-        private Builder(Class<MessageType> messageTypeClass) {
-            super(messageTypeClass);
+        private Builder() {
         }
 
-        public Builder<MessageType> setHttpClient (AsyncHttpClient httpClient) {
+        public Builder setHttpClient (AsyncHttpClient httpClient) {
             this.httpClient = httpClient;
             return this;
         }
 
-        public Builder<MessageType> setHttpServer (HttpServer httpServer) {
+        public Builder setHttpServer (HttpServer httpServer) {
             this.httpServer = httpServer;
             return this;
         }
 
-        public WebSocketAdapter<MessageType> createInstance() {
+        public WebSocketAdapter createInstance() {
             validate();
-            return new WebSocketAdapter<>(this);
+            if (messageTranscriber == null) {
+                messageTranscriber = new DefaultMessageTranscriberForStringAsTransportType();
+            }
+            return new WebSocketAdapter(this);
         }
     }
 }

@@ -10,6 +10,7 @@
 
 package ch.squaredesk.nova.comm.rpc;
 
+import ch.squaredesk.nova.comm.DefaultMessageTranscriberForStringAsTransportType;
 import ch.squaredesk.nova.comm.retrieving.IncomingMessageMetaData;
 import ch.squaredesk.nova.metrics.Metrics;
 import io.reactivex.Flowable;
@@ -27,14 +28,14 @@ class RpcServerTest {
         assertThat(t.getMessage(), containsString("metrics"));
     }
 
-    private class MyRpcServer extends RpcServer<String, RpcInvocation<String, IncomingMessageMetaData<Void, Void>, String, Void>> {
+    private class MyRpcServer extends RpcServer<String, String> {
 
         MyRpcServer(Metrics metrics) {
-            super(metrics);
+            super(metrics, new DefaultMessageTranscriberForStringAsTransportType());
         }
 
         @Override
-        public Flowable<RpcInvocation<String, IncomingMessageMetaData<Void, Void>, String, Void>> requests(String destination) {
+        public <T> Flowable<? extends RpcInvocation<T, ? extends IncomingMessageMetaData<?, ?>, String, ?>> requests(String destination, Class<T> targetType) {
             return Flowable.empty();
         }
     }

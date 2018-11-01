@@ -10,12 +10,14 @@
 
 package ch.squaredesk.nova.comm.rpc;
 
-public interface RpcCompletor<ReplyType, TransportSpecificReplyInfo> {
-    default void complete(ReplyType reply) {
-        complete(reply, null);
+import io.reactivex.functions.Function;
+
+public interface RpcCompletor<TransportMessageType, TransportSpecificReplyInfo> {
+    default <T> void complete(T reply, Function<T, TransportMessageType> messageTranscriber) throws Exception {
+        complete(reply, null, messageTranscriber);
     }
 
-    void complete(ReplyType reply, TransportSpecificReplyInfo replySpecificInfo);
+    <T> void  complete(T reply, TransportSpecificReplyInfo replySpecificInfo, Function<T, TransportMessageType> transcriber) throws Exception;
 
     void completeExceptionally(Throwable error);
 }
