@@ -13,17 +13,18 @@ package ch.squaredesk.nova.events.annotation;
 import ch.squaredesk.nova.Nova;
 import ch.squaredesk.nova.events.EventBus;
 import io.reactivex.BackpressureStrategy;
+
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.TimeUnit;
+
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Test;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
-
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.concurrent.TimeUnit;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
@@ -112,8 +113,8 @@ public class SpringWiringTest {
     }
 
     public static class MyBean1 {
-        private List<String> listInvocationParams = new ArrayList<>();
-        private List<Thread> listInvocationThreads = new ArrayList<>();
+        private List<String> listInvocationParams = new CopyOnWriteArrayList<>();
+        private List<Thread> listInvocationThreads = new CopyOnWriteArrayList<>();
 
         @OnEvent(value = "e", dispatchOnBusinessLogicThread = true, backpressureStrategy = BackpressureStrategy.BUFFER)
         public void onE1(String f) throws Exception {
@@ -124,8 +125,8 @@ public class SpringWiringTest {
     }
 
     public static class MyBean2 {
-        private List<String> listInvocationParams = new ArrayList<>();
-        private List<Thread> listInvocationThreads = new ArrayList<>();
+        private List<String> listInvocationParams = new CopyOnWriteArrayList<>();
+        private List<Thread> listInvocationThreads = new CopyOnWriteArrayList<>();
         @OnEvent(value = "e", enableInvocationTimeMetrics = false, backpressureStrategy = BackpressureStrategy.LATEST)
         public void onE1(String f) throws Exception {
             TimeUnit.MILLISECONDS.sleep(10);
