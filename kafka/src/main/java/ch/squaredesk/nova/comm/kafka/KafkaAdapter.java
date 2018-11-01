@@ -55,18 +55,18 @@ public class KafkaAdapter extends CommAdapter<String> {
     // simple send related methods //
     //                             //
     /////////////////////////////////
-    public Completable sendMessage(String destination, String message) throws Exception {
+    public Completable sendMessage(String destination, String message) {
         SendInfo sendInfo = new SendInfo();
         OutgoingMessageMetaData meta = new OutgoingMessageMetaData(destination, sendInfo);
         return messageSender.send(message, meta);
     }
 
-    public <T> Completable sendMessage(String destination, T message) throws Exception {
+    public <T> Completable sendMessage(String destination, T message) {
         Function<T, String> transcriber = messageTranscriber.getOutgoingMessageTranscriber((Class<T>)message.getClass());
         return sendMessage(destination, message, transcriber);
     }
 
-    public <T> Completable sendMessage(String destination, T message, Function<T, String> transcriber) throws Exception {
+    public <T> Completable sendMessage(String destination, T message, Function<T, String> transcriber) {
         requireNonNull(message, "message must not be null");
         SendInfo sendInfo = new SendInfo();
         OutgoingMessageMetaData meta = new OutgoingMessageMetaData(destination, sendInfo);
