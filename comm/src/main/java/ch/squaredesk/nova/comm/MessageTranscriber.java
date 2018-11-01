@@ -39,33 +39,41 @@ public class MessageTranscriber<TransportMessageType>  {
     }
 
     public <T> Function<T, TransportMessageType> getOutgoingMessageTranscriber(Class<T> typeToMarshal) {
-        Function<T, TransportMessageType> specificTranscriber = getSpecificOutgoingTranscriber(typeToMarshal);
-        if (specificTranscriber != null) {
-            return specificTranscriber;
-        } else if (defaultOutgoingMessageTranscriber != null) {
-            return defaultOutgoingMessageTranscriber.castToFunction(typeToMarshal);
-        } else {
-            throw new IllegalArgumentException("Unable to find an appropriate message transcriber");
-        }
+        return getSpecificOutgoingTranscriber(typeToMarshal);
     }
 
     public <T> Function<TransportMessageType, T> getIncomingMessageTranscriber(Class<T> typeToUnmarshalTo) {
-        Function<TransportMessageType, T> specificTranscriber = getSpecificIncomingTranscriber(typeToUnmarshalTo);
-        if (specificTranscriber != null) {
-            return specificTranscriber;
-        } else if (defaultIncomingMessageTranscriber != null) {
+        return getSpecificIncomingTranscriber(typeToUnmarshalTo);
+    }
+
+    protected <T> Function<T, TransportMessageType> createDefaultOutgoingMessageTranscriberFor(Class<T> typeToMarshal) {
+        if (defaultOutgoingMessageTranscriber != null) {
+            return defaultOutgoingMessageTranscriber.castToFunction(typeToMarshal);
+        } else {
+            throw new IllegalArgumentException("Unable to create an OutgingMessageTranscriber for class " + typeToMarshal);
+        }
+    }
+
+    protected <T> Function<TransportMessageType, T> createDefaultIncomingMessageTranscriberFor(Class<T> typeToUnmarshalTo) {
+        if (defaultIncomingMessageTranscriber != null) {
             return defaultIncomingMessageTranscriber.castToFunction(typeToUnmarshalTo);
         } else {
-            throw new IllegalArgumentException("Unable to find an appropriate message transcriber");
+            throw new IllegalArgumentException("Unable to create an IncomingMessageTranscriber for class " + typeToUnmarshalTo);
         }
     }
 
     private <T> Function<T, TransportMessageType> getSpecificOutgoingTranscriber (Class<T> targetClass) {
-        return (Function<T, TransportMessageType>) specificOutgoingTranscribers.get(targetClass);
+        return (Function<T, TransportMessageType>) specificOutgoingTranscribers.computeIfAbsent(
+                targetClass,
+                theClass -> createDefaultOutgoingMessageTranscriberFor(theClass)
+        );
     }
 
     private <T> Function<TransportMessageType, T> getSpecificIncomingTranscriber (Class<T> targetClass) {
-        return (Function<TransportMessageType, T>) specificIncomingTranscribers.get(targetClass);
+        return (Function<TransportMessageType, T>) specificIncomingTranscribers.computeIfAbsent(
+                targetClass,
+                theClass -> createDefaultIncomingMessageTranscriberFor(theClass)
+        );
     }
 
     public <T> void registerClassSpecificTranscribers (Class<T> targetClass,
