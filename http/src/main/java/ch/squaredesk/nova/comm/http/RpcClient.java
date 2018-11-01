@@ -11,14 +11,15 @@
 package ch.squaredesk.nova.comm.http;
 
 import ch.squaredesk.nova.metrics.Metrics;
-import com.ning.http.client.AsyncHttpClient;
-import com.ning.http.client.ListenableFuture;
-import com.ning.http.client.Response;
 import io.reactivex.Single;
 import io.reactivex.functions.Function;
 
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+
+import com.ning.http.client.AsyncHttpClient;
+import com.ning.http.client.ListenableFuture;
+import com.ning.http.client.Response;
 
 import static java.util.Objects.requireNonNull;
 
@@ -70,13 +71,13 @@ public class RpcClient extends ch.squaredesk.nova.comm.rpc.RpcClient<String, Req
         ListenableFuture<Response> resultFuture = requestBuilder.execute();
 
         Single<RpcReply<U>> resultSingle = Single.fromFuture(resultFuture).map(response -> {
-            int statusCode = response.getStatusCode();
             ReplyMessageMetaData metaData = new ReplyMessageMetaData(
                     requestMessageMetaData.destination,
-                    new ReplyInfo(statusCode));
+                    new ReplyInfo(response.getStatusCode()));
             String responseBody = response.getResponseBody();
+            U replyObject = responseBody == null || responseBody.trim().isEmpty() ? null : replyTranscriber.apply(responseBody);
             metricsCollector.rpcCompleted(requestMessageMetaData.destination, responseBody);
-            return new RpcReply<>(replyTranscriber.apply(responseBody), metaData);
+            return new RpcReply<>(replyObject, metaData);
         });
 
         return resultSingle.timeout(timeout, timeUnit);
