@@ -14,9 +14,14 @@ import ch.squaredesk.nova.metrics.Metrics;
 import ch.squaredesk.nova.metrics.MetricsDump;
 import ch.squaredesk.nova.metrics.SerializableMetricsDump;
 import ch.squaredesk.nova.tuples.Pair;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.dropwizard.metrics5.MetricName;
 import io.reactivex.observers.TestObserver;
+
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import org.elasticsearch.action.DocWriteRequest;
 import org.elasticsearch.action.bulk.BulkRequest;
 import org.elasticsearch.action.index.IndexRequest;
@@ -26,10 +31,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
@@ -37,11 +39,13 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ElasticMetricsReporterTest {
+    private Map<String, Object> additionalMetricsAttributes = new HashMap<>();
     private ElasticMetricsReporter sut;
 
     @BeforeEach
     void setup() {
-        sut = new ElasticMetricsReporter("127.0.0.1",9300,"index");
+        additionalMetricsAttributes.put("additionalKey", "additionalValue");
+        sut = new ElasticMetricsReporter("127.0.0.1",9300,"index", additionalMetricsAttributes);
     }
 
     @Test
@@ -84,8 +88,9 @@ class ElasticMetricsReporterTest {
             Map<String,Object> sourceAsMap = getMapFrom(ir.source());
             assertNotNull(sourceAsMap.get("host"));
             assertNotNull(sourceAsMap.get("hostAddress"));
-            assertNotNull(sourceAsMap.get("@timestamp"));
+            assertThat(sourceAsMap.get("@timestamp"), is(dump.timestamp));
             assertThat(sourceAsMap.get("name"),Matchers.oneOf("test.counter1","test.meter1","test.myMetric1"));
+            assertThat(sourceAsMap.get("additionalKey"), is("additionalValue"));
         }
     }
 
@@ -111,8 +116,9 @@ class ElasticMetricsReporterTest {
             Map<String,Object> sourceAsMap = getMapFrom(ir.source());
             assertNotNull(sourceAsMap.get("host"));
             assertNotNull(sourceAsMap.get("hostAddress"));
-            assertNotNull(sourceAsMap.get("@timestamp"));
+            assertThat(sourceAsMap.get("@timestamp"), is(dump.timestamp));
             assertThat(sourceAsMap.get("name"),Matchers.oneOf("test.counter1","test.meter1","test.myMetric1"));
+            assertThat(sourceAsMap.get("additionalKey"), is("additionalValue"));
         }
     }
 

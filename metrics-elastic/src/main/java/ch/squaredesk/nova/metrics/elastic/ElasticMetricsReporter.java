@@ -31,10 +31,7 @@ import java.io.IOException;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 
 public class ElasticMetricsReporter implements Consumer<MetricsDump> {
     private static final Logger logger = LoggerFactory.getLogger(ElasticMetricsReporter.class);
@@ -49,14 +46,14 @@ public class ElasticMetricsReporter implements Consumer<MetricsDump> {
     private RestHighLevelClient client;
 
     public ElasticMetricsReporter(String elasticServer, int elasticPort, String indexName) {
-        this(elasticServer, elasticPort, indexName, Collections.EMPTY_MAP);
+        this(elasticServer, elasticPort, indexName, Collections.emptyMap());
     }
 
     public ElasticMetricsReporter(String elasticServer, int elasticPort, String indexName, Map<String, Object> additionalMetricAttributes) {
         this.elasticServer = elasticServer;
         this.elasticPort = elasticPort;
         this.indexName = indexName;
-        this.additionalMetricAttributes = additionalMetricAttributes;
+        this.additionalMetricAttributes = additionalMetricAttributes == null ? Collections.emptyMap() : additionalMetricAttributes;
         defaultExceptionHandler = exception -> logger.error("Unable to upload metrics to index " + indexName, exception);
     }
 
@@ -126,9 +123,29 @@ public class ElasticMetricsReporter implements Consumer<MetricsDump> {
         );
     }
 
+    private long timestampInUtc(long timestampInMillis) {
+        return Instant.ofEpochMilli(timestampInMillis).atZone(zoneForTimestamps).toInstant().toEpochMilli();
+    }
+
+    private Single<BulkRequest> requestFor (Observable<Map<String, Object>> metricsAsMaps) {
+        return metricsAsMaps
+                .map(map -> new IndexRequest()
+                                .index(indexName)
+                                .type("doc")
+                                .source(map)
+                )
+                .reduce(Requests.bulkRequest(),
+                        (bulkRequestBuilder, indexRequest) -> {
+                            bulkRequestBuilder.add(indexRequest);
+                            return bulkRequestBuilder;
+                        })
+                ;
+
+    }
+
     Single<BulkRequest> requestFor(Map<String, Object> metricsDump) {
         Long timestamp = (Long) metricsDump.remove("timestamp");
-        LocalDateTime timestampInUtc = timestamp == null ? null : timestampInUtc(timestamp);
+        long timestampInUtc = timestamp == null ? timestampInUtc(System.currentTimeMillis()) : timestampInUtc(timestamp);
         String hostName = (String) metricsDump.remove("hostName");
         String hostAddress = (String) metricsDump.remove("hostAddress");
         return Observable.fromIterable(metricsDump.entrySet())
@@ -157,32 +174,13 @@ public class ElasticMetricsReporter implements Consumer<MetricsDump> {
                         });
     }
 
-    private LocalDateTime timestampInUtc(long timestampInMillis) {
-        return Instant.ofEpochMilli(timestampInMillis).atZone(zoneForTimestamps).toLocalDateTime();
-    }
-
-    private Single<BulkRequest> requestFor (Observable<Map<String, Object>> metricsAsMaps) {
-        return metricsAsMaps
-                .map(map -> new IndexRequest()
-                                .index(indexName)
-                                .type("doc")
-                                .source(map)
-                )
-                .reduce(Requests.bulkRequest(),
-                        (bulkRequestBuilder, indexRequest) -> {
-                            bulkRequestBuilder.add(indexRequest);
-                            return bulkRequestBuilder;
-                        })
-                ;
-
-    }
-
     Single<BulkRequest> requestFor(MetricsDump metricsDump) {
         Map<String, Object> additionalAttributes = new HashMap<>();
-        LocalDateTime timestampInUtc = timestampInUtc(metricsDump.timestamp);
+        long timestampInUtc = timestampInUtc(metricsDump.timestamp);
         additionalAttributes.put("@timestamp", timestampInUtc);
         additionalAttributes.put("host", metricsDump.hostName);
         additionalAttributes.put("hostAddress", metricsDump.hostAddress);
+        additionalAttributes.putAll(additionalMetricAttributes);
 
         Map<String, Map<String, Object>> convertedDump = MetricsConverter.convert(metricsDump.metrics, additionalAttributes);
         Observable<Map<String, Object>> enrichedMetrics = Observable.fromIterable(convertedDump.entrySet())
@@ -196,10 +194,11 @@ public class ElasticMetricsReporter implements Consumer<MetricsDump> {
 
     Single<BulkRequest> requestFor(SerializableMetricsDump metricsDump) {
         Map<String, Object> additionalAttributes = new HashMap<>();
-        LocalDateTime timestampInUtc = timestampInUtc(metricsDump.timestamp);
+        long timestampInUtc = timestampInUtc(metricsDump.timestamp);
         additionalAttributes.put("@timestamp", timestampInUtc);
         additionalAttributes.put("host", metricsDump.hostName);
         additionalAttributes.put("hostAddress", metricsDump.hostAddress);
+        additionalAttributes.putAll(additionalMetricAttributes);
 
         Observable<Map<String, Object>> enrichedMetrics = Observable.fromIterable(metricsDump.metrics.entrySet())
                 .map(entry -> {
