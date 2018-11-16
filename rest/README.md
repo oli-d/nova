@@ -137,10 +137,10 @@ not able to control threading or apply a specific backpressure strategy.
 
 For that reason, it might be desirable to mix the convenience of the rest package with
 the control of the [http](../http/README-md) communication package. Since both make use of the same 
-```HttpServer```, this is totally possible. However, there's one gotcha you need to be aware of:
+```SimpleHttpServer```, this is totally possible. However, there's one gotcha you need to be aware of:
 
 To be able to register your annotated REST handlers, all affected Spring beans must be instantiated
-__BEFORE__ the ```HttpServer``` instance is created. The underlying [grizzly](https://javaee.github.io/grizzly/) 
+__BEFORE__ the ```SimpleHttpServer``` instance is created. The underlying [grizzly](https://javaee.github.io/grizzly/)
 library we use does not allow the addition of new REST handlers after the server instance was created. This is in 
 contrast to "normal" HTTP handlers (used in the [http](../http/README-md) communication package), 
 that are allowed to be added at any time.
@@ -148,7 +148,7 @@ that are allowed to be added at any time.
 The result of this is that we have to take care of how, resp. when the ```HTTPServer``` is instantiated.
 We try to do this in ```RestEnablingConfiguration```, but the spring gods do unfortunately not give us full
 control over the process. Therefore:
-- make sure that you do not create your own ```HttpServer``` bean anywhere else
+- make sure that you do not create your own ```SimpleHttpServer``` bean anywhere else
 - and be warned that there might (luckily very very rare) occasions, where spring will complain during application 
 context creations. Unfortunately in those rare situations, you cannot use the convenience classes and have
 to construct all beans manually :(

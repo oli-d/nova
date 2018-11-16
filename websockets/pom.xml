@@ -13,7 +13,7 @@
 	<modelVersion>4.0.0</modelVersion>
 
 	<artifactId>websockets</artifactId>
-	<version>7.0.0</version>
+	<version>7.0.1</version>
 
 	<parent>
 		<groupId>ch.squaredesk.nova</groupId>
@@ -26,7 +26,7 @@
 		<dependency>
 			<groupId>ch.squaredesk.nova</groupId>
 			<artifactId>http</artifactId>
-			<version>7.0.0</version>
+			<version>7.0.1</version>
 		</dependency>
 		<dependency>
 			<groupId>org.glassfish.grizzly</groupId>

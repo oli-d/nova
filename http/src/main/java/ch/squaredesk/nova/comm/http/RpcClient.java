@@ -11,15 +11,17 @@
 package ch.squaredesk.nova.comm.http;
 
 import ch.squaredesk.nova.metrics.Metrics;
+import com.ning.http.client.AsyncHttpClient;
+import com.ning.http.client.FluentCaseInsensitiveStringsMap;
+import com.ning.http.client.ListenableFuture;
+import com.ning.http.client.Response;
 import io.reactivex.Single;
 import io.reactivex.functions.Function;
 
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
-
-import com.ning.http.client.AsyncHttpClient;
-import com.ning.http.client.ListenableFuture;
-import com.ning.http.client.Response;
 
 import static java.util.Objects.requireNonNull;
 
@@ -71,9 +73,7 @@ public class RpcClient extends ch.squaredesk.nova.comm.rpc.RpcClient<String, Req
         ListenableFuture<Response> resultFuture = requestBuilder.execute();
 
         Single<RpcReply<U>> resultSingle = Single.fromFuture(resultFuture).map(response -> {
-            ReplyMessageMetaData metaData = new ReplyMessageMetaData(
-                    requestMessageMetaData.destination,
-                    new ReplyInfo(response.getStatusCode()));
+            ReplyMessageMetaData metaData = createMetaDataFromReply(requestMessageMetaData, response);
             String responseBody = response.getResponseBody();
             U replyObject = responseBody == null || responseBody.trim().isEmpty() ? null : replyTranscriber.apply(responseBody);
             metricsCollector.rpcCompleted(requestMessageMetaData.destination, responseBody);
@@ -81,6 +81,23 @@ public class RpcClient extends ch.squaredesk.nova.comm.rpc.RpcClient<String, Req
         });
 
         return resultSingle.timeout(timeout, timeUnit);
+    }
+
+    private static ReplyMessageMetaData createMetaDataFromReply(RequestMessageMetaData requestMessageMetaData, Response response) {
+        Map<String, String> headersToReturn;
+        FluentCaseInsensitiveStringsMap responseHeaders = response.getHeaders();
+        if (responseHeaders.isEmpty()) {
+            headersToReturn = Collections.emptyMap();
+        } else {
+            Map<String, String> headerMap = new HashMap<>(responseHeaders.size() + 1, 1.0f);
+            responseHeaders.forEach((key, valueList) -> {
+                headerMap.put(key, String.join(",", valueList));
+            });
+            headersToReturn = headerMap;
+        }
+        return new ReplyMessageMetaData(
+                        requestMessageMetaData.destination,
+                        new ReplyInfo(response.getStatusCode(), headersToReturn));
     }
 
     void shutdown() {
