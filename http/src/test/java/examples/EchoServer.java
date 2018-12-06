@@ -3,12 +3,11 @@ package examples;
 import ch.squaredesk.nova.comm.http.HttpAdapter;
 import ch.squaredesk.nova.metrics.Metrics;
 import io.reactivex.schedulers.Schedulers;
+import org.glassfish.grizzly.http.server.HttpServer;
 
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.concurrent.CountDownLatch;
-
-import org.glassfish.grizzly.http.server.HttpServer;
 
 public class EchoServer {
     public static void main(String[] args) throws Exception {
