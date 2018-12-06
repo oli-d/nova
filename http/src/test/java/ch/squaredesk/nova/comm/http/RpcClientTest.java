@@ -139,8 +139,8 @@ class RpcClientTest {
             observer.assertNotComplete();
             observer.assertValueCount(0);
 
-            // sleep 4 more seconds and validate that we ran into a timeout in the meantime
-            Thread.sleep(5000);
+            // sleep 3 more seconds and validate that we ran into a timeout in the meantime
+            Thread.sleep(3000);
             observer.assertValueCount(0);
             observer.assertError(error -> error instanceof TimeoutException);
         } finally {

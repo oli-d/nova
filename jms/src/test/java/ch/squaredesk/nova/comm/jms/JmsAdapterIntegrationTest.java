@@ -100,7 +100,7 @@ class JmsAdapterIntegrationTest {
         replyObserver.assertValueCount(1);
         assertThat(replyObserver.values().get(0).result, is("aReply2"));
 
-        messageSubscriber.awaitCount(2, BaseTestConsumer.TestWaitStrategy.SLEEP_1000MS, 5000);
+        messageSubscriber.awaitCount(2, BaseTestConsumer.TestWaitStrategy.SLEEP_100MS, 5000);
         messageSubscriber.assertValueCount(2);
         assertThat(messageSubscriber.values(), contains("aReply1", "aReply3"));
     }
