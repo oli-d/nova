@@ -20,13 +20,18 @@ import java.net.URL;
 import java.security.KeyStore;
 import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.IntStream;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.awaitility.Awaitility.await;
 import static org.hamcrest.Matchers.is;
 
 @Tag("medium")
-class SslTest {
+class RpcServerSslTest {
     private HttpServerConfiguration rsc = HttpServerConfiguration.builder()
             .interfaceName("127.0.0.1")
             .port(10000)
@@ -36,7 +41,6 @@ class SslTest {
     private HttpServer httpServer = HttpServerFactory.serverFor(rsc);
     private RpcServer sut;
     private RpcClient rpcClient;
-    private MessageTranscriber<String> messageTranscriber;
 
     @BeforeEach
     void setup() throws Exception {
@@ -90,12 +94,7 @@ class SslTest {
             SSLContext sc = SSLContext.getInstance("SSL");
             sc.init(null, trustAllCerts, new SecureRandom());
             HttpsURLConnection.setDefaultSSLSocketFactory(sc.getSocketFactory());
-            HttpsURLConnection.setDefaultHostnameVerifier(new HostnameVerifier() {
-                @Override
-                public boolean verify(String arg0, SSLSession arg1) {
-                    return true;
-                }
-            });
+            HttpsURLConnection.setDefaultHostnameVerifier((arg0, arg1) -> true);
         } catch (Exception e) {
         }
     }
@@ -108,14 +107,15 @@ class SslTest {
         String path = "/bla";
         TestSubscriber<String> subscriber = sut.requests(path, String.class)
                 .subscribeOn(Schedulers.io())
-                .map(rpcInvocation -> rpcInvocation.request.metaData.details.headers.get("p")
-                ).test();
+                .map(rpcInvocation -> rpcInvocation.request.metaData.details.headers.get("p"))
+                .test();
 
         Observable.range(0, numRequests)
             .subscribe(i -> sendRestRequestInNewThread(path, i));
 
         await().atMost(20, SECONDS).until(subscriber::valueCount, is(numRequests));
     }
+
 
     private void sendRestRequestInNewThread(String path, int i) {
         new Thread(() -> {
@@ -126,11 +126,12 @@ class SslTest {
                         new URL(urlAsString),
                         new RequestInfo(HttpRequestMethod.POST));
 
-                rpcClient.sendRequest("{}", meta, s->s, s->s, 15, SECONDS);
+                rpcClient.sendRequest("{}", meta, s->s, s->s, 15, SECONDS).subscribe();
             } catch (Exception e) {
                 e.printStackTrace();
             }
         }).start();
     }
+
 
 }

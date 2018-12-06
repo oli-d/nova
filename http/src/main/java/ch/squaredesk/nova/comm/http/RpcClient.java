@@ -17,6 +17,7 @@ import com.ning.http.client.ListenableFuture;
 import com.ning.http.client.Response;
 import io.reactivex.Single;
 import io.reactivex.functions.Function;
+import io.reactivex.schedulers.Schedulers;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -70,17 +71,18 @@ public class RpcClient extends ch.squaredesk.nova.comm.rpc.RpcClient<String, Req
             requestBuilder.addHeader("Content-Type", "application/json; charset=utf-8");
         }
 
-        ListenableFuture<Response> resultFuture = requestBuilder.execute();
+        requestBuilder.setRequestTimeout((int)timeUnit.toMillis(timeout));
 
-        Single<RpcReply<U>> resultSingle = Single.fromFuture(resultFuture).map(response -> {
-            ReplyMessageMetaData metaData = createMetaDataFromReply(requestMessageMetaData, response);
-            String responseBody = response.getResponseBody();
-            U replyObject = responseBody == null || responseBody.trim().isEmpty() ? null : replyTranscriber.apply(responseBody);
-            metricsCollector.rpcCompleted(requestMessageMetaData.destination, responseBody);
-            return new RpcReply<>(replyObject, metaData);
-        });
-
-        return resultSingle.timeout(timeout, timeUnit);
+        return Single.fromCallable(() -> requestBuilder.execute().get())
+                        .subscribeOn(Schedulers.io())
+                        .map(response -> {
+                            ReplyMessageMetaData metaData = createMetaDataFromReply(requestMessageMetaData, response);
+                            String responseBody = response.getResponseBody();
+                            U replyObject = responseBody == null || responseBody.trim().isEmpty() ? null : replyTranscriber.apply(responseBody);
+                            metricsCollector.rpcCompleted(requestMessageMetaData.destination, responseBody);
+                            return new RpcReply<>(replyObject, metaData);
+                        })
+                        .timeout(timeout, timeUnit);
     }
 
     private static ReplyMessageMetaData createMetaDataFromReply(RequestMessageMetaData requestMessageMetaData, Response response) {

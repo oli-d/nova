@@ -107,7 +107,7 @@ class HttpAdapterTest {
                 });
         String url = "http://localhost:" + serverPortPair._2 + path;
 
-        sut.sendGetRequest(url, headers, String.class);
+        sut.sendGetRequest(url, headers, String.class).subscribe();
 
         await().atMost(10, SECONDS).until(() -> headersContainer[0], not(nullValue()));
         MatcherAssert.assertThat(headersContainer[0].getFirst("h1"), is("v1"));

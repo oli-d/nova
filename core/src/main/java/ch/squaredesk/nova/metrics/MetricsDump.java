@@ -14,6 +14,7 @@ import io.dropwizard.metrics5.Metric;
 import io.dropwizard.metrics5.MetricName;
 
 import java.net.InetAddress;
+import java.util.Collections;
 import java.util.Map;
 
 public class MetricsDump {
