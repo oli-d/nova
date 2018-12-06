@@ -107,7 +107,7 @@ class RpcClientTest {
             });
 
             return new Pair<> (ports[0], servers[0]);
-        }).subscribeOn(Schedulers.newThread());
+        });
 
     }
 
@@ -115,13 +115,17 @@ class RpcClientTest {
     void timeoutIsProperlyAppliedWhenDoingRpc() throws Exception {
         Pair<Integer, SimpleHttpServer> portServerPair = createHttpServer(httpExchange -> {
             // we just will never come back to force the timeout
-        }).blockingGet();
+        })
+                .subscribeOn(Schedulers.newThread())
+                .blockingGet();
 
         try {
             RequestInfo ri = new RequestInfo(HttpRequestMethod.GET);
             RequestMessageMetaData meta = new RequestMessageMetaData(new URL("http://localhost:"+portServerPair._1+"/"), ri);
 
-            Single<RpcReply<String>> replySingle = sut.sendRequest("", meta, s -> s, s -> s, 5, SECONDS);
+            Single<RpcReply<String>> replySingle = sut.sendRequest("", meta, s -> s, s -> s, 5, SECONDS)
+                    .subscribeOn(Schedulers.io())
+                    ;
 
             TestObserver<RpcReply<String>> observer = replySingle.test();
 

@@ -73,7 +73,6 @@ public class RpcClient extends ch.squaredesk.nova.comm.rpc.RpcClient<String, Req
         requestBuilder.setRequestTimeout((int)timeUnit.toMillis(timeout));
 
         return Single.fromCallable(() -> requestBuilder.execute().get())
-                        .subscribeOn(Schedulers.io())
                         .map(response -> {
                             ReplyMessageMetaData metaData = createMetaDataFromReply(requestMessageMetaData, response);
                             String responseBody = response.getResponseBody();
