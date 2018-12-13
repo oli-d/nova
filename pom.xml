@@ -110,12 +110,12 @@
             <dependency>
                 <groupId>ch.squaredesk.nova</groupId>
                 <artifactId>http-spring</artifactId>
-                <version>7.0.1</version>
+                <version>7.0.2</version>
             </dependency>
             <dependency>
                 <groupId>ch.squaredesk.nova</groupId>
                 <artifactId>rest</artifactId>
-                <version>7.0.1</version>
+                <version>7.0.2</version>
             </dependency>
             <dependency>
                 <groupId>ch.squaredesk.nova</groupId>
@@ -125,12 +125,12 @@
             <dependency>
                 <groupId>ch.squaredesk.nova</groupId>
                 <artifactId>websockets</artifactId>
-                <version>7.0.1</version>
+                <version>7.0.2</version>
             </dependency>
             <dependency>
                 <groupId>ch.squaredesk.nova</groupId>
                 <artifactId>websockets-annotations</artifactId>
-                <version>7.0.1</version>
+                <version>7.0.2</version>
             </dependency>
             <dependency>
                 <groupId>ch.squaredesk.nova</groupId>
