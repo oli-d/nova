@@ -16,7 +16,7 @@
 
     <groupId>ch.squaredesk.nova</groupId>
     <artifactId>bom</artifactId>
-    <version>7.0.1</version>
+    <version>7.0.2</version>
     <packaging>pom</packaging>
 
     <name>Nova BOM</name>
@@ -78,13 +78,13 @@
             <dependency>
                 <groupId>ch.squaredesk.nova</groupId>
                 <artifactId>event-annotations</artifactId>
-                <version>7.0.0</version>
+                <version>7.0.1</version>
             </dependency>
 
             <dependency>
                 <groupId>ch.squaredesk.nova</groupId>
                 <artifactId>service</artifactId>
-                <version>7.0.1</version>
+                <version>7.0.2</version>
             </dependency>
 
             <dependency>
@@ -95,7 +95,7 @@
             <dependency>
                 <groupId>ch.squaredesk.nova</groupId>
                 <artifactId>jms</artifactId>
-                <version>7.0.0</version>
+                <version>7.0.1</version>
             </dependency>
             <dependency>
                 <groupId>ch.squaredesk.nova</groupId>
@@ -146,7 +146,7 @@
             <dependency>
                 <groupId>ch.squaredesk.nova</groupId>
                 <artifactId>metrics-elastic</artifactId>
-                <version>7.0.0</version>
+                <version>7.0.1</version>
             </dependency>
             <dependency>
                 <groupId>ch.squaredesk.nova</groupId>

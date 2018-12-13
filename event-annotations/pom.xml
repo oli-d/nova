@@ -22,7 +22,7 @@
     </parent>
 
     <artifactId>event-annotations</artifactId>
-    <version>7.0.0</version>
+    <version>7.0.1</version>
 
     <dependencies>
         <dependency>
