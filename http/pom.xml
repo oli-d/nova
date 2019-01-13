@@ -15,18 +15,18 @@
 	<parent>
 		<groupId>ch.squaredesk.nova</groupId>
 		<artifactId>parentpom</artifactId>
-		<version>7.0.0</version>
+		<version>7.0.1</version>
 		<relativePath>../parentpom</relativePath>
 	</parent>
 
 	<artifactId>http</artifactId>
-    <version>7.0.2</version>
+    <version>7.0.3</version>
 
     <dependencies>
 	<dependency>
 	    <groupId>ch.squaredesk.nova</groupId>
 	    <artifactId>comm</artifactId>
-            <version>7.0.0</version>
+            <version>7.0.1</version>
         </dependency>
 
         <dependency>
@@ -47,13 +47,13 @@
         <dependency>
             <groupId>ch.squaredesk.nova</groupId>
             <artifactId>http-test-utils</artifactId>
-            <version>7.0.0</version>
+            <version>7.0.1</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>ch.squaredesk.nova</groupId>
             <artifactId>test-utils</artifactId>
-            <version>7.0.0</version>
+            <version>7.0.1</version>
             <scope>test</scope>
         </dependency>
     </dependencies>

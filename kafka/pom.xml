@@ -15,18 +15,18 @@
 	<parent>
 		<groupId>ch.squaredesk.nova</groupId>
 		<artifactId>parentpom</artifactId>
-		<version>7.0.0</version>
+		<version>7.0.1</version>
 		<relativePath>../parentpom</relativePath>
 	</parent>
 
 	<artifactId>kafka</artifactId>
-	<version>7.0.0</version>
+	<version>7.0.1</version>
 
 	<dependencies>
 		<dependency>
 			<groupId>ch.squaredesk.nova</groupId>
 			<artifactId>comm</artifactId>
-			<version>7.0.0</version>
+			<version>7.0.1</version>
 		</dependency>
 
 		<dependency>
