@@ -7,34 +7,42 @@
   ~ obtain a copy of the license at
   ~
   ~   https://squaredesk.ch/license/oss/LICENSE
+  ~
   -->
 
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <parent>
+        <artifactId>parentpom</artifactId>
+        <groupId>ch.squaredesk.nova</groupId>
+        <version>8.0.0</version>
+        <relativePath>../../parentpom</relativePath>
+    </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <parent>
-        <groupId>ch.squaredesk.nova</groupId>
-        <artifactId>parentpom</artifactId>
-        <version>8.0.0</version>
-        <relativePath>../parentpom</relativePath>
-    </parent>
-
-    <artifactId>service</artifactId>
+    <artifactId>rest-test-utils</artifactId>
     <version>8.0.0</version>
 
     <dependencies>
         <dependency>
             <groupId>ch.squaredesk.nova</groupId>
-            <artifactId>core</artifactId>
+            <artifactId>http-test-utils</artifactId>
             <version>8.0.0</version>
         </dependency>
+
         <dependency>
-            <groupId>ch.squaredesk.nova</groupId>
-            <artifactId>rest</artifactId>
-            <version>8.0.0</version>
-            <scope>test</scope>
+            <groupId>org.glassfish.jersey.containers</groupId>
+            <artifactId>jersey-container-grizzly2-http</artifactId>
+            <version>${jersey.version}</version>
+            <exclusions>
+                <!--Exclude grizzly, since we already get that from the http dependency-->
+                <exclusion>
+                    <groupId>org.glassfish.grizzly</groupId>
+                    <artifactId>grizzly-http-server</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
     </dependencies>
+
 </project>

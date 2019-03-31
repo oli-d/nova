@@ -12,7 +12,7 @@ What you get is
 * a simple service lifecycle
 * a ```Nova``` instance, which provides out-of-the-box service metrics and reactive access
 to the event bus and file system
-* annotation based event handling and
+* ch.squaredesk.nova.events.ch.squaredesk.nova.events.annotation based event handling and
 * easy configuration management
 
 ### The Service identifier

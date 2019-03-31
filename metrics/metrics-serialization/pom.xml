@@ -13,29 +13,24 @@
 	<modelVersion>4.0.0</modelVersion>
 
 	<parent>
-        <groupId>ch.squaredesk.nova</groupId>
-        <artifactId>parentpom</artifactId>
-		<relativePath>../parentpom</relativePath>
+		<groupId>ch.squaredesk.nova</groupId>
+		<artifactId>parentpom</artifactId>
 		<version>8.0.0</version>
+		<relativePath>../../parentpom</relativePath>
 	</parent>
 
-	<artifactId>core</artifactId>
+	<artifactId>metrics-serialization</artifactId>
 	<version>8.0.0</version>
-
 	<dependencies>
 		<dependency>
-			<groupId>io.dropwizard.metrics5</groupId>
-			<artifactId>metrics-core</artifactId>
+			<groupId>ch.squaredesk.nova</groupId>
+			<artifactId>core</artifactId>
+			<version>8.0.0</version>
 		</dependency>
 		<dependency>
-			<groupId>io.reactivex.rxjava2</groupId>
-			<artifactId>rxjava</artifactId>
-			<version>2.1.14</version>
-		</dependency>
-		<dependency>
-			<groupId>org.springframework</groupId>
-			<artifactId>spring-context</artifactId>
-			<version>5.1.4.RELEASE</version>
+			<groupId>com.fasterxml.jackson.core</groupId>
+			<artifactId>jackson-databind</artifactId>
+			<version>2.9.8</version>
 		</dependency>
 	</dependencies>
 </project>

@@ -8,7 +8,6 @@
   ~
   ~   https://squaredesk.ch/license/oss/LICENSE
   -->
-
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
@@ -18,23 +17,23 @@
         <groupId>ch.squaredesk.nova</groupId>
         <artifactId>parentpom</artifactId>
         <version>8.0.0</version>
-        <relativePath>../parentpom</relativePath>
+        <relativePath>../../parentpom</relativePath>
     </parent>
 
-    <artifactId>service</artifactId>
+    <artifactId>http-test-utils</artifactId>
     <version>8.0.0</version>
 
     <dependencies>
         <dependency>
             <groupId>ch.squaredesk.nova</groupId>
-            <artifactId>core</artifactId>
-            <version>8.0.0</version>
-        </dependency>
-        <dependency>
-            <groupId>ch.squaredesk.nova</groupId>
-            <artifactId>rest</artifactId>
+            <artifactId>test-utils</artifactId>
             <version>8.0.0</version>
             <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-api</artifactId>
+            <version>${junit.jupiter.version}</version>
         </dependency>
     </dependencies>
 </project>
