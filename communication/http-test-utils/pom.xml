@@ -28,12 +28,6 @@
             <groupId>ch.squaredesk.nova</groupId>
             <artifactId>test-utils</artifactId>
             <version>8.0.0</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter-api</artifactId>
-            <version>${junit.jupiter.version}</version>
         </dependency>
     </dependencies>
 </project>

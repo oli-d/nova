@@ -1,0 +1,11 @@
+/Volumes/VideoExt/dev/nova/communication/http/src/test/java/ch/squaredesk/nova/comm/http/RpcServerSslTest.java
+/Volumes/VideoExt/dev/nova/communication/http/src/test/java/ch/squaredesk/nova/comm/http/RpcServerTest.java
+/Volumes/VideoExt/dev/nova/communication/http/src/test/java/ch/squaredesk/nova/comm/http/HttpServerFactoryTest.java
+/Volumes/VideoExt/dev/nova/communication/http/src/test/java/ch/squaredesk/nova/comm/http/spring/HttpServerProvidingConfigurationTest.java
+/Volumes/VideoExt/dev/nova/communication/http/src/test/java/ch/squaredesk/nova/comm/http/HttpAdapterTest.java
+/Volumes/VideoExt/dev/nova/communication/http/src/test/java/ch/squaredesk/nova/comm/http/RequestSender.java
+/Volumes/VideoExt/dev/nova/communication/http/src/test/java/ch/squaredesk/nova/comm/http/RpcClientTest.java
+/Volumes/VideoExt/dev/nova/communication/http/src/test/java/ch/squaredesk/nova/comm/http/FrozenHttpAdapterTest.java
+/Volumes/VideoExt/dev/nova/communication/http/src/test/java/ch/squaredesk/nova/comm/http/spring/HttpEnablingConfigurationTest.java
+/Volumes/VideoExt/dev/nova/communication/http/src/test/java/ch/squaredesk/nova/comm/http/spring/HttpServerConfigurationProvidingConfigurationTest.java
+/Volumes/VideoExt/dev/nova/communication/http/src/test/java/examples/EchoServer.java

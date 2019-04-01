@@ -21,7 +21,7 @@ public class HttpEnablingConfiguration {
     @Autowired
     private HttpServer httpServer;
 
-    @Bean
+    @Bean("httpAdapter")
     HttpAdapter httpAdapter() {
         return HttpAdapter.builder()
                 .setDefaultRequestTimeout(defaultHttpRequestTimeoutInSeconds(), TimeUnit.SECONDS)
@@ -31,17 +31,17 @@ public class HttpEnablingConfiguration {
                 .build();
     }
 
-    @Bean
+    @Bean("defaultHttpRequestTimeoutInSeconds")
     public int defaultHttpRequestTimeoutInSeconds() {
         return environment.getProperty("NOVA.HTTP.DEFAULT_REQUEST_TIMEOUT_IN_SECONDS", Integer.class, 30);
     }
 
-    @Bean
+    @Bean("defaultHttpAdapterIdentifier")
     public String defaultHttpAdapterIdentifier() {
         return environment.getProperty("NOVA.HTTP.ADAPTER_IDENTIFIER");
     }
 
-    @Bean
+    @Bean("httpMessageTranscriber")
     public MessageTranscriber<String> httpMessageTranscriber() {
         return new DefaultMessageTranscriberForStringAsTransportType();
     }

@@ -1,0 +1,12 @@
+/Volumes/VideoExt/dev/nova/communication/comm/src/test/java/ch/squaredesk/nova/comm/MessageTranscriberTest.java
+/Volumes/VideoExt/dev/nova/communication/comm/src/test/java/ch/squaredesk/nova/comm/TestTransportInfo.java
+/Volumes/VideoExt/dev/nova/communication/comm/src/test/java/ch/squaredesk/nova/comm/DefaultMessageTranscriberForStringAsTransportTypeTest.java
+/Volumes/VideoExt/dev/nova/communication/comm/src/test/java/ch/squaredesk/nova/comm/rpc/RpcClientMetricsCollectorTest.java
+/Volumes/VideoExt/dev/nova/communication/comm/src/test/java/ch/squaredesk/nova/comm/rpc/RpcServerMetricsCollectorTest.java
+/Volumes/VideoExt/dev/nova/communication/comm/src/test/java/ch/squaredesk/nova/comm/rpc/RpcClientTest.java
+/Volumes/VideoExt/dev/nova/communication/comm/src/test/java/ch/squaredesk/nova/comm/BackpressuredStreamFromAsyncSourceTest.java
+/Volumes/VideoExt/dev/nova/communication/comm/src/test/java/ch/squaredesk/nova/comm/sending/MetricsCollectorTest.java
+/Volumes/VideoExt/dev/nova/communication/comm/src/test/java/ch/squaredesk/nova/comm/rpc/RpcServerTest.java
+/Volumes/VideoExt/dev/nova/communication/comm/src/test/java/ch/squaredesk/nova/comm/sending/MessageSenderTest.java
+/Volumes/VideoExt/dev/nova/communication/comm/src/test/java/ch/squaredesk/nova/comm/retrieving/MetricsCollectorTest.java
+/Volumes/VideoExt/dev/nova/communication/comm/src/test/java/ch/squaredesk/nova/comm/ReflectionHelperTest.java
