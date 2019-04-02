@@ -5,6 +5,7 @@ import ch.squaredesk.nova.comm.MessageTranscriber;
 import ch.squaredesk.nova.comm.http.HttpAdapter;
 import org.glassfish.grizzly.http.server.HttpServer;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
@@ -19,6 +20,7 @@ public class HttpEnablingConfiguration {
     private Environment environment;
 
     @Autowired
+    @Qualifier("httpServer")
     private HttpServer httpServer;
 
     @Bean("httpAdapter")
