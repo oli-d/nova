@@ -26,7 +26,7 @@ import org.glassfish.jersey.server.monitoring.ApplicationEventListener;
 import org.glassfish.jersey.server.monitoring.RequestEvent;
 import org.glassfish.jersey.server.monitoring.RequestEventListener;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.ApplicationContext;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
@@ -45,14 +45,6 @@ import java.net.URI;
 public class RestEnablingConfiguration {
     @Autowired
     Environment environment;
-    @Autowired
-    ApplicationContext applicationContext;
-    @Autowired
-    Nova nova;
-    @Autowired
-    HttpServerConfiguration httpServerConfiguration;
-    @Autowired(required = false)
-    ObjectMapper restObjectMapper;
 
     @Bean
     public static RestBeanPostprocessor restBeanPostProcessor() {
@@ -83,8 +75,12 @@ public class RestEnablingConfiguration {
 
     @Lazy // must be created after all other beans have been created (because of ch.squaredesk.nova.events.ch.squaredesk.nova.events.annotation processing)
     @Bean("httpServer")
-    public HttpServer restHttpServer() {
-        RestBeanPostprocessor restBeanPostprocessor = applicationContext.getBean(RestBeanPostprocessor.class);
+    public HttpServer restHttpServer(RestBeanPostprocessor restBeanPostprocessor,
+                                     HttpServerConfiguration httpServerConfiguration,
+                                     @Qualifier("restObjectMapper")
+                                     @Autowired(required = false)
+                                     ObjectMapper restObjectMapper,
+                                     Nova nova) {
         ResourceConfig resourceConfig = new ResourceConfig()
             .register(MultiPartFeature.class)
             .register(JacksonFeature.class);
