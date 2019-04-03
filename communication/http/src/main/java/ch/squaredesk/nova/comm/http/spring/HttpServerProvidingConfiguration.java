@@ -14,6 +14,7 @@ import ch.squaredesk.nova.comm.http.HttpServerConfiguration;
 import ch.squaredesk.nova.comm.http.HttpServerFactory;
 import org.glassfish.grizzly.http.server.HttpServer;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
@@ -21,11 +22,8 @@ import org.springframework.context.annotation.Import;
 @Configuration
 @Import(HttpServerConfigurationProvidingConfiguration.class)
 public class HttpServerProvidingConfiguration {
-    @Autowired
-    HttpServerConfiguration httpServerConfiguration;
-
     @Bean("httpServer")
-    public HttpServer httpServer() {
+    public HttpServer httpServer(@Qualifier("httpServerConfiguration") HttpServerConfiguration httpServerConfiguration) {
         return HttpServerFactory.serverFor(httpServerConfiguration);
     }
 }

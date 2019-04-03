@@ -10,10 +10,9 @@
 
 package ch.squaredesk.nova.comm.http.spring;
 
-import ch.squaredesk.nova.Nova;
 import ch.squaredesk.nova.comm.http.HttpServerConfiguration;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.ApplicationContext;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
@@ -22,13 +21,9 @@ import org.springframework.core.env.Environment;
 public class HttpServerConfigurationProvidingConfiguration {
     @Autowired
     Environment environment;
-    @Autowired
-    ApplicationContext applicationContext;
-    @Autowired
-    Nova nova;
 
     @Bean("httpServerPort")
-    public Integer httpServerPort() {
+    public int httpServerPort() {
         return environment.getProperty("NOVA.HTTP.SERVER.PORT", Integer.class, 10000);
     }
 
@@ -58,7 +53,13 @@ public class HttpServerConfigurationProvidingConfiguration {
     }
 
     @Bean("httpServerConfiguration")
-    public HttpServerConfiguration httpServerConfiguration() {
+    public HttpServerConfiguration httpServerConfiguration(
+            @Qualifier("httpServerInterfaceName") String interfaceName,
+            @Qualifier("httpServerPort") int httpServerPort,
+            @Qualifier("httpServerTrustStore")String sslTrustStorePass,
+            @Qualifier("httpServerTrustStorePass") String sslTrustStorePath,
+            @Qualifier("httpServerKeyStore") String sslKeyStorePass,
+            @Qualifier("httpServerKeyStorePass") String sslKeyStorePath) {
         return HttpServerConfiguration.builder()
                 .interfaceName(interfaceName())
                 .port(httpServerPort())

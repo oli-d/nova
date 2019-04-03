@@ -1,5 +1,6 @@
 package ch.squaredesk.nova.comm.http.spring;
 
+import ch.squaredesk.nova.Nova;
 import ch.squaredesk.nova.comm.DefaultMessageTranscriberForStringAsTransportType;
 import ch.squaredesk.nova.comm.MessageTranscriber;
 import ch.squaredesk.nova.comm.http.HttpAdapter;
@@ -19,17 +20,18 @@ public class HttpEnablingConfiguration {
     @Autowired
     private Environment environment;
 
-    @Autowired
-    @Qualifier("httpServer")
-    private HttpServer httpServer;
-
     @Bean("httpAdapter")
-    HttpAdapter httpAdapter() {
+    HttpAdapter httpAdapter(@Qualifier("httpServer") HttpServer httpServer,
+                            @Qualifier("defaultHttpRequestTimeoutInSeconds") int defaultHttpRequestTimeoutInSeconds,
+                            @Qualifier("defaultHttpAdapterIdentifier") String defaultHttpAdapterIdentifier,
+                            @Qualifier("httpMessageTranscriber") MessageTranscriber<String> httpMessageTranscriber,
+                            Nova nova) {
         return HttpAdapter.builder()
-                .setDefaultRequestTimeout(defaultHttpRequestTimeoutInSeconds(), TimeUnit.SECONDS)
+                .setDefaultRequestTimeout(defaultHttpRequestTimeoutInSeconds, TimeUnit.SECONDS)
                 .setHttpServer(httpServer)
-                .setIdentifier(defaultHttpAdapterIdentifier())
-                .setMessageTranscriber(httpMessageTranscriber())
+                .setIdentifier(defaultHttpAdapterIdentifier)
+                .setMessageTranscriber(httpMessageTranscriber)
+                .setMetrics(nova.metrics)
                 .build();
     }
 

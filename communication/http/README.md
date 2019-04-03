@@ -1,4 +1,4 @@
-nova-http [![Build Status](https://travis-ci.org/oli-d/nova-http.svg?branch=master)](https://travis-ci.org/oli-d/nova-http)
+http
 =========
 
 RPC style communication over HTTP(S).
@@ -17,9 +17,9 @@ In both cases "normal, synchronous, RPC-style" HTTP communication patterns are i
 
 ### 2.1 Using Spring
 
-The easiest way to retrieve an ```HttpAdapter``` instance is using Spring. We provide
+The easiest way to retrieve an ```HttpAdapter``` instance is using Spring. For this, we provide
 the class ```HttpEnablingConfiguration```. Simply import this in your own Spring configuration
-and you can obtain a bean called "httpAdapter" from the ApplicationContext.
+and you can get a bean called "httpAdapter" from the ApplicationContext.
 
 When you do so, default configuration will be applied, which can be overridden via
 environment variables or by providing the appropriate beans yourself. The possible
@@ -49,7 +49,7 @@ The configuration options are
   | httpServerTrustStore               | NOVA.HTTP.SERVER.TRUST_STORE                 | the truststore to use to validate clients                | <null>        |
   | httpServerTrustStorePass           | NOVA.HTTP.SERVER.TRUST_STORE_PASS            | the password for the trust store                         | <null>        |
   | | | | |
-  | httpServerConfiguration            | n/a                                          | an ```HttpConfiguration``` instance, containing all aforementioned config values. Handy if you want to read the configuration or override multiple defaults programmatically. |  |
+  | httpServerConfiguration            | n/a                                          | an ```HttpServerConfiguration``` instance, containing all aforementioned config values. Handy if you want to read the configuration or override multiple defaults programmatically. |  |
    
 
     
@@ -74,13 +74,7 @@ multiple instances in your service.
 
 * ```messageTranscriber``` - The object that is used to transform your messages from or to the wire format 
 (```String```). If you do not provide your own transcriber, the
-system tries to instantiate a default one. Default transcribers can be created
-for ```String```, ```Integer```, ```Double``` and ```BigDecimal``` message types. For
-all other message types, the implementation checks, whether the ```ObjectMapper``` from
-the ```com.fasterxml.jackson``` library can be found on the classpath. If so,
-all messages will be transcribed to/from a JSON string using a new instance of the ```ObjectMapper```. If ```ObjectMapper```
-cannot be found, the system will only be able to automatically transcribe the above mentioned message types. For
-all others, you have to register your own transcribers.
+system tries to instantiate a default one. 
 
 * ```defaultRequestTmeout``` - Defines the maximum time to wait for a reply, before timing out. This is an optional 
 parameter, default is 30 seconds
