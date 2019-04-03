@@ -10,11 +10,12 @@
 
 package ch.squaredesk.nova.comm.jms;
 
-import java.rmi.server.UID;
+
+import java.util.UUID;
 
 public class UIDCorrelationIdGenerator implements java.util.function.Supplier<String> {
     @Override
     public String get() {
-        return String.valueOf(new UID());
+        return UUID.randomUUID().toString();
     }
 }

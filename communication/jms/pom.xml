@@ -26,7 +26,7 @@
 		<dependency>
 			<groupId>ch.squaredesk.nova</groupId>
 			<artifactId>comm</artifactId>
-			<version>7.0.1</version>
+			<version>8.0.0</version>
 		</dependency>
 		<dependency>
 			<groupId>org.apache.xbean</groupId>
@@ -49,6 +49,12 @@
 			<groupId>org.apache.activemq</groupId>
 			<artifactId>activemq-broker</artifactId>
 			<version>5.14.5</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>ch.squaredesk.nova</groupId>
+			<artifactId>test-utils</artifactId>
+			<version>8.0.0</version>
 			<scope>test</scope>
 		</dependency>
 	</dependencies>
