@@ -1,7 +1,0 @@
-ch/squaredesk/nova/comm/rest/RestBeanPostprocessor.class
-ch/squaredesk/nova/comm/rest/BeanExaminer.class
-ch/squaredesk/nova/comm/rest/HttpServerAutostartCondition.class
-ch/squaredesk/nova/comm/rest/RestEnablingConfiguration$SpecificRestObjectMapperProvider.class
-ch/squaredesk/nova/comm/rest/RestEnablingConfiguration$1.class
-ch/squaredesk/nova/comm/rest/RestEnablingConfiguration.class
-ch/squaredesk/nova/comm/rest/RestServerStarter.class

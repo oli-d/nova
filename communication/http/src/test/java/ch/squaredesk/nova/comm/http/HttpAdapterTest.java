@@ -15,6 +15,7 @@ import ch.squaredesk.net.PortFinder;
 import ch.squaredesk.nova.tuples.Pair;
 import com.sun.net.httpserver.Headers;
 import com.sun.net.httpserver.HttpExchange;
+import io.reactivex.functions.Function;
 import io.reactivex.observers.TestObserver;
 import org.glassfish.grizzly.http.server.HttpServer;
 import org.hamcrest.MatcherAssert;
@@ -84,12 +85,11 @@ class HttpAdapterTest {
         Pair<com.sun.net.httpserver.HttpServer, Integer> serverPortPair = httpServer(path, "xxx");
         String url = "http://localhost:" + serverPortPair._2 + path;
 
-        TestObserver<RpcReply<MyType1>> type1Observer = sut.sendGetRequest(url, MyType1::new).test();
-        await().atMost(10, SECONDS).until(type1Observer::isTerminated, is(true));
-        type1Observer.assertValue(reply -> new MyType1("xxx").equals(reply.result));
-
-        assertThrows(
-                IllegalArgumentException.class, () -> sut.sendGetRequest(url, MyType1.class));
+        Function<String, MyType1> replyTranscriber = string -> {
+            throw new RuntimeException("Oli");
+        };
+        TestObserver<RpcReply<MyType1>> type1Observer = sut.sendGetRequest(url, replyTranscriber).test();
+        type1Observer.assertError(throwable -> throwable instanceof RuntimeException && throwable.getMessage().equals("Oli"));
     }
 
     @Test
