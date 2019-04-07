@@ -5,7 +5,7 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
-public class HttpServerConfiguration {
+public class HttpServerSettings {
     public final String interfaceName;
     public final int port;
     public final String sslKeyStorePath;
@@ -17,7 +17,7 @@ public class HttpServerConfiguration {
     public final boolean compressData;
     public final Set<String> compressibleMimeTypes;
 
-    private HttpServerConfiguration(Builder builder) {
+    private HttpServerSettings(Builder builder) {
         this.interfaceName = builder.interfaceName;
         this.port = builder.port;
         this.sslKeyStorePath = builder.sslKeyStorePath;
@@ -34,7 +34,7 @@ public class HttpServerConfiguration {
 
     @Override
     public String toString() {
-        return "HttpServerConfiguration{" +
+        return "HttpServerSettings{" +
                 "interfaceName='" + interfaceName + '\'' +
                 ", port=" + port +
                 ", sslKeyStorePath='" + sslKeyStorePath + '\'' +
@@ -105,9 +105,9 @@ public class HttpServerConfiguration {
         private void validate() {
         }
 
-        public HttpServerConfiguration build() {
+        public HttpServerSettings build() {
             validate();
-            return new HttpServerConfiguration(this);
+            return new HttpServerSettings(this);
         }
 
     }

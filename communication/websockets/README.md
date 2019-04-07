@@ -1,7 +1,49 @@
-# websockets
+websockets
+=========
 
-This artifact bundles all classes that enable you to do WebSocket communication according
-to the Nova patterns.
+Reactive abstractions over WebSockets.
+
+## 1. What is this about?
+This package provides the ```WebSocketAdapter``` class which can be used to 
+send and retrieve messages via WebSockets.
+
+## 2. WebSocketAdapter instantiation
+
+The easiest way to retrieve a ```WebSocketAdapter``` instance is using Spring. For this, we provide
+the class ```WebSocketEnablingConfiguration```. Simply import this in your own Spring configuration
+and you can get a bean called "webSocketAdapter" from the ApplicationContext.
+
+When you do so, default configuration will be applied, which can be overridden via
+environment variables or by providing the appropriate beans yourself. The possible
+configuration values are
+
+
+  | @Bean name                         | Environnment variable name                   | Description                                              | Default value |
+  |------------------------------------|----------------------------------------------|----------------------------------------------------------|---------------|
+  | webSocketAdapterIdentifier         | NOVA.WEB_SOCKET.ADAPTER_IDENTIFIER           | the identifier to assign to the HttpAdapter.             | <null> |
+  | | | | |
+  | httpServer                         | n/a                                          | the ```HttpServer``` instance, handling the incoming communication. This is an optional bean. If not provided, the HttpAdapter can only be used in client mode.| <null> |
+  | webSocketMessageTranscriber        | n/a                                          | the transcriber to use for incoming / outgoing messages  | default transcriber, see below |
+
+As you can see from the table above, the WebSocketAdapter needs an ```HttpServer``` instance to listen to HTTP requests, which 
+you have to provide as a bean in your ApplicationContext. This can be done very easily 
+by importing the ```HttpServerProvidingConfiguration``` which will automatically provide the appropriate bean named "httpServer". 
+The configuration options are  
+   
+  | @Bean name                         | Environnment variable name                   | Description                                              | Default value |
+  |------------------------------------|----------------------------------------------|----------------------------------------------------------|---------------|
+  | httpServerPort                     | NOVA.HTTP.SERVER.PORT                        | the port, the HTTP server listens on                     | 10000         |
+  | httpServerInterfaceName            | NOVA.HTTP.SERVER.INTERFACE_NAME              | the interface, the HTTP server listens on                | "0.0.0.0"     |
+  | httpServerKeyStore                 | NOVA.HTTP.SERVER.KEY_STORE                   | the keystore to use. Switches on SSL                     | <null>        |
+  | httpServerKeyStorePass             | NOVA.HTTP.SERVER.KEY_STORE_PASS              | the password for the keystore                            | <null>        |
+  | httpServerTrustStore               | NOVA.HTTP.SERVER.TRUST_STORE                 | the truststore to use to validate clients                | <null>        |
+  | httpServerTrustStorePass           | NOVA.HTTP.SERVER.TRUST_STORE_PASS            | the password for the trust store                         | <null>        |
+  | | | | |
+  | httpServerSettings                 | n/a                                          | an ```HttpServerSettings``` instance, containing all aforementioned config values. Handy if you want to read the configuration or override multiple defaults programmatically. |  |
+   
+Of course you can also instantiate a new ```WebSocketAdapter``` instance programmatically using its builder. 
+
+# 3. Usage
 
 The main class you will be using is ```WebSocketAdapter```. As with all adapters in the
 nova communication landscape, this adapter provides the client and server part of the 
@@ -9,29 +51,6 @@ communication.  The terms "Client" and "Server" do not really fit very well to a
 bi-directional communication channel. What we refer to here is the ability to accept
 new connections (that would be the "server" part) or initiate them ("client"). Once
 the WebSocket has been created, both ends are equal peers.
-
-```WebSocketAdapter```s are created using a builder. You have to pass
-
-* ```metrics``` - The ```Metrics``` instance used to capture communication metrics. **Mandatory**
-
-* ```messageTranscriber``` - Responsible to transform your messages from and to the wire format (```String```).
-If you do not provide your own transcriber, the
-system tries to instantiate a default one. Default transcribers can be created
-for ```String```, ```Integer```, ```Double``` and ```BigDecimal``` message types. For
-all other message types, the implementation checks, whether the ```ObjectMapper``` from
-the ```com.fasterxml.jackson``` library can be found on the classpath. If so,
-all messages will be transcribed to/from a JSON string using a new instance of the ```ObjectMapper```. If ```ObjectMapper```
-cannot be found, the system will only be able to automatically transcribe the above mentioned message types. For
-
-* ```httpServer``` - The ```HttpServer``` instance used to listen for incoming connections. Can be null, but
-in that case, connections cannot be accepted. The adapter will throw a ```RuntimeException``` if
-you try. Also, make sure that the passed server is NOT started before the ```WebSocketAdapter``` instance is
-created. Otherwise the WebSocket feature cannot be properly initialized. Since we like to fail fast, the
-system checks the current state of the passed server, and if it is already running also throws a ```RuntimeException```
-
-* ```httpClient``` - The ```AsyncHttpClient``` instance used to initiate connections. Can be null, but
-in that case, connections cannot be initiated. The adapter will throw a ```RuntimeException``` if
-you try.
 
 Once you got hold of a ```WebSocketAdapter``` you can use it to create an ```Endpoint``` instance. You 
 can do this in two ways

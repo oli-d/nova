@@ -18,31 +18,20 @@ import java.util.HashSet;
 import java.util.Set;
 
 
-/**
- * This class is used to register the properly annotated Rest endpoint classes. Since we implement
- * this as a BeanPostProcessor we are 1.) depending on Spring and 2.) this will only work for beans
- * known to Spring's ApplicationContext.
- *
- * An alternative would be to not rely on Spring at all and manually register the packages with
- * REST endpoints.
- *
- * Since we think that the first approach makes for a much nicer API, we bit the bullet and went for
- * the Spring dependency
- */
 public class RestBeanPostprocessor implements BeanPostProcessor {
     final Set<Object> handlerBeans = new HashSet<>();
 
 
     @Override
     public Object postProcessBeforeInitialization(Object bean, String beanName) throws BeansException {
+        if (BeanExaminer.isRestHandler(bean)) {
+            handlerBeans.add(bean);
+        }
         return bean;
     }
 
     @Override
     public Object postProcessAfterInitialization(Object bean, String beanName) throws BeansException {
-        if (BeanExaminer.isRestHandler(bean)) {
-            handlerBeans.add(bean);
-        }
         return bean;
     }
 

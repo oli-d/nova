@@ -12,6 +12,7 @@ package ch.squaredesk.nova.comm.jms;
 
 import ch.squaredesk.nova.metrics.Metrics;
 import io.reactivex.Completable;
+import io.reactivex.Single;
 import io.reactivex.subscribers.TestSubscriber;
 import org.apache.activemq.ActiveMQConnectionFactory;
 import org.junit.jupiter.api.AfterEach;
@@ -140,7 +141,7 @@ class RpcServerTest {
 
 
         @Override
-        public Completable send(String message, OutgoingMessageMetaData meta) {
+        public Single<OutgoingMessageMetaData> send(String message, OutgoingMessageMetaData meta) {
             this.message = message;
             this.sendingInfo = meta;
             return super.send(message, meta);

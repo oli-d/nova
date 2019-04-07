@@ -18,7 +18,7 @@ class HttpServerFactoryTest {
 
     @Test
     void serverNotAutomaticallyStarted() {
-        HttpServerConfiguration rsc = HttpServerConfiguration.builder().interfaceName("localhost").port(10000).build();
+        HttpServerSettings rsc = HttpServerSettings.builder().interfaceName("localhost").port(10000).build();
         HttpServer httpServer = HttpServerFactory.serverFor(rsc);
         MatcherAssert.assertThat(httpServer.isStarted(), Matchers.is(false));
     }

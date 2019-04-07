@@ -14,6 +14,7 @@ package ch.squaredesk.nova.comm.sending;
 
 import ch.squaredesk.nova.metrics.Metrics;
 import io.reactivex.Completable;
+import io.reactivex.Single;
 import io.reactivex.functions.Function;
 
 import static java.util.Objects.requireNonNull;
@@ -35,14 +36,14 @@ public abstract class MessageSender<
         this.metricsCollector = new MetricsCollector(identifier, metrics);
     }
 
-    public abstract Completable send(TransportMessageType message, MetaDataType sendingInfo);
+    public abstract Single<MetaDataType> send(TransportMessageType message, MetaDataType sendingInfo);
 
-    public <T> Completable send(T message, MetaDataType metaData, Function<T, TransportMessageType> transcriber) {
+    public <T> Single<MetaDataType> send(T message, MetaDataType metaData, Function<T, TransportMessageType> transcriber) {
         TransportMessageType transportMessage = null;
         try {
             transportMessage = transcriber.apply(message);
         } catch (Exception e) {
-            return Completable.error(e);
+            return Single.error(e);
         }
         return send(transportMessage, metaData);
     }

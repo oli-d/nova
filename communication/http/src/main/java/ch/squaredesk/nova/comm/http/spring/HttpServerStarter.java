@@ -10,36 +10,44 @@
 package ch.squaredesk.nova.comm.http.spring;
 
 import org.glassfish.grizzly.http.server.HttpServer;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.DisposableBean;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.event.ContextRefreshedEvent;
 
+import javax.annotation.PreDestroy;
 import java.io.IOException;
 
-public class HttpServerStarter implements ApplicationListener<ContextRefreshedEvent>, DisposableBean {
-    private Logger logger = LoggerFactory.getLogger(HttpServerStarter.class);
+public class HttpServerStarter implements ApplicationListener<ContextRefreshedEvent> {
+    private final HttpServer httpServer;
+    private final boolean autoStartServerWhenApplicationContextRefreshed;
 
-    private HttpServer httpServer;
+    public HttpServerStarter(HttpServer httpServer, boolean autoStartServerWhenApplicationContextRefreshed) {
+        this.httpServer = httpServer;
+        this.autoStartServerWhenApplicationContextRefreshed = autoStartServerWhenApplicationContextRefreshed;
+    }
 
     @Override
     public void onApplicationEvent(ContextRefreshedEvent event) {
-        httpServer = event.getApplicationContext().getBean("httpServer", HttpServer.class);
-
-        if (!httpServer.isStarted()) {
+        if (httpServer!= null && autoStartServerWhenApplicationContextRefreshed) {
             try {
-                httpServer.start();
+                start();
             } catch (IOException e) {
-                logger.error("Unable to start HttpServer", e);
+                throw new RuntimeException(e);
             }
         }
     }
 
-    @Override
-    public void destroy() throws Exception {
+    public void start() throws IOException {
+        if (!httpServer.isStarted()) {
+            httpServer.start();
+        }
+    }
+
+    @PreDestroy
+    public void shutdown() {
         if (httpServer != null) {
             httpServer.shutdown();
         }
     }
+
+
 }

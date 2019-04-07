@@ -41,7 +41,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 @Tag("medium")
 class HttpAdapterTest {
-    private HttpServerConfiguration rsc = HttpServerConfiguration.builder().interfaceName("localhost").port(10000).build();
+    private HttpServerSettings rsc = HttpServerSettings.builder().interfaceName("localhost").port(10000).build();
     private HttpServer httpServer = HttpServerFactory.serverFor(rsc);
     private HttpAdapter sut;
 

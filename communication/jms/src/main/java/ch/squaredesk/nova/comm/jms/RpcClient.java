@@ -59,11 +59,12 @@ public class RpcClient extends ch.squaredesk.nova.comm.rpc.RpcClient<String, Out
                 .singleOrError();
 
         // send message sync
-        Throwable sendError = messageSender
-                .send(request, requestMetaData, requestTranscriber)
-                .blockingGet();
-        if (sendError != null) {
-            return Single.error(sendError);
+        try {
+            messageSender
+                    .send(request, requestMetaData, requestTranscriber)
+                    .blockingGet();
+        } catch (Exception e) {
+            return Single.error(e);
         }
 
         return replySingle

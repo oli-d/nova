@@ -18,6 +18,7 @@ import ch.squaredesk.nova.metrics.Metrics;
 import io.reactivex.Completable;
 import io.reactivex.Flowable;
 import io.reactivex.Scheduler;
+import io.reactivex.Single;
 import io.reactivex.functions.Function;
 import io.reactivex.schedulers.Schedulers;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
@@ -55,18 +56,18 @@ public class KafkaAdapter extends CommAdapter<String> {
     // simple send related methods //
     //                             //
     /////////////////////////////////
-    public Completable sendMessage(String destination, String message) {
+    public Single<OutgoingMessageMetaData> sendMessage(String destination, String message) {
         SendInfo sendInfo = new SendInfo();
         OutgoingMessageMetaData meta = new OutgoingMessageMetaData(destination, sendInfo);
         return messageSender.send(message, meta);
     }
 
-    public <T> Completable sendMessage(String destination, T message) {
+    public <T> Single<OutgoingMessageMetaData> sendMessage(String destination, T message) {
         Function<T, String> transcriber = messageTranscriber.getOutgoingMessageTranscriber((Class<T>)message.getClass());
         return sendMessage(destination, message, transcriber);
     }
 
-    public <T> Completable sendMessage(String destination, T message, Function<T, String> transcriber) {
+    public <T> Single<OutgoingMessageMetaData> sendMessage(String destination, T message, Function<T, String> transcriber) {
         requireNonNull(message, "message must not be null");
         SendInfo sendInfo = new SendInfo();
         OutgoingMessageMetaData meta = new OutgoingMessageMetaData(destination, sendInfo);
@@ -119,7 +120,7 @@ public class KafkaAdapter extends CommAdapter<String> {
         private String identifier;
         private MessageSender messageSender;
         private MessageReceiver messageReceiver;
-        private Scheduler subscriptionScheduler;
+//        private Scheduler subscriptionScheduler;
         private Properties consumerProperties = new Properties();
         private Properties producerProperties = new Properties();
         private long pollTimeout = 1;
@@ -169,10 +170,10 @@ public class KafkaAdapter extends CommAdapter<String> {
             return this;
         }
 
-        public Builder setSubscriptionScheduler(Scheduler scheduler) {
-            this.subscriptionScheduler = scheduler;
-            return this;
-        }
+//        public Builder setSubscriptionScheduler(Scheduler scheduler) {
+//            this.subscriptionScheduler = scheduler;
+//            return this;
+//        }
 
         public Builder setIdentifier(String identifier) {
             this.identifier = identifier;
@@ -192,13 +193,13 @@ public class KafkaAdapter extends CommAdapter<String> {
         public void validate() {
             requireNonNull(serverAddress,"serverAddress must be provided");
             requireNonNull(metrics,"metrics must be provided");
-            if (subscriptionScheduler==null) {
-                subscriptionScheduler = Schedulers.from(Executors.newSingleThreadExecutor(r -> {
-                    Thread t = new Thread(r, "KafkaSubscription");
-                    t.setDaemon(true);
-                    return t;
-                }));
-            }
+//            if (subscriptionScheduler==null) {
+//                subscriptionScheduler = Schedulers.from(Executors.newSingleThreadExecutor(r -> {
+//                    Thread t = new Thread(r, "KafkaSubscription");
+//                    t.setDaemon(true);
+//                    return t;
+//                }));
+//            }
             if (consumerProperties==null) consumerProperties = new Properties();
             if (producerProperties==null) producerProperties = new Properties();
         }

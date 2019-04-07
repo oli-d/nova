@@ -24,6 +24,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.*;
 import org.springframework.core.annotation.Order;
+import org.springframework.core.env.Environment;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
@@ -34,35 +35,50 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 @ExtendWith(SpringExtension.class)
-@ContextConfiguration(classes = {SpringWiringTest.MyConfig.class, RestEnablingConfiguration.class})
-class SpringWiringTest {
+@ContextConfiguration(classes = {HttpAndRestTest.MyMixedConfig.class})
+class HttpAndRestTest {
     @Autowired
     HttpServerSettings httpServerSettings;
     @Autowired
-    Nova nova;
+    RpcServer rpcServer;
+
 
     @Test
-    void restEndpointCanProperlyBeInvoked() throws Exception {
+    void restAnnotationsCanBeMixedWithHttpRpcServer() throws Exception {
         String serverUrl = "http://127.0.0.1:" + httpServerSettings.port;
-        Metrics metrics = nova.metrics;
+        rpcServer.requests("/bar", String.class).subscribe(
+                rpcInvocation -> {
+                    rpcInvocation.complete("bar");
+                }
+        );
 
-        assertThat(metrics.getTimer("rest", "foo").getCount(), is(0L));
-
-        String replyAsString = HttpHelper.getResponseBody(serverUrl + "/foo", null);
+        String replyAsString = HttpHelper.getResponseBody(serverUrl + "/bar", null);
+        assertThat(replyAsString, is("bar"));
+        replyAsString = HttpHelper.getResponseBody(serverUrl + "/foo", null);
         assertThat(replyAsString, is("MyBean"));
-        assertThat(metrics.getTimer("rest", "foo").getCount(), is(1L));
     }
 
     @Configuration
-    public static class MyConfig  {
+    @Order(1)
+    @Import({NovaProvidingConfiguration.class, RestEnablingConfiguration.class})
+    public static class MyMixedConfig  {
         @Bean
         public MyBean myBean() {
             return new MyBean();
         }
 
+        @Bean("restHandlerPackages")
+        public String[] restHandlerPackages(Environment environment) {
+            return new String[]{"ch.squaredesk"};
+        }
+
+        @Bean
+        public RpcServer rpcServer(HttpServer httpServer, Nova nova) {
+            return new RpcServer("SWT", httpServer, nova.metrics );
+        }
     }
 
-    @Path("/foo")
+    @Path("/foo2")
     public static class MyBean {
         @GET
         public String restHandler()  {

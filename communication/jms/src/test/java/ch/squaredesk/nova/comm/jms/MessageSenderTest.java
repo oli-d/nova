@@ -82,7 +82,7 @@ class MessageSenderTest {
         OutgoingMessageMetaData meta = new OutgoingMessageMetaData(queue);
         MessageConsumer consumer = jmsHelper.createMessageConsumer(queue);
 
-        TestObserver<Void> observer = sut.send("Hallo", meta).test();
+        TestObserver<OutgoingMessageMetaData> observer = sut.send("Hallo", meta).test();
         observer.await(10, SECONDS);
         observer.assertComplete();
 
@@ -97,7 +97,7 @@ class MessageSenderTest {
         Destination queue = jmsHelper.createQueue("sendTest");
 
         OutgoingMessageMetaData meta = new OutgoingMessageMetaData(queue);
-        TestObserver<Void> observer = sut.send("Hallo", meta, message -> {
+        TestObserver<OutgoingMessageMetaData> observer = sut.send("Hallo", meta, message -> {
             throw new RuntimeException("4 test");
         }).test();
         observer.await(1, SECONDS);

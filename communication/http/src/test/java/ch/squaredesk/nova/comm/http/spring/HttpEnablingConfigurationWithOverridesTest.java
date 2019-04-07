@@ -3,8 +3,6 @@ package ch.squaredesk.nova.comm.http.spring;
 import ch.squaredesk.net.PortFinder;
 import ch.squaredesk.nova.comm.MessageTranscriber;
 import ch.squaredesk.nova.comm.http.*;
-import ch.squaredesk.nova.comm.retrieving.IncomingMessageTranscriber;
-import ch.squaredesk.nova.comm.sending.OutgoingMessageTranscriber;
 import ch.squaredesk.nova.spring.NovaProvidingConfiguration;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonFormat;
@@ -12,9 +10,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import io.reactivex.Flowable;
-import io.reactivex.observers.TestObserver;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.AfterEach;
@@ -29,9 +25,6 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.ZonedDateTime;
 
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
@@ -40,7 +33,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 @ContextConfiguration(classes = { HttpEnablingConfigurationWithOverridesTest.ConfigWithTranscriber.class})
 class HttpEnablingConfigurationWithOverridesTest {
     @Autowired
-    private HttpServerConfiguration serverConfiguration;
+    private HttpServerSettings serverConfiguration;
     @Autowired
     private HttpAdapter adapter;
     private String adapterBaseUrl;
@@ -86,7 +79,7 @@ class HttpEnablingConfigurationWithOverridesTest {
     }
 
 
-    @Import({HttpEnablingConfiguration.class, NovaProvidingConfiguration.class})
+    @Import({HttpEnablingConfiguration.class})
     public static class ConfigWithTranscriber {
         @Bean("httpServerPort")
         public Integer httpServerPort() {

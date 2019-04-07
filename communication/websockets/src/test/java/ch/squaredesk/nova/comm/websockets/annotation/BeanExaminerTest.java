@@ -23,7 +23,7 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-class BeanExaminerTest {
+public class BeanExaminerTest {
     private BeanExaminer sut;
 
     @BeforeEach
@@ -103,7 +103,7 @@ class BeanExaminerTest {
     @Test
     void beanExaminerCreatesEndpointForCustomMarshaller() throws Exception {
         class SomeClass {
-            @OnMessage(value = "x", messageMarshallerClassName = "ch.squaredesk.nova.comm.websockets.ch.squaredesk.nova.events.ch.squaredesk.nova.events.annotation.BeanExaminerTest$StringMarshaller")
+            @OnMessage(value = "x", messageMarshallerClassName = "ch.squaredesk.nova.comm.websockets.annotation.BeanExaminerTest$StringMarshaller")
             void handle(String message, WebSocket webSocket) {
             }
         }
@@ -118,7 +118,7 @@ class BeanExaminerTest {
     @Test
     void beanExaminerCreatesEndpointForCustomUnmarshaller() throws Exception {
         class SomeClass {
-            @OnMessage(value = "x", messageUnmarshallerClassName = "ch.squaredesk.nova.comm.websockets.ch.squaredesk.nova.events.ch.squaredesk.nova.events.annotation.BeanExaminerTest$StringUnmarshaller")
+            @OnMessage(value = "x", messageUnmarshallerClassName = "ch.squaredesk.nova.comm.websockets.annotation.BeanExaminerTest$StringUnmarshaller")
             void handle(String message, WebSocket webSocket) {
             }
         }
@@ -160,13 +160,13 @@ class BeanExaminerTest {
         assertThat(ex.getMessage(), is("Class java.util.ArrayList is not a valid MessageMarshaller"));
 
         class MarshallerClassThatDoesNotMatchMessageType {
-            @OnMessage(value = "x", messageMarshallerClassName = "ch.squaredesk.nova.comm.websockets.ch.squaredesk.nova.events.ch.squaredesk.nova.events.annotation.BeanExaminerTest$StringMarshaller")
+            @OnMessage(value = "x", messageMarshallerClassName = "ch.squaredesk.nova.comm.websockets.annotation.BeanExaminerTest$StringMarshaller")
             void handle(Integer message, WebSocket webSocket) {
             }
         }
         ex = Assertions.assertThrows(IllegalArgumentException.class,
                 () -> sut.websocketEndpointsIn(new MarshallerClassThatDoesNotMatchMessageType()));
-        assertThat(ex.getMessage(), is("Class ch.squaredesk.nova.comm.websockets.ch.squaredesk.nova.events.ch.squaredesk.nova.events.annotation.BeanExaminerTest$StringMarshaller is not a valid MessageMarshaller for method handle"));
+        assertThat(ex.getMessage(), is("Class ch.squaredesk.nova.comm.websockets.annotation.BeanExaminerTest$StringMarshaller is not a valid MessageMarshaller for method handle"));
     }
 
     @Test
@@ -199,13 +199,13 @@ class BeanExaminerTest {
         assertThat(ex.getMessage(), is("Class java.util.ArrayList is not a valid MessageUnmarshaller"));
 
         class UnmarshallerClassThatDoesNotMatchMessageType {
-            @OnMessage(value = "x", messageUnmarshallerClassName = "ch.squaredesk.nova.comm.websockets.ch.squaredesk.nova.events.ch.squaredesk.nova.events.annotation.BeanExaminerTest$StringUnmarshaller")
+            @OnMessage(value = "x", messageUnmarshallerClassName = "ch.squaredesk.nova.comm.websockets.annotation.BeanExaminerTest$StringUnmarshaller")
             void handle(Integer message, WebSocket webSocket) {
             }
         }
         ex = Assertions.assertThrows(IllegalArgumentException.class,
                 () -> sut.websocketEndpointsIn(new UnmarshallerClassThatDoesNotMatchMessageType()));
-        assertThat(ex.getMessage(), is("Class ch.squaredesk.nova.comm.websockets.ch.squaredesk.nova.events.ch.squaredesk.nova.events.annotation.BeanExaminerTest$StringUnmarshaller is not a valid MessageUnmarshaller for method handle"));
+        assertThat(ex.getMessage(), is("Class ch.squaredesk.nova.comm.websockets.annotation.BeanExaminerTest$StringUnmarshaller is not a valid MessageUnmarshaller for method handle"));
     }
 
     public static class StringMarshaller implements Function<String, String> {

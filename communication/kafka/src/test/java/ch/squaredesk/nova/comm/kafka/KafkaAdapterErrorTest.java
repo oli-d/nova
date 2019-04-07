@@ -64,7 +64,7 @@ class KafkaAdapterErrorTest {
 
     @Test
     void sendMessageWithException() throws Exception {
-        TestObserver<Void> observer = sut.sendMessage("someTopic","Hallo", message -> {
+        TestObserver<OutgoingMessageMetaData> observer = sut.sendMessage("someTopic","Hallo", message -> {
             throw new MyException("4 test");
         }).test();
         observer.await(1, TimeUnit.SECONDS);

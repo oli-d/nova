@@ -80,18 +80,6 @@ class WebsocketAdapterTest {
     }
 
     @Test
-    void clientFunctionsCannotBeInvokedIfNotProperlySetup() {
-        sut = WebSocketAdapter.builder()
-                .setMetrics(new Metrics())
-                .build();
-
-        IllegalStateException ex = assertThrows(
-                IllegalStateException.class,
-                () -> sut.connectTo("someDest"));
-        assertThat(ex.getMessage(), is("Adapter not initialized properly for client mode"));
-    }
-
-    @Test
     void sendAndReceiveAfterInitiatingConnection() throws Exception {
         String destinationUri = "ws://echo.websocket.org/";
         CountDownLatch connectionLatch = new CountDownLatch(1);

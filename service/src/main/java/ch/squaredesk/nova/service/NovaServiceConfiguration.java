@@ -12,8 +12,8 @@ package ch.squaredesk.nova.service;
 
 
 import ch.squaredesk.nova.events.annotation.AnnotationEnablingConfiguration;
-import ch.squaredesk.nova.events.annotation.NovaProvidingConfiguration;
 import ch.squaredesk.nova.service.annotation.LifecycleBeanProcessor;
+import ch.squaredesk.nova.spring.NovaProvidingConfiguration;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

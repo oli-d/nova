@@ -15,6 +15,7 @@ import com.github.charithe.kafka.KafkaJunitExtension;
 import com.github.charithe.kafka.KafkaJunitExtensionConfig;
 import com.github.charithe.kafka.StartupMode;
 import io.reactivex.Completable;
+import io.reactivex.Single;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.functions.Consumer;
 import io.reactivex.observers.TestObserver;
@@ -157,7 +158,7 @@ class KafkaAdapterTest {
             cdl2.countDown();
         });
 
-        sut.sendMessage(topic, "msg1").blockingAwait();
+        sut.sendMessage(topic, "msg1").blockingGet();
         cdl1.await(10, SECONDS);
         assertThat(cdl1.getCount(),is(0L));
         cdl2.await(10, SECONDS);
@@ -172,7 +173,7 @@ class KafkaAdapterTest {
             valuesSubscriber3.add(x);
             cdl3.countDown();
         });
-        sut.sendMessage(topic, "msg2").blockingAwait();
+        sut.sendMessage(topic, "msg2").blockingGet();
 
         cdl3.await(10, SECONDS);
         assertThat(cdl3.getCount(), is(0L));
@@ -289,10 +290,10 @@ class KafkaAdapterTest {
 
     @Test
     void messageMarshallingErrorOnSendForwardedToSubscriber(KafkaHelper kafkaHelper) throws Exception {
-        Completable completable = sut.sendMessage("dest", "myMessage", s -> {
+        Single<OutgoingMessageMetaData> completable = sut.sendMessage("dest", "myMessage", s -> {
             throw new RuntimeException("for test");
         });
-        TestObserver<Void> observer = completable.test();
+        TestObserver<OutgoingMessageMetaData> observer = completable.test();
         observer.await();
         observer.assertError(RuntimeException.class);
         observer.assertErrorMessage("for test");
@@ -303,9 +304,9 @@ class KafkaAdapterTest {
         String topic = "topicForSendTest";
         ensureTopicsExists(topic);
 
-        sut.sendMessage(topic, "One").blockingAwait();
-        sut.sendMessage(topic, "Two").blockingAwait();
-        sut.sendMessage(topic, "Three").blockingAwait();
+        sut.sendMessage(topic, "One").blockingGet();
+        sut.sendMessage(topic, "Two").blockingGet();
+        sut.sendMessage(topic, "Three").blockingGet();
 
         List<String> messages = kafkaHelper.consumeStrings(topic, 3).get(10, SECONDS);
         assertThat(messages.size(), is(3));
@@ -327,9 +328,9 @@ class KafkaAdapterTest {
             @Override
             public void run() {
                 try {
-                    sut.sendMessage(topic, "One-" + id).blockingAwait();
-                    sut.sendMessage(topic, "Two-" + id).blockingAwait();
-                    sut.sendMessage(topic, "Three-" + id).blockingAwait();
+                    sut.sendMessage(topic, "One-" + id).blockingGet();
+                    sut.sendMessage(topic, "Two-" + id).blockingGet();
+                    sut.sendMessage(topic, "Three-" + id).blockingGet();
                 } catch (Exception e) {
                     e.printStackTrace();
                 }

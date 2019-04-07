@@ -66,32 +66,32 @@ public class JmsAdapter extends CommAdapter<String> {
     // simple send related methods //
     //                             //
     /////////////////////////////////
-    public <T> Completable sendMessage(Destination destination, T message) throws Exception {
+    public <T> Single<OutgoingMessageMetaData> sendMessage(Destination destination, T message) throws Exception {
         return sendMessage(destination, message, null, null, null, null);
     }
 
-    public <T> Completable sendMessage(Destination destination, T message, Map<String, Object> customHeaders) {
+    public <T> Single<OutgoingMessageMetaData> sendMessage(Destination destination, T message, Map<String, Object> customHeaders) {
         return sendMessage(destination, message, customHeaders, null, null, null);
     }
 
-    public <T> Completable sendMessage(Destination destination, T message, Map<String, Object> customHeaders, Integer deliveryMode, Integer priority, Long timeToLive) {
+    public <T> Single<OutgoingMessageMetaData> sendMessage(Destination destination, T message, Map<String, Object> customHeaders, Integer deliveryMode, Integer priority, Long timeToLive) {
         Function<T, String> transcriber = messageTranscriber.getOutgoingMessageTranscriber((Class<T>) message.getClass());
         return doSendMessage(destination, message, transcriber, customHeaders, deliveryMode, priority, timeToLive);
     }
 
-    public <T> Completable sendMessage(Destination destination, T message, Function<T, String> transcriber) throws Exception {
+    public <T> Single<OutgoingMessageMetaData> sendMessage(Destination destination, T message, Function<T, String> transcriber) throws Exception {
         return doSendMessage(destination, message, transcriber, null, null, null, null);
     }
 
-    public <T> Completable sendMessage(Destination destination, T message, Function<T, String> transcriber, Map<String, Object> customHeaders) {
+    public <T> Single<OutgoingMessageMetaData> sendMessage(Destination destination, T message, Function<T, String> transcriber, Map<String, Object> customHeaders) {
         return doSendMessage(destination, message, transcriber, customHeaders, null, null, null);
     }
 
-    public <T> Completable sendMessage(Destination destination, T message, Function<T, String> transcriber, Map<String, Object> customHeaders, Integer deliveryMode, Integer priority, Long timeToLive) {
+    public <T> Single<OutgoingMessageMetaData> sendMessage(Destination destination, T message, Function<T, String> transcriber, Map<String, Object> customHeaders, Integer deliveryMode, Integer priority, Long timeToLive) {
         return doSendMessage(destination, message, transcriber, customHeaders, deliveryMode, priority, timeToLive);
     }
 
-    protected <T> Completable doSendMessage(
+    protected <T> Single<OutgoingMessageMetaData> doSendMessage(
             Destination destination,
             T message,
             Function<T,String> transcriber,
@@ -113,15 +113,15 @@ public class JmsAdapter extends CommAdapter<String> {
                 .doOnError(t -> examineSendExceptionForDeadDestinationAndInformListener(t, destination));
     }
 
-    public Completable sendMessage(Destination destination, String message) {
+    public Single<OutgoingMessageMetaData> sendMessage(Destination destination, String message) {
         return doSendMessage(destination, message, null, null, null, null);
     }
 
-    public Completable sendMessage(Destination destination, String message, Map<String, Object> customHeaders) {
+    public Single<OutgoingMessageMetaData> sendMessage(Destination destination, String message, Map<String, Object> customHeaders) {
         return doSendMessage(destination, message, customHeaders, null, null, null);
     }
 
-    protected Completable doSendMessage(
+    protected Single<OutgoingMessageMetaData> doSendMessage(
             Destination destination,
             String message,
             Map<String, Object> customHeaders,

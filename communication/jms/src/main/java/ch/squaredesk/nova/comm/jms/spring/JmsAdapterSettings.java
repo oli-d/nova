@@ -1,8 +1,6 @@
 package ch.squaredesk.nova.comm.jms.spring;
 
-import ch.squaredesk.nova.comm.jms.JmsAdapter;
-
-public class JmsConfiguration {
+public class JmsAdapterSettings {
     public final int defaultMessageDeliveryMode;
     public final int defaultMessagePriority;
     public final long defaultMessageTimeToLive;
@@ -13,16 +11,16 @@ public class JmsConfiguration {
     public final boolean producerSessionTransacted;
     public final String jmsAdapterIdentifier;
 
-    private JmsConfiguration (Builder builder) {
+    private JmsAdapterSettings(Builder builder) {
+        this.jmsAdapterIdentifier = builder.jmsAdapterIdentifier;
         this.defaultMessageDeliveryMode = builder.defaultMessageDeliveryMode;
         this.defaultMessagePriority = builder.defaultMessagePriority;
         this.defaultMessageTimeToLive = builder.defaultMessageTimeToLive;
         this.defaultJmsRpcTimeoutInSeconds = builder.defaultJmsRpcTimeoutInSeconds;
         this.consumerSessionAckMode = builder.consumerSessionAckMode;
-        this.consumerSessionTransacted = builder.consumerSessionTransacted;
         this.producerSessionAckMode = builder.producerSessionAckMode;
+        this.consumerSessionTransacted = builder.consumerSessionTransacted;
         this.producerSessionTransacted = builder.producerSessionTransacted;
-        this.jmsAdapterIdentifier = builder.jmsAdapterIdentifier;
     }
 
     public static Builder builder() {
@@ -30,57 +28,56 @@ public class JmsConfiguration {
     }
 
     public static class Builder {
+        private String jmsAdapterIdentifier;
         private int defaultMessageDeliveryMode;
         private int defaultMessagePriority;
         private long defaultMessageTimeToLive;
         private int defaultJmsRpcTimeoutInSeconds;
         private int consumerSessionAckMode;
-        private boolean consumerSessionTransacted;
         private int producerSessionAckMode;
-        private boolean producerSessionTransacted;
-        private String jmsAdapterIdentifier;
+        private final boolean consumerSessionTransacted = false;
+        private final boolean producerSessionTransacted = false;
 
         private Builder() {
         }
 
         public Builder setIdentifier(String value) {
+            this.jmsAdapterIdentifier = value;
             return this;
         }
 
         public Builder setDefaultMessageDeliveryMode(int value) {
+            this.defaultMessageDeliveryMode = value;
             return this;
         }
 
         public Builder setDefaultMessagePriority(int value) {
+            this.defaultMessagePriority = value;
             return this;
         }
 
         public Builder setDefaultMessageTimeToLive(long value) {
+            this.defaultMessageTimeToLive = value;
             return this;
         }
 
         public Builder setDefaultRpcTimeoutInSeconds(int value) {
+            this.defaultJmsRpcTimeoutInSeconds = value;
             return this;
         }
 
         public Builder setConsumerSessionAckMode(int value) {
-            return this;
-        }
-
-        public Builder setConsumerSessionTransacted(boolean value) {
+            this.consumerSessionAckMode = value;
             return this;
         }
 
         public Builder setProducerSessionAckMode(int value) {
+            this.producerSessionAckMode = value;
             return this;
         }
 
-        public Builder setProducerSessionTransacted(boolean value) {
-            return this;
-        }
-
-        public JmsConfiguration build() {
-            return new JmsConfiguration(this);
+        public JmsAdapterSettings build() {
+            return new JmsAdapterSettings(this);
         }
     }
 }

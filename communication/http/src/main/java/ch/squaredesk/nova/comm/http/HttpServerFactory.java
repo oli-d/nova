@@ -12,7 +12,7 @@ public class HttpServerFactory {
     private HttpServerFactory() {
     }
 
-    public static HttpServer serverFor (HttpServerConfiguration serverConfig) {
+    public static HttpServer serverFor (HttpServerSettings serverConfig) {
         Objects.requireNonNull(serverConfig, "server config must not be null");
 
         HttpServer httpServer = new HttpServer();

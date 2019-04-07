@@ -6,6 +6,8 @@ import ch.squaredesk.nova.comm.MessageTranscriber;
 import ch.squaredesk.nova.comm.jms.DefaultDestinationIdGenerator;
 import ch.squaredesk.nova.comm.jms.JmsAdapter;
 import ch.squaredesk.nova.comm.jms.UIDCorrelationIdGenerator;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
@@ -25,54 +27,52 @@ import java.util.function.Supplier;
 
 @Configuration
 public class JmsEnablingConfiguration {
+    private static final Logger logger = LoggerFactory.getLogger(JmsEnablingConfiguration.class);
+
     @Autowired
     private Environment environment;
 
     @Bean("jmsAdapter")
-    JmsAdapter jmsAdapter(@Qualifier("jmsConfiguration") JmsConfiguration jmsConfiguration,
+    JmsAdapter jmsAdapter(@Qualifier("jmsAdapterSettings") JmsAdapterSettings jmsAdapterSettings,
                           @Qualifier("jmsConnectionFactory") ConnectionFactory connectionFactory,
                           @Qualifier("jmsCorrelationIdGenerator") Supplier<String> correlationIdGenerator,
                           @Qualifier("jmsDestinationIdGenerator") Function<Destination, String> destinationIdGenerator,
                           @Qualifier("jmsMessageTranscriber") MessageTranscriber<String> jmsMessageTranscriber,
-                          Nova nova) {
+                          @Qualifier("nova") Nova nova) {
         return JmsAdapter.builder()
                 .setConnectionFactory(connectionFactory)
-                .setIdentifier(jmsConfiguration.jmsAdapterIdentifier)
+                .setIdentifier(jmsAdapterSettings.jmsAdapterIdentifier)
                 .setCorrelationIdGenerator(correlationIdGenerator)
                 .setDestinationIdGenerator(destinationIdGenerator)
-                .setDefaultMessageDeliveryMode(jmsConfiguration.defaultMessageDeliveryMode)
-                .setDefaultMessagePriority(jmsConfiguration.defaultMessagePriority)
-                .setDefaultMessageTimeToLive(jmsConfiguration.defaultMessageTimeToLive)
-                .setDefaultRpcTimeout(jmsConfiguration.defaultJmsRpcTimeoutInSeconds, TimeUnit.SECONDS)
-                .setConsumerSessionAckMode(jmsConfiguration.consumerSessionAckMode)
-                .setConsumerSessionTransacted(jmsConfiguration.consumerSessionTransacted)
-                .setProducerSessionAckMode(jmsConfiguration.producerSessionAckMode)
-                .setProducerSessionTransacted(jmsConfiguration.producerSessionTransacted)
+                .setDefaultMessageDeliveryMode(jmsAdapterSettings.defaultMessageDeliveryMode)
+                .setDefaultMessagePriority(jmsAdapterSettings.defaultMessagePriority)
+                .setDefaultMessageTimeToLive(jmsAdapterSettings.defaultMessageTimeToLive)
+                .setDefaultRpcTimeout(jmsAdapterSettings.defaultJmsRpcTimeoutInSeconds, TimeUnit.SECONDS)
+                .setConsumerSessionAckMode(jmsAdapterSettings.consumerSessionAckMode)
+                .setConsumerSessionTransacted(jmsAdapterSettings.consumerSessionTransacted)
+                .setProducerSessionAckMode(jmsAdapterSettings.producerSessionAckMode)
+                .setProducerSessionTransacted(jmsAdapterSettings.producerSessionTransacted)
                 .setMessageTranscriber(jmsMessageTranscriber)
                 .setMetrics(nova.metrics)
                 .build();
     }
 
-    @Bean("jmsConfiguration")
-    JmsConfiguration jmsConfiguration(@Qualifier("jmsAdapterIdentifier") String jmsAdapterIdentifier,
-                          @Qualifier("defaultMessageDeliveryMode") int defaultMessageDeliveryMode,
-                          @Qualifier("defaultMessagePriority") int defaultMessagePriority,
-                          @Qualifier("defaultMessageTimeToLive") long defaultMessageTimeToLive,
-                          @Qualifier("defaultJmsRpcTimeoutInSeconds") int defaultJmsRpcTimeoutInSeconds,
-                          @Qualifier("consumerSessionAckMode") int consumerSessionAckMode,
-                          @Qualifier("consumerSessionTransacted") boolean consumerSessionTransacted,
-                          @Qualifier("producerSessionAckMode") int producerSessionAckMode,
-                          @Qualifier("producerSessionTransacted") boolean producerSessionTransacted) {
-        return JmsConfiguration.builder()
+    @Bean("jmsAdapterSettings")
+    JmsAdapterSettings jmsConfiguration(@Qualifier("jmsAdapterIdentifier") @Autowired(required = false) String jmsAdapterIdentifier,
+                                        @Qualifier("defaultMessageDeliveryMode") int defaultMessageDeliveryMode,
+                                        @Qualifier("defaultMessagePriority") int defaultMessagePriority,
+                                        @Qualifier("defaultMessageTimeToLive") long defaultMessageTimeToLive,
+                                        @Qualifier("defaultJmsRpcTimeoutInSeconds") int defaultJmsRpcTimeoutInSeconds,
+                                        @Qualifier("consumerSessionAckMode") int consumerSessionAckMode,
+                                        @Qualifier("producerSessionAckMode") int producerSessionAckMode) {
+        return JmsAdapterSettings.builder()
                 .setIdentifier(jmsAdapterIdentifier)
                 .setDefaultMessageDeliveryMode(defaultMessageDeliveryMode)
                 .setDefaultMessagePriority(defaultMessagePriority)
                 .setDefaultMessageTimeToLive(defaultMessageTimeToLive)
                 .setDefaultRpcTimeoutInSeconds(defaultJmsRpcTimeoutInSeconds)
                 .setConsumerSessionAckMode(consumerSessionAckMode)
-                .setConsumerSessionTransacted(consumerSessionTransacted)
                 .setProducerSessionAckMode(producerSessionAckMode)
-                .setProducerSessionTransacted(producerSessionTransacted)
                 .build();
     }
 
@@ -96,43 +96,27 @@ public class JmsEnablingConfiguration {
         return propertyFromEnvironmentOrConstant("NOVA.JMS.CONSUMER_SESSION_ACK_MODE", Session.class, Session.AUTO_ACKNOWLEDGE, int.class);
     }
 
-    @Bean("consumerSessionTransacted")
-    boolean consumerSessionTransacted() {
-        return environment.getProperty("NOVA.JMS.CONSUMER_SESSION_TRANSACTED", Boolean.class, false);
-    }
-
     @Bean("producerSessionAckMode")
     int producerSessionAckMode() {
         return propertyFromEnvironmentOrConstant("NOVA.JMS.PRODUCER_SESSION_ACK_MODE", Session.class, Session.AUTO_ACKNOWLEDGE, int.class);
     }
 
-    @Bean("producerSessionTransacted")
-    boolean producerSessionTransacted() {
-        return environment.getProperty("NOVA.JMS.PRODUCER_SESSION_TRANSACTED", Boolean.class, false);
-    }
-
     private <T> T propertyFromEnvironmentOrConstant (String envVariableName, Class classContainingConstant, T defaultValue, Class<T> resultType) {
-        String envVariableValueAsString = environment.getProperty(envVariableName, String.valueOf(defaultValue));
-
-        // try to parse env value as int
-        Optional<T> envVariableValue = parse(envVariableValueAsString, resultType);
-
-        if (envVariableValue.isPresent()) {
-            return envVariableValue.get();
-        } else {
-            return constantValue(classContainingConstant, envVariableValueAsString, resultType)
-                    .orElseThrow(() -> new RuntimeException("Unable to parse value \"" + envVariableValueAsString + "\" for env parameter " + envVariableName + " as " + resultType));
+        String envValueAsString = environment.getProperty(envVariableName);
+        if (envValueAsString == null) {
+            return defaultValue;
         }
-    }
 
-    private <T> Optional<T> parse (String value, Class<T> resultType) {
-        T returnValue = null;
+        // try to parse env value as return type
         try {
-            returnValue = (T)Integer.parseInt(value);
+            return environment.getProperty(envVariableName, resultType);
         } catch (Exception e) {
-            // noop
+            logger.info("Unable to parse value \"{}\" of env parameter {} as {}. Checking, if this is a constant in class {}", envValueAsString, envVariableName, resultType, classContainingConstant);
         }
-        return Optional.ofNullable(returnValue);
+
+        // if the env value couldn't be parsed, it may be that the String value of a numeric constant was defined
+        return constantValue(classContainingConstant, envValueAsString, resultType).orElseThrow(
+                () -> new RuntimeException("Can't determine value for environment variable " + envVariableName));
     }
 
     private <T> Optional<T> constantValue (Class classContainingConstant, String constantName, Class<T> resultType) {
@@ -151,27 +135,27 @@ public class JmsEnablingConfiguration {
     }
 
     @Bean("jmsDestinationIdGenerator")
-    public Function<Destination, String> jmsDestinationIdGenerator() {
+    Function<Destination, String> jmsDestinationIdGenerator() {
         return new DefaultDestinationIdGenerator();
     }
 
     @Bean("jmsCorrelationIdGenerator")
-    public Supplier<String> jmsCorrelationIdGenerator() {
+    Supplier<String> jmsCorrelationIdGenerator() {
         return new UIDCorrelationIdGenerator();
     }
 
     @Bean("defaultJmsRpcTimeoutInSeconds")
-    public int defaultJmsRpcTimeoutInSeconds() {
+    int defaultJmsRpcTimeoutInSeconds() {
         return environment.getProperty("NOVA.JMS.DEFAULT_RPC_TIMEOUT_IN_SECONDS", Integer.class, 30);
     }
 
     @Bean("jmsAdapterIdentifier")
-    public String jmsAdapterIdentifier() {
+    String jmsAdapterIdentifier() {
         return environment.getProperty("NOVA.JMS.ADAPTER_IDENTIFIER");
     }
 
     @Bean("jmsMessageTranscriber")
-    public MessageTranscriber<String> jmsMessageTranscriber() {
+    MessageTranscriber<String> jmsMessageTranscriber() {
         return new DefaultMessageTranscriberForStringAsTransportType();
     }
 }

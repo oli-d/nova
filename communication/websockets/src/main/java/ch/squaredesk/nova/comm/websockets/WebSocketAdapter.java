@@ -31,7 +31,7 @@ public class WebSocketAdapter extends CommAdapter<String> {
 
     private WebSocketAdapter(Builder builder) {
         super(builder.messageTranscriber, builder.metrics);
-        this.metricsCollector = new MetricsCollector(builder.metrics);
+        this.metricsCollector = new MetricsCollector(builder.identifier, builder.metrics);
         this.httpServer = builder.httpServer;
         if (httpServer !=null) {
 //            if (httpServer.isStarted()) {
@@ -68,10 +68,16 @@ public class WebSocketAdapter extends CommAdapter<String> {
     }
 
     public static class Builder extends CommAdapterBuilder<String, WebSocketAdapter>{
+        public String identifier;
         private HttpServer httpServer;
         private AsyncHttpClient httpClient;
 
         private Builder() {
+        }
+
+        public Builder setIdentifier (String identifier) {
+            this.identifier = identifier;
+            return this;
         }
 
         public Builder setHttpClient (AsyncHttpClient httpClient) {
@@ -86,6 +92,9 @@ public class WebSocketAdapter extends CommAdapter<String> {
 
         public WebSocketAdapter createInstance() {
             validate();
+            if (httpClient == null) {
+                httpClient = new AsyncHttpClient();
+            }
             if (messageTranscriber == null) {
                 messageTranscriber = new DefaultMessageTranscriberForStringAsTransportType();
             }

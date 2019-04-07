@@ -11,7 +11,7 @@
 package ch.squaredesk.nova.comm.sending;
 
 import ch.squaredesk.nova.metrics.Metrics;
-import io.reactivex.Completable;
+import io.reactivex.Single;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -26,7 +26,7 @@ class MessageSenderTest {
         MessageSender<Object, Object, OutgoingMessageMetaData<Object, Object>> impl =
                 new MessageSender<Object, Object, OutgoingMessageMetaData<Object, Object>>(null, new Metrics()) {
                     @Override
-                    public Completable send(Object message, OutgoingMessageMetaData<Object, Object> sendingInfo) {
+                    public Single<OutgoingMessageMetaData<Object, Object>> send(Object message, OutgoingMessageMetaData<Object, Object> sendingInfo) {
                         return null;
                     }
                 }
@@ -40,7 +40,7 @@ class MessageSenderTest {
                 () -> {
                     new MessageSender<Object, Object, OutgoingMessageMetaData<Object, Object>>(null) {
                         @Override
-                        public Completable send(Object message, OutgoingMessageMetaData<Object, Object> sendingInfo) {
+                        public Single<OutgoingMessageMetaData<Object, Object>> send(Object message, OutgoingMessageMetaData<Object, Object> sendingInfo) {
                             return null;
                         }
                     };

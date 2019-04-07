@@ -11,7 +11,7 @@
 
 package ch.squaredesk.nova.comm.rest;
 
-import ch.squaredesk.nova.comm.http.HttpServerConfiguration;
+import ch.squaredesk.nova.comm.http.HttpServerSettings;
 import ch.squaredesk.nova.spring.NovaProvidingConfiguration;
 import org.glassfish.grizzly.http.server.HttpServer;
 import org.junit.jupiter.api.AfterEach;
@@ -31,7 +31,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 
 class RestEnablingConfigurationTest {
-    HttpServerConfiguration serverConfiguration;
+    HttpServerSettings serverConfiguration;
     Set<Object> handlerBeans;
     AnnotationConfigApplicationContext ctx;
 
@@ -39,7 +39,7 @@ class RestEnablingConfigurationTest {
         ctx = new AnnotationConfigApplicationContext();
         ctx.register(configClass);
         ctx.refresh();
-        serverConfiguration = ctx.getBean(HttpServerConfiguration.class);
+        serverConfiguration = ctx.getBean(HttpServerSettings.class);
         handlerBeans = ctx.getBean(RestBeanPostprocessor.class).handlerBeans;
         return ctx;
     }
@@ -49,7 +49,7 @@ class RestEnablingConfigurationTest {
         System.clearProperty("NOVA.HTTP.REST.INTERFACE_NAME");
         System.clearProperty("NOVA.HTTP.REST.PORT");
         System.clearProperty("NOVA.HTTP.REST.CAPTURE_METRICS");
-        System.clearProperty("NOVA.HTTP.REST.SERVER.AUTO_START");
+        System.clearProperty("NOVA.HTTP.SERVER.AUTO_START");
     }
 
     @AfterEach
@@ -60,20 +60,23 @@ class RestEnablingConfigurationTest {
     @Test
     void ifNothingSpecifiedRestServerIsStartedWhenTheApplicationContextIsInitialized() throws Exception{
         ApplicationContext ctx = setupContext(MyConfig.class);
-        assertThat(ctx.getBean("restServerStarter"), not(is(nullValue())));
+        assertThat(ctx.getBean("httpServer"), not(is(nullValue())));
+        assertThat(ctx.getBean("httpServer", HttpServer.class).isStarted(), is(true));
     }
 
     @Test
     void autoRestServerStartingCanBeSwitchedOffWithEnvVariable() throws Exception{
-        System.setProperty("NOVA.HTTP.REST.SERVER.AUTO_START", "false");
+        System.setProperty("NOVA.HTTP.SERVER.AUTO_START", "false");
         ApplicationContext ctx = setupContext(MyConfig.class);
-        assertThat(ctx.getBean("autoStartRestServer"), is(false));
+        assertThat(ctx.getBean("httpServer"), not(is(nullValue())));
+        assertThat(ctx.getBean("httpServer", HttpServer.class).isStarted(), is(false));
     }
 
     @Test
     void autoRestServerStartingCanBeSwitchedOffWithCustomBean() throws Exception{
         ApplicationContext ctx = setupContext(MyConfigWithNoAutostart.class);
-        assertThat(ctx.getBean("autoStartRestServer"), is(false));
+        assertThat(ctx.getBean("httpServer"), not(is(nullValue())));
+        assertThat(ctx.getBean("httpServer", HttpServer.class).isStarted(), is(false));
     }
 
     @Test
@@ -110,7 +113,7 @@ class RestEnablingConfigurationTest {
     @Configuration
     @Import({RestEnablingConfiguration.class, NovaProvidingConfiguration.class })
     public static class MyConfigWithNoAutostart {
-        @Bean("autoStartRestServer")
+        @Bean("autoStartHttpServer")
         boolean myAutoStartBean() {
             return false;
         }
@@ -129,12 +132,14 @@ class RestEnablingConfigurationTest {
     public static class MyDummyBeanToHaveAtLeastOneRestEndpoint {
         @Path("somePath")
         @GET
-        public void foo() {
+        public String foo() {
+            return "foo";
         }
 
         @Path("someAdditionalPath")
         @GET
-        public void bar() {
+        public String bar() {
+            return "bar";
         }
     }
 }

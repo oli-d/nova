@@ -12,8 +12,9 @@
 package ch.squaredesk.nova.comm.rest;
 
 import ch.squaredesk.nova.Nova;
-import ch.squaredesk.nova.comm.http.HttpServerConfiguration;
-import ch.squaredesk.nova.comm.http.spring.HttpServerConfigurationProvidingConfiguration;
+import ch.squaredesk.nova.comm.http.HttpServerSettings;
+import ch.squaredesk.nova.comm.http.spring.HttpServerProvidingConfiguration;
+import ch.squaredesk.nova.spring.NovaProvidingConfiguration;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.dropwizard.metrics5.Timer;
 import org.glassfish.grizzly.http.server.HttpServer;
@@ -40,19 +41,17 @@ import javax.ws.rs.ext.Provider;
 import java.net.URI;
 
 @Configuration
-@Import(HttpServerConfigurationProvidingConfiguration.class)
+@Import({HttpServerProvidingConfiguration.class, NovaProvidingConfiguration.class})
 @Order // default = Ordered.LOWEST_PRECEDENCE, which is exactly what we want
 public class RestEnablingConfiguration {
-    @Autowired
-    Environment environment;
 
-    @Bean
-    public static RestBeanPostprocessor restBeanPostProcessor() {
+    @Bean("restBeanPostProcessor")
+    static RestBeanPostprocessor restBeanPostProcessor() {
         return new RestBeanPostprocessor();
     }
 
-    @Bean(name = "captureRestMetrics")
-    public boolean captureRestMetrics() {
+    @Bean("captureRestMetrics")
+    boolean captureRestMetrics(Environment environment) {
         boolean captureMetrics = true;
         try {
             captureMetrics = Boolean.valueOf(environment.getProperty("NOVA.HTTP.REST.CAPTURE_METRICS", "true"));
@@ -63,30 +62,36 @@ public class RestEnablingConfiguration {
         return captureMetrics;
     }
 
-    @Bean("autoStartRestServer")
-    public boolean autoStartRestServer() {
-        return environment.getProperty("NOVA.HTTP.REST.SERVER.AUTO_START", Boolean.class, true);
+//    @Bean("autoStartHttpServer")
+//    public boolean autoStartHttpServer(Environment environment) {
+//        return false;
+//    }
+//
+//    @Bean("autoCreateHttpServer")
+//    public boolean autoCreateHttpServer(Environment environment) {
+//        return false;
+//    }
+
+    @Bean("restHandlerPackages")
+    public String[] restHandlerPackages(Environment environment) {
+        return new String[] {"ch.squaredesk"};
     }
 
-    @Bean
-    RestServerStarter restServerStarter() {
-        return new RestServerStarter(autoStartRestServer());
-    }
 
-    @Lazy // must be created after all other beans have been created (because of ch.squaredesk.nova.events.ch.squaredesk.nova.events.annotation processing)
+    @Lazy
     @Bean("httpServer")
-    public HttpServer restHttpServer(RestBeanPostprocessor restBeanPostprocessor,
-                                     HttpServerConfiguration httpServerConfiguration,
-                                     @Qualifier("restObjectMapper")
-                                     @Autowired(required = false)
-                                     ObjectMapper restObjectMapper,
-                                     Nova nova) {
+    HttpServer httpServer(@Qualifier("restBeanPostProcessor") RestBeanPostprocessor restBeanPostprocessor,
+                          @Qualifier("restHandlerPackages") String[] restHandlerPackages,
+                          @Qualifier("httpServerSettings") HttpServerSettings httpServerSettings,
+                          @Qualifier("restObjectMapper") @Autowired(required = false) ObjectMapper restObjectMapper,
+                          @Qualifier("captureRestMetrics") boolean captureRestMetrics,
+                          Nova nova) {
         ResourceConfig resourceConfig = new ResourceConfig()
-            .register(MultiPartFeature.class)
-            .register(JacksonFeature.class);
+                .register(MultiPartFeature.class)
+                .register(JacksonFeature.class);
 
         // do we have a specific ObjectMapper?
-        if (restObjectMapper!=null) {
+        if (restObjectMapper != null) {
             // super ugly hack, but Jersey needs public static providers :-(
             SpecificRestObjectMapperProvider.STATIC_OBJECT_MAPPER = restObjectMapper;
         } else {
@@ -94,8 +99,9 @@ public class RestEnablingConfiguration {
         }
         resourceConfig.register(SpecificRestObjectMapperProvider.class);
         resourceConfig.registerInstances(restBeanPostprocessor.handlerBeans.toArray());
+//        resourceConfig.packages(true, restHandlerPackages);
 
-        if (captureRestMetrics() && nova != null) {
+        if (captureRestMetrics && nova != null) {
             RequestEventListener requestEventListener = event -> {
                 String eventId = event.getContainerRequest().getPath(true);
                 Timer timer = nova.metrics.getTimer("rest", eventId);
@@ -122,20 +128,18 @@ public class RestEnablingConfiguration {
             });
         }
 
-        URI serverAddress = UriBuilder.fromPath("http://" + httpServerConfiguration.interfaceName + ":" +
-                httpServerConfiguration.port).build();
+        URI serverAddress = UriBuilder.fromPath("http://" + httpServerSettings.interfaceName + ":" +
+                httpServerSettings.port).build();
         return GrizzlyHttpServerFactory.createHttpServer(serverAddress, resourceConfig, false);
     }
 
     @Provider
     public static class SpecificRestObjectMapperProvider implements ContextResolver<ObjectMapper> {
-        public static ObjectMapper STATIC_OBJECT_MAPPER;
+        static ObjectMapper STATIC_OBJECT_MAPPER;
 
         @Override
         public ObjectMapper getContext(Class<?> type) {
             return STATIC_OBJECT_MAPPER;
         }
     }
-
-
 }

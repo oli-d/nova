@@ -12,6 +12,7 @@ package ch.squaredesk.nova.comm.jms;
 
 import ch.squaredesk.nova.metrics.Metrics;
 import io.reactivex.Completable;
+import io.reactivex.Single;
 
 import javax.jms.Destination;
 import javax.jms.MessageProducer;
@@ -30,7 +31,7 @@ public class MessageSender extends ch.squaredesk.nova.comm.sending.MessageSender
     }
 
     @Override
-    public Completable send(String message, OutgoingMessageMetaData meta) {
+    public Single<OutgoingMessageMetaData> send(String message, OutgoingMessageMetaData meta) {
         requireNonNull(message, "message must not be null");
 
         try {
@@ -55,11 +56,10 @@ public class MessageSender extends ch.squaredesk.nova.comm.sending.MessageSender
                         meta.details.priority,
                         meta.details.timeToLive);
             }
-            return Completable.complete();
+            return Single.just(meta.setJmsMessage(textMessage));
         } catch (Exception e) {
-            return Completable.error(e);
+            return Single.error(e);
         }
-        /*.subscribeOn(JmsAdapter.jmsSubscriptionScheduler)*/
     }
 
 }

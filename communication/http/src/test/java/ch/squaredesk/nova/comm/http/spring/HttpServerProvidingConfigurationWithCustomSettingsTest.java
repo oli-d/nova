@@ -1,7 +1,8 @@
 package ch.squaredesk.nova.comm.http.spring;
 
-import ch.squaredesk.nova.comm.http.HttpServerConfiguration;
+import ch.squaredesk.nova.comm.http.HttpServerSettings;
 import ch.squaredesk.nova.spring.NovaProvidingConfiguration;
+import org.glassfish.grizzly.http.server.HttpServer;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -14,7 +15,7 @@ import static org.hamcrest.junit.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 @Tag("medium")
-class HttpServerConfigurationProvidingConfigurationTest {
+class HttpServerProvidingConfigurationWithCustomSettingsTest {
     private AnnotationConfigApplicationContext ctx = new AnnotationConfigApplicationContext();
 
     private void setupContext(Class configClass) {
@@ -29,23 +30,12 @@ class HttpServerConfigurationProvidingConfigurationTest {
     }
 
     @Test
-    void importingConfigCreatesDefaultSettings() {
-        setupContext(MyDefaultConfig.class);
-
-        HttpServerConfiguration cfg = ctx.getBean(HttpServerConfiguration.class);
-
-        assertNotNull(cfg);
-        assertThat(cfg.interfaceName, is("0.0.0.0"));
-        assertThat(cfg.port, is(10000));
-    }
-
-    @Test
     void defaultSettingsCanBeOverriddenWithEnvironmentVariables() {
         System.setProperty("NOVA.HTTP.SERVER.PORT", "1234");
         System.setProperty("NOVA.HTTP.SERVER.INTERFACE_NAME", "oli");
-        setupContext(MyDefaultConfig.class);
+        setupContext(EmptyConfig.class);
 
-        HttpServerConfiguration cfg = ctx.getBean(HttpServerConfiguration.class);
+        HttpServerSettings cfg = ctx.getBean(HttpServerSettings.class);
 
         assertNotNull(cfg);
         assertThat(cfg.interfaceName, is("oli"));
@@ -56,18 +46,22 @@ class HttpServerConfigurationProvidingConfigurationTest {
     void defaultSettingsCanBeOverriddenWithProvidingOurOwnBeans() {
         setupContext(MyOverridingConfig.class);
 
-        HttpServerConfiguration cfg = ctx.getBean(HttpServerConfiguration.class);
+        HttpServerSettings cfg = ctx.getBean(HttpServerSettings.class);
 
         assertNotNull(cfg);
         assertThat(cfg.interfaceName, is("xxx"));
         assertThat(cfg.port, is(2345));
     }
 
-    @Import({HttpServerConfigurationProvidingConfiguration.class, NovaProvidingConfiguration.class})
-    public static class MyDefaultConfig {
+    @Import(HttpServerProvidingConfiguration.class)
+    public static class EmptyConfig {
+        @Bean("httpServer")
+        public HttpServer httpServer() {
+            return null;
+        }
     }
 
-    @Import({HttpServerConfigurationProvidingConfiguration.class, NovaProvidingConfiguration.class})
+    @Import(HttpServerProvidingConfiguration.class)
     public static class MyOverridingConfig {
         @Bean("httpServerPort")
         public Integer httpServerPort() {
@@ -77,6 +71,11 @@ class HttpServerConfigurationProvidingConfigurationTest {
         @Bean("httpServerInterfaceName")
         public String interfaceName() {
             return "xxx";
+        }
+
+        @Bean("httpServer")
+        public HttpServer httpServer() {
+            return null;
         }
     }
 }

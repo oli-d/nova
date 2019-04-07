@@ -18,34 +18,21 @@ When you do so, default configuration will be applied, which can be overridden v
 environment variables or by providing the appropriate beans yourself. The possible
 configuration values are
 
-  | @Bean name                         | Environnment variable name                   | Description                                              | Default value |
-  |------------------------------------|----------------------------------------------|----------------------------------------------------------|---------------|
-  | defaultHttpRequestTimeoutInSeconds | NOVA.HTTP.DEFAULT_REQUEST_TIMEOUT_IN_SECONDS | the default timeout in seconds when firing HTTP requests | 30 |
-  | defaultHttpAdapterIdentifier       | NOVA.HTTP.ADAPTER_IDENTIFIER                 | the identifier to assign to the HttpAdapter.             | <null> |
+  | @Bean name                    | Environnment variable name              | Description                                                                   | Default value |
+  |-------------------------------|-----------------------------------------|-------------------------------------------------------------------------------|---------------|
+  | defaultMessageDeliveryMode    | NOVA.JMS.DEFAULT_MESSAGE_DELIVERY_MODE  | the default message delivery mode (can be overridden on a call-by-call basis) | Message.DEFAULT_DELIVERY_MODE |
+  | defaultMessagePriority        | NOVA.JMS.DEFAULT_MESSAGE_PRIORITY       | the default message priority (can be overridden on a call-by-call basis)      | Message.DEFAULT_PRIORITY |
+  | defaultMessageTimeToLive      | NOVA.JMS.DEFAULT_MESSAGE_TIME_TO_LIVE   | the default message TTL (can be overridden on a call-by-call basis)           | Message.DEFAULT_TIME_TO_LIVE |
+  | consumerSessionAckMode        | NOVA.JMS.CONSUMER_SESSION_ACK_MODE      | the ACK mode for received messages | Session.AUTO_ACKNOWLEDGE                 |
+  | producerSessionAckMode        | NOVA.JMS.PRODUCER_SESSION_ACK_MODE      | the ACK mode for sent messages | Session.AUTO_ACKNOWLEDGE                     |
+  | defaultJmsRpcTimeoutInSeconds | NOVA.JMS.DEFAULT_RPC_TIMEOUT_IN_SECONDS | the default timeout in seconds when firing RPC requests                       | 30 |
+  | jmsAdapterIdentifier          | NOVA.JMS.ADAPTER_IDENTIFIER             | the identifier to assign to the JmsAdapter.                                   | <null> |
+  | jmsAdapterSettings            | n/a                                     | a ```JmsAdapterSettings``` instance, containing all aforementioned config values. Handy if you want to read the configuration or override multiple defaults programmatically. |  |
   | | | | |
-  | httpServer                         | n/a                                          | the ```HttpServer``` instance, handling the incoming communication. This is an optional bean. If not provided, the HttpAdapter can only be used in client mode.| <null> |
-  | httpMessageTranscriber             | n/a                                          | the transcriber to use for incoming / outgoing messages  | default transcriber, see below |
-  | | | | |
-  | httpServerStarter                  | n/a                                          | If you provide bean of class ```HttpServerStarter``` in your ApplicationContext, it will make sure that the server is automatically started as soon as you fire up the ApplicationContext.| <null> |
+  | jmsMessageTranscriber         | n/a                                     | the transcriber to use for incoming / outgoing messages                       | default transcriber, see below |
+  | jmsCorrelationIdGenerator     | n/a                                     | Every message will be sent via the JmsAdapter using a unique correlation ID, obtained from this instance. | default UUID provider |
+  | jmsDestinationIdGenerator     | n/a                                     | Destination objects are cached internally, and for that we use a (unique) ID obtained from this instance. | default ID provider, only override if you know what you're doing |
 
-As described above, by default the HttpAdapter will only work in "client mode". If you want to listen to HTTP requests, 
-you have to provide an ```HttpServer``` instance as a bean in your ApplicationContext. This can also be done very easily 
-by importing the ```HttpServerProvidingConfiguration``` which will automatically provide the appropriate bean named "httpServer". 
-The configuration options are  
-   
-  | @Bean name                         | Environnment variable name                   | Description                                              | Default value |
-  |------------------------------------|----------------------------------------------|----------------------------------------------------------|---------------|
-  | httpServerPort                     | NOVA.HTTP.SERVER.PORT                        | the port, the HTTP server listens on                     | 10000         |
-  | httpServerInterfaceName            | NOVA.HTTP.SERVER.INTERFACE_NAME              | the interface, the HTTP server listens on                | "0.0.0.0"     |
-  | httpServerKeyStore                 | NOVA.HTTP.SERVER.KEY_STORE                   | the keystore to use. Switches on SSL                     | <null>        |
-  | httpServerKeyStorePass             | NOVA.HTTP.SERVER.KEY_STORE_PASS              | the password for the keystore                            | <null>        |
-  | httpServerTrustStore               | NOVA.HTTP.SERVER.TRUST_STORE                 | the truststore to use to validate clients                | <null>        |
-  | httpServerTrustStorePass           | NOVA.HTTP.SERVER.TRUST_STORE_PASS            | the password for the trust store                         | <null>        |
-  | | | | |
-  | httpServerConfiguration            | n/a                                          | an ```HttpConfiguration``` instance, containing all aforementioned config values. Handy if you want to read the configuration or override multiple defaults programmatically. |  |
-   
-
-    
 Of course you can also instantiate a new ```JmsAdapter``` instance programmatically. To do so,
 make use of the ```Builder``` that can be obtained by invoking the builder method
  

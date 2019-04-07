@@ -27,18 +27,16 @@ configuration values are
 
   | @Bean name                         | Environnment variable name                   | Description                                              | Default value |
   |------------------------------------|----------------------------------------------|----------------------------------------------------------|---------------|
+  | httpAdapterIdentifier              | NOVA.HTTP.ADAPTER_IDENTIFIER                 | the identifier to assign to the HttpAdapter.             | <null> |
   | defaultHttpRequestTimeoutInSeconds | NOVA.HTTP.DEFAULT_REQUEST_TIMEOUT_IN_SECONDS | the default timeout in seconds when firing HTTP requests | 30 |
-  | defaultHttpAdapterIdentifier       | NOVA.HTTP.ADAPTER_IDENTIFIER                 | the identifier to assign to the HttpAdapter.             | <null> |
+  | autoCreateHttpServer               | NOVA.HTTP.SERVER.AUTO_CREATE                 | If this is false, the system will NOT automatically create an HttpServer | true |
+  | autoStartHttpServer                | NOVA.HTTP.SERVER.AUTO_FALSE                  | If true, the system will automatically start the HttpServer when the ApplicationContext is initialized| true |
   | | | | |
-  | httpServer                         | n/a                                          | the ```HttpServer``` instance, handling the incoming communication. This is an optional bean. If not provided, the HttpAdapter can only be used in client mode.| <null> |
+  | httpServer                         | n/a                                          | the ```HttpServer``` instance, handling the incoming communication. | An instance with default settings (see below) |
   | httpMessageTranscriber             | n/a                                          | the transcriber to use for incoming / outgoing messages  | default transcriber, see below |
-  | | | | |
-  | httpServerStarter                  | n/a                                          | If you provide bean of class ```HttpServerStarter``` in your ApplicationContext, it will make sure that the server is automatically started as soon as you fire up the ApplicationContext.| <null> |
 
-As described above, by default the HttpAdapter will only work in "client mode". If you want to listen to HTTP requests, 
-you have to provide an ```HttpServer``` instance as a bean in your ApplicationContext. This can also be done very easily 
-by importing the ```HttpServerProvidingConfiguration``` which will automatically provide the appropriate bean named "httpServer". 
-The configuration options are  
+As described above, by default the HttpAdapter will use an ```HttpServer``` with default settings. This bean is provided by the  
+```HttpServerProvidingConfiguration``` which is automatically imported. The configuration options are: 
    
   | @Bean name                         | Environnment variable name                   | Description                                              | Default value |
   |------------------------------------|----------------------------------------------|----------------------------------------------------------|---------------|
@@ -49,9 +47,10 @@ The configuration options are
   | httpServerTrustStore               | NOVA.HTTP.SERVER.TRUST_STORE                 | the truststore to use to validate clients                | <null>        |
   | httpServerTrustStorePass           | NOVA.HTTP.SERVER.TRUST_STORE_PASS            | the password for the trust store                         | <null>        |
   | | | | |
-  | httpServerConfiguration            | n/a                                          | an ```HttpServerConfiguration``` instance, containing all aforementioned config values. Handy if you want to read the configuration or override multiple defaults programmatically. |  |
+  | httpServerSettings                 | n/a                                          | an ```HttpServerSettings``` instance, containing all aforementioned config values. Handy if you want to read the configuration or override multiple defaults programmatically. |  |
    
-
+Note that the ```HttpServer``` is not mandatory. The adapter can be created without it in case
+you want to work in "client mode" only. 
     
 ### 2.2 Manual instantiation
 

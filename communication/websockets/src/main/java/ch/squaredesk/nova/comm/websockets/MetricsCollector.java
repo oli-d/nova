@@ -13,6 +13,7 @@ package ch.squaredesk.nova.comm.websockets;
 import ch.squaredesk.nova.metrics.Metrics;
 import io.dropwizard.metrics5.Counter;
 import io.dropwizard.metrics5.Meter;
+import io.dropwizard.metrics5.MetricName;
 
 import static java.util.Objects.requireNonNull;
 
@@ -25,10 +26,10 @@ public class MetricsCollector {
     private final Meter totalNumberOfSentMessages;
     private final Counter totalNumberOfSubscriptions;
 
-    public MetricsCollector(Metrics metrics) {
+    public MetricsCollector(String identifier, Metrics metrics) {
         requireNonNull(metrics, "metrics must not be null");
         this.metrics = metrics;
-        this.identifierPrefix = Metrics.name("websocket").toString();
+        this.identifierPrefix = Metrics.name("websocket", identifier).toString();
         totalNumberOfReceivedMessages = metrics.getMeter(this.identifierPrefix,"received","total");
         totalNumberOfUnparsabledMessagesReceived = metrics.getMeter(this.identifierPrefix,"received","unparsable","total");
         totalNumberOfSentMessages = metrics.getMeter(this.identifierPrefix,"sent","total");

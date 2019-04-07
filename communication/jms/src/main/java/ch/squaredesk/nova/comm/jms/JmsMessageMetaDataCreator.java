@@ -19,6 +19,7 @@ class JmsMessageMetaDataCreator {
         try {
             return new IncomingMessageMetaData(
                     message.getJMSDestination(),
+                    message,
                     JmsSpecificInfoExtractor.extractFrom(message));
         } catch (JMSException e) {
             throw new RuntimeException("Unable to parse incoming message", e);

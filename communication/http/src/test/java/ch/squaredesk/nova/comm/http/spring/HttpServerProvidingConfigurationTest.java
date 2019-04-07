@@ -1,64 +1,37 @@
 package ch.squaredesk.nova.comm.http.spring;
 
+import ch.squaredesk.nova.comm.http.HttpServerSettings;
 import ch.squaredesk.nova.spring.NovaProvidingConfiguration;
 import org.glassfish.grizzly.http.server.HttpServer;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import org.springframework.context.annotation.AnnotationConfigApplicationContext;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Import;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @Tag("medium")
+@ExtendWith(SpringExtension.class)
+@ContextConfiguration(classes = {HttpServerProvidingConfiguration.class, NovaProvidingConfiguration.class})
 class HttpServerProvidingConfigurationTest {
-    private AnnotationConfigApplicationContext ctx = new AnnotationConfigApplicationContext();
+    @Autowired
+    private HttpServer httpServer;
+    @Autowired
+    private HttpServerSettings settings;
 
-    private void setupContext(Class configClass) {
-        ctx.register(configClass);
-        ctx.refresh();
-    }
-
-    @AfterEach
-    void shutdownServer() throws Exception  {
-        HttpServer server = ctx.getBean(HttpServer.class);
-        if (server!=null) {
-            server.shutdown().get();
-        }
-    }
 
     @Test
     void importingConfigCreatesServerWithDefaultSettings() {
-        setupContext(DefaultConfig.class);
-
-        HttpServer server = ctx.getBean(HttpServer.class);
-
-        assertNotNull(server);
-        assertThat(server.isStarted(), is(false));
+        assertNotNull(httpServer);
+        assertTrue(httpServer.isStarted());
+        assertNotNull(settings);
+        assertThat(settings.interfaceName, is("0.0.0.0"));
+        assertThat(settings.port, is(10000));
     }
 
-    @Test
-    void providingServerStarterBeanAutomaticallyStartsServer() {
-        setupContext(ConfigWithStarter.class);
-
-        HttpServer server = ctx.getBean(HttpServer.class);
-
-        assertNotNull(server);
-        assertThat(server.isStarted(), is(true));
-    }
-
-    @Import({HttpServerProvidingConfiguration.class, NovaProvidingConfiguration.class})
-    public static class DefaultConfig {
-    }
-
-    @Import({HttpServerProvidingConfiguration.class, NovaProvidingConfiguration.class})
-    public static class ConfigWithStarter {
-        @Bean
-        public HttpServerStarter serverStarter() {
-            return new HttpServerStarter();
-        }
-    }
 }

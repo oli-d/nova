@@ -11,22 +11,21 @@
 package ch.squaredesk.nova.comm.websockets.annotation;
 
 import ch.squaredesk.nova.Nova;
-import ch.squaredesk.nova.comm.http.HttpServerConfiguration;
+import ch.squaredesk.nova.comm.http.HttpServerSettings;
+import ch.squaredesk.nova.comm.http.spring.HttpServerStarter;
 import ch.squaredesk.nova.comm.websockets.WebSocket;
 import ch.squaredesk.nova.comm.websockets.WebSocketAdapter;
 import ch.squaredesk.nova.comm.websockets.client.ClientEndpoint;
-import ch.squaredesk.nova.metrics.Metrics;
-import ch.squaredesk.nova.spring.NovaProvidingConfiguration;
-import com.ning.http.client.AsyncHttpClient;
+import ch.squaredesk.nova.comm.websockets.spring.WebSocketEnablingConfiguration;
 import org.glassfish.grizzly.http.server.HttpServer;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Import;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import java.util.Random;
 import java.util.concurrent.CountDownLatch;
@@ -36,30 +35,23 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 @Tag("medium")
+@ExtendWith(SpringExtension.class)
+@ContextConfiguration(classes = { WebSocketEnablingConfiguration.class, SpringWiringTest.MyConfig.class})
 public class SpringWiringTest {
-
-    private AnnotationConfigApplicationContext ctx = new AnnotationConfigApplicationContext();
-    private String serverUrl;
-
-    private void setupContext(Class configClass) throws Exception {
-        ctx.register(configClass);
-        ctx.refresh();
-        HttpServerConfiguration cfg = ctx.getBean(HttpServerConfiguration.class);
-        serverUrl = "ws://127.0.0.1:" + cfg.port;
-    }
-
-    @AfterEach
-    public void tearDown() {
-        ctx.close();
-    }
+    @Autowired
+    HttpServerSettings httpServerSettings;
+    @Autowired
+    HttpServer httpServer;
+    @Autowired
+    Nova nova;
+    @Autowired
+    WebSocketAdapter webSocketAdapter;
 
     @Test
     public void webSocketEndpointCanProperlyBeInvoked() throws Exception {
-        setupContext(MyConfig.class);
-        Metrics metrics = ctx.getBean(Nova.class).metrics;
-        assertThat(metrics.getMeter("websocket", "received", "echo").getCount(), is(0L));
+        httpServer.start();
 
-        WebSocketAdapter webSocketAdapter = ctx.getBean(WebSocketAdapter.class);
+        String serverUrl = "ws://127.0.0.1:" + httpServerSettings.port;
         ClientEndpoint clientSideSocket = webSocketAdapter.connectTo(serverUrl+"/echo");
         CountDownLatch cdl = new CountDownLatch(1);
         Integer[] resultHolder = new Integer[1];
@@ -74,33 +66,15 @@ public class SpringWiringTest {
         assertThat(cdl.getCount(), is (0L));
         assertThat(resultHolder[0], is(dataToSend));
 
-        assertThat(metrics.getMeter("websocket", "received", "echo").getCount(), is(1L));
+        assertThat(nova.metrics.getMeter("websocket", "received", "echo").getCount(), is(1L));
     }
 
     @Configuration
-    @Import({NovaProvidingConfiguration.class, WebSocketEnablingConfiguration.class})
     public static class MyConfig  {
-        @Autowired
-        Nova nova;
-        @Autowired
-        HttpServer httpServer;
-        @Autowired
-        AsyncHttpClient httpClient;
-
         @Bean
         public MyBean myBean() {
             return new MyBean();
         }
-
-        @Bean
-        public WebSocketAdapter webSocketAdapter() {
-            return WebSocketAdapter.builder()
-                    .setHttpServer(httpServer)
-                    .setHttpClient(httpClient)
-                    .setMetrics(nova.metrics)
-                    .build();
-        }
-
     }
 
     public static class MyBean {

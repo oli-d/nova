@@ -113,11 +113,11 @@ class JmsAdapterTest {
         RetrieveInfo rpcInfo = new RetrieveInfo("c1", null, null);
         RetrieveInfo messageInfo = new RetrieveInfo(null, null, null);
         IncomingMessage[] messages = new IncomingMessage[] {
-                new IncomingMessage<>("one", new IncomingMessageMetaData(origin, rpcInfo)),
-                new IncomingMessage<>("two", new IncomingMessageMetaData(origin, messageInfo)),
-                new IncomingMessage<>("three", new IncomingMessageMetaData(origin, messageInfo)),
-                new IncomingMessage<>("four", new IncomingMessageMetaData(origin, messageInfo)),
-                new IncomingMessage<>("five", new IncomingMessageMetaData(origin, rpcInfo))
+                new IncomingMessage<>("one", new IncomingMessageMetaData(origin, null, rpcInfo)),
+                new IncomingMessage<>("two", new IncomingMessageMetaData(origin, null, messageInfo)),
+                new IncomingMessage<>("three", new IncomingMessageMetaData(origin, null, messageInfo)),
+                new IncomingMessage<>("four", new IncomingMessageMetaData(origin, null, messageInfo)),
+                new IncomingMessage<>("five", new IncomingMessageMetaData(origin, null, rpcInfo))
         };
 
         TestSubscriber<String> subscriber = sut.messages(origin).test();
@@ -224,10 +224,10 @@ class JmsAdapterTest {
         }
 
         @Override
-        public Completable send(String message, OutgoingMessageMetaData meta) {
+        public Single<OutgoingMessageMetaData> send(String message, OutgoingMessageMetaData meta) {
             this.message = message;
             this.metaData = meta;
-            return Completable.complete();
+            return Single.just(meta);
         }
     }
 

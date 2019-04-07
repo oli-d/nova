@@ -12,6 +12,7 @@ package ch.squaredesk.nova.comm.kafka;
 
 import ch.squaredesk.nova.metrics.Metrics;
 import io.reactivex.Completable;
+import io.reactivex.Single;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerRecord;
@@ -31,9 +32,10 @@ public class MessageSender extends ch.squaredesk.nova.comm.sending.MessageSender
     }
 
     @Override
-    public Completable send(String message, OutgoingMessageMetaData sendingInfo) {
+    public Single<OutgoingMessageMetaData> send(String message, OutgoingMessageMetaData sendingInfo) {
         requireNonNull(message, "message must not be null");
-        return Completable.fromFuture(producer.send(new ProducerRecord<>(sendingInfo.destination, message)));
+        return Single.fromFuture(producer.send(new ProducerRecord<>(sendingInfo.destination, message)))
+                .map(producerRecord -> sendingInfo);
     }
 
 }

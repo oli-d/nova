@@ -26,7 +26,7 @@ import static org.hamcrest.Matchers.is;
 
 @Tag("medium")
 class RpcServerSslTest {
-    private HttpServerConfiguration rsc = HttpServerConfiguration.builder()
+    private HttpServerSettings rsc = HttpServerSettings.builder()
             .interfaceName("127.0.0.1")
             .port(10000)
             .sslKeyStorePath("src/test/resources/ssl/keystore.jks")
