@@ -19,8 +19,8 @@ import org.springframework.context.annotation.Import;
 @Configuration
 @Import({RestEnablingConfiguration.class, NovaProvidingConfiguration.class })
 public class EchoConfiguration {
-    @Bean
-    public EchoHandler echoHandler() {
-        return new EchoHandler();
+    @Bean("restPackagesToScanForHandlers")
+    public String[] restPackagesToScanForHandlers() {
+        return new String[]{"ch.squaredesk.nova.comm.rest.example"};
     }
 }

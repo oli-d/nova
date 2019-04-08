@@ -39,22 +39,17 @@ import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.ext.ContextResolver;
 import javax.ws.rs.ext.Provider;
 import java.net.URI;
+import java.util.Arrays;
 
 @Configuration
 @Import({HttpServerProvidingConfiguration.class, NovaProvidingConfiguration.class})
-@Order // default = Ordered.LOWEST_PRECEDENCE, which is exactly what we want
 public class RestEnablingConfiguration {
-
-    @Bean("restBeanPostProcessor")
-    static RestBeanPostprocessor restBeanPostProcessor() {
-        return new RestBeanPostprocessor();
-    }
 
     @Bean("captureRestMetrics")
     boolean captureRestMetrics(Environment environment) {
         boolean captureMetrics = true;
         try {
-            captureMetrics = Boolean.valueOf(environment.getProperty("NOVA.HTTP.REST.CAPTURE_METRICS", "true"));
+            captureMetrics = Boolean.valueOf(environment.getProperty("NOVA.REST.CAPTURE_METRICS", "true"));
         } catch (Exception e) {
             // noop, stick to default value
         }
@@ -62,30 +57,25 @@ public class RestEnablingConfiguration {
         return captureMetrics;
     }
 
-//    @Bean("autoStartHttpServer")
-//    public boolean autoStartHttpServer(Environment environment) {
-//        return false;
-//    }
-//
-//    @Bean("autoCreateHttpServer")
-//    public boolean autoCreateHttpServer(Environment environment) {
-//        return false;
-//    }
-
-    @Bean("restHandlerPackages")
-    public String[] restHandlerPackages(Environment environment) {
-        return new String[] {"ch.squaredesk"};
+    @Bean("restPackagesToScanForHandlers")
+    public String[] packagesToScanForHandlers(Environment environment) {
+        String value = System.getProperty("NOVA.REST.PACKAGES_TO_SCAN_FOR_HANDLERS", "");
+        return value.split(",");
     }
 
 
-    @Lazy
     @Bean("httpServer")
-    HttpServer httpServer(@Qualifier("restBeanPostProcessor") RestBeanPostprocessor restBeanPostprocessor,
-                          @Qualifier("restHandlerPackages") String[] restHandlerPackages,
+    HttpServer httpServer(@Qualifier("restPackagesToScanForHandlers") String[] restPackagesToScanForHandlers,
                           @Qualifier("httpServerSettings") HttpServerSettings httpServerSettings,
                           @Qualifier("restObjectMapper") @Autowired(required = false) ObjectMapper restObjectMapper,
                           @Qualifier("captureRestMetrics") boolean captureRestMetrics,
                           Nova nova) {
+
+        if (restPackagesToScanForHandlers == null ||
+                Arrays.stream(restPackagesToScanForHandlers).allMatch(packageName -> packageName == null || packageName.trim().isEmpty())) {
+            throw new RuntimeException("Unable to instantiate REST server with empty list of packages to scan for handlers");
+        }
+
         ResourceConfig resourceConfig = new ResourceConfig()
                 .register(MultiPartFeature.class)
                 .register(JacksonFeature.class);
@@ -98,8 +88,7 @@ public class RestEnablingConfiguration {
             SpecificRestObjectMapperProvider.STATIC_OBJECT_MAPPER = new ObjectMapper().findAndRegisterModules();
         }
         resourceConfig.register(SpecificRestObjectMapperProvider.class);
-        resourceConfig.registerInstances(restBeanPostprocessor.handlerBeans.toArray());
-//        resourceConfig.packages(true, restHandlerPackages);
+        resourceConfig.packages(true, restPackagesToScanForHandlers);
 
         if (captureRestMetrics && nova != null) {
             RequestEventListener requestEventListener = event -> {

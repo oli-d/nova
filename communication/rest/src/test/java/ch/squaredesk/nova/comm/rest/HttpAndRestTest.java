@@ -11,6 +11,7 @@
 
 package ch.squaredesk.nova.comm.rest;
 
+import ch.squaredesk.net.PortFinder;
 import ch.squaredesk.nova.Nova;
 import ch.squaredesk.nova.comm.http.HttpServerSettings;
 import ch.squaredesk.nova.comm.http.RpcServer;
@@ -25,8 +26,10 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.*;
 import org.springframework.core.annotation.Order;
 import org.springframework.core.env.Environment;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
+import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
@@ -59,17 +62,11 @@ class HttpAndRestTest {
     }
 
     @Configuration
-    @Order(1)
-    @Import({NovaProvidingConfiguration.class, RestEnablingConfiguration.class})
+    @Import({RestTestConfig.class})
     public static class MyMixedConfig  {
         @Bean
         public MyBean myBean() {
             return new MyBean();
-        }
-
-        @Bean("restHandlerPackages")
-        public String[] restHandlerPackages(Environment environment) {
-            return new String[]{"ch.squaredesk"};
         }
 
         @Bean

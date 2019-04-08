@@ -10,7 +10,7 @@ class and you are ready to go.
 
 Doing so ensures, that a local server is started and all annotated handlers are properly registered.
 
-The server is created with the default settings described in the [http-ch.squaredesk.nova.spring](../http-spring/README.md)
+The server is created with the default settings described in the [http](../http/README.md)
 package.
 
 
@@ -35,12 +35,18 @@ For detailed usage and enhanced features like async request processing, please r
 ### Configuration
 
 There's not much you need to configure. Just import ```RestEnablingConfiguration.class``` and you are
-ready to go.
+almost ready to go.
 
-By default, the REST server will be started as soon as the application context
-has been initialized. If you want to switch that feature off and start the
-httpServer manually at a later point in time, you can set the environment
-variable ```NOVA.HTTP.REST.SERVER.AUTO_START``` to false or provide your own bean named ```autoStartRestServer```.
+The only problem left is to tell the framework where it can find the annotated
+handler classes. Unfortunately, the underlying implementation does not allow registration of new handlers 
+dynamically during runtime. They have to be known and provided at the time, the 
+REST server is instantiated. To do so, it is enough to provide the name of the packages
+that contain REST request handlers with the following bean or environment parameter:
+
+  | @Bean name                    | Environnment variable name              | Description                                                                   | Default value |
+  |-------------------------------|-----------------------------------------|-------------------------------------------------------------------------------|---------------|
+  | restPackagesToScanForHandlers | NOVA.REST.PACKAGES_TO_SCAN_FOR_HANDLERS | A mandatory, list of package names that will (recursively) be scanned for REST request handlers. If programmatically providing a bean return a String array, if using the environment parameter, specify a comma separated list. | n/a|
+ 
 
 Out of the box, JSON marshalling will be supported using Jackson. The default ObjectMapper
 that is used for that will register all modules it can find on your classpath. If you need
@@ -85,18 +91,22 @@ As a bit more complete example, here's how you would create a simple echo server
     * ```echoPathValue()``` expects a ```GET``` request and echoes data parsed from the request path
     * ```echoPostRequestBody()``` expects a ```POST``` request and echoes the request body
     
-1. Create a configuration class that provides the handler bean and enables REST handling
+1. Create a configuration class that enables REST handling and specifies the name of the package conatining the 
+handler class
     
     ```Java
     @Configuration
     @Import(RestEnablingConfiguration.class)
     public class EchoConfiguration {
-        @Bean
-        public EchoHandler echoHandler() {
-            return new EchoHandler();
+        @Bean("restPackagesToScanForHandlers")
+        public String[] restPackagesToScanForHandlers() {
+            return new String[]{"ch.squaredesk.nova.comm.rest.example"};
         }
     }
     ```
+    
+    (Of course, you could also omit the list of packages and set the environment 
+    variable ```NOVA.REST.PACKAGES_TO_SCAN_FOR_HANDLERS``` to ```ch.squaredesk.nova.comm.rest.example``` instead.)  
     
 1. Create a starter class
     
@@ -127,28 +137,3 @@ As a bit more complete example, here's how you would create a simple echo server
    * Running ```curl -X POST http://localhost:10000/echo -d "data3" -H "Content-Type:text/plain"```
     will invoke ```echoRequestObject()``` and return ```data3```
      
-### Mixing rest and http
-
-Using the ```@OnRestRequest``` ch.squaredesk.nova.events.ch.squaredesk.nova.events.annotation is very convenient and enables you to expose your server
-side functionality in a very simple way, requiring almost no additional code. 
-
-Unfortunately, you do not have much control over how the requests get processed, e.g. you are
-not able to control threading or apply a specific backpressure strategy.
-
-For that reason, it might be desirable to mix the convenience of the rest package with
-the control of the [http](../http/README-md) communication package. Since both make use of the same 
-```SimpleHttpServer```, this is totally possible. However, there's one gotcha you need to be aware of:
-
-To be able to register your annotated REST handlers, all affected Spring beans must be instantiated
-__BEFORE__ the ```SimpleHttpServer``` instance is created. The underlying [grizzly](https://javaee.github.io/grizzly/)
-library we use does not allow the addition of new REST handlers after the server instance was created. This is in 
-contrast to "normal" HTTP handlers (used in the [http](../http/README-md) communication package), 
-that are allowed to be added at any time.
-
-The result of this is that we have to take care of how, resp. when the ```HTTPServer``` is instantiated.
-We try to do this in ```RestEnablingConfiguration```, but the ch.squaredesk.nova.spring gods do unfortunately not give us full
-control over the process. Therefore:
-- make sure that you do not create your own ```SimpleHttpServer``` bean anywhere else
-- and be warned that there might (luckily very very rare) occasions, where ch.squaredesk.nova.spring will complain during application 
-context creations. Unfortunately in those rare situations, you cannot use the convenience classes and have
-to construct all beans manually :(

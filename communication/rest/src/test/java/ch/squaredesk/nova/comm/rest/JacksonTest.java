@@ -12,6 +12,7 @@
 package ch.squaredesk.nova.comm.rest;
 
 import ch.squaredesk.nova.comm.http.HttpRequestSender;
+import ch.squaredesk.nova.comm.http.HttpServerSettings;
 import ch.squaredesk.nova.spring.NovaProvidingConfiguration;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -49,17 +50,18 @@ public class JacksonTest {
     @Test
     void jacksonIsEnabledOutOfTheBoxWithAnObjectMapperThatFindsAndRegistersAllModules() throws Exception {
         context = new AnnotationConfigApplicationContext(MyConfigForTest.class);
-        MyRestHandler myRestHandler = context.getBean(MyRestHandler.class);
+        HttpServerSettings httpServerSettings = context.getBean(HttpServerSettings.class);
         ObjectMapper om = new ObjectMapper().findAndRegisterModules();
         Person sentPerson = new Person("Lea", "Dotzauer", LocalDate.of(2005,9,16));
 
         // send entity as JSON
-        HttpRequestSender.HttpResponse httpResponse = HttpRequestSender.sendPutRequest("http://localhost:10000/echo", om.writeValueAsString(sentPerson), "application-json");
+        HttpRequestSender.HttpResponse httpResponse = HttpRequestSender.sendPutRequest("http://localhost:" + httpServerSettings.port +"/echo",
+                om.writeValueAsString(sentPerson), "application-json");
 
         // expect that the handler retrieved a properly unmarshalled entity
         assertThat(httpResponse.returnCode, is(200));
-        Assertions.assertNotNull(myRestHandler.person);
-        assertThat(myRestHandler.person, samePropertyValuesAs(sentPerson));
+        Assertions.assertNotNull(MyRestHandler.person);
+        assertThat(MyRestHandler.person, samePropertyValuesAs(sentPerson));
         Person receivedPerson = om.readValue(httpResponse.replyMessage, Person.class);
         assertThat(receivedPerson, samePropertyValuesAs(sentPerson));
     }
@@ -67,11 +69,13 @@ public class JacksonTest {
     @Test
     void returnCode400IsSentByJerseyWhenObjectCantBeUnmarshalled() throws Exception {
         context = new AnnotationConfigApplicationContext(MyConfigForTest.class);
+        HttpServerSettings httpServerSettings = context.getBean(HttpServerSettings.class);
         ObjectMapper om = new ObjectMapper();
         Person sentPerson = new Person("Lea", "Dotzauer", LocalDate.of(2005,9,16));
 
         // send entity as JSON
-        HttpRequestSender.HttpResponse httpResponse = HttpRequestSender.sendPutRequest("http://localhost:10000/echo", om.writeValueAsString(sentPerson), "application-json");
+        HttpRequestSender.HttpResponse httpResponse = HttpRequestSender.sendPutRequest("http://localhost:" + httpServerSettings.port + "/echo",
+                om.writeValueAsString(sentPerson), "application-json");
 
         // expect that the handler retrieved a properly unmarshalled entity
         assertThat(httpResponse.returnCode, is(400));
@@ -80,18 +84,19 @@ public class JacksonTest {
     @Test
     void specificObjectMapperCanBeProvided() throws Exception {
         context = new AnnotationConfigApplicationContext(MyConfigForTestWithSpecificObjectMapper.class);
-        MyRestHandler myRestHandler = context.getBean(MyRestHandler.class);
+        HttpServerSettings httpServerSettings = context.getBean(HttpServerSettings.class);
         ObjectMapper om = new ObjectMapper().findAndRegisterModules();
         Person sentPerson = new Person("Lea", "Dotzauer", LocalDate.of(2005, 9, 16));
         String sentPersonAsString = om.writeValueAsString(sentPerson);
 
         // send entity as JSON
-        HttpRequestSender.HttpResponse httpResponse = HttpRequestSender.sendPutRequest("http://localhost:10000/echo", sentPersonAsString, "application-json");
+        HttpRequestSender.HttpResponse httpResponse = HttpRequestSender.sendPutRequest("http://localhost:" + httpServerSettings.port + "/echo",
+                sentPersonAsString, "application-json");
 
         // expect that the handler retrieved a properly unmarshalled entity
         assertThat(httpResponse.returnCode, is(200));
-        Assertions.assertNotNull(myRestHandler.person);
-        assertThat(myRestHandler.person, samePropertyValuesAs(sentPerson));
+        Assertions.assertNotNull(MyRestHandler.person);
+        assertThat(MyRestHandler.person, samePropertyValuesAs(sentPerson));
         assertThat(sentPersonAsString, containsString("[2005,9,16]")); // default LocalDateFormat from ObjectMapper
         assertThat(httpResponse.replyMessage, containsString("2005-09-16")); // specific mapper was configured to write ISO
     }
@@ -111,13 +116,8 @@ public class JacksonTest {
     }
 
     @Configuration
-    @Import({RestEnablingConfiguration.class, NovaProvidingConfiguration.class})
+    @Import({RestTestConfig.class})
     public static class MyConfigForTestWithSpecificObjectMapper {
-        @Bean
-        public MyRestHandler myRestHandler() {
-            return new MyRestHandler();
-        }
-
         @Bean("restObjectMapper")
         public ObjectMapper restObjectMapper() {
             return new ObjectMapper().findAndRegisterModules().configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
@@ -125,24 +125,20 @@ public class JacksonTest {
     }
 
     @Configuration
-    @Import({RestEnablingConfiguration.class, NovaProvidingConfiguration.class})
+    @Import({RestTestConfig.class})
     public static class MyConfigForTest {
-        @Bean
-        public MyRestHandler myRestHandler() {
-            return new MyRestHandler();
-        }
     }
 
     @Path("/echo")
     public static class MyRestHandler {
-        public Person person;
+        static Person person;
 
         @PUT
         @Consumes(MediaType.APPLICATION_JSON)
         @Produces(MediaType.APPLICATION_JSON)
         @ManagedAsync
         public void echo (Person person, @Suspended AsyncResponse response) {
-            this.person = person;
+            MyRestHandler.person = person;
             response.resume(person);
         }
     }

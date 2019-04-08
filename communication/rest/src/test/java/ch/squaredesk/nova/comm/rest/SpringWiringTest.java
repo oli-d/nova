@@ -17,7 +17,9 @@ import ch.squaredesk.nova.comm.http.RpcServer;
 import ch.squaredesk.nova.metrics.Metrics;
 import ch.squaredesk.nova.spring.NovaProvidingConfiguration;
 import org.glassfish.grizzly.http.server.HttpServer;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,12 +36,22 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 @ExtendWith(SpringExtension.class)
-@ContextConfiguration(classes = {SpringWiringTest.MyConfig.class, RestEnablingConfiguration.class})
+@ContextConfiguration(classes = {SpringWiringTest.MyConfig.class})
 class SpringWiringTest {
     @Autowired
     HttpServerSettings httpServerSettings;
     @Autowired
     Nova nova;
+
+    @BeforeAll
+    static void setup() {
+        System.setProperty("NOVA.REST.PACKAGES_TO_SCAN_FOR_HANDLERS","ch.squaredesk.nova.comm.rest");
+    }
+
+    @AfterAll
+    static void tearDown() {
+        System.clearProperty("NOVA.REST.PACKAGES_TO_SCAN_FOR_HANDLERS");
+    }
 
     @Test
     void restEndpointCanProperlyBeInvoked() throws Exception {
@@ -54,6 +66,7 @@ class SpringWiringTest {
     }
 
     @Configuration
+    @Import({RestTestConfig.class})
     public static class MyConfig  {
         @Bean
         public MyBean myBean() {

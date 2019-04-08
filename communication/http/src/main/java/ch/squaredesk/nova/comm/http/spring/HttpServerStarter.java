@@ -15,6 +15,7 @@ import org.springframework.context.event.ContextRefreshedEvent;
 
 import javax.annotation.PreDestroy;
 import java.io.IOException;
+import java.util.concurrent.TimeUnit;
 
 public class HttpServerStarter implements ApplicationListener<ContextRefreshedEvent> {
     private final HttpServer httpServer;
@@ -45,7 +46,11 @@ public class HttpServerStarter implements ApplicationListener<ContextRefreshedEv
     @PreDestroy
     public void shutdown() {
         if (httpServer != null) {
-            httpServer.shutdown();
+            try {
+                httpServer.shutdown().get(5, TimeUnit.SECONDS);
+            } catch (Exception e) {
+                // noop; shutdown anyway...
+            }
         }
     }
 

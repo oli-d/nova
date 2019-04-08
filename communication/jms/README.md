@@ -40,6 +40,8 @@ make use of the ```Builder``` that can be obtained by invoking the builder metho
 Builder builder = JmsAdapter.builder();
 ```
 
+Under the hood, an ```HttpServer``` is used to listen to incoming requests. Refer to the 
+documentation of the [http](../http/README.md) module to see how this is configured.
 
 ## 3. Usage
 

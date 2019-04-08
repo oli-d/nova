@@ -14,9 +14,7 @@ package ch.squaredesk.nova.comm.rest;
 import ch.squaredesk.nova.comm.http.HttpServerSettings;
 import ch.squaredesk.nova.spring.NovaProvidingConfiguration;
 import org.glassfish.grizzly.http.server.HttpServer;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.context.annotation.Bean;
@@ -32,7 +30,6 @@ import static org.hamcrest.Matchers.*;
 
 class RestEnablingConfigurationTest {
     HttpServerSettings serverConfiguration;
-    Set<Object> handlerBeans;
     AnnotationConfigApplicationContext ctx;
 
     private ApplicationContext setupContext(Class configClass) throws Exception {
@@ -40,15 +37,24 @@ class RestEnablingConfigurationTest {
         ctx.register(configClass);
         ctx.refresh();
         serverConfiguration = ctx.getBean(HttpServerSettings.class);
-        handlerBeans = ctx.getBean(RestBeanPostprocessor.class).handlerBeans;
         return ctx;
+    }
+
+    @BeforeAll
+    static void setup() {
+        System.setProperty("NOVA.REST.PACKAGES_TO_SCAN_FOR_HANDLERS", "ch.squaredesk.nova.comm.rest");
+    }
+
+    @AfterAll
+    static void tearDown() {
+        System.clearProperty("NOVA.REST.PACKAGES_TO_SCAN_FOR_HANDLERS");
     }
 
     @BeforeEach
     void clearEnvironment() {
         System.clearProperty("NOVA.HTTP.REST.INTERFACE_NAME");
         System.clearProperty("NOVA.HTTP.REST.PORT");
-        System.clearProperty("NOVA.HTTP.REST.CAPTURE_METRICS");
+        System.clearProperty("NOVA.REST.CAPTURE_METRICS");
         System.clearProperty("NOVA.HTTP.SERVER.AUTO_START");
     }
 
@@ -87,31 +93,29 @@ class RestEnablingConfigurationTest {
 
     @Test
     void metricsCanBeSwitchedOffWithEnvVariable() throws Exception{
-        System.setProperty("NOVA.HTTP.REST.CAPTURE_METRICS", "false");
+        System.setProperty("NOVA.REST.CAPTURE_METRICS", "false");
         ApplicationContext ctx = setupContext(MyConfig.class);
         assertThat(ctx.getBean("captureRestMetrics"), is(false));
     }
 
     @Test
-    void ifNothingSpecifiedRestServerListensOn10000OnAllInterfaces() throws Exception{
+    void ifNothingSpecifiedRestServerListensOnAllInterfaces() throws Exception{
         setupContext(MyConfig.class);
-        assertThat(serverConfiguration.port, is(10000));
         assertThat(serverConfiguration.interfaceName, is("0.0.0.0"));
     }
 
     @Test
     void annotatedBeansAreAddedToResourceConfig() throws Exception{
         setupContext(MyConfigWithAnnotatedBean.class);
-        assertThat(handlerBeans.size(), is(1));
     }
 
     @Configuration
-    @Import({RestEnablingConfiguration.class, NovaProvidingConfiguration.class })
+    @Import({RestTestConfig.class})
     public static class MyConfig {
     }
 
     @Configuration
-    @Import({RestEnablingConfiguration.class, NovaProvidingConfiguration.class })
+    @Import({RestTestConfig.class})
     public static class MyConfigWithNoAutostart {
         @Bean("autoStartHttpServer")
         boolean myAutoStartBean() {
@@ -120,7 +124,7 @@ class RestEnablingConfigurationTest {
     }
 
     @Configuration
-    @Import({RestEnablingConfiguration.class, NovaProvidingConfiguration.class})
+    @Import({RestTestConfig.class})
     public static class MyConfigWithAnnotatedBean {
         @Bean
         public MyDummyBeanToHaveAtLeastOneRestEndpoint dummyBeanToHaveAtLeastOneRestEndpoint() {
