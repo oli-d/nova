@@ -38,6 +38,6 @@ Builder builder = KafkaAdapter.builder();
 
 ...
 
-### 3.3. Message "transcription"
+### 3.2. Message "transcription"
 
-Nessage transcription works exactly as described in detail in the [http](../http/README.md) module. 
+Message transcription works exactly as described in detail in the [http](../http/README.md) module. 

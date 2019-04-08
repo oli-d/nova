@@ -50,17 +50,13 @@ Currently, the following libraries exist:
 
 - Core functionality
   * [core](./core/README.md): core functionality, used by all other components
-  * [ch.squaredesk.nova.spring-support](./spring-support/README.md): convenient creation of Nova bean with Spring
-  * [event-annotations](./event-annotations/README.md): allows your ch.squaredesk.nova.spring beans to automatically connect to the EventBus using annotations
 
 - Communication
   * [comm](./comm/README.md): communication base library providing protocol agnostic, reactive message sending and retrieval
   * [jms](./jms/README.md): reactive JMS messaging
   * [http](./http/README.md): reactive HTTP communication
-  * [http-ch.squaredesk.nova.spring](./http-spring/README.md): convenience classes to easily enable HTTP communication with ch.squaredesk.nova.spring
-  * [rest](./rest/README.md): ch.squaredesk.nova.events.ch.squaredesk.nova.events.annotation based REST communication
+  * [rest](./rest/README.md): annotation based REST communication according to the JAX-RS spec
   * [websockets](./websockets/README.md): reactive WebSocket communication
-  * [websockets-annotations](./websockets-annotations/README.md): ch.squaredesk.nova.events.ch.squaredesk.nova.events.annotation based WebSocket communication
   * [kafka](./kafka/README.md): reactive Kafka communication
 
 - Service related

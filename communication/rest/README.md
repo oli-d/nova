@@ -1,12 +1,11 @@
-# annotation based REST communication
+# rest
 
 This package provides convenience classes to easily use the REST related annotations, defined
 in the [JAX-RS](https://projects.eclipse.org/projects/ee4j.jaxrs) spec.
 
-As it is the case for [event-annotations](../event-annotations/README.md), this feature relies on Spring
-to work properly. We chose the same approach and offer a specific ```Configuration``` class that
-can be used to conveniently enable the desired functionality. Simply import the ```RestEnablingConfiguration```
-class and you are ready to go.
+We chose the same approach as for all our other communication modules and offer a specific 
+```Configuration``` class that can be used to conveniently enable the desired functionality. 
+Simply import the ```RestEnablingConfiguration``` class and you are (almost) ready to go.
 
 Doing so ensures, that a local server is started and all annotated handlers are properly registered.
 
@@ -14,7 +13,7 @@ The server is created with the default settings described in the [http](../http/
 package.
 
 
-So, as an example, if you write the following bean:
+So, as an example, if you write the following class:
 
 ```Java
 @Path("/foo")
@@ -26,7 +25,7 @@ public class MyRestHandlerBean {
 }
 ```
 
-and include it in the Spring application context, clients are able to send a REST request
+clients are able to send a REST request
 to ```"http://<your server>/foo"``` and will receive the String "MyBean says foo" in the response body.
 
 For detailed usage and enhanced features like async request processing, please refer to the
@@ -34,8 +33,8 @@ For detailed usage and enhanced features like async request processing, please r
 
 ### Configuration
 
-There's not much you need to configure. Just import ```RestEnablingConfiguration.class``` and you are
-almost ready to go.
+As stated above, there's not much you need to configure. Just import ```RestEnablingConfiguration.class``` 
+and you are almost ready to go.
 
 The only problem left is to tell the framework where it can find the annotated
 handler classes. Unfortunately, the underlying implementation does not allow registration of new handlers 
@@ -64,7 +63,7 @@ one in your Spring application context. Make sure that it is named "restObjectMa
 
 As a bit more complete example, here's how you would create a simple echo server:
 
-1. Create a bean class that provides the echo handler
+1. Create a class that provides the echo handler
     
     ```Java
     @Path("/echo")
