@@ -12,14 +12,11 @@ package ch.squaredesk.nova.comm.rest;
 
 import ch.squaredesk.nova.Nova;
 import ch.squaredesk.nova.comm.http.HttpServerSettings;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.dropwizard.metrics5.Timer;
 import org.glassfish.grizzly.http.server.HttpServer;
-import org.glassfish.hk2.api.DynamicConfiguration;
-import org.glassfish.hk2.api.ServiceLocator;
-import org.glassfish.hk2.api.ServiceLocatorFactory;
 import org.glassfish.jersey.grizzly2.httpserver.GrizzlyHttpServerFactory;
-import org.glassfish.jersey.internal.inject.Injections;
 import org.glassfish.jersey.jackson.JacksonFeature;
 import org.glassfish.jersey.media.multipart.MultiPartFeature;
 import org.glassfish.jersey.server.ResourceConfig;
@@ -37,24 +34,23 @@ import javax.ws.rs.ext.ContextResolver;
 import javax.ws.rs.ext.Provider;
 import java.io.IOException;
 import java.net.URI;
-import java.util.Collection;
 
 public class RestServerStarter implements ApplicationListener<ContextRefreshedEvent> {
     private HttpServer httpServer;
     private HttpServerSettings httpServerSettings;
     private RestBeanPostprocessor restBeanPostprocessor;
-    private ObjectMapper restObjectMapper;
+    private ObjectMapper httpObjectMapper;
     private boolean captureRestMetrics;
     private Nova nova;
 
     public RestServerStarter(HttpServerSettings httpServerSettings,
                              RestBeanPostprocessor restBeanPostprocessor,
-                             ObjectMapper restObjectMapper,
+                             ObjectMapper httpObjectMapper,
                              boolean captureRestMetrics,
                              Nova nova) {
         this.httpServerSettings = httpServerSettings;
         this.restBeanPostprocessor = restBeanPostprocessor;
-        this.restObjectMapper = restObjectMapper;
+        this.httpObjectMapper = httpObjectMapper;
         this.captureRestMetrics = captureRestMetrics;
         this.nova = nova;
     }
@@ -68,11 +64,11 @@ public class RestServerStarter implements ApplicationListener<ContextRefreshedEv
                     .register(JacksonFeature.class);
 
             // do we have a specific ObjectMapper?
-            if (restObjectMapper != null) {
+            if (httpObjectMapper != null) {
                 // super ugly hack, but Jersey needs public static providers :-(
-                SpecificRestObjectMapperProvider.STATIC_OBJECT_MAPPER = restObjectMapper;
+                SpecificRestObjectMapperProvider.STATIC_OBJECT_MAPPER = httpObjectMapper;
             } else {
-                SpecificRestObjectMapperProvider.STATIC_OBJECT_MAPPER = new ObjectMapper().findAndRegisterModules();
+                SpecificRestObjectMapperProvider.STATIC_OBJECT_MAPPER = new ObjectMapper().findAndRegisterModules().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
             }
             resourceConfig.register(SpecificRestObjectMapperProvider.class);
             resourceConfig.registerInstances(restBeanPostprocessor.handlerBeans);

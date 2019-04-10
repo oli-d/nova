@@ -71,4 +71,5 @@ class DefaultMessageTranscriberForStringAsTransportTypeTest {
             return field != null ? field.hashCode() : 0;
         }
     }
+
 }

@@ -28,6 +28,13 @@
             <artifactId>comm</artifactId>
             <version>8.0.0</version>
         </dependency>
+        <!-- Normally, we should already get jackson transitively from the comm module dependency. However, if we do so,
+             a wrong version gets imported (?!?!?!), therefore we have to explicitly import it here (again). -->
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+            <version>${jackson.version}</version>
+        </dependency>
 
         <dependency>
             <groupId>org.glassfish.grizzly</groupId>

@@ -49,7 +49,7 @@ public class HttpEnablingConfiguration {
         if (httpObjectMapper == null) {
             return new DefaultMessageTranscriberForStringAsTransportType();
         } else {
-            return new MessageTranscriber<>(httpObjectMapper::writeValueAsString, httpObjectMapper::readValue);
+            return new DefaultMessageTranscriberForStringAsTransportType(httpObjectMapper);
         }
     }
 }

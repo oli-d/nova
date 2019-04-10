@@ -9,10 +9,13 @@
  *
  */
 
-package ch.squaredesk.nova.comm.websockets.annotation;
+package ch.squaredesk.nova.comm.websockets.spring;
 
 import ch.squaredesk.nova.comm.DefaultMessageTranscriberForStringAsTransportType;
 import ch.squaredesk.nova.comm.websockets.WebSocket;
+import ch.squaredesk.nova.comm.websockets.annotation.OnMessage;
+import ch.squaredesk.nova.comm.websockets.spring.BeanExaminer;
+import ch.squaredesk.nova.comm.websockets.spring.EndpointDescriptor;
 import io.reactivex.BackpressureStrategy;
 import io.reactivex.functions.Function;
 import org.junit.jupiter.api.Assertions;
@@ -103,7 +106,7 @@ public class BeanExaminerTest {
     @Test
     void beanExaminerCreatesEndpointForCustomMarshaller() throws Exception {
         class SomeClass {
-            @OnMessage(value = "x", messageMarshallerClassName = "ch.squaredesk.nova.comm.websockets.annotation.BeanExaminerTest$StringMarshaller")
+            @OnMessage(value = "x", messageMarshallerClassName = "ch.squaredesk.nova.comm.websockets.spring.BeanExaminerTest$StringMarshaller")
             void handle(String message, WebSocket webSocket) {
             }
         }
@@ -118,7 +121,7 @@ public class BeanExaminerTest {
     @Test
     void beanExaminerCreatesEndpointForCustomUnmarshaller() throws Exception {
         class SomeClass {
-            @OnMessage(value = "x", messageUnmarshallerClassName = "ch.squaredesk.nova.comm.websockets.annotation.BeanExaminerTest$StringUnmarshaller")
+            @OnMessage(value = "x", messageUnmarshallerClassName = "ch.squaredesk.nova.comm.websockets.spring.BeanExaminerTest$StringUnmarshaller")
             void handle(String message, WebSocket webSocket) {
             }
         }
@@ -160,13 +163,13 @@ public class BeanExaminerTest {
         assertThat(ex.getMessage(), is("Class java.util.ArrayList is not a valid MessageMarshaller"));
 
         class MarshallerClassThatDoesNotMatchMessageType {
-            @OnMessage(value = "x", messageMarshallerClassName = "ch.squaredesk.nova.comm.websockets.annotation.BeanExaminerTest$StringMarshaller")
+            @OnMessage(value = "x", messageMarshallerClassName = "ch.squaredesk.nova.comm.websockets.spring.BeanExaminerTest$StringMarshaller")
             void handle(Integer message, WebSocket webSocket) {
             }
         }
         ex = Assertions.assertThrows(IllegalArgumentException.class,
                 () -> sut.websocketEndpointsIn(new MarshallerClassThatDoesNotMatchMessageType()));
-        assertThat(ex.getMessage(), is("Class ch.squaredesk.nova.comm.websockets.annotation.BeanExaminerTest$StringMarshaller is not a valid MessageMarshaller for method handle"));
+        assertThat(ex.getMessage(), is("Class ch.squaredesk.nova.comm.websockets.spring.BeanExaminerTest$StringMarshaller is not a valid MessageMarshaller for method handle"));
     }
 
     @Test
@@ -199,13 +202,13 @@ public class BeanExaminerTest {
         assertThat(ex.getMessage(), is("Class java.util.ArrayList is not a valid MessageUnmarshaller"));
 
         class UnmarshallerClassThatDoesNotMatchMessageType {
-            @OnMessage(value = "x", messageUnmarshallerClassName = "ch.squaredesk.nova.comm.websockets.annotation.BeanExaminerTest$StringUnmarshaller")
+            @OnMessage(value = "x", messageUnmarshallerClassName = "ch.squaredesk.nova.comm.websockets.spring.BeanExaminerTest$StringUnmarshaller")
             void handle(Integer message, WebSocket webSocket) {
             }
         }
         ex = Assertions.assertThrows(IllegalArgumentException.class,
                 () -> sut.websocketEndpointsIn(new UnmarshallerClassThatDoesNotMatchMessageType()));
-        assertThat(ex.getMessage(), is("Class ch.squaredesk.nova.comm.websockets.annotation.BeanExaminerTest$StringUnmarshaller is not a valid MessageUnmarshaller for method handle"));
+        assertThat(ex.getMessage(), is("Class ch.squaredesk.nova.comm.websockets.spring.BeanExaminerTest$StringUnmarshaller is not a valid MessageUnmarshaller for method handle"));
     }
 
     public static class StringMarshaller implements Function<String, String> {

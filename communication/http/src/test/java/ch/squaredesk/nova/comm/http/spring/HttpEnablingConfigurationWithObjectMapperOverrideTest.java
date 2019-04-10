@@ -12,7 +12,6 @@
 package ch.squaredesk.nova.comm.http.spring;
 
 import ch.squaredesk.net.PortFinder;
-import ch.squaredesk.nova.comm.DefaultMessageTranscriberForStringAsTransportType;
 import ch.squaredesk.nova.comm.http.HttpAdapter;
 import ch.squaredesk.nova.comm.http.HttpRequestSender;
 import ch.squaredesk.nova.comm.http.HttpServerSettings;
@@ -20,12 +19,8 @@ import ch.squaredesk.nova.comm.http.RpcInvocation;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
 import io.reactivex.Flowable;
-import javafx.util.converter.LocalDateStringConverter;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.AfterEach;
@@ -41,7 +36,6 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 
 @Tag("medium")
 @ExtendWith(SpringExtension.class)
@@ -94,6 +88,7 @@ class HttpEnablingConfigurationWithObjectMapperOverrideTest {
     }
 
     @Configuration
+    @Import(HttpEnablingConfiguration.class)
     public static class ConfigWithObjectMapper {
         @Bean("httpServerPort")
         public Integer httpServerPort() {
@@ -104,27 +99,7 @@ class HttpEnablingConfigurationWithObjectMapperOverrideTest {
         public ObjectMapper httpObjectMapper() {
             ObjectMapper objectMapper = new ObjectMapper();
             objectMapper.configOverride(BigDecimal.class).setFormat(JsonFormat.Value.forShape(JsonFormat.Shape.STRING));
-
-
-            try {
-                String valueAsString = objectMapper.writeValueAsString(new BigDecimal("234"));
-                System.out.println(objectMapper.writeValueAsString(new BigDecimal("234")));
-                System.out.println(objectMapper.writeValueAsString(LocalDateTime.now()));
-            } catch (JsonProcessingException e) {
-                e.printStackTrace();
-            }
             return objectMapper;
         }
-    }
-
-    public static void main(String[] args) throws Exception {
-        ObjectMapper objectMapper = new ObjectMapper();
-        objectMapper.configOverride(BigDecimal.class).setFormat(JsonFormat.Value.forShape(JsonFormat.Shape.STRING));
-        DefaultMessageTranscriberForStringAsTransportType sut = new DefaultMessageTranscriberForStringAsTransportType(objectMapper);
-
-        String valueAsString = sut.getOutgoingMessageTranscriber(BigDecimal.class).apply(new BigDecimal("234"));
-        // assertThat(valueAsString, is("\"234\""));
-        System.out.println(objectMapper.writeValueAsString(new BigDecimal("234")));
-        System.out.println(valueAsString);
     }
 }

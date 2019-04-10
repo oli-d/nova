@@ -19,6 +19,13 @@
             <artifactId>http</artifactId>
             <version>8.0.0</version>
         </dependency>
+        <!-- Normally, we should already get jackson transitively from the comm module dependency. However, if we do so,
+             version a wrong version gets important (?!?!?!), therefore we have to explicitely import it here (again). -->
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+            <version>${jackson.version}</version>
+        </dependency>
 
         <dependency>
             <groupId>ch.squaredesk.nova</groupId>

@@ -8,15 +8,14 @@
  *   https://squaredesk.ch/license/oss/LICENSE
  *
  */
-package ch.squaredesk.nova.comm.websockets.annotation;
+package ch.squaredesk.nova.comm.websockets.spring;
 
 import ch.squaredesk.nova.Nova;
 import ch.squaredesk.nova.comm.http.HttpServerSettings;
-import ch.squaredesk.nova.comm.http.spring.HttpServerStarter;
 import ch.squaredesk.nova.comm.websockets.WebSocket;
 import ch.squaredesk.nova.comm.websockets.WebSocketAdapter;
+import ch.squaredesk.nova.comm.websockets.annotation.OnMessage;
 import ch.squaredesk.nova.comm.websockets.client.ClientEndpoint;
-import ch.squaredesk.nova.comm.websockets.spring.WebSocketEnablingConfiguration;
 import org.glassfish.grizzly.http.server.HttpServer;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;

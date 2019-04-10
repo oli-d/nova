@@ -8,7 +8,7 @@
  *   https://squaredesk.ch/license/oss/LICENSE
  *
  */
-package ch.squaredesk.nova.comm.websockets.annotation;
+package ch.squaredesk.nova.comm.websockets.spring;
 
 import io.reactivex.BackpressureStrategy;
 import io.reactivex.functions.Function;

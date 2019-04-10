@@ -6,7 +6,6 @@ import ch.squaredesk.nova.comm.MessageTranscriber;
 import ch.squaredesk.nova.comm.http.spring.HttpServerProvidingConfiguration;
 import ch.squaredesk.nova.comm.websockets.MetricsCollector;
 import ch.squaredesk.nova.comm.websockets.WebSocketAdapter;
-import ch.squaredesk.nova.comm.websockets.annotation.WebSocketBeanPostprocessor;
 import ch.squaredesk.nova.spring.NovaProvidingConfiguration;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.glassfish.grizzly.http.server.HttpServer;

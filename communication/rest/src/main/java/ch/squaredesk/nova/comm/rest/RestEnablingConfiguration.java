@@ -42,10 +42,10 @@ public class RestEnablingConfiguration {
     @Bean
     RestServerStarter restServerStarter(@Qualifier("httpServerSettings") HttpServerSettings httpServerSettings,
                                         RestBeanPostprocessor restBeanPostprocessor,
-                                        @Qualifier("restObjectMapper") @Autowired(required = false) ObjectMapper restObjectMapper,
+                                        @Qualifier("httpObjectMapper") @Autowired(required = false) ObjectMapper httpObjectMapper,
                                         @Qualifier("captureRestMetrics") boolean captureRestMetrics,
                                         Nova nova) {
-        return new RestServerStarter(httpServerSettings, restBeanPostprocessor, restObjectMapper, captureRestMetrics, nova);
+        return new RestServerStarter(httpServerSettings, restBeanPostprocessor, httpObjectMapper, captureRestMetrics, nova);
     }
 
     @Bean
