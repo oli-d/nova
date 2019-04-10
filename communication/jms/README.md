@@ -29,7 +29,8 @@ configuration values are
   | jmsAdapterIdentifier          | NOVA.JMS.ADAPTER_IDENTIFIER             | the identifier to assign to the JmsAdapter.                                   | <null> |
   | jmsAdapterSettings            | n/a                                     | a ```JmsAdapterSettings``` instance, containing all aforementioned config values. Handy if you want to read the configuration or override multiple defaults programmatically. |  |
   | | | | |
-  | jmsMessageTranscriber         | n/a                                     | the transcriber to use for incoming / outgoing messages                       | default transcriber, see below |
+  | jmsObjectMapper               | n/a                                     | the ObjectMapper to use when transcribing incoming / outgoing messages        | default ObjectMapper, for details see [here](../comm/README.md) |
+  | jmsMessageTranscriber         | n/a                                     | the transcriber to use for incoming / outgoing messages                       | default transcriber, for details see [here](../comm/README.md) |
   | jmsCorrelationIdGenerator     | n/a                                     | Every message will be sent via the JmsAdapter using a unique correlation ID, obtained from this instance. | default UUID provider |
   | jmsDestinationIdGenerator     | n/a                                     | Destination objects are cached internally, and for that we use a (unique) ID obtained from this instance. | default ID provider, only override if you know what you're doing |
 
@@ -46,7 +47,3 @@ documentation of the [http](../http/README.md) module to see how this is configu
 ## 3. Usage
 
 ...
-
-### 3.3. Message "transcription"
-
-Nessage transcription works exactly as described in detail in the [http](../http/README.md) module. 

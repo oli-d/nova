@@ -33,7 +33,8 @@ configuration values are
   | autoStartHttpServer                | NOVA.HTTP.SERVER.AUTO_FALSE                  | If true, the system will automatically start the HttpServer when the ApplicationContext is initialized| true |
   | | | | |
   | httpServer                         | n/a                                          | the ```HttpServer``` instance, handling the incoming communication. | An instance with default settings (see below) |
-  | httpMessageTranscriber             | n/a                                          | the transcriber to use for incoming / outgoing messages  | default transcriber, see below |
+  | httpObjectMapper                   | n/a                                          | the ObjectMapper to use when transcribing incoming / outgoing messages| default ObjectMapper, for details see [here](../comm/README.md) |
+  | httpMessageTranscriber             | n/a                                          | the transcriber to use for incoming / outgoing messages  | default transcriber, for details see [here](../comm/README.md) |
 
 As described above, by default the HttpAdapter will use an ```HttpServer``` with default settings. This bean is provided by the  
 ```HttpServerProvidingConfiguration``` which is automatically imported. The configuration options are: 
@@ -152,52 +153,5 @@ httpAdapter.requests("/echo", String.class)
         invocation -> invocation.complete(invocation.request)
     );
 ```
-
-### 3.3. Message "transcription"
-
-In our Java code, we want to use our specific domain objects, which have to be
-serialized and deserialized to and from the wire format. 
-This is what we call message transcription. and what is the purpose of our  class.
-
-Therefore, to be able to create a String representation for a domain object or create a 
-domain object from its String representation, the ```HttpAdapter``` needs an instance of 
-our ```MessageTranscriber``` class.
-
-If you do not provide a specific one, the library will instantiate a default one for you. The
-default transcriber is able to handle the Java types ```String```, ```Integer```, ```Long```, 
-```Double``` and ```BigDecimal```.
-
-In addition, it uses reflection to check whether it can find the ```ObjectMapper``` class
-of the [Jackson JSON library](https://github.com/FasterXML/jackson) on the classpath. If so, it instantiates an 
-new ObjectMapper and uses this instance to transcribe complex types to and from a JSON String.
-
-As convenient as this is, you might want to have more control over the ObjectMapper configuration.
-Since we do not want to enforce the use of Jackson (or even JSON as the data format), there is no 
-other way than providing your own ```MessageTranscriber``` instance.
-
-In case of Jackson, this is very simple, as you can see in the following example
-```
-    // instantiate an Object Mapper
-    ObjectMapper om = new ObjectMapper()
-        .findAndRegisterModules()
-        .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
-        .setSerializationInclusion(JsonInclude.Include.NON_NULL)
-        // ... more configuration
-        ;
-    
-    // instantiate new MessageTranscriber that uses our specific ObjectMapper
-    return new MessageTranscriber<>(om::writeValueAsString, om::readValue);
-```
-
-If you are happy with the default transcriber, but only want to override the handling for
-specific types, you can use the method 
-```
-MessageTranscriber.registerClassSpecificTranscribers(
-    Class<T> targetClass,
-    Function<T, TransportMessageType> outgoingMessageTranscriber,
-    Function<TransportMessageType, T> incomingMessageTranscriber)
-```
-or alternatively provide your own transcriber on a call-by-call base, invoking the appropriate
-methods on the HttpAdapter.
 
 

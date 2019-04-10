@@ -12,8 +12,6 @@
 package ch.squaredesk.nova.comm.rest;
 
 import ch.squaredesk.nova.Nova;
-import ch.squaredesk.nova.comm.DefaultMessageTranscriberForStringAsTransportType;
-import ch.squaredesk.nova.comm.MessageTranscriber;
 import ch.squaredesk.nova.comm.http.HttpServerSettings;
 import ch.squaredesk.nova.comm.http.spring.HttpEnablingConfiguration;
 import ch.squaredesk.nova.spring.NovaProvidingConfiguration;
@@ -62,15 +60,6 @@ public class RestEnablingConfiguration {
         return value.split(",");
     }
     */
-
-    @Bean("httpMessageTranscriber")
-    MessageTranscriber<String> httpMessageTranscriber(@Qualifier("restObjectMapper") @Autowired(required = false) ObjectMapper restObjectMapper) {
-        if (restObjectMapper==null) {
-            return new DefaultMessageTranscriberForStringAsTransportType();
-        } else {
-            return new MessageTranscriber<>(restObjectMapper::writeValueAsString, restObjectMapper::readValue);
-        }
-    }
 
     /**
      * Switch off HttpServer auto creation. We can only do this after the ApplicationContext

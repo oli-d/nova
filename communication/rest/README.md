@@ -36,18 +36,6 @@ For detailed usage and enhanced features like async request processing, please r
 As stated above, there's not much you need to configure. Just @Import ```RestEnablingConfiguration.class``` 
 and you are ready to go.
 
-Out of the box, JSON marshalling will be supported using Jackson. The default ObjectMapper
-that is used for that will register all modules it can find on your classpath. If you need
-a specifically configured ObjectMapper for the marshalling of your entities, you can provide
-one in your Spring application context. Make sure that it is named "restObjectMapper", e.g.:
-
-```Java
-    @Bean("restObjectMapper")
-    public ObjectMapper restObjectMapper() {
-        return ...
-    }
-```
-
 ## Example: A Simple Echo Server
 
 As a bit more complete example, here's how you would create a simple echo server:

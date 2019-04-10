@@ -4,6 +4,7 @@ import ch.squaredesk.nova.Nova;
 import ch.squaredesk.nova.comm.DefaultMessageTranscriberForStringAsTransportType;
 import ch.squaredesk.nova.comm.MessageTranscriber;
 import ch.squaredesk.nova.comm.kafka.KafkaAdapter;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
@@ -63,7 +64,11 @@ public class KafkaEnablingConfiguration {
     }
 
     @Bean("kafkaMessageTranscriber")
-    MessageTranscriber<String> kafkaMessageTranscriber () {
-        return new DefaultMessageTranscriberForStringAsTransportType();
+    MessageTranscriber<String> kafkaMessageTranscriber(@Qualifier("kafkaObjectMapper") @Autowired(required = false) ObjectMapper kafkaObjectMapper) {
+        if (kafkaObjectMapper == null) {
+            return new DefaultMessageTranscriberForStringAsTransportType();
+        } else {
+            return new DefaultMessageTranscriberForStringAsTransportType(kafkaObjectMapper);
+        }
     }
 }

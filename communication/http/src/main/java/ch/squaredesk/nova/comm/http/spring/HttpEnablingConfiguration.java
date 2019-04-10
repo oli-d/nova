@@ -5,6 +5,7 @@ import ch.squaredesk.nova.comm.DefaultMessageTranscriberForStringAsTransportType
 import ch.squaredesk.nova.comm.MessageTranscriber;
 import ch.squaredesk.nova.comm.http.HttpAdapter;
 import ch.squaredesk.nova.spring.NovaProvidingConfiguration;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.glassfish.grizzly.http.server.HttpServer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -44,7 +45,11 @@ public class HttpEnablingConfiguration {
     }
 
     @Bean("httpMessageTranscriber")
-    MessageTranscriber<String> httpMessageTranscriber() {
-        return new DefaultMessageTranscriberForStringAsTransportType();
+    MessageTranscriber<String> httpMessageTranscriber(@Qualifier("httpObjectMapper") @Autowired(required = false) ObjectMapper httpObjectMapper) {
+        if (httpObjectMapper == null) {
+            return new DefaultMessageTranscriberForStringAsTransportType();
+        } else {
+            return new MessageTranscriber<>(httpObjectMapper::writeValueAsString, httpObjectMapper::readValue);
+        }
     }
 }

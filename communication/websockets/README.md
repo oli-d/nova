@@ -23,7 +23,8 @@ configuration values are
   | webSocketAdapterIdentifier         | NOVA.WEB_SOCKET.ADAPTER_IDENTIFIER           | the identifier to assign to the HttpAdapter.             | <null> |
   | | | | |
   | httpServer                         | n/a                                          | the ```HttpServer``` instance, handling the incoming communication. This is an optional bean. If not provided, the HttpAdapter can only be used in client mode.| <null> |
-  | webSocketMessageTranscriber        | n/a                                          | the transcriber to use for incoming / outgoing messages  | default transcriber, see below |
+  | webSocketObjectMapper              | n/a                                          | the ObjectMapper to use when transcribing incoming / outgoing messages| default ObjectMapper, for details see [here](../comm/README.md) |
+  | webSocketMessageTranscriber        | n/a                                          | the transcriber to use for incoming / outgoing messages  | default transcriber, for details see [here](../comm/README.md) |
 
 As you can see from the table above, the WebSocketAdapter needs an ```HttpServer``` instance to listen to HTTP requests, which 
 you have to provide as a bean in your ApplicationContext. This can be done very easily 

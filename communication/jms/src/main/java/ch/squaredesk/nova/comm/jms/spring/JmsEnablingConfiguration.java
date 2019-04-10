@@ -6,6 +6,7 @@ import ch.squaredesk.nova.comm.MessageTranscriber;
 import ch.squaredesk.nova.comm.jms.DefaultDestinationIdGenerator;
 import ch.squaredesk.nova.comm.jms.JmsAdapter;
 import ch.squaredesk.nova.comm.jms.UIDCorrelationIdGenerator;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -155,7 +156,11 @@ public class JmsEnablingConfiguration {
     }
 
     @Bean("jmsMessageTranscriber")
-    MessageTranscriber<String> jmsMessageTranscriber() {
-        return new DefaultMessageTranscriberForStringAsTransportType();
+    MessageTranscriber<String> jmsMessageTranscriber(@Qualifier("jmsObjectMapper") @Autowired(required = false) ObjectMapper jmsObjectMapper) {
+        if (jmsObjectMapper == null) {
+            return new DefaultMessageTranscriberForStringAsTransportType();
+        } else {
+            return new DefaultMessageTranscriberForStringAsTransportType(jmsObjectMapper);
+        }
     }
 }

@@ -24,7 +24,8 @@ configuration values are
   | kafkaAdapterIdentifier        | NOVA.KAFKA.ADAPTER_IDENTIFIER           | the identifier to assign to the adapter                               | <null> |
   | kafkaAdapterSettings          | n/a                                     | a ```KafkaAdapterSettings``` instance, containing all aforementioned config values. Handy if you want to read the configuration or override multiple defaults programmatically. |  |
   | | | | |
-  | kafkaMessageTranscriber       | n/a                                     | the transcriber to use for incoming / outgoing messages               | default transcriber, see below |
+  | kafkaObjectMapper             | n/a                                     | the ObjectMapper to use when transcribing incoming / outgoing messages| default ObjectMapper, for details see [here](../comm/README.md) |
+  | kafkaMessageTranscriber       | n/a                                     | the transcriber to use for incoming / outgoing messages               | default transcriber, for details see [here](../comm/README.md) |
 
 Of course you can also instantiate a new ```KafkaAdapter``` instance programmatically. To do so,
 make use of the ```Builder``` that can be obtained by invoking the builder method
@@ -38,6 +39,3 @@ Builder builder = KafkaAdapter.builder();
 
 ...
 
-### 3.2. Message "transcription"
-
-Message transcription works exactly as described in detail in the [http](../http/README.md) module. 

@@ -1,9 +1,9 @@
 package ch.squaredesk.nova.comm.http.spring;
 
 import ch.squaredesk.net.PortFinder;
+import ch.squaredesk.nova.comm.DefaultMessageTranscriberForStringAsTransportType;
 import ch.squaredesk.nova.comm.MessageTranscriber;
 import ch.squaredesk.nova.comm.http.*;
-import ch.squaredesk.nova.spring.NovaProvidingConfiguration;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -30,8 +30,8 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 @Tag("medium")
 @ExtendWith(SpringExtension.class)
-@ContextConfiguration(classes = { HttpEnablingConfigurationWithOverridesTest.ConfigWithTranscriber.class})
-class HttpEnablingConfigurationWithOverridesTest {
+@ContextConfiguration(classes = { HttpEnablingConfigurationWithTranscriberOverrideTest.ConfigWithTranscriber.class})
+class HttpEnablingConfigurationWithTranscriberOverrideTest {
     @Autowired
     private HttpServerSettings serverConfiguration;
     @Autowired
@@ -62,6 +62,23 @@ class HttpEnablingConfigurationWithOverridesTest {
     }
 
     @Test
+    void providedObjectMapperIsUsed() throws Exception {
+        String requestDestination = "/objectMapperTest";
+        Flowable<RpcInvocation<MyDto>> requests = adapter.requests(requestDestination, MyDto.class);
+        requests.subscribe(invocation -> {
+            invocation.complete(invocation.request.message.value);
+        });
+
+        // send MyDTO instance, but send BigDecimal value as String, not number
+        String reply = HttpRequestSender.sendPostRequest(
+                adapterBaseUrl + "/" + requestDestination,
+                "{\"value\":\"123\"}").replyMessage;
+
+        // the request handler sent back the BigDecimal 123, so we expect "123" back
+        MatcherAssert.assertThat(reply, Matchers.is("\"123\""));
+    }
+
+    @Test
     void providedMessageTranscriberIsUsed() throws Exception {
         String requestDestination = "/transcriberTest";
         Flowable<RpcInvocation<MyDto>> requests = adapter.requests(requestDestination, MyDto.class);
@@ -88,10 +105,31 @@ class HttpEnablingConfigurationWithOverridesTest {
 
         @Bean("httpMessageTranscriber")
         public MessageTranscriber<String> httpMessageTranscriber() {
-            ObjectMapper om = (new ObjectMapper()).findAndRegisterModules().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false).setSerializationInclusion(JsonInclude.Include.NON_NULL);
+            ObjectMapper om = new ObjectMapper()
+                    .findAndRegisterModules().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+                    .setSerializationInclusion(JsonInclude.Include.NON_NULL);
             om.configOverride(BigDecimal.class).setFormat(JsonFormat.Value.forShape(JsonFormat.Shape.STRING));
 
-            return new MessageTranscriber<>(om::writeValueAsString, om::readValue);
+            return new DefaultMessageTranscriberForStringAsTransportType(om);
+        }
+    }
+
+    @Import({HttpEnablingConfiguration.class})
+    public static class ConfigWithObjectMapper {
+        @Bean("httpServerPort")
+        public Integer httpServerPort() {
+            return PortFinder.findFreePort();
+        }
+
+        @Bean("httpObjectMapper")
+        public ObjectMapper httpObjectMapper() {
+            ObjectMapper om = new ObjectMapper()
+                    .findAndRegisterModules()
+                    .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+
+            om.configOverride(BigDecimal.class).setFormat(JsonFormat.Value.forShape(JsonFormat.Shape.STRING));
+
+            return om;
         }
     }
 }

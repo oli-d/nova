@@ -13,10 +13,6 @@
     <artifactId>rest</artifactId>
     <version>8.0.0</version>
 
-    <properties>
-        <jackson.version>2.9.8</jackson.version>
-    </properties>
-
     <dependencies>
         <dependency>
             <groupId>ch.squaredesk.nova</groupId>
@@ -77,16 +73,6 @@
         <dependency>
             <groupId>com.fasterxml.jackson.jaxrs</groupId>
             <artifactId>jackson-jaxrs-json-provider</artifactId>
-            <version>${jackson.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.fasterxml.jackson.core</groupId>
-            <artifactId>jackson-annotations</artifactId>
-            <version>${jackson.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.fasterxml.jackson.datatype</groupId>
-            <artifactId>jackson-datatype-jsr310</artifactId>
             <version>${jackson.version}</version>
         </dependency>
         <!--TODO: In Java 9/10, the XML APIs are "hidden", in 11 they will be removed, so we-->

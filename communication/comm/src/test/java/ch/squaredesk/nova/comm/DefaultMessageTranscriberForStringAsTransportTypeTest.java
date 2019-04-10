@@ -1,13 +1,18 @@
 package ch.squaredesk.nova.comm;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import io.reactivex.functions.Function;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
 
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.sameInstance;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 class DefaultMessageTranscriberForStringAsTransportTypeTest {
@@ -16,6 +21,16 @@ class DefaultMessageTranscriberForStringAsTransportTypeTest {
     @BeforeEach
     void setUp() {
         sut = new DefaultMessageTranscriberForStringAsTransportType();
+    }
+
+    @Test
+    void specificObjectMapperCanBeUsed() throws Exception {
+        ObjectMapper objectMapper = new ObjectMapper();
+        objectMapper.configOverride(BigDecimal.class).setFormat(JsonFormat.Value.forShape(JsonFormat.Shape.STRING));
+        DefaultMessageTranscriberForStringAsTransportType sut = new DefaultMessageTranscriberForStringAsTransportType(objectMapper);
+
+        String valueAsString = sut.getOutgoingMessageTranscriber(BigDecimal.class).apply(new BigDecimal("234"));
+        assertThat(valueAsString, is("\"234\""));
     }
 
     @Test

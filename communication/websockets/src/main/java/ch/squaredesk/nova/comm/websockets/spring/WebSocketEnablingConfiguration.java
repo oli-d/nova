@@ -8,6 +8,7 @@ import ch.squaredesk.nova.comm.websockets.MetricsCollector;
 import ch.squaredesk.nova.comm.websockets.WebSocketAdapter;
 import ch.squaredesk.nova.comm.websockets.annotation.WebSocketBeanPostprocessor;
 import ch.squaredesk.nova.spring.NovaProvidingConfiguration;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.glassfish.grizzly.http.server.HttpServer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -41,8 +42,12 @@ public class WebSocketEnablingConfiguration {
     }
 
     @Bean("webSocketMessageTranscriber")
-    MessageTranscriber<String> webSocketMessageTranscriber() {
-        return new DefaultMessageTranscriberForStringAsTransportType();
+    MessageTranscriber<String> webSocketMessageTranscriber(@Qualifier("webSocketObjectMapper") @Autowired(required = false)ObjectMapper webSocketObjectMapper) {
+        if (webSocketObjectMapper == null) {
+            return new DefaultMessageTranscriberForStringAsTransportType();
+        } else {
+            return new DefaultMessageTranscriberForStringAsTransportType(webSocketObjectMapper);
+        }
     }
 
     @Bean("webSocketBeanPostprocessor")
