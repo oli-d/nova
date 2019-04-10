@@ -122,11 +122,19 @@ public class JacksonTest {
         public ObjectMapper restObjectMapper() {
             return new ObjectMapper().findAndRegisterModules().configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
         }
+        @Bean
+        MyRestHandler myRestHandler() {
+            return new MyRestHandler();
+        }
     }
 
     @Configuration
     @Import({RestTestConfig.class})
     public static class MyConfigForTest {
+        @Bean
+        MyRestHandler myRestHandler() {
+            return new MyRestHandler();
+        }
     }
 
     @Path("/echo")

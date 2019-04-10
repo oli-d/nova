@@ -13,9 +13,9 @@ public class RestTestConfig {
     int httpServerPort() {
         return PortFinder.findFreePort();
     }
-
-    @Bean("restPackagesToScanForHandlers")
-    public String[] restPackagesToScanForHandlers() {
-        return new String[]{"ch.squaredesk.nova.comm.rest"};
-    }
+//
+//    @Bean("restPackagesToScanForHandlers")
+//    public String[] restPackagesToScanForHandlers() {
+//        return new String[]{"ch.squaredesk.nova.comm.rest"};
+//    }
 }

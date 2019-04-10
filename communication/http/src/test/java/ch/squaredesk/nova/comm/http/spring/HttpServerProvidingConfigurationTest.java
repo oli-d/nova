@@ -3,12 +3,15 @@ package ch.squaredesk.nova.comm.http.spring;
 import ch.squaredesk.nova.comm.http.HttpServerSettings;
 import ch.squaredesk.nova.spring.NovaProvidingConfiguration;
 import org.glassfish.grizzly.http.server.HttpServer;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
+
+import java.util.concurrent.ExecutionException;
 
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
@@ -24,6 +27,12 @@ class HttpServerProvidingConfigurationTest {
     @Autowired
     private HttpServerSettings settings;
 
+    @AfterEach
+    void shutdownServer() throws Exception {
+        if (httpServer!=null) {
+            httpServer.shutdown().get();
+        }
+    }
 
     @Test
     void importingConfigCreatesServerWithDefaultSettings() {

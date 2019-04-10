@@ -38,6 +38,13 @@ class HttpEnablingConfigurationWithoutServerTest {
     static void tearDown()  {
     }
 
+    @AfterEach
+    void shutdownServer() throws Exception {
+        if (httpServer != null) {
+            httpServer.shutdown().get();
+        }
+    }
+
     @Test
     void serverWasNotProvided() throws Exception {
         System.clearProperty("NOVA.HTTP.SERVER.AUTO_CREATE");

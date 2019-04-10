@@ -11,25 +11,18 @@
 
 package ch.squaredesk.nova.comm.rest;
 
-import ch.squaredesk.net.PortFinder;
-import ch.squaredesk.nova.Nova;
+import ch.squaredesk.nova.comm.http.HttpAdapter;
 import ch.squaredesk.nova.comm.http.HttpServerSettings;
-import ch.squaredesk.nova.comm.http.RpcServer;
-import ch.squaredesk.nova.metrics.Metrics;
-import ch.squaredesk.nova.spring.NovaProvidingConfiguration;
-import org.glassfish.grizzly.http.server.HttpServer;
-import org.junit.jupiter.api.AfterEach;
+import ch.squaredesk.nova.comm.http.RpcReply;
+import io.reactivex.observers.TestObserver;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.annotation.*;
-import org.springframework.core.annotation.Order;
-import org.springframework.core.env.Environment;
-import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Import;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
-import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
@@ -43,22 +36,16 @@ class HttpAndRestTest {
     @Autowired
     HttpServerSettings httpServerSettings;
     @Autowired
-    RpcServer rpcServer;
+    HttpAdapter httpAdapter;
 
 
     @Test
-    void restAnnotationsCanBeMixedWithHttpRpcServer() throws Exception {
+    void restAnnotationsCanBeMixedWithHttpAdapterInClientMode() throws Exception {
         String serverUrl = "http://127.0.0.1:" + httpServerSettings.port;
-        rpcServer.requests("/bar", String.class).subscribe(
-                rpcInvocation -> {
-                    rpcInvocation.complete("bar");
-                }
-        );
+        TestObserver<RpcReply<String>> test = httpAdapter.sendGetRequest(serverUrl + "/foo2", String.class).test();
 
-        String replyAsString = HttpHelper.getResponseBody(serverUrl + "/bar", null);
-        assertThat(replyAsString, is("bar"));
-        replyAsString = HttpHelper.getResponseBody(serverUrl + "/foo", null);
-        assertThat(replyAsString, is("MyBean"));
+        assertThat(test.valueCount(), is(1));
+        assertThat(test.values().get(0).result, is("MyBean"));
     }
 
     @Configuration
@@ -67,11 +54,6 @@ class HttpAndRestTest {
         @Bean
         public MyBean myBean() {
             return new MyBean();
-        }
-
-        @Bean
-        public RpcServer rpcServer(HttpServer httpServer, Nova nova) {
-            return new RpcServer("SWT", httpServer, nova.metrics );
         }
     }
 

@@ -34,11 +34,11 @@
             <artifactId>grizzly-http-server-core</artifactId>
             <version>${grizzly.version}</version>
         </dependency>
-        <dependency>
-            <groupId>org.glassfish.grizzly</groupId>
-            <artifactId>connection-pool</artifactId>
-            <version>${grizzly.version}</version>
-        </dependency>
+        <!--<dependency>-->
+            <!--<groupId>org.glassfish.grizzly</groupId>-->
+            <!--<artifactId>connection-pool</artifactId>-->
+            <!--<version>${grizzly.version}</version>-->
+        <!--</dependency>-->
         <dependency>
             <groupId>org.glassfish.grizzly</groupId>
             <artifactId>grizzly-http-client</artifactId>

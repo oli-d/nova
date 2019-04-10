@@ -18,7 +18,10 @@ import java.util.HashSet;
 import java.util.Set;
 
 
-public class RestBeanPostprocessor implements BeanPostProcessor {
+/**
+ * This class is used to register the properly annotated Rest endpoint classes.
+ */
+class RestBeanPostprocessor implements BeanPostProcessor {
     final Set<Object> handlerBeans = new HashSet<>();
 
 

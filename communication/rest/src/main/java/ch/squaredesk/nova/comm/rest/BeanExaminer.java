@@ -24,7 +24,7 @@ class BeanExaminer {
     private BeanExaminer() {
     }
 
-    public static boolean isRestHandler(Object bean) {
+    static boolean isRestHandler(Object bean) {
         requireNonNull(bean, "bean to examine must not be null");
 
         return stream(bean.getClass().getAnnotations())

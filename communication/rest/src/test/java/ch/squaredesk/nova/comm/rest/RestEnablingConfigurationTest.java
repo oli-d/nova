@@ -15,6 +15,7 @@ import ch.squaredesk.nova.comm.http.HttpServerSettings;
 import ch.squaredesk.nova.spring.NovaProvidingConfiguration;
 import org.glassfish.grizzly.http.server.HttpServer;
 import org.junit.jupiter.api.*;
+import org.springframework.cache.support.NullValue;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.context.annotation.Bean;
@@ -56,33 +57,6 @@ class RestEnablingConfigurationTest {
         System.clearProperty("NOVA.HTTP.REST.PORT");
         System.clearProperty("NOVA.REST.CAPTURE_METRICS");
         System.clearProperty("NOVA.HTTP.SERVER.AUTO_START");
-    }
-
-    @AfterEach
-    void shutdown() throws Exception {
-        ctx.getBean(HttpServer.class).shutdown().get();
-    }
-
-    @Test
-    void ifNothingSpecifiedRestServerIsStartedWhenTheApplicationContextIsInitialized() throws Exception{
-        ApplicationContext ctx = setupContext(MyConfig.class);
-        assertThat(ctx.getBean("httpServer"), not(is(nullValue())));
-        assertThat(ctx.getBean("httpServer", HttpServer.class).isStarted(), is(true));
-    }
-
-    @Test
-    void autoRestServerStartingCanBeSwitchedOffWithEnvVariable() throws Exception{
-        System.setProperty("NOVA.HTTP.SERVER.AUTO_START", "false");
-        ApplicationContext ctx = setupContext(MyConfig.class);
-        assertThat(ctx.getBean("httpServer"), not(is(nullValue())));
-        assertThat(ctx.getBean("httpServer", HttpServer.class).isStarted(), is(false));
-    }
-
-    @Test
-    void autoRestServerStartingCanBeSwitchedOffWithCustomBean() throws Exception{
-        ApplicationContext ctx = setupContext(MyConfigWithNoAutostart.class);
-        assertThat(ctx.getBean("httpServer"), not(is(nullValue())));
-        assertThat(ctx.getBean("httpServer", HttpServer.class).isStarted(), is(false));
     }
 
     @Test
