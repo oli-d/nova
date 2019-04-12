@@ -211,8 +211,6 @@ public class NovaServiceTest {
     }
 
 
-
-
     @Component
     public static class MyBrokenInitService extends NovaService {
         @OnServiceInit
@@ -253,7 +251,7 @@ public class NovaServiceTest {
 
 
     @Configuration
-    public static class MyCrippledConfig extends NovaServiceConfiguration {
+    public static class MyCrippledConfig  {
         @Bean
         public Nova nova() {
             return null;
@@ -266,22 +264,22 @@ public class NovaServiceTest {
     }
 
     @Configuration
-    public static class MyConfig extends NovaServiceConfiguration<MyService> {
+    public static class MyConfig {
         @Autowired
         Environment env;
 
-        @Bean
+        @Bean("serviceInstance")
         public MyService serviceInstance() {
             return new MyService();
         }
     }
 
     @Configuration
-    public static class MyConfigWithProperty extends NovaServiceConfiguration<MyService> {
+    public static class MyConfigWithProperty {
         @Autowired
         Environment env;
 
-        @Bean
+        @Bean("serviceInstance")
         public MyService serviceInstance() {
             return new MyService();
         }
@@ -293,30 +291,30 @@ public class NovaServiceTest {
     }
 
     @Configuration
-    public static class MyConfigForBrokenStartService extends NovaServiceConfiguration<MyBrokenStartService> {
-        @Bean
+    public static class MyConfigForBrokenStartService {
+        @Bean("serviceInstance")
         public MyBrokenStartService serviceInstance() {
             return new MyBrokenStartService();
         }
     }
 
     @Configuration
-    public static class MyConfigForBrokenInitService extends NovaServiceConfiguration<MyBrokenInitService> {
-        @Bean
+    public static class MyConfigForBrokenInitService {
+        @Bean("serviceInstance")
         public MyBrokenInitService serviceInstance() {
             return new MyBrokenInitService();
         }
     }
 
     @Configuration
-    public static class MyConfigWithoutBeanAnnotation extends NovaServiceConfiguration<MyService> {
+    public static class MyConfigWithoutBeanAnnotation {
         public MyService serviceInstance() {
             return new MyService();
         }
     }
 
-    public static class MyConfigWithoutConfigurationAnnotation extends NovaServiceConfiguration<MyService> {
-        @Bean
+    public static class MyConfigWithoutConfigurationAnnotation  {
+        @Bean("serviceInstance")
         public MyService serviceInstance() {
             return new MyService();
         }

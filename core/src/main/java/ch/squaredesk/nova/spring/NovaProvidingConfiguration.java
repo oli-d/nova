@@ -23,7 +23,7 @@ public class NovaProvidingConfiguration {
     @Autowired
     private Environment environment;
 
-    @Bean(name = "nova")
+    @Bean("nova")
     public Nova nova() {
         return Nova.builder()
                 .setIdentifier(identifier())
@@ -33,22 +33,22 @@ public class NovaProvidingConfiguration {
                 .build();
     }
 
-    @Bean
+    @Bean("novaIdentifier")
     public String identifier() {
         return environment.getProperty("NOVA.ID", "");
     }
 
-    @Bean
+    @Bean("novaWarnOnUnhandledEvents")
     public Boolean warnOnUnhandledEvent() {
         return environment.getProperty("NOVA.EVENTS.WARN_ON_UNHANDLED", Boolean.class, false);
     }
 
-    @Bean
+    @Bean("novaCaptureJvmMetrics")
     public Boolean captureJvmMetrics() {
         return environment.getProperty("NOVA.METRICS.CAPTURE_VM_METRICS", Boolean.class, true);
     }
 
-    @Bean
+    @Bean("novaDefaultBackpressureStrategy")
     public BackpressureStrategy defaultBackpressureStrategy() {
         String strategyAsString = environment.getProperty(
                 "NOVA.EVENTS.BACKPRESSURE_STRATEGY",

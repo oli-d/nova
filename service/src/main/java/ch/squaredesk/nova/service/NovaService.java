@@ -15,9 +15,8 @@ import ch.squaredesk.nova.service.annotation.LifecycleBeanProcessor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
 
 import java.lang.reflect.Method;
 import java.util.Arrays;
@@ -33,15 +32,19 @@ public abstract class NovaService {
 
     @Autowired
     AnnotationConfigApplicationContext applicationContext;
-    @Autowired
+
+    @Qualifier(NovaServiceConfiguration.BeanIdentifiers.REGISTER_SHUTDOWN_HOOK)
     boolean registerShutdownHook;
+
     @Autowired
     LifecycleBeanProcessor lifecycleBeanProcessor;
     @Autowired
     protected Nova nova;
     @Autowired
+    @Qualifier(NovaServiceConfiguration.BeanIdentifiers.INSTANCE_ID)
     protected String instanceId;
     @Autowired
+    @Qualifier(NovaServiceConfiguration.BeanIdentifiers.NAME)
     protected String serviceName;
 
     protected NovaService() {
@@ -138,19 +141,12 @@ public abstract class NovaService {
         }
     }
 
-    public static <T extends NovaService, U extends NovaServiceConfiguration<T>>
-        T createInstance(Class<T> serviceClass, Class<U> configurationClass) {
+    public static <T extends NovaService> T createInstance(Class<T> serviceClass, Class<?> ...configurationClasses) {
 
-        // ensure, that the passed config class is properly annotated
-        assertIsAnnotated(configurationClass, Configuration.class);
+        AnnotationConfigApplicationContext ctx = new AnnotationConfigApplicationContext();
 
-        // and, that we also have an appropriate service bean creator
-        assertIsAnnotated(configurationClass, "serviceInstance", Bean.class);
-
-        AnnotationConfigApplicationContext ctx =
-                new AnnotationConfigApplicationContext();
-
-        ctx.register(configurationClass);
+        ctx.register(NovaServiceConfiguration.class);
+        ctx.register(configurationClasses);
         ctx.refresh();
 
         T service = ctx.getBean(serviceClass);

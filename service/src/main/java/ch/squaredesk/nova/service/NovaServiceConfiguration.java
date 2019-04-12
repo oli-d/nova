@@ -30,16 +30,21 @@ import java.util.stream.Stream;
 @PropertySource(value="file:${NOVA.SERVICE.CONFIG}", ignoreResourceNotFound = true)
 @PropertySource(value="classpath:${NOVA.SERVICE.CONFIG}", ignoreResourceNotFound = true)
 @Import({AnnotationEnablingConfiguration.class, NovaProvidingConfiguration.class})
-public abstract class NovaServiceConfiguration<ServiceType>  {
+public class NovaServiceConfiguration  {
+    public interface BeanIdentifiers {
+        String INSTANCE_ID  = "novaServiceInstanceId";
+        String NAME = "novaServiceName";
+        String REGISTER_SHUTDOWN_HOOK = "novaRegisterShutdownHook";
+    }
     @Autowired
     protected Environment environment;
 
-    @Bean(name = "instanceId")
+    @Bean(BeanIdentifiers.INSTANCE_ID)
     public String instanceId() {
         return environment.getProperty("NOVA.SERVICE.INSTANCE_ID", UUID.randomUUID().toString());
     }
 
-    @Bean(name = "serviceName")
+    @Bean(BeanIdentifiers.NAME)
     public String serviceName() {
         String name = environment.getProperty("NOVA.SERVICE.NAME", (String)null);
         if (name == null) {
@@ -58,7 +63,7 @@ public abstract class NovaServiceConfiguration<ServiceType>  {
         return new LifecycleBeanProcessor();
     }
 
-    @Bean
+    @Bean(BeanIdentifiers.REGISTER_SHUTDOWN_HOOK)
     public boolean registerShutdownHook() {
         boolean registerShutdownHook = true;
         try {
@@ -69,6 +74,4 @@ public abstract class NovaServiceConfiguration<ServiceType>  {
         }
         return registerShutdownHook;
     }
-
-    public abstract ServiceType serviceInstance();
 }
