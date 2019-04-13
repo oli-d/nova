@@ -48,12 +48,12 @@
 
     <distributionManagement>
         <snapshotRepository>
-            <id>snapshot</id>
-            <url>http://x8nexus:9999/repository/maven-snapshots/</url>
+            <id>ossrh</id>
+            <url>https://oss.sonatype.org/content/repositories/snapshots</url>
         </snapshotRepository>
         <repository>
-            <id>release</id>
-            <url>http://x8nexus:9999/repository/maven-releases/</url>
+            <id>ossrh</id>
+            <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
         </repository>
     </distributionManagement>
 

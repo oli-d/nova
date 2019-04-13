@@ -41,14 +41,18 @@ public abstract class NovaService {
     @Autowired
     protected Nova nova;
     @Autowired
-    @Qualifier(NovaServiceConfiguration.BeanIdentifiers.INSTANCE_ID)
+    @Qualifier(NovaServiceConfiguration.BeanIdentifiers.INSTANCE_IDENTIFIER)
     protected String instanceId;
-    @Autowired
+    @Autowired(required = false)
     @Qualifier(NovaServiceConfiguration.BeanIdentifiers.NAME)
     protected String serviceName;
 
     protected NovaService() {
         this.logger = LoggerFactory.getLogger(getClass());
+        if (serviceName == null) {
+            serviceName = getClass().getSimpleName();
+            logger.info("The service name was not provided, so we derived it from the class name: {} ", serviceName);
+        }
     }
 
     private void doInit() {
@@ -113,31 +117,6 @@ public abstract class NovaService {
 
         void cut() {
             shutdownLatch.countDown();
-        }
-    }
-
-    private static void assertIsAnnotated(Class classToCheck, Class annotationToCheckFor) {
-        boolean annotated = Arrays.stream(classToCheck.getAnnotations())
-                .anyMatch(anno -> anno.annotationType().equals(annotationToCheckFor));
-        if (!annotated) {
-            throw new IllegalArgumentException("the class " + classToCheck.getName() + " must be annotated with @" +
-                    annotationToCheckFor.getSimpleName());
-        }
-    }
-
-    private static void assertIsAnnotated(Class classToCheck, String methodToFind, Class annotationToCheckFor) {
-        Method methodToCheck;
-        try {
-            methodToCheck = classToCheck.getMethod(methodToFind);
-        } catch (Exception e) {
-            throw new RuntimeException("Unable to instantiate service", e);
-        }
-
-        boolean annotated = Arrays.stream(methodToCheck.getAnnotations())
-                .anyMatch(anno -> anno.annotationType().equals(annotationToCheckFor));
-        if (!annotated) {
-            throw new IllegalArgumentException("the method " + methodToFind + "() must be annotated with @" +
-                    annotationToCheckFor.getSimpleName());
         }
     }
 

@@ -20,7 +20,7 @@ import org.springframework.core.env.Environment;
 @Configuration
 @Import(RestEnablingConfiguration.class)
 public class TimeServiceConfig  {
-    @Bean("serviceInstance")
+    @Bean
     public TimeService serviceInstance() {
         return new TimeService();
     }

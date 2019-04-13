@@ -4,27 +4,45 @@ This artifact provides ```NovaService```, an abstract class that enables you to
 quickly create a standalone Java service.
 
 To do so, all you have to do is
-1. Create a service main class which inherits from ```NovaService```
-1. Implement a Spring  configuration class that inherits from ```NovaServiceConfiguration```
+1. Create a service class which inherits from ```NovaService```
+1. Provide a Spring configuration class that returns your service as a ```@Bean```
+1. Invoke the static factory method ```NovaService.createInstance()``` to instantiate your service
 
 What you get is
 * a service identifier
 * a simple service lifecycle
 * a ```Nova``` instance, which provides out-of-the-box service metrics and reactive access
 to the event bus and file system
-* ch.squaredesk.nova.events.ch.squaredesk.nova.events.annotation based event handling and
+* annotation based event handling and
 * easy configuration management
 
 ### The Service identifier
 
 Each service has a ```serviceId``` and a ```serviceName``` field. The values of this
 field can be set by
-* either providing appropriately named beans in the Spring application context,
-* or setting the environment variables ```NOVA.SERVICE.INSTANCE_ID``` and ```NOVA.SERVICE.NAME```
+* either setting the environment variables ```NOVA.SERVICE.INSTANCE_ID``` and ```NOVA.SERVICE.NAME```
+* or providing beans in the Spring application context. The bean qualifiers are the same as
+the environment variable names. For easy access, they are also defined in the interface
+```ServiceConfiguration.BeanIdentifiers```:
+    ```
+    @Configuration
+    public static class MyConfigWithServiceName {
+        @Bean(NovaServiceConfiguration.BeanIdentifiers.INSTANCE)
+        public MyService serviceInstance() {
+            return new MyService();
+        }
 
-If you do not implement either of the mentioned solutions, the system will calculate the
-values automatically. The ServiceName is derived by inspecting your service' class name and
-the instanceId will be a new UUID.
+        @Bean(NovaServiceConfiguration.BeanIdentifiers.NAME)
+        public String foo() {
+            return env.getProperty("MyService");
+        }
+    }
+    ```
+    
+
+If you do not provide either of the mentioned beans, the system will use default
+values . The default service name is the service' class name and the instanceId will be a new 
+UUID.
 
 Please note that it is recommended to have a unique tuple of service name and instance ID. The
 framework will not enforce this, but in a multi-instance environment failing to do so will cause
@@ -64,7 +82,7 @@ are available in Spring's ```Environment``` and can be used in your configuratio
 other classes.
 
 In addition to that, it is possible to load an additional config file by assigning the
-path to the environment variable ```NOVA.SERVICE.CONFIG```. The system tries to find this
+path to the environment variable ```NOVA.SERVICE.CONFIG_FILE```. The system tries to find this
 file in the local file system and on the classpath (in that order).
 
 If the additional config file is found, the defined properties are also added to the Spring
@@ -149,18 +167,14 @@ required beans:
 ```Java
 @Configuration
 @Import(RestEnablingConfiguration.class)
-public class TimeServiceConfig extends NovaServiceConfiguration<TimeService> {
-    @Autowired
-    Environment env;
-
-    @Override
+public class TimeServiceConfig  {
     @Bean
     public TimeService serviceInstance() {
         return new TimeService();
     }
 
     @Bean
-    public TimeRequestHandler timeRequestHandler() {
+    public TimeRequestHandler timeRequestHandler(Environment env) {
         return new TimeRequestHandler(env.getProperty("messagePrefix",""));
     }
 }
@@ -243,7 +257,7 @@ file (let's say ```/tmp/myconfig.properties```) and specify the full path on the
 command line:
 
 ```
-java -DNOVA.SERVICE.CONFIG=/tmp/myconfig.properties -jar timeservice.jar
+java -DNOVA.SERVICE.CONFIG_FILE=/tmp/myconfig.properties -jar timeservice.jar
 ```
 
 _(You can find the full source code of the example in the folder ```src/test/example/time```

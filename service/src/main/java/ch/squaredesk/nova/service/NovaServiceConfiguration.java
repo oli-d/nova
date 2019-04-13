@@ -27,35 +27,29 @@ import java.util.stream.Stream;
 
 @Configuration
 @PropertySource(value="classpath:defaults.properties", ignoreResourceNotFound = true)
-@PropertySource(value="file:${NOVA.SERVICE.CONFIG}", ignoreResourceNotFound = true)
-@PropertySource(value="classpath:${NOVA.SERVICE.CONFIG}", ignoreResourceNotFound = true)
+@PropertySource(value="file:${NOVA.SERVICE.CONFIG_FILE}", ignoreResourceNotFound = true)
+@PropertySource(value="classpath:${NOVA.SERVICE.CONFIG_FILE}", ignoreResourceNotFound = true)
 @Import({AnnotationEnablingConfiguration.class, NovaProvidingConfiguration.class})
 public class NovaServiceConfiguration  {
     public interface BeanIdentifiers {
-        String INSTANCE_ID  = "novaServiceInstanceId";
-        String NAME = "novaServiceName";
-        String REGISTER_SHUTDOWN_HOOK = "novaRegisterShutdownHook";
+        String INSTANCE  = "NOVA.SERVICE.INSTANCE";
+        String INSTANCE_IDENTIFIER = "NOVA.SERVICE.INSTANCE_IDENTIFIER";
+        String NAME = "NOVA.SERVICE.NAME";
+        String REGISTER_SHUTDOWN_HOOK = "NOVA.SERVICE.REGISTER_SHUTDOWN_HOOK";
+        String CAPTURE_JVM_METRICS = "NOVA.SERVICE.CAPTURE_JVM_METRICS";
+        String CONFIG_FILE = "NOVA.SERVICE.CONFIG_FILE";
     }
     @Autowired
     protected Environment environment;
 
-    @Bean(BeanIdentifiers.INSTANCE_ID)
+    @Bean(BeanIdentifiers.INSTANCE_IDENTIFIER)
     public String instanceId() {
-        return environment.getProperty("NOVA.SERVICE.INSTANCE_ID", UUID.randomUUID().toString());
+        return environment.getProperty(BeanIdentifiers.INSTANCE_IDENTIFIER, UUID.randomUUID().toString());
     }
 
     @Bean(BeanIdentifiers.NAME)
     public String serviceName() {
-        String name = environment.getProperty("NOVA.SERVICE.NAME", (String)null);
-        if (name == null) {
-            String configClassName = getClass().getSimpleName();
-            Optional<Integer> indexOfConfigSubstring = Stream.of("config", "conf", "cfg")
-                    .map(testString -> configClassName.toLowerCase().indexOf(testString))
-                    .max(Integer::compareTo);
-            name = configClassName.substring(0, indexOfConfigSubstring.orElse(configClassName.length()));
-        }
-
-        return name;
+        return environment.getProperty(BeanIdentifiers.NAME);
     }
 
     @Bean
@@ -68,7 +62,7 @@ public class NovaServiceConfiguration  {
         boolean registerShutdownHook = true;
         try {
             registerShutdownHook = Boolean.parseBoolean(
-                    environment.getProperty("NOVA.SERVICE.REGISTER_SHUTDOWN_HOOK", "TRUE"));
+                    environment.getProperty(BeanIdentifiers.REGISTER_SHUTDOWN_HOOK, "TRUE"));
         } catch (Exception e) {
             // noop, stick with default
         }

@@ -36,11 +36,11 @@ import static org.junit.jupiter.api.Assertions.*;
 public class NovaServiceTest {
     @AfterEach
     void tearDown() {
-        System.clearProperty("NOVA.SERVICE.CAPTURE_JVM_METRICS");
-        System.clearProperty("NOVA.SERVICE.NAME");
-        System.clearProperty("NOVA.SERVICE.INSTANCE_ID");
-        System.clearProperty("NOVA.SERVICE.CONFIG");
-        System.clearProperty("NOVA.SERVICE.REGISTER_SHUTDOWNOOK");
+        System.clearProperty(NovaServiceConfiguration.BeanIdentifiers.CAPTURE_JVM_METRICS);
+        System.clearProperty(NovaServiceConfiguration.BeanIdentifiers.CONFIG_FILE);
+        System.clearProperty(NovaServiceConfiguration.BeanIdentifiers.INSTANCE_IDENTIFIER);
+        System.clearProperty(NovaServiceConfiguration.BeanIdentifiers.NAME);
+        System.clearProperty(NovaServiceConfiguration.BeanIdentifiers.REGISTER_SHUTDOWN_HOOK);
         System.clearProperty("foo");
     }
 
@@ -59,13 +59,6 @@ public class NovaServiceTest {
         assertThrows(
                 UnsatisfiedDependencyException.class,
                 () -> MyService.createInstance(MyService.class, MyCrippledConfig.class));
-    }
-
-    @Test
-    void serviceCannotBeCreatedWithConfigThatIsntAnnotatedWithConfiguration() {
-        Throwable t = assertThrows(IllegalArgumentException.class,
-                () -> MyService.createInstance(MyService.class, MyConfigWithoutConfigurationAnnotation.class));
-        assertThat(t.getMessage(), containsString("must be annotated with @Configuration"));
     }
 
     @Test
@@ -104,9 +97,9 @@ public class NovaServiceTest {
 
     @Test
     void earlyExceptionForServiceConfigurationThatIsNotProperlyAnnotated() {
-        Throwable t = assertThrows(IllegalArgumentException.class,
+        Throwable t = assertThrows(NoSuchBeanDefinitionException.class,
                 () -> MyService.createInstance(MyService.class, MyConfigWithoutBeanAnnotation.class));
-        assertThat(t.getMessage(), containsString("must be annotated with @Bean"));
+        assertThat(t.getMessage(), containsString("No qualifying bean of type"));
     }
 
     @Test
@@ -153,9 +146,9 @@ public class NovaServiceTest {
 
     @Test
     void serviceNameCanBeSpecifiedWithEnvironmentProperty() throws Exception {
-        System.setProperty("NOVA.SERVICE.NAME", "ABC");
+        System.setProperty(NovaServiceConfiguration.BeanIdentifiers.NAME, "ABC");
         AnnotationConfigApplicationContext ctx = new AnnotationConfigApplicationContext();
-        ctx.register(MyConfig.class);
+        ctx.register(MyConfig.class, NovaServiceConfiguration.class);
         ctx.refresh();
         MyService sut = ctx.getBean(MyService.class);
 
@@ -163,40 +156,37 @@ public class NovaServiceTest {
     }
 
     @Test
-    void serviceNameDerivedFromConfigClassNameIfNotSpecified() throws Exception {
+    void defaultServiceNameUsedIfNotSpecified() throws Exception {
         AnnotationConfigApplicationContext ctx = new AnnotationConfigApplicationContext();
-        ctx.register(MyConfig.class);
+        ctx.register(MyConfig.class, NovaServiceConfiguration.class);
         ctx.refresh();
         MyService sut = ctx.getBean(MyService.class);
 
-        assertThat(sut.serviceName, is(
-                MyConfig.class.getName()
-                        .replace(getClass().getPackage().getName() + ".", "")
-                        .replace("Config","")));
+        assertThat(sut.serviceName, is("MyService"));
     }
 
     @Test
     void defaultConfigsLoadedAutomaticallyIfPresent() {
         AnnotationConfigApplicationContext ctx = new AnnotationConfigApplicationContext();
-        ctx.register(MyConfigWithProperty.class);
+        ctx.register(MyConfigWithProperty.class, NovaServiceConfiguration.class);
         ctx.refresh();
         assertThat(ctx.getBean("foo"), is ("bar"));
     }
 
     @Test
     void noProblemIfSpecificConfigFileDoesNotExist() {
-        System.setProperty("NOVA.SERVICE.CONFIG", "doesn'tExist");
+        System.setProperty(NovaServiceConfiguration.BeanIdentifiers.CONFIG_FILE, "doesn'tExist");
         AnnotationConfigApplicationContext ctx = new AnnotationConfigApplicationContext();
-        ctx.register(MyConfigWithProperty.class);
+        ctx.register(MyConfigWithProperty.class, NovaServiceConfiguration.class);
         ctx.refresh();
         assertThat(ctx.getBean("foo"), is ("bar"));
     }
 
     @Test
     void specificConfigFileIsLoadedIfPresentAndOverridesDefaultConfig() {
-        System.setProperty("NOVA.SERVICE.CONFIG", "override.properties");
+        System.setProperty(NovaServiceConfiguration.BeanIdentifiers.CONFIG_FILE, "override.properties");
         AnnotationConfigApplicationContext ctx = new AnnotationConfigApplicationContext();
-        ctx.register(MyConfigWithProperty.class);
+        ctx.register(MyConfigWithProperty.class, NovaServiceConfiguration.class);
         ctx.refresh();
         assertThat(ctx.getBean("foo"), is ("baz"));
     }
@@ -205,7 +195,7 @@ public class NovaServiceTest {
     void specificConfigItemsCanAlsoBeSetViaEnvironmentVariable() {
         System.setProperty("foo", "baz");
         AnnotationConfigApplicationContext ctx = new AnnotationConfigApplicationContext();
-        ctx.register(MyConfigWithProperty.class);
+        ctx.register(MyConfigWithProperty.class, NovaServiceConfiguration.class);
         ctx.refresh();
         assertThat(ctx.getBean("foo"), is ("baz"));
     }
@@ -268,7 +258,7 @@ public class NovaServiceTest {
         @Autowired
         Environment env;
 
-        @Bean("serviceInstance")
+        @Bean(NovaServiceConfiguration.BeanIdentifiers.INSTANCE)
         public MyService serviceInstance() {
             return new MyService();
         }
@@ -279,7 +269,7 @@ public class NovaServiceTest {
         @Autowired
         Environment env;
 
-        @Bean("serviceInstance")
+        @Bean(NovaServiceConfiguration.BeanIdentifiers.INSTANCE)
         public MyService serviceInstance() {
             return new MyService();
         }
@@ -292,7 +282,7 @@ public class NovaServiceTest {
 
     @Configuration
     public static class MyConfigForBrokenStartService {
-        @Bean("serviceInstance")
+        @Bean(NovaServiceConfiguration.BeanIdentifiers.INSTANCE)
         public MyBrokenStartService serviceInstance() {
             return new MyBrokenStartService();
         }
@@ -300,7 +290,7 @@ public class NovaServiceTest {
 
     @Configuration
     public static class MyConfigForBrokenInitService {
-        @Bean("serviceInstance")
+        @Bean(NovaServiceConfiguration.BeanIdentifiers.INSTANCE)
         public MyBrokenInitService serviceInstance() {
             return new MyBrokenInitService();
         }
@@ -308,13 +298,6 @@ public class NovaServiceTest {
 
     @Configuration
     public static class MyConfigWithoutBeanAnnotation {
-        public MyService serviceInstance() {
-            return new MyService();
-        }
-    }
-
-    public static class MyConfigWithoutConfigurationAnnotation  {
-        @Bean("serviceInstance")
         public MyService serviceInstance() {
             return new MyService();
         }
