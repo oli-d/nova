@@ -41,35 +41,22 @@ class RestEnablingConfigurationTest {
         return ctx;
     }
 
-    @BeforeAll
-    static void setup() {
-        System.setProperty("NOVA.REST.PACKAGES_TO_SCAN_FOR_HANDLERS", "ch.squaredesk.nova.comm.rest");
-    }
-
-    @AfterAll
-    static void tearDown() {
-        System.clearProperty("NOVA.REST.PACKAGES_TO_SCAN_FOR_HANDLERS");
-    }
-
     @BeforeEach
     void clearEnvironment() {
-        System.clearProperty("NOVA.HTTP.REST.INTERFACE_NAME");
-        System.clearProperty("NOVA.HTTP.REST.PORT");
         System.clearProperty("NOVA.REST.CAPTURE_METRICS");
-        System.clearProperty("NOVA.HTTP.SERVER.AUTO_START");
     }
 
     @Test
     void ifNothingSpecifiedMetricsAreCaptured() throws Exception{
         ApplicationContext ctx = setupContext(MyConfig.class);
-        assertThat(ctx.getBean("captureRestMetrics"), is(true));
+        assertThat(ctx.getBean(RestEnablingConfiguration.BeanIdentifiers.CAPTURE_METRICS), is(true));
     }
 
     @Test
     void metricsCanBeSwitchedOffWithEnvVariable() throws Exception{
         System.setProperty("NOVA.REST.CAPTURE_METRICS", "false");
         ApplicationContext ctx = setupContext(MyConfig.class);
-        assertThat(ctx.getBean("captureRestMetrics"), is(false));
+        assertThat(ctx.getBean(RestEnablingConfiguration.BeanIdentifiers.CAPTURE_METRICS), is(false));
     }
 
     @Test
@@ -86,15 +73,6 @@ class RestEnablingConfigurationTest {
     @Configuration
     @Import({RestTestConfig.class})
     public static class MyConfig {
-    }
-
-    @Configuration
-    @Import({RestTestConfig.class})
-    public static class MyConfigWithNoAutostart {
-        @Bean("autoStartHttpServer")
-        boolean myAutoStartBean() {
-            return false;
-        }
     }
 
     @Configuration

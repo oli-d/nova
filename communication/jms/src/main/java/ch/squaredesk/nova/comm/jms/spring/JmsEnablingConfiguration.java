@@ -6,6 +6,7 @@ import ch.squaredesk.nova.comm.MessageTranscriber;
 import ch.squaredesk.nova.comm.jms.DefaultDestinationIdGenerator;
 import ch.squaredesk.nova.comm.jms.JmsAdapter;
 import ch.squaredesk.nova.comm.jms.UIDCorrelationIdGenerator;
+import ch.squaredesk.nova.spring.NovaProvidingConfiguration;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -13,6 +14,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Import;
 import org.springframework.core.env.Environment;
 
 import javax.jms.ConnectionFactory;
@@ -27,19 +29,39 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 @Configuration
+@Import({NovaProvidingConfiguration.class})
 public class JmsEnablingConfiguration {
     private static final Logger logger = LoggerFactory.getLogger(JmsEnablingConfiguration.class);
+
+    public interface BeanIdentifiers {
+        String ADAPTER_IDENTIFIER = "NOVA.JMS.ADAPTER_IDENTIFIER";
+        String DEFAULT_REQUEST_TIMEOUT_IN_SECONDS = "NOVA.JMS.DEFAULT_REQUEST_TIMEOUT_IN_SECONDS";
+        String DEFAULT_MESSAGE_DELIVERY_MODE = "NOVA.JMS.DEFAULT_MESSAGE_DELIVERY_MODE";
+        String DEFAULT_MESSAGE_PRIORITY = "NOVA.JMS.DEFAULT_MESSAGE_PRIORITY";
+        String DEFAULT_MESSAGE_TIME_TO_LIVE = "NOVA.JMS.DEFAULT_MESSAGE_TIME_TO_LIVE";
+        String CONSUMER_SESSION_ACK_MODE = "NOVA.JMS.CONSUMER_SESSION_ACK_MODE";
+        String PRODUCER_SESSION_ACK_MODE = "NOVA.JMS.PRODUCER_SESSION_ACK_MODE";
+
+        String OBJECT_MAPPER = "NOVA.JMS.OBJECT_MAPPER";
+        String MESSAGE_TRANSCRIBER = "NOVA.JMS.MESSAGE_TRANSCRIBER";
+        String CORRELATION_ID_GENERATOR = "NOVA.JMS.CORRELATION_ID_GENERATOR";
+        String DESTINATION_ID_GENERATOR = "NOVA.JMS.DESTINATION_ID_GENERATOR";
+        String CONNECTION_FACTORY = "NOVA.JMS.CONNECTION_FACTORY";
+        String ADAPTER_SETTINGS = "NOVA.JMS.ADAPTER_SETTINGS";
+        String ADAPTER = "NOVA.JMS.ADAPTER";
+    }
+
 
     @Autowired
     private Environment environment;
 
-    @Bean("jmsAdapter")
-    JmsAdapter jmsAdapter(@Qualifier("jmsAdapterSettings") JmsAdapterSettings jmsAdapterSettings,
-                          @Qualifier("jmsConnectionFactory") ConnectionFactory connectionFactory,
-                          @Qualifier("jmsCorrelationIdGenerator") Supplier<String> correlationIdGenerator,
-                          @Qualifier("jmsDestinationIdGenerator") Function<Destination, String> destinationIdGenerator,
-                          @Qualifier("jmsMessageTranscriber") MessageTranscriber<String> jmsMessageTranscriber,
-                          @Qualifier("nova") Nova nova) {
+    @Bean(BeanIdentifiers.ADAPTER)
+    JmsAdapter jmsAdapter(@Qualifier(BeanIdentifiers.ADAPTER_SETTINGS) JmsAdapterSettings jmsAdapterSettings,
+                          @Qualifier(BeanIdentifiers.CONNECTION_FACTORY) ConnectionFactory connectionFactory,
+                          @Qualifier(BeanIdentifiers.CORRELATION_ID_GENERATOR) Supplier<String> correlationIdGenerator,
+                          @Qualifier(BeanIdentifiers.DESTINATION_ID_GENERATOR) Function<Destination, String> destinationIdGenerator,
+                          @Qualifier(BeanIdentifiers.MESSAGE_TRANSCRIBER) MessageTranscriber<String> jmsMessageTranscriber,
+                          Nova nova) {
         return JmsAdapter.builder()
                 .setConnectionFactory(connectionFactory)
                 .setIdentifier(jmsAdapterSettings.jmsAdapterIdentifier)
@@ -58,14 +80,14 @@ public class JmsEnablingConfiguration {
                 .build();
     }
 
-    @Bean("jmsAdapterSettings")
-    JmsAdapterSettings jmsConfiguration(@Qualifier("jmsAdapterIdentifier") @Autowired(required = false) String jmsAdapterIdentifier,
-                                        @Qualifier("defaultMessageDeliveryMode") int defaultMessageDeliveryMode,
-                                        @Qualifier("defaultMessagePriority") int defaultMessagePriority,
-                                        @Qualifier("defaultMessageTimeToLive") long defaultMessageTimeToLive,
-                                        @Qualifier("defaultJmsRpcTimeoutInSeconds") int defaultJmsRpcTimeoutInSeconds,
-                                        @Qualifier("consumerSessionAckMode") int consumerSessionAckMode,
-                                        @Qualifier("producerSessionAckMode") int producerSessionAckMode) {
+    @Bean(BeanIdentifiers.ADAPTER_SETTINGS)
+    JmsAdapterSettings jmsConfiguration(@Qualifier(BeanIdentifiers.ADAPTER_IDENTIFIER) @Autowired(required = false) String jmsAdapterIdentifier,
+                                        @Qualifier(BeanIdentifiers.DEFAULT_MESSAGE_DELIVERY_MODE) int defaultMessageDeliveryMode,
+                                        @Qualifier(BeanIdentifiers.DEFAULT_MESSAGE_PRIORITY) int defaultMessagePriority,
+                                        @Qualifier(BeanIdentifiers.DEFAULT_MESSAGE_TIME_TO_LIVE) long defaultMessageTimeToLive,
+                                        @Qualifier(BeanIdentifiers.DEFAULT_REQUEST_TIMEOUT_IN_SECONDS) int defaultJmsRpcTimeoutInSeconds,
+                                        @Qualifier(BeanIdentifiers.CONSUMER_SESSION_ACK_MODE) int consumerSessionAckMode,
+                                        @Qualifier(BeanIdentifiers.PRODUCER_SESSION_ACK_MODE) int producerSessionAckMode) {
         return JmsAdapterSettings.builder()
                 .setIdentifier(jmsAdapterIdentifier)
                 .setDefaultMessageDeliveryMode(defaultMessageDeliveryMode)
@@ -77,29 +99,29 @@ public class JmsEnablingConfiguration {
                 .build();
     }
 
-    @Bean("defaultMessageDeliveryMode")
+    @Bean(BeanIdentifiers.DEFAULT_MESSAGE_DELIVERY_MODE)
     int defaultMessageDeliveryMode() {
-        return propertyFromEnvironmentOrConstant("NOVA.JMS.DEFAULT_MESSAGE_DELIVERY_MODE", Message.class, Message.DEFAULT_DELIVERY_MODE, int.class);
+        return propertyFromEnvironmentOrConstant(BeanIdentifiers.DEFAULT_MESSAGE_DELIVERY_MODE, Message.class, Message.DEFAULT_DELIVERY_MODE, int.class);
     }
 
-    @Bean("defaultMessagePriority")
+    @Bean(BeanIdentifiers.DEFAULT_MESSAGE_PRIORITY)
     int defaultMessagePriority() {
-        return propertyFromEnvironmentOrConstant("NOVA.JMS.DEFAULT_MESSAGE_PRIORITY", Message.class, Message.DEFAULT_PRIORITY, int.class);
+        return propertyFromEnvironmentOrConstant(BeanIdentifiers.DEFAULT_MESSAGE_PRIORITY, Message.class, Message.DEFAULT_PRIORITY, int.class);
     }
 
-    @Bean("defaultMessageTimeToLive")
+    @Bean(BeanIdentifiers.DEFAULT_MESSAGE_TIME_TO_LIVE)
     long defaultMessageTimeToLive() {
-        return propertyFromEnvironmentOrConstant("NOVA.JMS.DEFAULT_MESSAGE_TIME_TO_LIVE", Message.class, Message.DEFAULT_TIME_TO_LIVE, long.class);
+        return propertyFromEnvironmentOrConstant(BeanIdentifiers.DEFAULT_MESSAGE_TIME_TO_LIVE, Message.class, Message.DEFAULT_TIME_TO_LIVE, long.class);
     }
 
-    @Bean("consumerSessionAckMode")
+    @Bean(BeanIdentifiers.CONSUMER_SESSION_ACK_MODE)
     int consumerSessionAckMode() {
-        return propertyFromEnvironmentOrConstant("NOVA.JMS.CONSUMER_SESSION_ACK_MODE", Session.class, Session.AUTO_ACKNOWLEDGE, int.class);
+        return propertyFromEnvironmentOrConstant(BeanIdentifiers.CONSUMER_SESSION_ACK_MODE, Session.class, Session.AUTO_ACKNOWLEDGE, int.class);
     }
 
-    @Bean("producerSessionAckMode")
+    @Bean(BeanIdentifiers.PRODUCER_SESSION_ACK_MODE)
     int producerSessionAckMode() {
-        return propertyFromEnvironmentOrConstant("NOVA.JMS.PRODUCER_SESSION_ACK_MODE", Session.class, Session.AUTO_ACKNOWLEDGE, int.class);
+        return propertyFromEnvironmentOrConstant(BeanIdentifiers.PRODUCER_SESSION_ACK_MODE, Session.class, Session.AUTO_ACKNOWLEDGE, int.class);
     }
 
     private <T> T propertyFromEnvironmentOrConstant (String envVariableName, Class classContainingConstant, T defaultValue, Class<T> resultType) {
@@ -135,28 +157,28 @@ public class JmsEnablingConfiguration {
                 });
     }
 
-    @Bean("jmsDestinationIdGenerator")
+    @Bean(BeanIdentifiers.DESTINATION_ID_GENERATOR)
     Function<Destination, String> jmsDestinationIdGenerator() {
         return new DefaultDestinationIdGenerator();
     }
 
-    @Bean("jmsCorrelationIdGenerator")
+    @Bean(BeanIdentifiers.CORRELATION_ID_GENERATOR)
     Supplier<String> jmsCorrelationIdGenerator() {
         return new UIDCorrelationIdGenerator();
     }
 
-    @Bean("defaultJmsRpcTimeoutInSeconds")
+    @Bean(BeanIdentifiers.DEFAULT_REQUEST_TIMEOUT_IN_SECONDS)
     int defaultJmsRpcTimeoutInSeconds() {
-        return environment.getProperty("NOVA.JMS.DEFAULT_RPC_TIMEOUT_IN_SECONDS", Integer.class, 30);
+        return environment.getProperty(BeanIdentifiers.DEFAULT_REQUEST_TIMEOUT_IN_SECONDS, Integer.class, 30);
     }
 
-    @Bean("jmsAdapterIdentifier")
+    @Bean(BeanIdentifiers.ADAPTER_IDENTIFIER)
     String jmsAdapterIdentifier() {
-        return environment.getProperty("NOVA.JMS.ADAPTER_IDENTIFIER");
+        return environment.getProperty(BeanIdentifiers.ADAPTER_IDENTIFIER);
     }
 
-    @Bean("jmsMessageTranscriber")
-    MessageTranscriber<String> jmsMessageTranscriber(@Qualifier("jmsObjectMapper") @Autowired(required = false) ObjectMapper jmsObjectMapper) {
+    @Bean(BeanIdentifiers.MESSAGE_TRANSCRIBER)
+    MessageTranscriber<String> jmsMessageTranscriber(@Qualifier(BeanIdentifiers.OBJECT_MAPPER) @Autowired(required = false) ObjectMapper jmsObjectMapper) {
         if (jmsObjectMapper == null) {
             return new DefaultMessageTranscriberForStringAsTransportType();
         } else {

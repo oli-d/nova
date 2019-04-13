@@ -17,15 +17,20 @@ When you do so, default configuration will be applied, which can be overridden v
 environment variables or by providing the appropriate beans yourself. The possible
 configuration values are
 
-  | @Bean name                    | Environnment variable name              | Description                                                           | Default value |
-  |-------------------------------|-----------------------------------------|-----------------------------------------------------------------------|---------------|
-  | kafkaPollTimeoutInMilliseconds| NOVA.KAFKA.POLL_TIMEOUT_IN_MILLISECONDS | the timeout in milliseconds when polling new messages from the broker | 1000 (1s) |
-  | kafkaServerAddress            | NOVA.KAFKA.SERVER_ADDRESS               | the address of the server to connect to                               | Message.DEFAULT_PRIORITY |
-  | kafkaAdapterIdentifier        | NOVA.KAFKA.ADAPTER_IDENTIFIER           | the identifier to assign to the adapter                               | <null> |
-  | kafkaAdapterSettings          | n/a                                     | a ```KafkaAdapterSettings``` instance, containing all aforementioned config values. Handy if you want to read the configuration or override multiple defaults programmatically. |  |
-  | | | | |
-  | kafkaObjectMapper             | n/a                                     | the ObjectMapper to use when transcribing incoming / outgoing messages| default ObjectMapper, for details see [here](../comm/README.md) |
-  | kafkaMessageTranscriber       | n/a                                     | the transcriber to use for incoming / outgoing messages               | default transcriber, for details see [here](../comm/README.md) |
+  | Environnment variable / bean name       | Description                                                           | Default value |
+  |-----------------------------------------|-----------------------------------------------------------------------|---------------|
+  | NOVA.KAFKA.POLL_TIMEOUT_IN_MILLISECONDS | the timeout in milliseconds when polling new messages from the broker | 1000 (1s) |
+  | NOVA.KAFKA.SERVER_ADDRESS               | the address of the server to connect to                               | Message.DEFAULT_PRIORITY |
+  | NOVA.KAFKA.ADAPTER_IDENTIFIER           | the identifier to assign to the adapter                               | <null> |
+  | NOVA.KAFKA.ADAPTER_SETTINGS             | a ```KafkaAdapterSettings``` instance, containing all aforementioned config values. Handy if you want to read the configuration or override multiple defaults programmatically. |  |
+  | | | |
+  | NOVA.KAFKA.OBJECT_MAPPER                | the ObjectMapper to use when transcribing incoming / outgoing messages| default ObjectMapper, for details see [here](../comm/README.md) |
+  | NOVA.KAFKA.CONSUMER_PROPERTIES          | the properties to use to create the Kafka consumer                    |  |
+  | NOVA.KAFKA.PRODUCER_PROPERTIES          | the properties to use to create the Kafka producer                    |  |
+  | NOVA.KAFKA.MESSAGE_TRANSCRIBER          | the transcriber to use for incoming / outgoing messages               | default transcriber, for details see [here](../comm/README.md) |
+  | | | |
+  | NOVA.KAFKA.ADAPTER                      | the ```KafkaAdapter``` instance                                       |  |
+
 
 Of course you can also instantiate a new ```KafkaAdapter``` instance programmatically. To do so,
 make use of the ```Builder``` that can be obtained by invoking the builder method

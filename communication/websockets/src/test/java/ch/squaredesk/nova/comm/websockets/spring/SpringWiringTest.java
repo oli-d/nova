@@ -10,8 +10,10 @@
  */
 package ch.squaredesk.nova.comm.websockets.spring;
 
+import ch.squaredesk.net.PortFinder;
 import ch.squaredesk.nova.Nova;
 import ch.squaredesk.nova.comm.http.HttpServerSettings;
+import ch.squaredesk.nova.comm.http.spring.HttpServerProvidingConfiguration;
 import ch.squaredesk.nova.comm.websockets.WebSocket;
 import ch.squaredesk.nova.comm.websockets.WebSocketAdapter;
 import ch.squaredesk.nova.comm.websockets.annotation.OnMessage;
@@ -73,6 +75,11 @@ public class SpringWiringTest {
         @Bean
         public MyBean myBean() {
             return new MyBean();
+        }
+
+        @Bean(HttpServerProvidingConfiguration.BeanIdentifiers.PORT)
+        public int serverPort() {
+            return PortFinder.findFreePort();
         }
     }
 

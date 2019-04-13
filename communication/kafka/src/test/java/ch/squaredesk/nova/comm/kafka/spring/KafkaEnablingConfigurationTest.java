@@ -17,37 +17,36 @@ import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 @ExtendWith(SpringExtension.class)
 @ContextConfiguration(classes = {
-        KafkaEnablingConfiguration.class,
         KafkaEnablingConfigurationTest.AdapterDisablingConfig.class,
-        NovaProvidingConfiguration.class})
+        KafkaEnablingConfiguration.class})
 class KafkaEnablingConfigurationTest {
     @Autowired
     KafkaAdapterSettings kafkaAdapterSettings;
 
     @BeforeAll
     static void setup() {
-        System.setProperty("NOVA.KAFKA.ADAPTER_IDENTIFIER", "myId");
-        System.setProperty("NOVA.KAFKA.SERVER_ADDRESS", "server:port");
-        System.setProperty("NOVA.KAFKA.POLL_TIMEOUT_IN_MILLISECONDS", "123");
+        System.setProperty(KafkaEnablingConfiguration.BeanIdentifiers.ADAPTER_IDENTIFIER, "myId");
+        System.setProperty(KafkaEnablingConfiguration.BeanIdentifiers.SERVER_ADDRESS, "localhost:4567");
+        System.setProperty(KafkaEnablingConfiguration.BeanIdentifiers.POLL_TIMEOUT_IN_MS, "123");
     }
 
     @AfterAll
     static void tearDown() {
-        System.clearProperty("NOVA.KAFKA.ADAPTER_IDENTIFIER");
-        System.clearProperty("NOVA.KAFKA.SERVER_ADDRESS");
-        System.clearProperty("NOVA.KAFKA.POLL_TIMEOUT_IN_MILLISECONDS");
+        System.clearProperty(KafkaEnablingConfiguration.BeanIdentifiers.ADAPTER_IDENTIFIER);
+        System.clearProperty(KafkaEnablingConfiguration.BeanIdentifiers.SERVER_ADDRESS);
+        System.clearProperty(KafkaEnablingConfiguration.BeanIdentifiers.POLL_TIMEOUT_IN_MS);
     }
 
     @Test
     void environmentVariablesProperlyParsed() {
         assertThat(kafkaAdapterSettings.identifier, is("myId"));
-        assertThat(kafkaAdapterSettings.serverAddress, is("server:port"));
+        assertThat(kafkaAdapterSettings.serverAddress, is("localhost:4567"));
         assertThat(kafkaAdapterSettings.pollTimeoutInMilliseconds, is(123L));
     }
 
     @Configuration
     static class AdapterDisablingConfig {
-        @Bean("kafkaAdapter")
+        @Bean(KafkaEnablingConfiguration.BeanIdentifiers.ADAPTER)
         KafkaAdapter kafkaAdapter() { return null; }
     }
 }

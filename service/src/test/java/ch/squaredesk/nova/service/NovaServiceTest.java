@@ -36,7 +36,6 @@ import static org.junit.jupiter.api.Assertions.*;
 public class NovaServiceTest {
     @AfterEach
     void tearDown() {
-        System.clearProperty(NovaServiceConfiguration.BeanIdentifiers.CAPTURE_JVM_METRICS);
         System.clearProperty(NovaServiceConfiguration.BeanIdentifiers.CONFIG_FILE);
         System.clearProperty(NovaServiceConfiguration.BeanIdentifiers.INSTANCE_IDENTIFIER);
         System.clearProperty(NovaServiceConfiguration.BeanIdentifiers.NAME);

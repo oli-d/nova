@@ -1,24 +1,14 @@
 package ch.squaredesk.nova.comm.http.spring;
 
-import ch.squaredesk.net.PortFinder;
-import ch.squaredesk.nova.comm.MessageTranscriber;
 import ch.squaredesk.nova.comm.http.HttpAdapter;
-import com.fasterxml.jackson.annotation.JsonFormat;
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.glassfish.grizzly.http.server.HttpServer;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
-
-import java.math.BigDecimal;
 
 @Tag("medium")
 @ExtendWith(SpringExtension.class)
@@ -29,10 +19,6 @@ class HttpEnablingConfigurationWithoutServerTest {
     @Autowired
     private HttpAdapter httpAdapter;
 
-    @BeforeAll
-    static void setup() {
-        System.setProperty("NOVA.HTTP.SERVER.AUTO_CREATE", "false");
-    }
 
     @AfterAll
     static void tearDown()  {
@@ -47,14 +33,14 @@ class HttpEnablingConfigurationWithoutServerTest {
 
     @Test
     void serverWasNotProvided() throws Exception {
-        System.clearProperty("NOVA.HTTP.SERVER.AUTO_CREATE");
+        System.clearProperty(HttpServerProvidingConfiguration.BeanIdentifiers.AUTO_CREATE_SERVER);
         Assertions.assertNotNull(httpAdapter);
         Assertions.assertNull(httpServer);
     }
 
     @Import({HttpEnablingConfiguration.class})
     public static class MyConfig {
-        @Bean("autoCreateHttpServer")
+        @Bean(HttpServerProvidingConfiguration.BeanIdentifiers.AUTO_CREATE_SERVER)
         public boolean auttoCreateHttpServer() {
             return false;
         }

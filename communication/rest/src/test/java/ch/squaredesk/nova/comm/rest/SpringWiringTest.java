@@ -43,16 +43,6 @@ class SpringWiringTest {
     @Autowired
     Nova nova;
 
-    @BeforeAll
-    static void setup() {
-        System.setProperty("NOVA.REST.PACKAGES_TO_SCAN_FOR_HANDLERS","ch.squaredesk.nova.comm.rest");
-    }
-
-    @AfterAll
-    static void tearDown() {
-        System.clearProperty("NOVA.REST.PACKAGES_TO_SCAN_FOR_HANDLERS");
-    }
-
     @Test
     void restEndpointCanProperlyBeInvoked() throws Exception {
         String serverUrl = "http://127.0.0.1:" + httpServerSettings.port;

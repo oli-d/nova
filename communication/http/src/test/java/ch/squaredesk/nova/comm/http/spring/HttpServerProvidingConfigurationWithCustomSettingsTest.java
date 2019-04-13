@@ -25,14 +25,14 @@ class HttpServerProvidingConfigurationWithCustomSettingsTest {
 
     @AfterEach
     void cleanEnvironmentVariables() {
-        System.clearProperty("NOVA.HTTP.SERVER.PORT");
-        System.clearProperty("NOVA.HTTP.SERVER.INTERFACE_NAME");
+        System.clearProperty(HttpServerProvidingConfiguration.BeanIdentifiers.PORT);
+        System.clearProperty(HttpServerProvidingConfiguration.BeanIdentifiers.INTERFACE);
     }
 
     @Test
     void defaultSettingsCanBeOverriddenWithEnvironmentVariables() {
-        System.setProperty("NOVA.HTTP.SERVER.PORT", "1234");
-        System.setProperty("NOVA.HTTP.SERVER.INTERFACE_NAME", "oli");
+        System.setProperty(HttpServerProvidingConfiguration.BeanIdentifiers.PORT, "1234");
+        System.setProperty(HttpServerProvidingConfiguration.BeanIdentifiers.INTERFACE, "oli");
         setupContext(EmptyConfig.class);
 
         HttpServerSettings cfg = ctx.getBean(HttpServerSettings.class);
@@ -55,7 +55,7 @@ class HttpServerProvidingConfigurationWithCustomSettingsTest {
 
     @Import(HttpServerProvidingConfiguration.class)
     public static class EmptyConfig {
-        @Bean("httpServer")
+        @Bean(HttpServerProvidingConfiguration.BeanIdentifiers.SERVER)
         public HttpServer httpServer() {
             return null;
         }
@@ -63,17 +63,17 @@ class HttpServerProvidingConfigurationWithCustomSettingsTest {
 
     @Import(HttpServerProvidingConfiguration.class)
     public static class MyOverridingConfig {
-        @Bean("httpServerPort")
+        @Bean(HttpServerProvidingConfiguration.BeanIdentifiers.PORT)
         public Integer httpServerPort() {
             return 2345;
         }
 
-        @Bean("httpServerInterfaceName")
+        @Bean(HttpServerProvidingConfiguration.BeanIdentifiers.INTERFACE)
         public String interfaceName() {
             return "xxx";
         }
 
-        @Bean("httpServer")
+        @Bean(HttpServerProvidingConfiguration.BeanIdentifiers.SERVER)
         public HttpServer httpServer() {
             return null;
         }

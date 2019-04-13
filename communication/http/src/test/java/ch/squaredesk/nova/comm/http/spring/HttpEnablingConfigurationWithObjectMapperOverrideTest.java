@@ -90,12 +90,12 @@ class HttpEnablingConfigurationWithObjectMapperOverrideTest {
     @Configuration
     @Import(HttpEnablingConfiguration.class)
     public static class ConfigWithObjectMapper {
-        @Bean("httpServerPort")
+        @Bean(HttpServerProvidingConfiguration.BeanIdentifiers.PORT)
         public Integer httpServerPort() {
             return PortFinder.findFreePort();
         }
 
-        @Bean("httpObjectMapper")
+        @Bean(HttpEnablingConfiguration.BeanIdentifiers.OBJECT_MAPPER)
         public ObjectMapper httpObjectMapper() {
             ObjectMapper objectMapper = new ObjectMapper();
             objectMapper.configOverride(BigDecimal.class).setFormat(JsonFormat.Value.forShape(JsonFormat.Shape.STRING));

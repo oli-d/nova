@@ -17,7 +17,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 
 @Configuration
-@Import({RestEnablingConfiguration.class, NovaProvidingConfiguration.class })
+@Import({RestEnablingConfiguration.class })
 public class EchoConfiguration {
     @Bean
     public EchoHandler echoHandler() {

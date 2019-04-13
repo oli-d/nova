@@ -19,14 +19,20 @@ import org.springframework.core.env.Environment;
 @Configuration
 @Import({HttpServerProvidingConfiguration.class, NovaProvidingConfiguration.class})
 public class WebSocketEnablingConfiguration {
-    @Autowired
-    Environment environment;
+    public interface BeanIdentifiers {
+        String CAPTURE_METRICS = "NOVA.WEB_SOCKET.CAPTURE_METRICS";
+        String ADAPTER_IDENTIFIER = "NOVA.WEB_SOCKET.ADAPTER_IDENTIFIER";
 
-    @Bean("webSocketAdapter")
-    WebSocketAdapter webSocketAdapter(@Qualifier("webSocketAdapterIdentifier") @Autowired(required = false) String webSocketAdapterIdentifier,
-                                      @Qualifier("webSocketMessageTranscriber") MessageTranscriber<String> webSocketMessageTranscriber,
-                                      HttpServer httpServer,
-                                      @Qualifier("nova") Nova nova) {
+        String OBJECT_MAPPER = "NOVA.WEB_SOCKET.OBJECT_MAPPER";
+        String MESSAGE_TRANSCRIBER = "NOVA.WEB_SOCKET.MESSAGE_TRANSCRIBER";
+        String ADAPTER = "NOVA.WEB_SOCKET.ADAPTER.INSTANCE";
+    }
+
+    @Bean(BeanIdentifiers.ADAPTER)
+    WebSocketAdapter webSocketAdapter(@Qualifier(BeanIdentifiers.ADAPTER_IDENTIFIER) @Autowired(required = false) String webSocketAdapterIdentifier,
+                                      @Qualifier(BeanIdentifiers.MESSAGE_TRANSCRIBER) MessageTranscriber<String> webSocketMessageTranscriber,
+                                      @Qualifier(HttpServerProvidingConfiguration.BeanIdentifiers.SERVER) HttpServer httpServer,
+                                      Nova nova) {
         return WebSocketAdapter.builder()
                 .setIdentifier(webSocketAdapterIdentifier)
                 .setHttpServer(httpServer)
@@ -35,13 +41,13 @@ public class WebSocketEnablingConfiguration {
                 .build();
     }
 
-    @Bean("webSocketAdapterIdentifier")
-    String webSocketAdapterIdentifier() {
-        return environment.getProperty("NOVA.WEB_SOCKET.ADAPTER_IDENTIFIER");
+    @Bean(BeanIdentifiers.ADAPTER_IDENTIFIER)
+    String webSocketAdapterIdentifier(Environment environment) {
+        return environment.getProperty(BeanIdentifiers.ADAPTER_IDENTIFIER);
     }
 
-    @Bean("webSocketMessageTranscriber")
-    MessageTranscriber<String> webSocketMessageTranscriber(@Qualifier("webSocketObjectMapper") @Autowired(required = false)ObjectMapper webSocketObjectMapper) {
+    @Bean(BeanIdentifiers.MESSAGE_TRANSCRIBER)
+    MessageTranscriber<String> webSocketMessageTranscriber(@Qualifier(BeanIdentifiers.OBJECT_MAPPER) @Autowired(required = false)ObjectMapper webSocketObjectMapper) {
         if (webSocketObjectMapper == null) {
             return new DefaultMessageTranscriberForStringAsTransportType();
         } else {
@@ -49,10 +55,10 @@ public class WebSocketEnablingConfiguration {
         }
     }
 
-    @Bean("webSocketBeanPostprocessor")
+    @Bean
     WebSocketBeanPostprocessor webSocketBeanPostprocessor(
-            @Qualifier("webSocketMessageTranscriber") MessageTranscriber<String> webSocketMessageTranscriber,
-            @Qualifier("webSocketAdapterIdentifier") @Autowired(required = false) String webSocketAdapterIdentifier,
+            @Qualifier(BeanIdentifiers.MESSAGE_TRANSCRIBER) MessageTranscriber<String> webSocketMessageTranscriber,
+            @Qualifier(BeanIdentifiers.ADAPTER_IDENTIFIER) @Autowired(required = false) String webSocketAdapterIdentifier,
             Nova nova) {
         return new WebSocketBeanPostprocessor(webSocketMessageTranscriber, new MetricsCollector(webSocketAdapterIdentifier, nova.metrics));
     }

@@ -81,12 +81,12 @@ class HttpEnablingConfigurationWithTranscriberOverrideTest {
 
     @Import({HttpEnablingConfiguration.class})
     public static class ConfigWithTranscriber {
-        @Bean("httpServerPort")
+        @Bean(HttpServerProvidingConfiguration.BeanIdentifiers.PORT)
         public Integer httpServerPort() {
             return PortFinder.findFreePort();
         }
 
-        @Bean("httpMessageTranscriber")
+        @Bean(HttpEnablingConfiguration.BeanIdentifiers.MESSAGE_TRANSCRIBER)
         public MessageTranscriber<String> httpMessageTranscriber() {
             ObjectMapper om = new ObjectMapper()
                     .findAndRegisterModules().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)

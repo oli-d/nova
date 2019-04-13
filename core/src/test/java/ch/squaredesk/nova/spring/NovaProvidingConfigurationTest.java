@@ -20,6 +20,7 @@ import org.springframework.context.annotation.AnnotationConfigApplicationContext
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 
+import static ch.squaredesk.nova.spring.NovaProvidingConfiguration.BeanIdentifiers.*;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -37,10 +38,10 @@ class NovaProvidingConfigurationTest {
 
     @BeforeEach
     void clearEnvironment() {
-        System.clearProperty("NOVA.ID");
-        System.clearProperty("NOVA.EVENTS.WARN_ON_UNHANDLED");
-        System.clearProperty("NOVA.EVENTS.BACKPRESSURE_STRATEGY");
-        System.clearProperty("NOVA.METRICS.CAPTURE_VM_METRICS");
+        System.clearProperty(IDENTIFIER);
+        System.clearProperty(WARN_ON_UNHANDLED_EVENTS);
+        System.clearProperty(DEFAULT_BACKPRESSURE_STRATEGY);
+        System.clearProperty(CAPTURE_VM_METRICS);
     }
 
     @Test
@@ -55,28 +56,28 @@ class NovaProvidingConfigurationTest {
 
     @Test
     void identifierCanBeOverridenWithEnvironmentVariable() {
-        System.setProperty("NOVA.ID", "oli");
+        System.setProperty(IDENTIFIER, "oli");
         Nova sut = createSut();
         assertThat(sut.identifier, is("oli"));
     }
 
     @Test
     void warnOnUnhandledEventCanBeOverridenWithEnvironmentVariable() {
-        System.setProperty("NOVA.EVENTS.WARN_ON_UNHANDLED", "true");
+        System.setProperty(WARN_ON_UNHANDLED_EVENTS, "true");
         Nova sut = createSut();
         assertThat(sut.eventBus.eventBusConfig.warnOnUnhandledEvents, is(true));
     }
 
     @Test
     void defaultBackpressureStrategyCanBeOverridenWithEnvironmentVariable() {
-        System.setProperty("NOVA.EVENTS.BACKPRESSURE_STRATEGY", BackpressureStrategy.DROP.toString());
+        System.setProperty(DEFAULT_BACKPRESSURE_STRATEGY, BackpressureStrategy.DROP.toString());
         Nova sut = createSut();
         assertThat(sut.eventBus.eventBusConfig.defaultBackpressureStrategy, is(BackpressureStrategy.DROP));
     }
 
     @Test
     void captureJvmMetricsCanBeOverridenWithEnvironmentVariable() {
-        System.setProperty("NOVA.METRICS.CAPTURE_VM_METRICS", "false");
+        System.setProperty(CAPTURE_VM_METRICS, "false");
         Nova sut = createSut();
         assertNull(sut.metrics.getMetrics().get("jvm.mem"));
         assertNull(sut.metrics.getMetrics().get("jvm.gc"));

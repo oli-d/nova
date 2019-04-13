@@ -14,44 +14,53 @@ package ch.squaredesk.nova.spring;
 import ch.squaredesk.nova.Nova;
 import io.reactivex.BackpressureStrategy;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
 
 @Configuration
 public class NovaProvidingConfiguration {
-    @Autowired
-    private Environment environment;
+    public interface BeanIdentifiers {
+        String NOVA = "NOVA.INSTANCE";
+        String IDENTIFIER = "NOVA.ID";
+        String DEFAULT_BACKPRESSURE_STRATEGY = "NOVA.EVENTS.DEFAULT_BACKPRESSURE_STRATEGY";
+        String WARN_ON_UNHANDLED_EVENTS = "NOVA.EVENTS.WARN_ON_UNHANDLED";
+        String CAPTURE_VM_METRICS = "NOVA.METRICS.CAPTURE_VM_METRICS";
+    }
 
-    @Bean("nova")
-    public Nova nova() {
+    @Bean(BeanIdentifiers.NOVA)
+    public Nova nova(@Qualifier(BeanIdentifiers.IDENTIFIER) String identifier,
+                     @Qualifier(BeanIdentifiers.DEFAULT_BACKPRESSURE_STRATEGY) BackpressureStrategy defaultBackpressureStrategy,
+                     @Qualifier(BeanIdentifiers.WARN_ON_UNHANDLED_EVENTS) boolean warnOnUnhandledEvent,
+                     @Qualifier(BeanIdentifiers.CAPTURE_VM_METRICS) boolean captureJvmMetrics) {
         return Nova.builder()
-                .setIdentifier(identifier())
-                .setDefaultBackpressureStrategy(defaultBackpressureStrategy())
-                .setWarnOnUnhandledEvent(warnOnUnhandledEvent())
-                .captureJvmMetrics(captureJvmMetrics())
+                .setIdentifier(identifier)
+                .setDefaultBackpressureStrategy(defaultBackpressureStrategy)
+                .setWarnOnUnhandledEvent(warnOnUnhandledEvent)
+                .captureJvmMetrics(captureJvmMetrics)
                 .build();
     }
 
-    @Bean("novaIdentifier")
-    public String identifier() {
-        return environment.getProperty("NOVA.ID", "");
+    @Bean(BeanIdentifiers.IDENTIFIER)
+    public String identifier(Environment environment) {
+        return environment.getProperty(BeanIdentifiers.IDENTIFIER, "");
     }
 
-    @Bean("novaWarnOnUnhandledEvents")
-    public Boolean warnOnUnhandledEvent() {
-        return environment.getProperty("NOVA.EVENTS.WARN_ON_UNHANDLED", Boolean.class, false);
+    @Bean(BeanIdentifiers.WARN_ON_UNHANDLED_EVENTS)
+    public Boolean warnOnUnhandledEvent(Environment environment) {
+        return environment.getProperty(BeanIdentifiers.WARN_ON_UNHANDLED_EVENTS, Boolean.class, false);
     }
 
-    @Bean("novaCaptureJvmMetrics")
-    public Boolean captureJvmMetrics() {
-        return environment.getProperty("NOVA.METRICS.CAPTURE_VM_METRICS", Boolean.class, true);
+    @Bean(BeanIdentifiers.CAPTURE_VM_METRICS)
+    public Boolean captureJvmMetrics(Environment environment) {
+        return environment.getProperty(BeanIdentifiers.CAPTURE_VM_METRICS, Boolean.class, true);
     }
 
-    @Bean("novaDefaultBackpressureStrategy")
-    public BackpressureStrategy defaultBackpressureStrategy() {
+    @Bean(BeanIdentifiers.DEFAULT_BACKPRESSURE_STRATEGY)
+    public BackpressureStrategy defaultBackpressureStrategy(Environment environment) {
         String strategyAsString = environment.getProperty(
-                "NOVA.EVENTS.BACKPRESSURE_STRATEGY",
+                BeanIdentifiers.DEFAULT_BACKPRESSURE_STRATEGY,
                 String.class,
                 BackpressureStrategy.BUFFER.toString());
         return BackpressureStrategy.valueOf(strategyAsString.toUpperCase());

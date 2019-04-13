@@ -25,30 +25,32 @@ When you do so, default configuration will be applied, which can be overridden v
 environment variables or by providing the appropriate beans yourself. The possible
 configuration values are
 
-  | @Bean name                         | Environnment variable name                   | Description                                              | Default value |
-  |------------------------------------|----------------------------------------------|----------------------------------------------------------|---------------|
-  | httpAdapterIdentifier              | NOVA.HTTP.ADAPTER_IDENTIFIER                 | the identifier to assign to the HttpAdapter.             | <null> |
-  | defaultHttpRequestTimeoutInSeconds | NOVA.HTTP.DEFAULT_REQUEST_TIMEOUT_IN_SECONDS | the default timeout in seconds when firing HTTP requests | 30 |
-  | autoCreateHttpServer               | NOVA.HTTP.SERVER.AUTO_CREATE                 | If this is false, the system will NOT automatically create an HttpServer | true |
-  | autoStartHttpServer                | NOVA.HTTP.SERVER.AUTO_FALSE                  | If true, the system will automatically start the HttpServer when the ApplicationContext is initialized| true |
-  | | | | |
-  | httpServer                         | n/a                                          | the ```HttpServer``` instance, handling the incoming communication. | An instance with default settings (see below) |
-  | httpObjectMapper                   | n/a                                          | the ObjectMapper to use when transcribing incoming / outgoing messages| default ObjectMapper, for details see [here](../comm/README.md) |
-  | httpMessageTranscriber             | n/a                                          | the transcriber to use for incoming / outgoing messages  | default transcriber, for details see [here](../comm/README.md) |
+  | Environnment variable / bean name            | Description                                              | Default value |
+  |----------------------------------------------|----------------------------------------------------------|---------------|
+  | NOVA.HTTP.ADAPTER_IDENTIFIER                 | the identifier to assign to the HttpAdapter.             | <null> |
+  | NOVA.HTTP.DEFAULT_REQUEST_TIMEOUT_IN_SECONDS | the default timeout in seconds when firing HTTP requests | 30 |
+  | | | |
+  | NOVA.HTTP.SERVER                             | the ```HttpServer``` instance, handling the incoming communication. | An instance with default settings (see below) |
+  | NOVA.HTTP.OBJECT_MAPPER                      | the ObjectMapper to use when transcribing incoming / outgoing messages| default ObjectMapper, for details see [here](../comm/README.md) |
+  | NOVA.HTTP.MESSAGE_TRANSCRIBER                | the transcriber to use for incoming / outgoing messages  | default transcriber, for details see [here](../comm/README.md) |
 
 As described above, by default the HttpAdapter will use an ```HttpServer``` with default settings. This bean is provided by the  
 ```HttpServerProvidingConfiguration``` which is automatically imported. The configuration options are: 
    
-  | @Bean name                         | Environnment variable name                   | Description                                              | Default value |
-  |------------------------------------|----------------------------------------------|----------------------------------------------------------|---------------|
-  | httpServerPort                     | NOVA.HTTP.SERVER.PORT                        | the port, the HTTP server listens on                     | 10000         |
-  | httpServerInterfaceName            | NOVA.HTTP.SERVER.INTERFACE_NAME              | the interface, the HTTP server listens on                | "0.0.0.0"     |
-  | httpServerKeyStore                 | NOVA.HTTP.SERVER.KEY_STORE                   | the keystore to use. Switches on SSL                     | <null>        |
-  | httpServerKeyStorePass             | NOVA.HTTP.SERVER.KEY_STORE_PASS              | the password for the keystore                            | <null>        |
-  | httpServerTrustStore               | NOVA.HTTP.SERVER.TRUST_STORE                 | the truststore to use to validate clients                | <null>        |
-  | httpServerTrustStorePass           | NOVA.HTTP.SERVER.TRUST_STORE_PASS            | the password for the trust store                         | <null>        |
-  | | | | |
-  | httpServerSettings                 | n/a                                          | an ```HttpServerSettings``` instance, containing all aforementioned config values. Handy if you want to read the configuration or override multiple defaults programmatically. |  |
+  | Environnment variable / bean name            | Description                                              | Default value |
+  |----------------------------------------------|----------------------------------------------------------|---------------|
+  | NOVA.HTTP.SERVER.PORT                        | the port, the HTTP server listens on                     | 10000         |
+  | NOVA.HTTP.SERVER.INTERFACE_NAME              | the interface, the HTTP server listens on                | "0.0.0.0"     |
+  | NOVA.HTTP.SERVER.KEY_STORE                   | the keystore to use. Switches on SSL                     | <null>        |
+  | NOVA.HTTP.SERVER.KEY_STORE_PASSWORD          | the password for the keystore                            | <null>        |
+  | NOVA.HTTP.SERVER.KEY_STORE_PASSWORD_FILE     | the file conatining the password for the keystore        | <null>        |
+  | NOVA.HTTP.SERVER.TRUST_STORE                 | the truststore to use to validate clients                | <null>        |
+  | NOVA.HTTP.SERVER.TRUST_STORE_PASSWORD        | the password for the trust store                         | <null>        |
+  | NOVA.HTTP.SERVER.TRUST_STORE_PASSWORD_FILE   | the file containinf the password for the trust store     | <null>        |
+  | | | |
+  | NOVA.HTTP.SERVER.AUTO_CREATE                 | If this is false, the system will NOT automatically create an HttpServer | true |
+  | NOVA.HTTP.SERVER.AUTO_START                  | If true, the system will automatically start the HttpServer when the ApplicationContext is initialized| true |
+  | NOVA.HTTP.SERVER.SETTINGS                    | an ```HttpServerSettings``` instance, containing all aforementioned config values. Handy if you want to read the configuration or override multiple defaults programmatically. |  |
    
 Note that the ```HttpServer``` is not mandatory. The adapter can be created without it in case
 you want to work in "client mode" only. 

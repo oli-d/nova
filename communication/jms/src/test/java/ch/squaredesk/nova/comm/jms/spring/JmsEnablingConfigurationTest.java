@@ -30,24 +30,24 @@ class JmsEnablingConfigurationTest {
 
     @BeforeAll
     static void setup() {
-        System.setProperty("NOVA.JMS.DEFAULT_MESSAGE_DELIVERY_MODE", String.valueOf(Message.DEFAULT_DELIVERY_MODE));
-        System.setProperty("NOVA.JMS.DEFAULT_MESSAGE_PRIORITY", "DEFAULT_PRIORITY");
-        System.setProperty("NOVA.JMS.DEFAULT_MESSAGE_TIME_TO_LIVE", "DEFAULT_TIME_TO_LIVE");
-        System.setProperty("NOVA.JMS.CONSUMER_SESSION_ACK_MODE", "CLIENT_ACKNOWLEDGE");
-        System.setProperty("NOVA.JMS.PRODUCER_SESSION_ACK_MODE", String.valueOf(Session.DUPS_OK_ACKNOWLEDGE));
-        System.setProperty("NOVA.JMS.DEFAULT_RPC_TIMEOUT_IN_SECONDS", "11");
-        System.setProperty("NOVA.JMS.ADAPTER_IDENTIFIER", "myId");
+        System.setProperty(JmsEnablingConfiguration.BeanIdentifiers.DEFAULT_MESSAGE_DELIVERY_MODE, String.valueOf(Message.DEFAULT_DELIVERY_MODE));
+        System.setProperty(JmsEnablingConfiguration.BeanIdentifiers.DEFAULT_MESSAGE_PRIORITY, "DEFAULT_PRIORITY");
+        System.setProperty(JmsEnablingConfiguration.BeanIdentifiers.DEFAULT_MESSAGE_TIME_TO_LIVE, "DEFAULT_TIME_TO_LIVE");
+        System.setProperty(JmsEnablingConfiguration.BeanIdentifiers.CONSUMER_SESSION_ACK_MODE, "CLIENT_ACKNOWLEDGE");
+        System.setProperty(JmsEnablingConfiguration.BeanIdentifiers.PRODUCER_SESSION_ACK_MODE, String.valueOf(Session.DUPS_OK_ACKNOWLEDGE));
+        System.setProperty(JmsEnablingConfiguration.BeanIdentifiers.DEFAULT_REQUEST_TIMEOUT_IN_SECONDS, "11");
+        System.setProperty(JmsEnablingConfiguration.BeanIdentifiers.ADAPTER_IDENTIFIER, "myId");
     }
 
     @AfterAll
     static void tearDown() {
-        System.clearProperty("NOVA.JMS.DEFAULT_MESSAGE_DELIVERY_MODE");
-        System.clearProperty("NOVA.JMS.DEFAULT_MESSAGE_PRIORITY");
-        System.clearProperty("NOVA.JMS.DEFAULT_MESSAGE_TIME_TO_LIVE");
-        System.clearProperty("NOVA.JMS.CONSUMER_SESSION_ACK_MODE");
-        System.clearProperty("NOVA.JMS.PRODUCER_SESSION_ACK_MODE");
-        System.clearProperty("NOVA.JMS.DEFAULT_RPC_TIMEOUT_IN_SECONDS");
-        System.clearProperty("NOVA.JMS.ADAPTER_IDENTIFIER");
+        System.clearProperty(JmsEnablingConfiguration.BeanIdentifiers.DEFAULT_MESSAGE_DELIVERY_MODE);
+        System.clearProperty(JmsEnablingConfiguration.BeanIdentifiers.DEFAULT_MESSAGE_PRIORITY);
+        System.clearProperty(JmsEnablingConfiguration.BeanIdentifiers.DEFAULT_MESSAGE_TIME_TO_LIVE);
+        System.clearProperty(JmsEnablingConfiguration.BeanIdentifiers.CONSUMER_SESSION_ACK_MODE);
+        System.clearProperty(JmsEnablingConfiguration.BeanIdentifiers.PRODUCER_SESSION_ACK_MODE);
+        System.clearProperty(JmsEnablingConfiguration.BeanIdentifiers.DEFAULT_REQUEST_TIMEOUT_IN_SECONDS);
+        System.clearProperty(JmsEnablingConfiguration.BeanIdentifiers.ADAPTER_IDENTIFIER);
     }
 
     @Test
@@ -63,7 +63,7 @@ class JmsEnablingConfigurationTest {
 
     @Configuration
     public static class TestConfig {
-        @Bean("jmsConnectionFactory")
+        @Bean(JmsEnablingConfiguration.BeanIdentifiers.CONNECTION_FACTORY)
         ConnectionFactory connectionFactory() {
             return new ActiveMQConnectionFactory();
         }

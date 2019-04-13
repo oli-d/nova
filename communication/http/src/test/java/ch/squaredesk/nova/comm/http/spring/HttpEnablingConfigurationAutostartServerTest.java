@@ -19,12 +19,12 @@ class HttpEnablingConfigurationAutostartServerTest {
 
     @BeforeAll
     static void setup() throws Exception  {
-        System.setProperty("NOVA.HTTP.SERVER.AUTO_START", "false");
+        System.setProperty(HttpServerProvidingConfiguration.BeanIdentifiers.AUTO_START_SERVER, "false");
     }
 
     @AfterAll
     static void tearDown() throws Exception  {
-        System.clearProperty("NOVA.HTTP.SERVER.AUTO_START");
+        System.clearProperty(HttpServerProvidingConfiguration.BeanIdentifiers.AUTO_START_SERVER);
     }
 
     @Test

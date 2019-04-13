@@ -13,6 +13,7 @@ package ch.squaredesk.nova.comm.rest;
 
 import ch.squaredesk.nova.comm.http.HttpRequestSender;
 import ch.squaredesk.nova.comm.http.HttpServerSettings;
+import ch.squaredesk.nova.comm.http.spring.HttpEnablingConfiguration;
 import ch.squaredesk.nova.spring.NovaProvidingConfiguration;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -85,9 +86,9 @@ public class JacksonTest {
     void specificObjectMapperCanBeProvided() throws Exception {
         context = new AnnotationConfigApplicationContext(MyConfigForTestWithSpecificObjectMapper.class);
         HttpServerSettings httpServerSettings = context.getBean(HttpServerSettings.class);
-        ObjectMapper om = new ObjectMapper().findAndRegisterModules();
+        ObjectMapper objectMapper = context.getBean(ObjectMapper.class);
         Person sentPerson = new Person("Lea", "Dotzauer", LocalDate.of(2005, 9, 16));
-        String sentPersonAsString = om.writeValueAsString(sentPerson);
+        String sentPersonAsString = objectMapper.writeValueAsString(sentPerson);
 
         // send entity as JSON
         HttpRequestSender.HttpResponse httpResponse = HttpRequestSender.sendPutRequest("http://localhost:" + httpServerSettings.port + "/echo",
@@ -97,7 +98,7 @@ public class JacksonTest {
         assertThat(httpResponse.returnCode, is(200));
         Assertions.assertNotNull(MyRestHandler.person);
         assertThat(MyRestHandler.person, samePropertyValuesAs(sentPerson));
-        assertThat(sentPersonAsString, containsString("[2005,9,16]")); // default LocalDateFormat from ObjectMapper
+        assertThat(sentPersonAsString, containsString("2005-09-16")); // specific mapper was configured to write ISO
         assertThat(httpResponse.replyMessage, containsString("2005-09-16")); // specific mapper was configured to write ISO
     }
 
@@ -118,7 +119,7 @@ public class JacksonTest {
     @Configuration
     @Import({RestTestConfig.class})
     public static class MyConfigForTestWithSpecificObjectMapper {
-        @Bean("restObjectMapper")
+        @Bean(HttpEnablingConfiguration.BeanIdentifiers.OBJECT_MAPPER)
         public ObjectMapper restObjectMapper() {
             return new ObjectMapper().findAndRegisterModules().configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
         }
