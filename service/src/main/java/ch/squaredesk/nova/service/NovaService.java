@@ -30,9 +30,6 @@ public abstract class NovaService {
 
     protected final Logger logger;
 
-    @Autowired
-    AnnotationConfigApplicationContext applicationContext;
-
     @Qualifier(NovaServiceConfiguration.BeanIdentifiers.REGISTER_SHUTDOWN_HOOK)
     boolean registerShutdownHook;
 
@@ -88,8 +85,6 @@ public abstract class NovaService {
             lifeline.cut();
             lifeline = new Lifeline();
             started = false;
-
-            applicationContext.close();
 
             logger.info("Shutdown procedure completed for service {}, instance {}.", serviceName, instanceId);
         }
