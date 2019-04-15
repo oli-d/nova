@@ -27,7 +27,7 @@ import org.springframework.core.env.Environment;
 @Configuration
 @Import({HttpEnablingConfiguration.class})
 public class RestEnablingConfiguration {
-    public interface BeanIdentifiers {
+    public interface BeanIdentifiers extends HttpEnablingConfiguration.BeanIdentifiers {
         String CAPTURE_METRICS = "NOVA.REST.CAPTURE_METRICS";
     }
 

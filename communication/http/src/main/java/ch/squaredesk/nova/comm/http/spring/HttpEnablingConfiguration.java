@@ -19,7 +19,7 @@ import java.util.concurrent.TimeUnit;
 @Configuration
 @Import({HttpServerProvidingConfiguration.class, NovaProvidingConfiguration.class})
 public class HttpEnablingConfiguration {
-    public interface BeanIdentifiers {
+    public interface BeanIdentifiers extends HttpServerProvidingConfiguration.BeanIdentifiers {
         String ADAPTER_IDENTIFIER = "NOVA.HTTP.ADAPTER_IDENTIFIER";
         String DEFAULT_REQUEST_TIMEOUT_IN_SECONDS = "NOVA.HTTP.DEFAULT_REQUEST_TIMEOUT_IN_SECONDS";
         String OBJECT_MAPPER = "NOVA.HTTP.OBJECT_MAPPER";
