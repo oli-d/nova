@@ -12,6 +12,7 @@ package ch.squaredesk.nova.comm.websockets;
 import ch.squaredesk.nova.comm.CommAdapter;
 import ch.squaredesk.nova.comm.CommAdapterBuilder;
 import ch.squaredesk.nova.comm.DefaultMessageTranscriberForStringAsTransportType;
+import ch.squaredesk.nova.comm.http.spring.HttpServerBeanListener;
 import ch.squaredesk.nova.comm.websockets.client.ClientEndpoint;
 import ch.squaredesk.nova.comm.websockets.client.ClientEndpointFactory;
 import ch.squaredesk.nova.comm.websockets.server.ServerEndpoint;
@@ -20,11 +21,14 @@ import com.ning.http.client.AsyncHttpClient;
 import org.glassfish.grizzly.http.server.HttpServer;
 import org.glassfish.grizzly.http.server.NetworkListener;
 import org.glassfish.grizzly.websockets.WebSocketAddOn;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-public class WebSocketAdapter extends CommAdapter<String> {
-    private final HttpServer httpServer;
+public class WebSocketAdapter extends CommAdapter<String> implements HttpServerBeanListener {
+    private static final Logger logger = LoggerFactory.getLogger(WebSocketAdapter.class);
+
+    private HttpServer httpServer;
     private final AsyncHttpClient httpClient;
-
     private final MetricsCollector metricsCollector;
     private final ServerEndpointFactory serverEndpointFactory;
     private final ClientEndpointFactory clientEndpointFactory;
@@ -32,8 +36,16 @@ public class WebSocketAdapter extends CommAdapter<String> {
     private WebSocketAdapter(Builder builder) {
         super(builder.messageTranscriber, builder.metrics);
         this.metricsCollector = new MetricsCollector(builder.identifier, builder.metrics);
-        this.httpServer = builder.httpServer;
+        setHttpServer(builder.httpServer);
+        this.httpClient = builder.httpClient;
+        this.serverEndpointFactory = new ServerEndpointFactory(builder.messageTranscriber);
+        this.clientEndpointFactory = new ClientEndpointFactory(builder.messageTranscriber);
+    }
+
+    private void setHttpServer(HttpServer httpServer) {
         if (httpServer !=null) {
+            this.httpServer = httpServer;
+
 //            if (httpServer.isStarted()) {
 //                throw new IllegalArgumentException("HttpServer MUST NOT BE STARTED before WebSocketAdapter is created");
 //            }
@@ -43,9 +55,6 @@ public class WebSocketAdapter extends CommAdapter<String> {
                 listener.registerAddOn(addon);
             }
         }
-        this.httpClient = builder.httpClient;
-        this.serverEndpointFactory = new ServerEndpointFactory(builder.messageTranscriber);
-        this.clientEndpointFactory = new ClientEndpointFactory(builder.messageTranscriber);
     }
 
     public ClientEndpoint connectTo (String destination)  {
@@ -60,6 +69,14 @@ public class WebSocketAdapter extends CommAdapter<String> {
             throw new IllegalStateException("Adapter not initialized properly for server mode");
         }
         return serverEndpointFactory.createFor(destination, metricsCollector);
+    }
+
+    @Override
+    public void httpServerAvailableInContext(HttpServer httpServer) {
+        if (this.httpServer == null) {
+            logger.info("httpServer available, server functionality available");
+            setHttpServer(httpServer);
+        }
     }
 
 

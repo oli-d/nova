@@ -42,13 +42,6 @@ class RpcServerTest {
     }
 
     @Test
-    void sutCannotBeCreatedWithoutConfigs() {
-        NullPointerException npe = assertThrows(NullPointerException.class,
-                () -> new RpcServer(null, new Metrics()));
-        assertThat(npe.getMessage(), is("httpServer must not be null"));
-    }
-
-    @Test
     void subscriptionsCanBeMadeAfterServerStarted() throws Exception {
         assertNotNull(sut.requests("/requests", String.class));
         sut.start();

@@ -12,6 +12,7 @@ package ch.squaredesk.nova.comm.rest;
 
 import ch.squaredesk.nova.Nova;
 import ch.squaredesk.nova.comm.http.HttpServerSettings;
+import ch.squaredesk.nova.comm.http.spring.HttpServerBeanNotifier;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.dropwizard.metrics5.Timer;
@@ -25,8 +26,12 @@ import org.glassfish.jersey.server.monitoring.ApplicationEventListener;
 import org.glassfish.jersey.server.monitoring.RequestEvent;
 import org.glassfish.jersey.server.monitoring.RequestEventListener;
 import org.springframework.beans.factory.BeanInitializationException;
+import org.springframework.beans.factory.config.AutowireCapableBeanFactory;
+import org.springframework.beans.factory.support.BeanDefinitionRegistry;
+import org.springframework.beans.factory.support.GenericBeanDefinition;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.event.ContextRefreshedEvent;
+import org.springframework.context.support.GenericApplicationContext;
 
 import javax.annotation.PreDestroy;
 import javax.ws.rs.core.UriBuilder;
@@ -105,6 +110,14 @@ public class RestServerStarter implements ApplicationListener<ContextRefreshedEv
                     httpServerSettings.port).build();
             httpServer = GrizzlyHttpServerFactory.createHttpServer(serverAddress, resourceConfig, false);
 
+            // register server in ApplicationContext
+            GenericApplicationContext genericContext = (GenericApplicationContext) contextRefreshedEvent.getApplicationContext();
+            genericContext.registerBean(RestEnablingConfiguration.BeanIdentifiers.REST_SERVER, HttpServer.class, () -> httpServer);
+
+            // notify everyone interested
+            HttpServerBeanNotifier.notifyHttpServerAvailableInContext(httpServer, contextRefreshedEvent.getApplicationContext());
+
+            // and start the server
             try {
                 start();
             } catch (IOException e) {

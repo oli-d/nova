@@ -109,12 +109,3 @@ As a bit more complete example, here's how you would create a simple echo server
    * Running ```curl -X POST http://localhost:10000/echo -d "data3" -H "Content-Type:text/plain"```
     will invoke ```echoRequestObject()``` and return ```data3```
      
-## Mixing JAX-RS annotations and the HttpAdapter
-
-Unfortunately, when you are using the rest functionality and JAX-RS annotations
-it is no longer possible to use the HttpAdapter in server mode. The reason for 
-that is that the underlying web server we use needs to know all REST handlers
-at time of instantiation. So, we can no longer dynamically add request
-handlers after the server was instantiated, as it is done by the HttpAdapter.  
-
-Using the HttpAdapter in client mode is still supported. 

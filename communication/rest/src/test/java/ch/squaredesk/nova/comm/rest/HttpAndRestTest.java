@@ -13,8 +13,10 @@ package ch.squaredesk.nova.comm.rest;
 
 import ch.squaredesk.nova.comm.http.HttpAdapter;
 import ch.squaredesk.nova.comm.http.HttpServerSettings;
+import ch.squaredesk.nova.comm.http.RpcInvocation;
 import ch.squaredesk.nova.comm.http.RpcReply;
 import io.reactivex.observers.TestObserver;
+import io.reactivex.subscribers.TestSubscriber;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -40,12 +42,26 @@ class HttpAndRestTest {
 
 
     @Test
-    void restAnnotationsCanBeMixedWithHttpAdapterInClientMode() throws Exception {
+    void restAnnotationsCanBeMixedWithHttpAdapterInClientMode() {
         String serverUrl = "http://127.0.0.1:" + httpServerSettings.port;
         TestObserver<RpcReply<String>> test = httpAdapter.sendGetRequest(serverUrl + "/foo2", String.class).test();
 
         assertThat(test.valueCount(), is(1));
         assertThat(test.values().get(0).result, is("MyBean"));
+    }
+
+    @Test
+    void restAnnotationsCanBeMixedWithHttpAdapterInServerMode() throws Exception {
+        String serverUrl = "http://127.0.0.1:" + httpServerSettings.port;
+        httpAdapter.requests("/foo1", String.class).subscribe(
+                invocation -> invocation.complete("YourBean", 200)
+        );
+
+        String response1 = HttpHelper.getResponseBody(serverUrl + "/foo1", "some request");
+        String response2 = HttpHelper.getResponseBody(serverUrl + "/foo2", "some request");
+
+        assertThat(response1, is("YourBean"));
+        assertThat(response2, is("MyBean"));
     }
 
     @Configuration

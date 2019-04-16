@@ -14,6 +14,7 @@ package ch.squaredesk.nova.comm.rest;
 import ch.squaredesk.nova.Nova;
 import ch.squaredesk.nova.comm.http.HttpServerSettings;
 import ch.squaredesk.nova.comm.http.spring.HttpEnablingConfiguration;
+import ch.squaredesk.nova.comm.http.spring.HttpServerBeanNotifier;
 import ch.squaredesk.nova.comm.http.spring.HttpServerProvidingConfiguration;
 import ch.squaredesk.nova.spring.NovaProvidingConfiguration;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -27,8 +28,9 @@ import org.springframework.core.env.Environment;
 @Configuration
 @Import({HttpEnablingConfiguration.class})
 public class RestEnablingConfiguration {
-    public interface BeanIdentifiers extends HttpEnablingConfiguration.BeanIdentifiers {
+    public interface BeanIdentifiers {
         String CAPTURE_METRICS = "NOVA.REST.CAPTURE_METRICS";
+        String REST_SERVER = "NOVA.REST.SERVER.INSTANCE";
     }
 
     @Bean(BeanIdentifiers.CAPTURE_METRICS)
@@ -60,8 +62,6 @@ public class RestEnablingConfiguration {
     /**
      * Switch off HttpServer auto creation. We can only do this after the ApplicationContext
      * is completely initialized, since we need all handler beans to be available.
-     *
-     * For that reason, the HttpAdapter can only be used in client mode when using REST annotations.
      **/
     @Bean(HttpServerProvidingConfiguration.BeanIdentifiers.AUTO_START_SERVER)
     public boolean autoStartHttpServer() {
@@ -73,4 +73,8 @@ public class RestEnablingConfiguration {
         return false;
     }
 
+    @Bean("autoNotifyAboutHttpServerAvailability")
+    public boolean autoNotifyAboutHttpServerAvailability() {
+        return false;
+    }
 }

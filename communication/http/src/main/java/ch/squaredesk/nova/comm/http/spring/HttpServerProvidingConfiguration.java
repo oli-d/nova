@@ -13,15 +13,11 @@ package ch.squaredesk.nova.comm.http.spring;
 import ch.squaredesk.nova.Nova;
 import ch.squaredesk.nova.comm.http.HttpServerSettings;
 import ch.squaredesk.nova.comm.http.HttpServerFactory;
-import ch.squaredesk.nova.filesystem.Filesystem;
-import ch.squaredesk.nova.spring.NovaProvidingConfiguration;
 import org.glassfish.grizzly.http.server.HttpServer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Conditional;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Import;
 import org.springframework.core.env.Environment;
 
 import java.util.Optional;
@@ -42,6 +38,7 @@ public class HttpServerProvidingConfiguration {
 
         String SETTINGS = "NOVA.HTTP.SERVER.SETTINGS";
         String SERVER = "NOVA.HTTP.SERVER";
+        String SERVER_NOTIFIER = "NOVA.HTTP.SERVER.NOTIFIER";
         String SERVER_STARTER = "NOVA.HTTP.SERVER.STARTER";
     }
 
@@ -147,6 +144,16 @@ public class HttpServerProvidingConfiguration {
     public HttpServerStarter httpServerStarter(@Qualifier(BeanIdentifiers.AUTO_START_SERVER) boolean autoStartHttpServer,
                                                @Qualifier(BeanIdentifiers.SERVER) @Autowired(required = false) HttpServer httpServer) {
         return new HttpServerStarter(httpServer, autoStartHttpServer);
+    }
+
+    @Bean("autoNotifyAboutHttpServerAvailability")
+    public boolean autoNotifyAboutHttpServerAvailability() {
+        return true;
+    }
+
+    @Bean(BeanIdentifiers.SERVER_NOTIFIER)
+    public HttpServerBeanNotifier httpServerBeanNotifier(@Qualifier("autoNotifyAboutHttpServerAvailability") boolean autoNotifyAboutHttpServerAvailability) {
+        return new HttpServerBeanNotifier(autoNotifyAboutHttpServerAvailability);
     }
 
 

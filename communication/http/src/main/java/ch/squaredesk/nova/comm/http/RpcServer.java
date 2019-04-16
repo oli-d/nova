@@ -2,6 +2,7 @@ package ch.squaredesk.nova.comm.http;
 
 import ch.squaredesk.nova.comm.DefaultMessageTranscriberForStringAsTransportType;
 import ch.squaredesk.nova.comm.MessageTranscriber;
+import ch.squaredesk.nova.comm.http.spring.HttpServerBeanListener;
 import ch.squaredesk.nova.comm.retrieving.IncomingMessage;
 import ch.squaredesk.nova.metrics.Metrics;
 import io.reactivex.BackpressureStrategy;
@@ -29,12 +30,12 @@ import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
-public class RpcServer extends ch.squaredesk.nova.comm.rpc.RpcServer<String, String> {
+public class RpcServer extends ch.squaredesk.nova.comm.rpc.RpcServer<String, String> implements HttpServerBeanListener {
     private static final Logger logger = LoggerFactory.getLogger(RpcServer.class);
 
     private final Map<String, Flowable<RpcInvocation>> mapDestinationToIncomingMessages = new ConcurrentHashMap<>();
 
-    private final HttpServer httpServer;
+    private HttpServer httpServer;
 
     public RpcServer(HttpServer httpServer, MessageTranscriber<String> messageTranscriber, Metrics metrics) {
         this(null, httpServer, messageTranscriber, metrics);
@@ -49,7 +50,6 @@ public class RpcServer extends ch.squaredesk.nova.comm.rpc.RpcServer<String, Str
     }
     public RpcServer(String identifier, HttpServer httpServer, MessageTranscriber<String> messageTranscriber, Metrics metrics) {
         super(identifier, messageTranscriber, metrics);
-        Objects.requireNonNull(httpServer, "httpServer must not be null");
         this.httpServer = httpServer;
     }
 
@@ -162,6 +162,14 @@ public class RpcServer extends ch.squaredesk.nova.comm.rpc.RpcServer<String, Str
         } catch (Exception e) {
             logger.info("An error occurred, trying to shutdown REST HTTP server", e);
         }
+    }
+
+    @Override
+    public void httpServerAvailableInContext(HttpServer httpServer) {
+        if (this.httpServer == null) {
+            logger.info("httpServer available, RpcServer functional");
+        }
+        this.httpServer = httpServer;
     }
 
     private class NonBlockingHttpHandler<IncomingMessageType> extends HttpHandler {

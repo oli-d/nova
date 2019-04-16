@@ -15,6 +15,7 @@ import ch.squaredesk.nova.comm.CommAdapter;
 import ch.squaredesk.nova.comm.CommAdapterBuilder;
 import ch.squaredesk.nova.comm.DefaultMessageTranscriberForStringAsTransportType;
 import ch.squaredesk.nova.comm.MessageTranscriber;
+import ch.squaredesk.nova.comm.http.spring.HttpServerBeanListener;
 import com.ning.http.client.AsyncHttpClient;
 import io.reactivex.Flowable;
 import io.reactivex.Single;
@@ -30,7 +31,7 @@ import java.util.concurrent.TimeUnit;
 
 import static java.util.Objects.requireNonNull;
 
-public class HttpAdapter extends CommAdapter<String> {
+public class HttpAdapter extends CommAdapter<String> implements HttpServerBeanListener {
     private final RpcClient rpcClient;
     private final RpcServer rpcServer;
     private final Long defaultRequestTimeout;
@@ -437,6 +438,16 @@ public class HttpAdapter extends CommAdapter<String> {
         rpcClient.shutdown();
     }
 
+
+    ///////// Spring wiring
+    @Override
+    public void httpServerAvailableInContext(HttpServer httpServer) {
+        if (this.rpcServer != null) {
+            this.rpcServer.httpServerAvailableInContext(httpServer);
+        }
+    }
+
+
     ///////// The builder
     /////////
     /////////
@@ -444,7 +455,7 @@ public class HttpAdapter extends CommAdapter<String> {
         return new Builder();
     }
 
-    public static class Builder extends CommAdapterBuilder<String, HttpAdapter>{
+    public static class Builder extends CommAdapterBuilder<String, HttpAdapter> {
         private static Logger logger = LoggerFactory.getLogger(Builder.class);
 
         private String identifier;
@@ -509,10 +520,9 @@ public class HttpAdapter extends CommAdapter<String> {
             }
             if (rpcServer == null) {
                 if (httpServer == null) {
-                    logger.info("No httpServer provided, HTTP Adapter will only be usable in client mode!!!");
-                } else {
-                    rpcServer = new RpcServer(identifier, httpServer, messageTranscriber, metrics);
+                    logger.info("No httpServer provided (yet), HTTP Adapter will only be usable in client mode until HttpServer becomes available!!!");
                 }
+                rpcServer = new RpcServer(identifier, httpServer, messageTranscriber, metrics);
             }
             return new HttpAdapter(this);
         }
