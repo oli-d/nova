@@ -6,6 +6,7 @@ import ch.squaredesk.nova.comm.MessageTranscriber;
 import ch.squaredesk.nova.comm.http.HttpAdapter;
 import ch.squaredesk.nova.spring.NovaProvidingConfiguration;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ning.http.client.AsyncHttpClient;
 import org.glassfish.grizzly.http.server.HttpServer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -17,7 +18,7 @@ import org.springframework.core.env.Environment;
 import java.util.concurrent.TimeUnit;
 
 @Configuration
-@Import({HttpServerProvidingConfiguration.class, NovaProvidingConfiguration.class})
+@Import({HttpServerProvidingConfiguration.class, HttpClientProvidingConfiguration.class, NovaProvidingConfiguration.class})
 public class HttpEnablingConfiguration {
     public interface BeanIdentifiers {
         String ADAPTER_IDENTIFIER = "NOVA.HTTP.ADAPTER_IDENTIFIER";
@@ -30,13 +31,15 @@ public class HttpEnablingConfiguration {
 
 
     @Bean(BeanIdentifiers.ADAPTER_INSTANCE)
-    HttpAdapter httpAdapter(@Qualifier(HttpServerProvidingConfiguration.BeanIdentifiers.SERVER) @Autowired(required = false) HttpServer httpServer,
+    HttpAdapter httpAdapter(@Qualifier(HttpClientProvidingConfiguration.BeanIdentifiers.CLIENT) @Autowired(required = false) AsyncHttpClient httpClient,
+                            @Qualifier(HttpServerProvidingConfiguration.BeanIdentifiers.SERVER) @Autowired(required = false) HttpServer httpServer,
                             @Qualifier(BeanIdentifiers.DEFAULT_REQUEST_TIMEOUT_IN_SECONDS) int defaultHttpRequestTimeoutInSeconds,
                             @Qualifier(BeanIdentifiers.ADAPTER_IDENTIFIER) @Autowired(required=false) String defaultHttpAdapterIdentifier,
                             @Qualifier(BeanIdentifiers.MESSAGE_TRANSCRIBER) MessageTranscriber<String> httpMessageTranscriber,
                             Nova nova) {
         return HttpAdapter.builder()
                 .setDefaultRequestTimeout(defaultHttpRequestTimeoutInSeconds, TimeUnit.SECONDS)
+                .setHttpClient(httpClient)
                 .setHttpServer(httpServer)
                 .setIdentifier(defaultHttpAdapterIdentifier)
                 .setMessageTranscriber(httpMessageTranscriber)

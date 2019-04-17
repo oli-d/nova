@@ -459,9 +459,10 @@ public class HttpAdapter extends CommAdapter<String> implements HttpServerBeanLi
         private static Logger logger = LoggerFactory.getLogger(Builder.class);
 
         private String identifier;
-        private HttpServer httpServer;
+        private AsyncHttpClient httpClient;
         private RpcClient rpcClient;
         private RpcServer rpcServer;
+        private HttpServer httpServer;
         private Long defaultRequestTimeout;
         private TimeUnit defaultRequestTimeUnit;
 
@@ -474,6 +475,11 @@ public class HttpAdapter extends CommAdapter<String> implements HttpServerBeanLi
                 defaultRequestTimeout = timeout;
                 defaultRequestTimeUnit = timeUnit;
             }
+            return this;
+        }
+
+        public Builder setHttpClient(AsyncHttpClient httpClient) {
+            this.httpClient = httpClient;
             return this;
         }
 
@@ -515,7 +521,10 @@ public class HttpAdapter extends CommAdapter<String> implements HttpServerBeanLi
                 defaultRequestTimeUnit = TimeUnit.SECONDS;
             }
             if (rpcClient == null) {
-                AsyncHttpClient httpClient = new AsyncHttpClient();
+                if (httpClient == null) {
+                    logger.info("No httpClient provided, instantiating one with default settings...");
+                    httpClient = new AsyncHttpClient();
+                }
                 rpcClient = new RpcClient(identifier, httpClient, metrics);
             }
             if (rpcServer == null) {

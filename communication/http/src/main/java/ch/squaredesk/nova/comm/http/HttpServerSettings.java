@@ -81,7 +81,7 @@ public class HttpServerSettings {
         }
 
         public Builder sslTrustStorePath(String s) {
-            this.sslTrustStorePass = s;
+            this.sslTrustStorePath = s;
             return this;
         }
 
@@ -92,6 +92,11 @@ public class HttpServerSettings {
 
         public Builder setCompressData(boolean compress) {
             this.compressData = compressData;
+            return this;
+        }
+
+        public Builder setNeedsClientAuth(boolean needsClientAuth) {
+            this.sslNeedsClientAuth = needsClientAuth;
             return this;
         }
 

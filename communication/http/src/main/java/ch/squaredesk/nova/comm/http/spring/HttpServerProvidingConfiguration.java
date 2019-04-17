@@ -95,11 +95,11 @@ public class HttpServerProvidingConfiguration {
             @Qualifier(BeanIdentifiers.KEY_STORE_PASSWORD_FILE) @Autowired(required = false) String sslKeyStorePasswordFile) {
 
         String trustStorePassword = Optional.ofNullable(sslTrustStorePasswordFile)
-                .map(passwordFile -> readPasswordFromFile(nova, passwordFile))
+                .map(passwordFile -> PasswordFileReader.readPasswordFromFile(nova, passwordFile))
                 .orElse(sslTrustStorePassword);
 
         String keyStorePassword = Optional.ofNullable(sslKeyStorePasswordFile)
-                .map(passwordFile -> readPasswordFromFile(nova, passwordFile))
+                .map(passwordFile -> PasswordFileReader.readPasswordFromFile(nova, passwordFile))
                 .orElse(sslKeyStorePassword);
 
 
@@ -111,13 +111,6 @@ public class HttpServerProvidingConfiguration {
                 .sslTrustStorePath(sslTrustStore)
                 .sslTrustStorePass(trustStorePassword)
                 .build();
-    }
-
-    private static String readPasswordFromFile (Nova nova, String passwordFile) {
-        if (nova == null) {
-            nova = Nova.builder().build();
-        }
-        return nova.filesystem.readTextFileFully(passwordFile).blockingGet();
     }
 
     @Bean(BeanIdentifiers.SERVER)
