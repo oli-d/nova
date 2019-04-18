@@ -48,6 +48,8 @@ public class JmsEnablingConfiguration {
         String DESTINATION_ID_GENERATOR = "NOVA.JMS.DESTINATION_ID_GENERATOR";
         String CONNECTION_FACTORY = "NOVA.JMS.CONNECTION_FACTORY";
         String ADAPTER_SETTINGS = "NOVA.JMS.ADAPTER_SETTINGS";
+        String AUTO_START_ADAPTER = "NOVA.JMS.AUTO_START_ADAPTER";
+        String ADAPTER_STARTER = "NOVA.JMS.ADAPTER_STARTER";
         String ADAPTER = "NOVA.JMS.ADAPTER";
     }
 
@@ -185,4 +187,16 @@ public class JmsEnablingConfiguration {
             return new DefaultMessageTranscriberForStringAsTransportType(jmsObjectMapper);
         }
     }
+
+    @Bean(BeanIdentifiers.AUTO_START_ADAPTER)
+    boolean autostartAdapter() {
+        return environment.getProperty(BeanIdentifiers.AUTO_START_ADAPTER, boolean.class, false);
+    }
+
+    @Bean(BeanIdentifiers.ADAPTER_STARTER)
+    JmsAdapterStarter jmsAdapterStarter(@Qualifier(BeanIdentifiers.ADAPTER) JmsAdapter jmsAdapter,
+                                        @Qualifier(BeanIdentifiers.AUTO_START_ADAPTER) boolean autoStartAdapter) {
+        return new JmsAdapterStarter(jmsAdapter, autoStartAdapter);
+    }
+
 }

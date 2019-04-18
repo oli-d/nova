@@ -18,12 +18,15 @@ import javax.jms.*;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 
 class JmsObjectRepository {
     private final Logger logger = LoggerFactory.getLogger(JmsObjectRepository.class);
 
     private final Map<String, MessageProducer> mapDestinationIdToMessageProducer = new ConcurrentHashMap<>();
+
+    private final AtomicBoolean started = new AtomicBoolean(false);
 
     private Session producerSession;
     private Session consumerSession;
@@ -102,11 +105,13 @@ class JmsObjectRepository {
 
 
     void start() throws JMSException {
-        connection.start();
-        logger.debug("Creating producer session with the following settings: {}", producerSessionDescriptor);
-        this.producerSession = connection.createSession(producerSessionDescriptor.transacted, producerSessionDescriptor.acknowledgeMode);
-        logger.debug("Creating consumer session with the following settings: {}", consumerSessionDescriptor);
-        this.consumerSession = connection.createSession(consumerSessionDescriptor.transacted, consumerSessionDescriptor.acknowledgeMode);
+        if (!started.getAndSet(true)) {
+            connection.start();
+            logger.debug("Creating producer session with the following settings: {}", producerSessionDescriptor);
+            this.producerSession = connection.createSession(producerSessionDescriptor.transacted, producerSessionDescriptor.acknowledgeMode);
+            logger.debug("Creating consumer session with the following settings: {}", consumerSessionDescriptor);
+            this.consumerSession = connection.createSession(consumerSessionDescriptor.transacted, consumerSessionDescriptor.acknowledgeMode);
+        }
     }
 
     void shutdown() {
@@ -134,6 +139,7 @@ class JmsObjectRepository {
             logger.warn("Unable to close connection", e);
         }
 
+        started.set(false);
     }
 
 }
