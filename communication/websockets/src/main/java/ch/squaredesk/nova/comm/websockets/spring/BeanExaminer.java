@@ -13,50 +13,60 @@ package ch.squaredesk.nova.comm.websockets.spring;
 
 import ch.squaredesk.nova.comm.MessageTranscriber;
 import ch.squaredesk.nova.comm.ReflectionHelper;
+import ch.squaredesk.nova.comm.websockets.CloseReason;
 import ch.squaredesk.nova.comm.websockets.WebSocket;
+import ch.squaredesk.nova.comm.websockets.spring.annotation.OnClose;
+import ch.squaredesk.nova.comm.websockets.spring.annotation.OnConnect;
+import ch.squaredesk.nova.comm.websockets.spring.annotation.OnError;
 import ch.squaredesk.nova.comm.websockets.spring.annotation.OnMessage;
+import io.reactivex.Observable;
+import io.reactivex.functions.Consumer;
 import io.reactivex.functions.Function;
+import io.reactivex.functions.Predicate;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
-import java.util.function.Predicate;
+import java.util.Collection;
 import java.util.stream.Collectors;
 
 import static java.util.Arrays.stream;
 import static java.util.Objects.requireNonNull;
 
 class BeanExaminer {
-    private static final Predicate<Annotation> interestingAnnotation = anno -> anno instanceof OnMessage;
-
     private final MessageTranscriber<String> defaultMessageTranscriber;
 
     BeanExaminer(MessageTranscriber<String> messageTranscriber) {
         this.defaultMessageTranscriber = messageTranscriber;
     }
 
-    EndpointDescriptor[] websocketEndpointsIn(Object bean) {
+    private static Consumer<Method> methodSignatureValidator (Predicate<Method> test,
+                                                              java.util.function.Function<Method, String> errorMessageCreator) {
+        return method -> {
+            if (!test.test(method)) {
+                throw new IllegalArgumentException(errorMessageCreator.apply(method));
+            }
+        };
+    }
+
+    Collection<OnMessageHandlerEndpointDescriptor> onMessageEndpointsIn(Object bean) {
         requireNonNull(bean, "bean to examine must not be null");
 
-        return stream(bean.getClass().getDeclaredMethods())
-                .filter(method -> stream(method.getDeclaredAnnotations()).anyMatch(interestingAnnotation))
-                .peek(method -> {
-                    if (!methodSignatureValidForMessageHandler(method))
-                        throw new IllegalArgumentException(
-                                "Method " + prettyPrint(bean, method) + ", annotated with @" +
-                                        OnMessage.class.getSimpleName() + " has an invalid signature");
-                })
+        return methodsWithAnnotation(bean, OnMessage.class)
+                .doOnNext(methodSignatureValidator(
+                    BeanExaminer::methodSignatureValidForMessageHandler,
+                    method -> "Method " + prettyPrint(bean, method) + ", annotated with @" + OnMessage.class.getSimpleName() + " has an invalid signature"))
                 .map(method -> {
-                    OnMessage annotation = stream(method.getDeclaredAnnotations())
-                            .filter(interestingAnnotation)
-                            .findFirst()
-                            .map(anno -> (OnMessage) anno)
-                            .get();
+                    OnMessage annotation = Observable.fromArray(method.getDeclaredAnnotations())
+                            .filter(anno -> anno instanceof OnMessage)
+                            .cast(OnMessage.class)
+                            .firstElement()
+                            .blockingGet();
 
                     Class<?> messageType = getMessageTypeFromHandlerMethod(method);
                     Function<?, String> marshaller = instantiateMarshaller(method, annotation, messageType);
                     Function<String, ?> unmarshaller = instantiateUnmarshaller(method, annotation, messageType);
 
-                    return new EndpointDescriptor(
+                    return new OnMessageHandlerEndpointDescriptor(
                             bean,
                             method,
                             annotation.value(),
@@ -66,13 +76,101 @@ class BeanExaminer {
                             annotation.captureTimings(),
                             annotation.backpressureStrategy());
                 })
-                .toArray(EndpointDescriptor[]::new);
+                .toList()
+                .blockingGet();
+    }
+
+    Collection<EventHandlerEndpointDescriptor> onConnectHandlersIn(Object bean) {
+        return eventHandlerEndpointsIn(
+            bean,
+            OnConnect.class,
+            BeanExaminer::methodSignatureValidForConnectEventHandler
+        );
+    }
+
+    Collection<EventHandlerEndpointDescriptor> onErrorHandlersIn(Object bean) {
+        return eventHandlerEndpointsIn(
+            bean,
+            OnError.class,
+            BeanExaminer::methodSignatureValidForErrorEventHandler
+        );
+    }
+
+    Collection<EventHandlerEndpointDescriptor> onCloseHandlersIn(Object bean) {
+        return eventHandlerEndpointsIn(
+            bean,
+            OnClose.class,
+            BeanExaminer::methodSignatureValidForCloseEventHandler
+        );
+    }
+
+
+    private <AnnoType extends Annotation> Collection<EventHandlerEndpointDescriptor> eventHandlerEndpointsIn(Object bean, Class<AnnoType> annotationType, Predicate<Method> methodSignatureValidator) {
+        requireNonNull(bean, "bean to examine must not be null");
+
+        return methodsWithAnnotation(bean, annotationType)
+                .doOnNext(methodSignatureValidator(
+                        methodSignatureValidator,
+                        method -> "Method " + prettyPrint(bean, method) + ", annotated with @" + annotationType.getSimpleName() + " has an invalid signature")
+                )
+                .map(method -> {
+                    AnnoType annotation = Observable.fromArray(method.getDeclaredAnnotations())
+                            .filter(anno -> annotationType.isAssignableFrom(anno.getClass()))
+                            .cast(annotationType)
+                            .firstElement()
+                            .blockingGet();
+
+                    return new EventHandlerEndpointDescriptor(
+                            bean,
+                            method,
+                            getDestinationFrom(annotation),
+                            getCaptureTimings(annotation));
+                })
+                .toList()
+                .blockingGet();
+    }
+
+    private static Observable<Method> methodsWithAnnotation(Object bean, Class<?> annotationType) {
+        requireNonNull(bean, "bean to examine must not be null");
+
+        return Observable.fromArray(bean.getClass().getDeclaredMethods())
+                .filter(method -> stream(method.getDeclaredAnnotations()).anyMatch(anno -> annotationType.isAssignableFrom(anno.getClass())));
     }
 
     private static boolean methodSignatureValidForMessageHandler(Method m) {
         return m.getReturnType() == void.class &&
                 m.getParameterTypes().length == 2 &&
                 m.getParameterTypes()[1].isAssignableFrom(WebSocket.class);
+    }
+
+    private static boolean methodSignatureValidForConnectEventHandler(Method m) {
+        return m.getReturnType() == void.class &&
+                m.getParameterTypes().length == 1 &&
+                m.getParameterTypes()[0].isAssignableFrom(WebSocket.class);
+    }
+
+    private static boolean methodSignatureValidForErrorEventHandler(Method m) {
+        return m.getReturnType() == void.class &&
+                m.getParameterTypes().length == 2 &&
+                m.getParameterTypes()[0].isAssignableFrom(WebSocket.class) &&
+                m.getParameterTypes()[1].isAssignableFrom(Throwable.class);
+    }
+
+    private static boolean methodSignatureValidForCloseEventHandler(Method m) {
+        return m.getReturnType() == void.class &&
+                m.getParameterTypes().length == 2 &&
+                m.getParameterTypes()[0].isAssignableFrom(WebSocket.class) &&
+                m.getParameterTypes()[1].isAssignableFrom(CloseReason.class);
+    }
+
+    private static String getDestinationFrom(Annotation annotation) throws Exception {
+        Method valueProvider = annotation.getClass().getDeclaredMethod("value");
+        return (String)valueProvider.invoke(annotation);
+    }
+
+    private static boolean getCaptureTimings(Annotation annotation) throws Exception {
+        Method valueProvider = annotation.getClass().getDeclaredMethod("captureTimings");
+        return (boolean) valueProvider.invoke(annotation);
     }
 
     private static Class<?> getMessageTypeFromHandlerMethod (Method method) {
@@ -150,4 +248,5 @@ class BeanExaminer {
                 .append(')');
         return sb.toString();
     }
+
 }

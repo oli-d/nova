@@ -20,11 +20,13 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.util.Collection;
+
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class BeanExaminerTest {
+public class BeanExaminerOnMessageHandlerTest {
     private BeanExaminer sut;
 
     @BeforeEach
@@ -36,35 +38,37 @@ public class BeanExaminerTest {
     void beanExaminerThrowsForMethodWithInvalidSignature() throws Exception {
         class EmptyClass {
         }
-        assertThat(sut.websocketEndpointsIn(new EmptyClass()).length, is(0));
+        assertThat(sut.onMessageEndpointsIn(new EmptyClass()).size(), is(0));
 
         class AnotherEmptyClass {
             public void handle (String msg, WebSocket webSocket) {}
         }
-        assertThat(sut.websocketEndpointsIn(new AnotherEmptyClass()).length, is(0));
+        assertThat(sut.onMessageEndpointsIn(new AnotherEmptyClass()).size(), is(0));
 
         class ValidClassAllDefaults {
             @OnMessage("hallo")
             void validSignature(Integer message, WebSocket webSocket) {
             }
         }
-        EndpointDescriptor[] endpoints = sut.websocketEndpointsIn(new ValidClassAllDefaults());
-        assertThat(endpoints.length, is(1));
-        assertThat(endpoints[0].destination, is("hallo"));
-        assertThat(endpoints[0].messageType, is(Integer.class));
-        assertThat(endpoints[0].backpressureStrategy, is(BackpressureStrategy.BUFFER));
-        assertThat(endpoints[0].captureTimings, is(true));
+        Collection<OnMessageHandlerEndpointDescriptor> endpoints = sut.onMessageEndpointsIn(new ValidClassAllDefaults());
+        assertThat(endpoints.size(), is(1));
+        OnMessageHandlerEndpointDescriptor descriptor = endpoints.iterator().next();
+        assertThat(descriptor.destination, is("hallo"));
+        assertThat(descriptor.messageType, is(Integer.class));
+        assertThat(descriptor.backpressureStrategy, is(BackpressureStrategy.BUFFER));
+        assertThat(descriptor.captureTimings, is(true));
 
         class ValidClass {
             @OnMessage(value ="hallo2", backpressureStrategy = BackpressureStrategy.DROP, captureTimings = false)
             void validSignature(Integer message, WebSocket webSocket) {
             }
         }
-        endpoints = sut.websocketEndpointsIn(new ValidClass());
-        assertThat(endpoints.length, is(1));
-        assertThat(endpoints[0].destination, is("hallo2"));
-        assertThat(endpoints[0].backpressureStrategy, is(BackpressureStrategy.DROP));
-        assertThat(endpoints[0].captureTimings, is(false));
+        endpoints = sut.onMessageEndpointsIn(new ValidClass());
+        descriptor = endpoints.iterator().next();
+        assertThat(endpoints.size(), is(1));
+        assertThat(descriptor.destination, is("hallo2"));
+        assertThat(descriptor.backpressureStrategy, is(BackpressureStrategy.DROP));
+        assertThat(descriptor.captureTimings, is(false));
 
         class InvalidClassMissingMessageParam {
             @OnMessage("x")
@@ -72,7 +76,7 @@ public class BeanExaminerTest {
             }
         }
         IllegalArgumentException ex = Assertions.assertThrows(IllegalArgumentException.class,
-                () -> sut.websocketEndpointsIn(new InvalidClassMissingMessageParam()));
+                () -> sut.onMessageEndpointsIn(new InvalidClassMissingMessageParam()));
         assertTrue(ex.getMessage().contains("annotated with @OnMessage has an invalid signature"));
         assertTrue(ex.getMessage().contains(InvalidClassMissingMessageParam.class.getName()));
         assertTrue(ex.getMessage().contains("invalidSignatureMissingMessageParam"));
@@ -83,7 +87,7 @@ public class BeanExaminerTest {
             }
         }
         ex = Assertions.assertThrows(IllegalArgumentException.class,
-                () -> sut.websocketEndpointsIn(new InvalidClassMissingWebSocketParam()));
+                () -> sut.onMessageEndpointsIn(new InvalidClassMissingWebSocketParam()));
         assertTrue(ex.getMessage().contains("annotated with @OnMessage has an invalid signature"));
         assertTrue(ex.getMessage().contains(InvalidClassMissingWebSocketParam.class.getName()));
         assertTrue(ex.getMessage().contains("invalidSignatureMissingWebSocketParam"));
@@ -95,7 +99,7 @@ public class BeanExaminerTest {
             }
         }
         ex = Assertions.assertThrows(IllegalArgumentException.class,
-                () -> sut.websocketEndpointsIn(new InvalidClassWrongReturnType()));
+                () -> sut.onMessageEndpointsIn(new InvalidClassWrongReturnType()));
         assertTrue(ex.getMessage().contains("annotated with @OnMessage has an invalid signature"));
         assertTrue(ex.getMessage().contains(InvalidClassWrongReturnType.class.getName()));
         assertTrue(ex.getMessage().contains("invalidSignatureWrongReturnType"));
@@ -104,31 +108,33 @@ public class BeanExaminerTest {
     @Test
     void beanExaminerCreatesEndpointForCustomMarshaller() throws Exception {
         class SomeClass {
-            @OnMessage(value = "x", messageMarshallerClassName = "ch.squaredesk.nova.comm.websockets.spring.BeanExaminerTest$StringMarshaller")
+            @OnMessage(value = "x", messageMarshallerClassName = "ch.squaredesk.nova.comm.websockets.spring.BeanExaminerOnMessageHandlerTest$StringMarshaller")
             void handle(String message, WebSocket webSocket) {
             }
         }
-        EndpointDescriptor[] endpoints = sut.websocketEndpointsIn(new SomeClass());
-        assertThat(endpoints.length, is(1));
-        assertThat(endpoints[0].destination, is("x"));
-        assertThat(endpoints[0].messageType, is(String.class));
-        assertThat(endpoints[0].backpressureStrategy, is(BackpressureStrategy.BUFFER));
-        assertThat(endpoints[0].captureTimings, is(true));
+        Collection<OnMessageHandlerEndpointDescriptor> endpoints = sut.onMessageEndpointsIn(new SomeClass());
+        assertThat(endpoints.size(), is(1));
+        OnMessageHandlerEndpointDescriptor descriptor = endpoints.iterator().next();
+        assertThat(descriptor.destination, is("x"));
+        assertThat(descriptor.messageType, is(String.class));
+        assertThat(descriptor.backpressureStrategy, is(BackpressureStrategy.BUFFER));
+        assertThat(descriptor.captureTimings, is(true));
     }
 
     @Test
     void beanExaminerCreatesEndpointForCustomUnmarshaller() throws Exception {
         class SomeClass {
-            @OnMessage(value = "x", messageUnmarshallerClassName = "ch.squaredesk.nova.comm.websockets.spring.BeanExaminerTest$StringUnmarshaller")
+            @OnMessage(value = "x", messageUnmarshallerClassName = "ch.squaredesk.nova.comm.websockets.spring.BeanExaminerOnMessageHandlerTest$StringUnmarshaller")
             void handle(String message, WebSocket webSocket) {
             }
         }
-        EndpointDescriptor[] endpoints = sut.websocketEndpointsIn(new SomeClass());
-        assertThat(endpoints.length, is(1));
-        assertThat(endpoints[0].destination, is("x"));
-        assertThat(endpoints[0].messageType, is(String.class));
-        assertThat(endpoints[0].backpressureStrategy, is(BackpressureStrategy.BUFFER));
-        assertThat(endpoints[0].captureTimings, is(true));
+        Collection<OnMessageHandlerEndpointDescriptor> endpoints = sut.onMessageEndpointsIn(new SomeClass());
+        assertThat(endpoints.size(), is(1));
+        OnMessageHandlerEndpointDescriptor descriptor = endpoints.iterator().next();
+        assertThat(descriptor.destination, is("x"));
+        assertThat(descriptor.messageType, is(String.class));
+        assertThat(descriptor.backpressureStrategy, is(BackpressureStrategy.BUFFER));
+        assertThat(descriptor.captureTimings, is(true));
     }
 
     @Test
@@ -138,8 +144,9 @@ public class BeanExaminerTest {
             void handle(Integer message, WebSocket webSocket) {
             }
         }
+
         IllegalArgumentException ex = Assertions.assertThrows(IllegalArgumentException.class,
-                () -> sut.websocketEndpointsIn(new InvalidMarshallerClassName()));
+                () -> sut.onMessageEndpointsIn(new InvalidMarshallerClassName()));
         assertThat(ex.getMessage(), is("Unable to load class bla bla"));
 
         class MarshallerClassNameThatCantBeInstantiated {
@@ -148,7 +155,7 @@ public class BeanExaminerTest {
             }
         }
         ex = Assertions.assertThrows(IllegalArgumentException.class,
-                () -> sut.websocketEndpointsIn(new MarshallerClassNameThatCantBeInstantiated()));
+                () -> sut.onMessageEndpointsIn(new MarshallerClassNameThatCantBeInstantiated()));
         assertThat(ex.getMessage(), is("Unable to instantiate class java.lang.Double"));
 
         class MarshallerClassThatIsNotAnUnmarshaller {
@@ -157,17 +164,17 @@ public class BeanExaminerTest {
             }
         }
         ex = Assertions.assertThrows(IllegalArgumentException.class,
-                () -> sut.websocketEndpointsIn(new MarshallerClassThatIsNotAnUnmarshaller()));
+                () -> sut.onMessageEndpointsIn(new MarshallerClassThatIsNotAnUnmarshaller()));
         assertThat(ex.getMessage(), is("Class java.util.ArrayList is not a valid MessageMarshaller"));
 
         class MarshallerClassThatDoesNotMatchMessageType {
-            @OnMessage(value = "x", messageMarshallerClassName = "ch.squaredesk.nova.comm.websockets.spring.BeanExaminerTest$StringMarshaller")
+            @OnMessage(value = "x", messageMarshallerClassName = "ch.squaredesk.nova.comm.websockets.spring.BeanExaminerOnMessageHandlerTest$StringMarshaller")
             void handle(Integer message, WebSocket webSocket) {
             }
         }
         ex = Assertions.assertThrows(IllegalArgumentException.class,
-                () -> sut.websocketEndpointsIn(new MarshallerClassThatDoesNotMatchMessageType()));
-        assertThat(ex.getMessage(), is("Class ch.squaredesk.nova.comm.websockets.spring.BeanExaminerTest$StringMarshaller is not a valid MessageMarshaller for method handle"));
+                () -> sut.onMessageEndpointsIn(new MarshallerClassThatDoesNotMatchMessageType()));
+        assertThat(ex.getMessage(), is("Class ch.squaredesk.nova.comm.websockets.spring.BeanExaminerOnMessageHandlerTest$StringMarshaller is not a valid MessageMarshaller for method handle"));
     }
 
     @Test
@@ -178,7 +185,7 @@ public class BeanExaminerTest {
             }
         }
         IllegalArgumentException ex = Assertions.assertThrows(IllegalArgumentException.class,
-                () -> sut.websocketEndpointsIn(new InvalidUnmarshallerClassName()));
+                () -> sut.onMessageEndpointsIn(new InvalidUnmarshallerClassName()));
         assertThat(ex.getMessage(), is("Unable to load class bla bla"));
 
         class UnmarshallerClassNameThatCantBeInstantiated {
@@ -187,7 +194,7 @@ public class BeanExaminerTest {
             }
         }
         ex = Assertions.assertThrows(IllegalArgumentException.class,
-                () -> sut.websocketEndpointsIn(new UnmarshallerClassNameThatCantBeInstantiated()));
+                () -> sut.onMessageEndpointsIn(new UnmarshallerClassNameThatCantBeInstantiated()));
         assertThat(ex.getMessage(), is("Unable to instantiate class java.lang.Double"));
 
         class UnmarshallerClassThatIsNotAnUnmarshaller {
@@ -196,17 +203,17 @@ public class BeanExaminerTest {
             }
         }
         ex = Assertions.assertThrows(IllegalArgumentException.class,
-                () -> sut.websocketEndpointsIn(new UnmarshallerClassThatIsNotAnUnmarshaller()));
+                () -> sut.onMessageEndpointsIn(new UnmarshallerClassThatIsNotAnUnmarshaller()));
         assertThat(ex.getMessage(), is("Class java.util.ArrayList is not a valid MessageUnmarshaller"));
 
         class UnmarshallerClassThatDoesNotMatchMessageType {
-            @OnMessage(value = "x", messageUnmarshallerClassName = "ch.squaredesk.nova.comm.websockets.spring.BeanExaminerTest$StringUnmarshaller")
+            @OnMessage(value = "x", messageUnmarshallerClassName = "ch.squaredesk.nova.comm.websockets.spring.BeanExaminerOnMessageHandlerTest$StringUnmarshaller")
             void handle(Integer message, WebSocket webSocket) {
             }
         }
         ex = Assertions.assertThrows(IllegalArgumentException.class,
-                () -> sut.websocketEndpointsIn(new UnmarshallerClassThatDoesNotMatchMessageType()));
-        assertThat(ex.getMessage(), is("Class ch.squaredesk.nova.comm.websockets.spring.BeanExaminerTest$StringUnmarshaller is not a valid MessageUnmarshaller for method handle"));
+                () -> sut.onMessageEndpointsIn(new UnmarshallerClassThatDoesNotMatchMessageType()));
+        assertThat(ex.getMessage(), is("Class ch.squaredesk.nova.comm.websockets.spring.BeanExaminerOnMessageHandlerTest$StringUnmarshaller is not a valid MessageUnmarshaller for method handle"));
     }
 
     public static class StringMarshaller implements Function<String, String> {

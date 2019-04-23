@@ -14,10 +14,8 @@ package ch.squaredesk.nova.comm.websockets.spring;
 import ch.squaredesk.nova.comm.MessageTranscriber;
 import ch.squaredesk.nova.comm.websockets.MetricsCollector;
 import ch.squaredesk.nova.comm.websockets.WebSocketAdapter;
-import io.reactivex.Observable;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.config.BeanPostProcessor;
-
 
 
 public class WebSocketBeanPostprocessor implements BeanPostProcessor {
@@ -41,11 +39,25 @@ public class WebSocketBeanPostprocessor implements BeanPostProcessor {
 
     @Override
     public Object postProcessAfterInitialization(Object bean, String beanName) throws BeansException {
-        EndpointDescriptor[] endpoints = beanExaminer.websocketEndpointsIn(bean);
-        for (EndpointDescriptor endpointDescriptor: endpoints) {
-            webSocketAdapter.acceptConnections(endpointDescriptor.destination).subscribe(
-                webSocket -> {
-                    Observable messages = webSocket.messages(endpointDescriptor.messageType);
+        beanExaminer.onConnectHandlersIn(bean).forEach(handlerDescriptor ->
+            webSocketAdapter
+                .acceptConnections(handlerDescriptor.destination)
+                .subscribe(ConnectEventHandlerMethodInvoker.createFor(handlerDescriptor, metricsCollector)));
+
+        beanExaminer.onCloseHandlersIn(bean).forEach(handlerDescriptor ->
+            webSocketAdapter
+                .acceptConnections(handlerDescriptor.destination)
+                .subscribe(webSocket -> webSocket.onClose(CloseEventHandlerMethodInvoker.createFor(handlerDescriptor, metricsCollector))));
+
+        beanExaminer.onErrorHandlersIn(bean).forEach(handlerDescriptor ->
+            webSocketAdapter
+                .acceptConnections(handlerDescriptor.destination)
+                .subscribe(webSocket -> webSocket.onError(ErrorEventHandlerMethodInvoker.createFor(handlerDescriptor, metricsCollector))));
+
+        beanExaminer.onMessageEndpointsIn(bean).forEach(endpointDescriptor->
+            webSocketAdapter
+                .acceptConnections(endpointDescriptor.destination)
+                .subscribe(webSocket -> webSocket.messages(endpointDescriptor.messageType).subscribe(OnMessageMethodInvoker.createFor(endpointDescriptor, metricsCollector))));
                     /* FIXME: no Flowables at the moment
                     if (endpointDescriptor.backpressureStrategy!=null) {
                         switch (endpointDescriptor.backpressureStrategy) {
@@ -61,10 +73,7 @@ public class WebSocketBeanPostprocessor implements BeanPostProcessor {
                         }
                     }
                     */
-                    messages.subscribe(MethodInvoker.createFor(endpointDescriptor, metricsCollector));
-                }
-            );
-        }
+
         return bean;
     }
 

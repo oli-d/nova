@@ -15,17 +15,13 @@ import io.reactivex.functions.Function;
 
 import java.lang.reflect.Method;
 
-class EndpointDescriptor {
-    final Object objectToInvokeMethodOn;
-    final Method methodToInvoke;
-    final String destination;
+class OnMessageHandlerEndpointDescriptor extends EventHandlerEndpointDescriptor {
     final Class<?> messageType;
     final Function<?, String> marshaller;
     final Function<String, ?> unmarshaller;
-    final boolean captureTimings;
     final BackpressureStrategy backpressureStrategy;
 
-    EndpointDescriptor(
+    OnMessageHandlerEndpointDescriptor(
             Object objectToInvokeMethodOn,
             Method methodToInvoke,
             String destination,
@@ -34,13 +30,10 @@ class EndpointDescriptor {
             Function<String, ?> unmarshaller,
             boolean captureMetrics,
             BackpressureStrategy backpressureStrategy) {
-        this.objectToInvokeMethodOn = objectToInvokeMethodOn;
-        this.methodToInvoke = methodToInvoke;
-        this.destination = destination;
+        super(objectToInvokeMethodOn, methodToInvoke, destination, captureMetrics);
         this.messageType = messageType;
         this.marshaller = marshaller;
         this.unmarshaller = unmarshaller;
-        this.captureTimings = captureMetrics;
         this.backpressureStrategy = backpressureStrategy;
     }
 }

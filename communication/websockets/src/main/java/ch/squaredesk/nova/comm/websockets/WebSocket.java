@@ -14,6 +14,7 @@ import ch.squaredesk.nova.comm.retrieving.IncomingMessage;
 import ch.squaredesk.nova.tuples.Pair;
 import io.reactivex.Completable;
 import io.reactivex.Observable;
+import io.reactivex.functions.Consumer;
 import io.reactivex.functions.Function;
 import io.reactivex.subjects.PublishSubject;
 import io.reactivex.subjects.Subject;
@@ -22,14 +23,12 @@ import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.function.Consumer;
 
 public abstract class WebSocket {
     private static final Logger logger = LoggerFactory.getLogger(WebSocket.class);
 
     private final Subject<String> messages;
     private final Observable<String> messagesToHandOut;
-    private final Subject<Pair<WebSocket, Throwable>> errors = PublishSubject.create();
 
     private final MetricsCollector metricsCollector;
     private final MessageTranscriber<String> messageTranscriber;
@@ -54,6 +53,8 @@ public abstract class WebSocket {
                 .doOnEach(message -> metricsCollector.messageReceived(destinationForMetrics))
                 .retry()
                 .share();
+
+        metricsCollector.subscriptionCreated(destinationForMetrics);
     }
 
 
@@ -72,8 +73,6 @@ public abstract class WebSocket {
             return Completable.error(e);
         } finally {
             messages.onComplete();
-            errors.onComplete();
-            // FIXME: if we call this, Flowable will be closed before we could inform eventual subscriber... closedSockets.onComplete();
             propagateCloseEvent(closeReason);
         }
     }
@@ -138,6 +137,7 @@ public abstract class WebSocket {
     }
 
     protected void propagateCloseEvent(CloseReason closeReason) {
+        metricsCollector.subscriptionDestroyed(destinationForMetrics);
         closeHandlers.forEach(handler -> {
             try {
                 handler.accept(new Pair<>(this, closeReason));

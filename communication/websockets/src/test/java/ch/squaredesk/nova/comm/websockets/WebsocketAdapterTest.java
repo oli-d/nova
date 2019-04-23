@@ -81,7 +81,6 @@ class WebsocketAdapterTest {
     @Test
     void sendAndReceiveAfterInitiatingConnection() throws Exception {
         String destinationUri = "ws://echo.websocket.org/";
-        CountDownLatch connectionLatch = new CountDownLatch(1);
         CountDownLatch closeLatch = new CountDownLatch(1);
 
         Counter totalSubscriptions = metrics.getCounter("websocket", "subscriptions", "total");
@@ -90,12 +89,9 @@ class WebsocketAdapterTest {
         assertThat(specificSubscriptions.getCount(), is(0L));
 
         WebSocket endpoint = sut.connectTo(destinationUri);
-        // FIXME: endpoint.connectedWebSockets().subscribe( socket -> connectionLatch.countDown() );
         endpoint.onClose(socketReasonPair -> closeLatch.countDown() );
-        connectionLatch.await(2, TimeUnit.SECONDS);
-        // FIXME: assertThat(connectionLatch.getCount(), is(0L));
-// FIXME        assertThat(totalSubscriptions.getCount(), is(1l));
-// FIXME        assertThat(specificSubscriptions.getCount(), is(1l));
+        assertThat(totalSubscriptions.getCount(), is(1l));
+        assertThat(specificSubscriptions.getCount(), is(1l));
 
         testEchoFromClientPerspective(destinationUri, endpoint);
 
@@ -132,14 +128,15 @@ class WebsocketAdapterTest {
 
             connectionLatch.await(2, TimeUnit.SECONDS);
             assertThat(connectionLatch.getCount(), is(0L));
-            assertThat(totalSubscriptions.getCount(), is(1l));
-            assertThat(specificSubscriptions.getCount(), is(1l));
+            assertThat(totalSubscriptions.getCount(), is(2l)); // one for the client side, one for the server side
+            assertThat(specificSubscriptions.getCount(), is(1l)); // the server side
             testEchoFromClientPerspective(clientDestination, endpointInitiating);
         } finally {
             if (endpointInitiating != null) {
                 endpointInitiating.close();
                 closeLatch.await(10, TimeUnit.SECONDS);
                 assertThat(closeLatch.getCount(), is(0L));
+                Awaitility.await().atMost(5, TimeUnit.SECONDS).until(totalSubscriptions::getCount, is (0L));
                 assertThat(totalSubscriptions.getCount(), is(0L));
                 assertThat(specificSubscriptions.getCount(), is(0L));
             }

@@ -27,9 +27,7 @@ public class WebSocketFactory {
             String destination,
             MetricsCollector metricsCollector)  {
 
-        WebSocketUpgradeHandler webSocketUpgradeHandler = new WebSocketUpgradeHandler.Builder()
-//   TODO             .addWebSocketListener(listener)
-                .build();
+        WebSocketUpgradeHandler webSocketUpgradeHandler = new WebSocketUpgradeHandler.Builder().build();
         com.ning.http.client.ws.WebSocket underlyingWebSocket = openConnection(httpClient, destination, webSocketUpgradeHandler);
 
         return new ClientSideWebSocket(destination, underlyingWebSocket, messageTranscriber, metricsCollector);

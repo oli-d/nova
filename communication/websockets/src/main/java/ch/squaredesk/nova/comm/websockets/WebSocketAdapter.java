@@ -20,7 +20,6 @@ import io.reactivex.Observable;
 import io.reactivex.subjects.BehaviorSubject;
 import org.glassfish.grizzly.http.server.HttpServer;
 import org.glassfish.grizzly.http.server.NetworkListener;
-import org.glassfish.grizzly.websockets.DataFrame;
 import org.glassfish.grizzly.websockets.WebSocketAddOn;
 import org.glassfish.grizzly.websockets.WebSocketApplication;
 import org.glassfish.grizzly.websockets.WebSocketEngine;
@@ -79,22 +78,19 @@ public class WebSocketAdapter extends CommAdapter<String> implements HttpServerB
 
         return connectingWebSocketsByDestination.computeIfAbsent(destinationForSubscription,
                 dest -> {
-                    String destinationForMetrics = dest.startsWith("/") ? dest.substring(1) : dest;
                     BehaviorSubject<WebSocket> subject = BehaviorSubject.create();
 
                     WebSocketApplication app = new WebSocketApplication() {
                         @Override
                         public void onConnect(org.glassfish.grizzly.websockets.WebSocket socket) {
-                            metricsCollector.subscriptionCreated(destinationForMetrics);
                             WebSocket serverSideWebSocket = serverEndpointFactory.createFor(dest, socket, messageTranscriber, metricsCollector);
                             subject.onNext(serverSideWebSocket);
                         }
 
-                        @Override
-                        public void onClose(org.glassfish.grizzly.websockets.WebSocket socket, DataFrame frame) {
-                            metricsCollector.subscriptionDestroyed(destinationForMetrics);
-                        }
-
+//                        @Override
+//                        public void onClose(org.glassfish.grizzly.websockets.WebSocket socket, DataFrame frame) {
+//                        }
+//
             //  FIXME          @Override
             //            protected boolean onError(org.glassfish.grizzly.websockets.WebSocket socket, Throwable t) {
             //                errors.onNext(new Pair<>(socket, t));
