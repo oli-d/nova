@@ -70,18 +70,22 @@ To see this in real life, here's how the implementation of an EchoServer would l
         // Instantiate the WebSocketAdapter
         WebSocketAdapter webSocketAdapter = webSocketAdapter();
 
-        // Get the "server side" endpoint
-        ServerEndpoint acceptingEndpoint = webSocketAdapter.acceptConnections("/echo");
-        // Subscribe to incoming messages
-        acceptingEndpoint.messages(String.class)
-                .subscribe(
-                    incomingMessage -> {
-                        // Get the WebSocket that represents the connection to the sender
-                        WebSocket webSocket = incomingMessage.metaData.details.webSocket;
-                        // and just send the message back to the sender
-                        webSocket.send(incomingMessage.message);
-                    }
-                );
+        // subscribe to connecting websockets
+        webSocketAdapter.acceptConnections("/echo").subscribe(
+                // Subscribe to incoming messages
+                socket -> {
+                    System.out.println("New connection established, starting to listen to messages...");
+                    socket.messages(String.class)
+                            .subscribe(
+                                incomingMessage -> {
+                                    // Get the WebSocket that represents the connection to the sender
+                                    WebSocket webSocket = incomingMessage.metaData.details.webSocket;
+                                    // and just send the message back to the sender
+                                    webSocket.send(incomingMessage.message);
+                                }
+                            );
+                }
+        );
 ```
 
 The code to connect to that server and send a few messages would look like that:
