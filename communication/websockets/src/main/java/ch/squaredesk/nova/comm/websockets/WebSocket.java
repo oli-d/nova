@@ -9,27 +9,60 @@
  */
 package ch.squaredesk.nova.comm.websockets;
 
+import io.reactivex.Single;
+import io.reactivex.disposables.Disposable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 public class WebSocket {
-    private final SendAction sendAction;
-    private final Runnable closeAction;
-    private final ConcurrentHashMap<String, Object> userProperties = new ConcurrentHashMap<>(1);
+    private static final Logger logger = LoggerFactory.getLogger(WebSocket.class);
 
-    public WebSocket(SendAction sendAction, Runnable closeAction) {
-        Objects.requireNonNull(sendAction, "sendAction must not be null");
-        Objects.requireNonNull(closeAction, "closeAction must not be null");
-        this.sendAction = sendAction;
-        this.closeAction = closeAction;
-    }
+    private final ConcurrentHashMap<String, Object> userProperties = new ConcurrentHashMap<>(1);
+    private final CopyOnWriteArrayList<Consumer<WebSocket>> closeHandlers = new CopyOnWriteArrayList<>();
+
+    private final SendAction sendAction;
+    private final Consumer<CloseReason> closeAction;
+    private final Supplier<Boolean> isOpenSupplier;
+    private final Disposable closeEventSubscription;
+
+    public WebSocket(SendAction sendAction, Consumer<CloseReason> closeAction, Supplier<Boolean> isOpenSupplier,
+                     Single<Long> webSocketClosedSingle) {
+        this.sendAction = Objects.requireNonNull(sendAction, "sendAction must not be null");
+        this.closeAction = Objects.requireNonNull(closeAction, "closeAction must not be null");
+        this.isOpenSupplier = Objects.requireNonNull(isOpenSupplier, "isOpenSupplier must not be null");
+
+        this.closeEventSubscription = Objects.requireNonNull(webSocketClosedSingle, "webSocketClosedSingle must not be null")
+                .subscribe(timestamp -> closeHandlers.forEach(handler -> {
+                    try {
+                        handler.accept(WebSocket.this);
+                    } catch (Exception e) {
+                        logger.error("An error occurred, trying to notify handler about close event", e);
+                    }
+                }));
+        }
 
     public final <T> void send(T message) throws Exception {
         sendAction.accept(message);
     }
 
-    public final void close() {
-        closeAction.run();
+    public void close() {
+        close(CloseReason.NORMAL_CLOSURE);
+    }
+
+    public void close(CloseReason closeReason) {
+        if (!closeReason.mightBeUsedByEndpoint) {
+            throw new IllegalArgumentException("CloseReason " + closeReason + " cannot be used by endpoints");
+        }
+        closeEventSubscription.dispose();
+        if (closeAction != null) {
+            closeAction.accept(closeReason);
+        }
     }
 
     public void clearUserProperties() {
@@ -51,4 +84,15 @@ public class WebSocket {
     public <PropertyType> PropertyType getUserProperty(String propertyId, Class<PropertyType> propertyType) {
         return (PropertyType)userProperties.get(propertyId);
     }
+
+    public boolean isOpen() {
+        return isOpenSupplier.get();
+    }
+
+    public void onClose(Consumer<WebSocket> handler) {
+        if (handler != null) {
+            closeHandlers.add(handler);
+        }
+    }
+
 }

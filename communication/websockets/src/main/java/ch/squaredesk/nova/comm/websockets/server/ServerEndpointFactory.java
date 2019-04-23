@@ -12,10 +12,13 @@ package ch.squaredesk.nova.comm.websockets.server;
 import ch.squaredesk.nova.comm.MessageTranscriber;
 import ch.squaredesk.nova.comm.websockets.*;
 import io.reactivex.Scheduler;
+import io.reactivex.Single;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.functions.Function;
 import io.reactivex.schedulers.Schedulers;
+import org.glassfish.grizzly.websockets.DataFrame;
 import org.glassfish.grizzly.websockets.WebSocketEngine;
+import org.glassfish.grizzly.websockets.WebSocketListener;
 
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -38,14 +41,51 @@ public class ServerEndpointFactory {
                 webSocket.send(messageAsString);
             }
         };
-        return new WebSocket(sendAction, webSocket::close);
+        Single<Long> closeEventSingle = Single.create(s -> {
+            webSocket.add(new WebSocketListener() {
+                @Override
+                public void onClose(org.glassfish.grizzly.websockets.WebSocket socket, DataFrame frame) {
+                    s.onSuccess(System.currentTimeMillis());
+                }
+
+                @Override
+                public void onConnect(org.glassfish.grizzly.websockets.WebSocket socket) {
+                }
+
+                @Override
+                public void onMessage(org.glassfish.grizzly.websockets.WebSocket socket, String text) {
+                }
+
+                @Override
+                public void onMessage(org.glassfish.grizzly.websockets.WebSocket socket, byte[] bytes) {
+                }
+
+                @Override
+                public void onPing(org.glassfish.grizzly.websockets.WebSocket socket, byte[] bytes) {
+                }
+
+                @Override
+                public void onPong(org.glassfish.grizzly.websockets.WebSocket socket, byte[] bytes) {
+                }
+
+                @Override
+                public void onFragment(org.glassfish.grizzly.websockets.WebSocket socket, String fragment, boolean last) {
+                }
+
+                @Override
+                public void onFragment(org.glassfish.grizzly.websockets.WebSocket socket, byte[] fragment, boolean last) {
+                }
+            });
+        });
+
+        return new WebSocket(sendAction, webSocket::close, webSocket::isConnected, closeEventSingle);
     }
 
     private WebSocket createWebSocket(org.glassfish.grizzly.websockets.WebSocket webSocket) {
         return webSockets.computeIfAbsent(webSocket, this::instantiateNewWebSocket);
     }
 
-    public ServerEndpoint createFor(
+    public WebSocket createFor(
             String destination,
             MetricsCollector metricsCollector)  {
 

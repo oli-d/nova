@@ -13,8 +13,9 @@ import ch.squaredesk.nova.comm.MessageTranscriber;
 import ch.squaredesk.nova.comm.websockets.*;
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.providers.grizzly.websocket.GrizzlyWebSocketAdapter;
+import com.ning.http.client.ws.WebSocketListener;
 import com.ning.http.client.ws.WebSocketUpgradeHandler;
-import io.reactivex.functions.Function;
+import io.reactivex.Single;
 
 import java.util.function.Consumer;
 
@@ -25,7 +26,7 @@ public class ClientEndpointFactory {
         this.messageTranscriber = messageTranscriber;
     }
 
-    public ClientEndpoint createFor (
+    public WebSocket createFor (
             AsyncHttpClient httpClient,
             String destination,
             MetricsCollector metricsCollector)  {
@@ -36,13 +37,16 @@ public class ClientEndpointFactory {
                 .build();
         com.ning.http.client.ws.WebSocket underlyingWebSocket = openConnection(httpClient, destination, webSocketUpgradeHandler);
 
-        WebSocket webSocket = createWebSocket(destination, underlyingWebSocket, metricsCollector);
-        Function<com.ning.http.client.ws.WebSocket, WebSocket> webSocketFactory = rawSocket -> webSocket;
-
-        EndpointStreamSource endpointStreamSource =
-                EndpointStreamSourceFactory.createStreamSourceFor(destination, webSocketFactory, listener, metricsCollector);
-
+        SendAction sendAction = new SendAction() {
+            @Override
+            public <T> void accept(T message) throws Exception {
+                String messageAsString = messageTranscriber.getOutgoingMessageTranscriber(message).apply(message);
+                underlyingWebSocket.sendMessage(messageAsString);
+                metricsCollector.messageSent(destination);
+            }
+        };
         Consumer<CloseReason> closeAction = closeReason -> {
+            metricsCollector.subscriptionDestroyed(destination);
             if (underlyingWebSocket instanceof GrizzlyWebSocketAdapter) {
                 GrizzlyWebSocketAdapter gwsa = (GrizzlyWebSocketAdapter) underlyingWebSocket;
                 gwsa.getGrizzlyWebSocket().close(closeReason.code, closeReason.text);
@@ -51,7 +55,25 @@ public class ClientEndpointFactory {
             }
             listener.close();
         };
-        return new ClientEndpoint(destination, endpointStreamSource, webSocket, closeAction, messageTranscriber, metricsCollector);
+
+        Single<Long> closeEventSingle = Single.create(s ->
+            underlyingWebSocket.addWebSocketListener(new WebSocketListener() {
+                @Override
+                public void onOpen(com.ning.http.client.ws.WebSocket websocket) {
+                }
+
+                @Override
+                public void onClose(com.ning.http.client.ws.WebSocket websocket) {
+                    s.onSuccess(System.currentTimeMillis());
+                }
+
+                @Override
+                public void onError(Throwable t) {
+                }
+            }
+        ));
+
+        return new WebSocket(sendAction, closeAction, underlyingWebSocket::isOpen, closeEventSingle);
     }
 
     private static com.ning.http.client.ws.WebSocket openConnection(
@@ -62,37 +84,6 @@ public class ClientEndpointFactory {
             return httpClient.prepareGet(destination).execute(webSocketUpgradeHandler).get();
         } catch (Exception e) {
             throw new RuntimeException("Unable to connect to " + destination, e);
-        }
-    }
-
-    private WebSocket createWebSocket(
-            String destination,
-            com.ning.http.client.ws.WebSocket webSocket,
-            MetricsCollector metricsCollector) {
-
-        SendAction sendAction = new SendAction() {
-            @Override
-            public <T> void accept(T message) throws Exception {
-                String messageAsString = messageTranscriber.getOutgoingMessageTranscriber(message).apply(message);
-                webSocket.sendMessage(messageAsString);
-                metricsCollector.messageSent(destination);
-            }
-        };
-        Runnable closeAction = () -> metricsCollector.subscriptionDestroyed(destination);
-
-        return new WebSocket(sendAction, closeAction);
-    }
-
-    private static <MessageType> MessageType unmarshal (
-            String destination,
-            String message,
-            Function<String, MessageType> messageUnmarshaller,
-            MetricsCollector metricsCollector) {
-        try {
-            return messageUnmarshaller.apply(message);
-        } catch (Exception e) {
-            metricsCollector.unparsableMessageReceived(destination);
-            throw new RuntimeException("Unable to unmarshal incoming message " + message + " on destination " + destination, e);
         }
     }
 }
