@@ -67,5 +67,10 @@ class JmsEnablingConfigurationTest {
         ConnectionFactory connectionFactory() {
             return new ActiveMQConnectionFactory();
         }
+
+        @Bean(JmsEnablingConfiguration.BeanIdentifiers.AUTO_START_ADAPTER)
+        boolean autoStart() {
+            return false;
+        }
     }
 }

@@ -29,7 +29,7 @@ configuration values are
   | NOVA.JMS.ADAPTER_IDENTIFIER             | the identifier to assign to the JmsAdapter.                                                       | <null> |
   | NOVA.JMS.ADAPTER_SETTINGS               | a ```JmsAdapterSettings``` instance, containing all aforementioned config values. Handy if you want to read the configuration or override multiple defaults programmatically. |  |
   | NOVA.JMS.ADAPTER                        | the ```JmsAdapter``` instance, built with the provided configuration                                      |  |
-  | NOVA.JMS.AUTO_START_ADAPTER             | if set to ```true```, the JmsAdapter will automatically be started on ApplicationContext refresh          | false |
+  | NOVA.JMS.AUTO_START_ADAPTER             | if set to ```true```, the JmsAdapter will automatically be started on ApplicationContext refresh          | true |
   | | | |
   | NOVA.JMS.CONNECTION_FACTORY             | the factory to use to connect to the message broker.                                                      |  |
   | NOVA.JMS.OBJECT_MAPPER                  | the ObjectMapper to use when transcribing incoming / outgoing messages                                    | default ObjectMapper, for details see [here](../comm/README.md) |

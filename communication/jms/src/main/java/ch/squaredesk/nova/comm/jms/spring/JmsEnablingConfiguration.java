@@ -190,7 +190,7 @@ public class JmsEnablingConfiguration {
 
     @Bean(BeanIdentifiers.AUTO_START_ADAPTER)
     boolean autostartAdapter() {
-        return environment.getProperty(BeanIdentifiers.AUTO_START_ADAPTER, boolean.class, false);
+        return environment.getProperty(BeanIdentifiers.AUTO_START_ADAPTER, boolean.class, true);
     }
 
     @Bean(BeanIdentifiers.ADAPTER_STARTER)
