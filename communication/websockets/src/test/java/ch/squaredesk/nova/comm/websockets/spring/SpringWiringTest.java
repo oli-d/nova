@@ -16,8 +16,7 @@ import ch.squaredesk.nova.comm.http.HttpServerSettings;
 import ch.squaredesk.nova.comm.http.spring.HttpServerProvidingConfiguration;
 import ch.squaredesk.nova.comm.websockets.WebSocket;
 import ch.squaredesk.nova.comm.websockets.WebSocketAdapter;
-import ch.squaredesk.nova.comm.websockets.annotation.OnMessage;
-import ch.squaredesk.nova.comm.websockets.client.ClientEndpoint;
+import ch.squaredesk.nova.comm.websockets.spring.annotation.OnMessage;
 import org.glassfish.grizzly.http.server.HttpServer;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -32,8 +31,8 @@ import java.util.Random;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
-import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 @Tag("medium")
 @ExtendWith(SpringExtension.class)
@@ -53,7 +52,7 @@ public class SpringWiringTest {
         httpServer.start();
 
         String serverUrl = "ws://127.0.0.1:" + httpServerSettings.port;
-        ClientEndpoint clientSideSocket = webSocketAdapter.connectTo(serverUrl+"/echo");
+        WebSocket clientSideSocket = webSocketAdapter.connectTo(serverUrl+"/echo");
         CountDownLatch cdl = new CountDownLatch(1);
         Integer[] resultHolder = new Integer[1];
         clientSideSocket.messages(Integer.class).subscribe(msg -> {
@@ -64,7 +63,7 @@ public class SpringWiringTest {
         clientSideSocket.send(dataToSend);
 
         cdl.await(5, TimeUnit.SECONDS);
-        assertThat(cdl.getCount(), is (0L));
+        assertThat(cdl.getCount(), is(0L));
         assertThat(resultHolder[0], is(dataToSend));
 
         assertThat(nova.metrics.getMeter("websocket", "received", "echo").getCount(), is(1L));

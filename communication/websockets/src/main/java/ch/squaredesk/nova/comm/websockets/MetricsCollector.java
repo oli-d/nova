@@ -13,7 +13,6 @@ package ch.squaredesk.nova.comm.websockets;
 import ch.squaredesk.nova.metrics.Metrics;
 import io.dropwizard.metrics5.Counter;
 import io.dropwizard.metrics5.Meter;
-import io.dropwizard.metrics5.MetricName;
 
 import static java.util.Objects.requireNonNull;
 

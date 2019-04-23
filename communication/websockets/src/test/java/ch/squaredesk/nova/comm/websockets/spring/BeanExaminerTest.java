@@ -13,9 +13,7 @@ package ch.squaredesk.nova.comm.websockets.spring;
 
 import ch.squaredesk.nova.comm.DefaultMessageTranscriberForStringAsTransportType;
 import ch.squaredesk.nova.comm.websockets.WebSocket;
-import ch.squaredesk.nova.comm.websockets.annotation.OnMessage;
-import ch.squaredesk.nova.comm.websockets.spring.BeanExaminer;
-import ch.squaredesk.nova.comm.websockets.spring.EndpointDescriptor;
+import ch.squaredesk.nova.comm.websockets.spring.annotation.OnMessage;
 import io.reactivex.BackpressureStrategy;
 import io.reactivex.functions.Function;
 import org.junit.jupiter.api.Assertions;

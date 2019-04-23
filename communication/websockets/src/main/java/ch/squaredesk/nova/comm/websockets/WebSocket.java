@@ -9,59 +9,72 @@
  */
 package ch.squaredesk.nova.comm.websockets;
 
-import io.reactivex.Single;
-import io.reactivex.disposables.Disposable;
+import ch.squaredesk.nova.comm.MessageTranscriber;
+import ch.squaredesk.nova.comm.retrieving.IncomingMessage;
+import ch.squaredesk.nova.tuples.Pair;
+import io.reactivex.Completable;
+import io.reactivex.Observable;
+import io.reactivex.functions.Function;
+import io.reactivex.subjects.PublishSubject;
+import io.reactivex.subjects.Subject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Consumer;
-import java.util.function.Supplier;
 
-public class WebSocket {
+public abstract class WebSocket {
     private static final Logger logger = LoggerFactory.getLogger(WebSocket.class);
 
+    private final Subject<String> messages;
+    private final Observable<String> messagesToHandOut;
+    private final Subject<Pair<WebSocket, Throwable>> errors = PublishSubject.create();
+
+    private final MetricsCollector metricsCollector;
+    private final MessageTranscriber<String> messageTranscriber;
+    protected final String destination;
+    private final String destinationForMetrics;
+
     private final ConcurrentHashMap<String, Object> userProperties = new ConcurrentHashMap<>(1);
-    private final CopyOnWriteArrayList<Consumer<WebSocket>> closeHandlers = new CopyOnWriteArrayList<>();
 
-    private final SendAction sendAction;
-    private final Consumer<CloseReason> closeAction;
-    private final Supplier<Boolean> isOpenSupplier;
-    private final Disposable closeEventSubscription;
+    private final CopyOnWriteArrayList<Consumer<Pair<WebSocket, CloseReason>>> closeHandlers = new CopyOnWriteArrayList<>();
+    private final CopyOnWriteArrayList<Consumer<Pair<WebSocket, Throwable>>> errorHandlers = new CopyOnWriteArrayList<>();
 
-    public WebSocket(SendAction sendAction, Consumer<CloseReason> closeAction, Supplier<Boolean> isOpenSupplier,
-                     Single<Long> webSocketClosedSingle) {
-        this.sendAction = Objects.requireNonNull(sendAction, "sendAction must not be null");
-        this.closeAction = Objects.requireNonNull(closeAction, "closeAction must not be null");
-        this.isOpenSupplier = Objects.requireNonNull(isOpenSupplier, "isOpenSupplier must not be null");
+    public WebSocket(String destination,
+                     MessageTranscriber<String> messageTranscriber,
+                     MetricsCollector metricsCollector) {
+        this.destination = destination;
+        this.destinationForMetrics = destination.startsWith("/") ? destination.substring(1) : destination;
+        this.messageTranscriber = messageTranscriber;
+        this.metricsCollector = metricsCollector;
 
-        this.closeEventSubscription = Objects.requireNonNull(webSocketClosedSingle, "webSocketClosedSingle must not be null")
-                .subscribe(timestamp -> closeHandlers.forEach(handler -> {
-                    try {
-                        handler.accept(WebSocket.this);
-                    } catch (Exception e) {
-                        logger.error("An error occurred, trying to notify handler about close event", e);
-                    }
-                }));
-        }
-
-    public final <T> void send(T message) throws Exception {
-        sendAction.accept(message);
+        this.messages = PublishSubject.create();
+        this.messagesToHandOut = messages
+                .doOnEach(message -> metricsCollector.messageReceived(destinationForMetrics))
+                .retry()
+                .share();
     }
 
-    public void close() {
-        close(CloseReason.NORMAL_CLOSURE);
+
+    public Completable close() {
+        return close(CloseReason.NORMAL_CLOSURE);
     }
 
-    public void close(CloseReason closeReason) {
+    public Completable close(CloseReason closeReason) {
         if (!closeReason.mightBeUsedByEndpoint) {
-            throw new IllegalArgumentException("CloseReason " + closeReason + " cannot be used by endpoints");
+            return Completable.error(new IllegalArgumentException("CloseReason " + closeReason + " cannot be used by endpoints"));
         }
-        closeEventSubscription.dispose();
-        if (closeAction != null) {
-            closeAction.accept(closeReason);
+        try {
+            doClose(closeReason);
+            return Completable.complete();
+        } catch (Exception e) {
+            return Completable.error(e);
+        } finally {
+            messages.onComplete();
+            errors.onComplete();
+            // FIXME: if we call this, Flowable will be closed before we could inform eventual subscriber... closedSockets.onComplete();
+            propagateCloseEvent(closeReason);
         }
     }
 
@@ -85,14 +98,73 @@ public class WebSocket {
         return (PropertyType)userProperties.get(propertyId);
     }
 
-    public boolean isOpen() {
-        return isOpenSupplier.get();
+    public <T> Observable<IncomingMessage<T, IncomingMessageMetaData>> messages (Function<String, T> messageTranscriber) {
+        return messagesToHandOut
+                .map(messageTranscriber)
+                .doOnError(error -> metricsCollector.unparsableMessageReceived(destinationForMetrics))
+                .retry()
+                .map(msg -> new IncomingMessage<>(msg, new IncomingMessageMetaData(destination, new RetrieveInfo(this))));
     }
 
-    public void onClose(Consumer<WebSocket> handler) {
+     public <T> Observable<IncomingMessage<T, IncomingMessageMetaData>> messages (Class<T> messageType) {
+        return messages(messageTranscriber.getIncomingMessageTranscriber(messageType));
+    }
+
+    public Observable<IncomingMessage<String, IncomingMessageMetaData>> messages () {
+        return messages(s -> s);
+    }
+
+    public <T> Completable send(T message) {
+        try {
+            String messageAsString = messageTranscriber.getOutgoingMessageTranscriber(message).apply(message);
+            doSend(messageAsString);
+            metricsCollector.messageSent(destinationForMetrics);
+            return Completable.complete();
+        } catch (Exception e) {
+            return Completable.error(e);
+        }
+    }
+
+    public void onClose(Consumer<Pair<WebSocket, CloseReason>> handler) {
         if (handler != null) {
             closeHandlers.add(handler);
         }
     }
+
+    public void onError(Consumer<Pair<WebSocket, Throwable>> handler) {
+        if (handler != null) {
+            errorHandlers.add(handler);
+        }
+    }
+
+    protected void propagateCloseEvent(CloseReason closeReason) {
+        closeHandlers.forEach(handler -> {
+            try {
+                handler.accept(new Pair<>(this, closeReason));
+            } catch (Exception e) {
+                logger.error("An error occurred, trying to inform handler about close event", e);
+            }
+        });
+    }
+
+    protected void propagateError(Throwable error) {
+        errorHandlers.forEach(handler -> {
+            try {
+                handler.accept(new Pair<>(this, error));
+            } catch (Exception e) {
+                logger.error("An error occurred, trying to inform handler about error event", e);
+            }
+        });
+    }
+
+    protected void propagateNewMessage(String message) {
+        messages.onNext(message);
+    }
+
+    public abstract void doSend(String message);
+
+    protected abstract void doClose(CloseReason closeReason);
+
+    protected abstract boolean isOpen();
 
 }

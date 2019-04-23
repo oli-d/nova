@@ -9,7 +9,7 @@
  *
  */
 
-package ch.squaredesk.nova.comm.websockets.annotation;
+package ch.squaredesk.nova.comm.websockets.spring.annotation;
 
 import io.reactivex.BackpressureStrategy;
 

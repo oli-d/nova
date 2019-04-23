@@ -34,7 +34,7 @@ class MethodInvoker<MessageType> implements Consumer<IncomingMessage<MessageType
     }
 
     @Override
-    public void accept(IncomingMessage<MessageType, IncomingMessageMetaData> message) throws Exception {
+    public void accept(IncomingMessage<MessageType, IncomingMessageMetaData> message) {
         // FIXME: timing metrics
         try {
             methodToInvoke.invoke(objectToInvokeMethodOn, message.message, message.metaData.details.webSocket);

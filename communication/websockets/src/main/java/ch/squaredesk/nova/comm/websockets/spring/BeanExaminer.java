@@ -14,7 +14,7 @@ package ch.squaredesk.nova.comm.websockets.spring;
 import ch.squaredesk.nova.comm.MessageTranscriber;
 import ch.squaredesk.nova.comm.ReflectionHelper;
 import ch.squaredesk.nova.comm.websockets.WebSocket;
-import ch.squaredesk.nova.comm.websockets.annotation.OnMessage;
+import ch.squaredesk.nova.comm.websockets.spring.annotation.OnMessage;
 import io.reactivex.functions.Function;
 
 import java.lang.annotation.Annotation;

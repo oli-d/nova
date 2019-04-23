@@ -57,9 +57,10 @@ public class WebSocketEnablingConfiguration {
 
     @Bean
     WebSocketBeanPostprocessor webSocketBeanPostprocessor(
-            @Qualifier(BeanIdentifiers.MESSAGE_TRANSCRIBER) MessageTranscriber<String> webSocketMessageTranscriber,
             @Qualifier(BeanIdentifiers.ADAPTER_IDENTIFIER) @Autowired(required = false) String webSocketAdapterIdentifier,
+            @Qualifier(BeanIdentifiers.ADAPTER) WebSocketAdapter webSocketAdapter,
+            @Qualifier(BeanIdentifiers.MESSAGE_TRANSCRIBER) MessageTranscriber<String> webSocketMessageTranscriber,
             Nova nova) {
-        return new WebSocketBeanPostprocessor(webSocketMessageTranscriber, new MetricsCollector(webSocketAdapterIdentifier, nova.metrics));
+        return new WebSocketBeanPostprocessor(webSocketAdapter, webSocketMessageTranscriber, new MetricsCollector(webSocketAdapterIdentifier, nova.metrics));
     }
 }

@@ -2,8 +2,6 @@ package examples;
 
 import ch.squaredesk.nova.comm.websockets.WebSocket;
 import ch.squaredesk.nova.comm.websockets.WebSocketAdapter;
-import ch.squaredesk.nova.comm.websockets.client.ClientEndpoint;
-import ch.squaredesk.nova.comm.websockets.server.ServerEndpoint;
 import ch.squaredesk.nova.metrics.Metrics;
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.AsyncHttpClientConfig;
@@ -52,23 +50,27 @@ public class EchoServer {
         // Instantiate the WebSocketAdapter
         WebSocketAdapter webSocketAdapter = webSocketAdapter();
 
-        // Get the "server side" endpoint
-        ServerEndpoint acceptingEndpoint = webSocketAdapter.acceptConnections("/echo");
-        // Subscribe to incoming messages
-        acceptingEndpoint.messages(String.class)
-                .subscribe(
-                    incomingMessage -> {
-                        // Get the WebSocket that represents the connection to the sender
-                        WebSocket webSocket = incomingMessage.metaData.details.webSocket;
-                        // and just send the message back to the sender
-                        webSocket.send(incomingMessage.message);
-                    }
-                );
+        // subscribe to connecting websockets
+        webSocketAdapter.acceptConnections("/echo").subscribe(
+                // Subscribe to incoming messages
+                socket -> {
+                    System.out.println("New connection established, starting to listen to messages...");
+                    socket.messages(String.class)
+                            .subscribe(
+                                incomingMessage -> {
+                                    // Get the WebSocket that represents the connection to the sender
+                                    WebSocket webSocket = incomingMessage.metaData.details.webSocket;
+                                    // and just send the message back to the sender
+                                    webSocket.send(incomingMessage.message);
+                                }
+                            );
+                }
+        );
 
         // Connect to the "server side" endpoint
-        ClientEndpoint initiatingEndpoint = webSocketAdapter.connectTo("ws://127.0.0.1:10000/echo");
+        WebSocket initiatingEndpoint = webSocketAdapter.connectTo("ws://127.0.0.1:10000/echo");
         // Subscribe to messages returned from the echo server
-        initiatingEndpoint.messages(String.class).subscribe(
+        initiatingEndpoint.messages().subscribe(
                 incomingMessage -> {
                     System.out.println("Echo server returned " + incomingMessage.message);
                 });
