@@ -31,7 +31,7 @@ public class WebSocketEnablingConfiguration {
     @Bean(BeanIdentifiers.ADAPTER)
     WebSocketAdapter webSocketAdapter(@Qualifier(BeanIdentifiers.ADAPTER_IDENTIFIER) @Autowired(required = false) String webSocketAdapterIdentifier,
                                       @Qualifier(BeanIdentifiers.MESSAGE_TRANSCRIBER) MessageTranscriber<String> webSocketMessageTranscriber,
-                                      @Qualifier(HttpServerProvidingConfiguration.BeanIdentifiers.SERVER) HttpServer httpServer,
+                                      @Qualifier(HttpServerProvidingConfiguration.BeanIdentifiers.SERVER) @Autowired(required = false) HttpServer httpServer,
                                       Nova nova) {
         return WebSocketAdapter.builder()
                 .setIdentifier(webSocketAdapterIdentifier)
@@ -56,11 +56,11 @@ public class WebSocketEnablingConfiguration {
     }
 
     @Bean
-    WebSocketBeanPostprocessor webSocketBeanPostprocessor(
+    WebSocketBeanProcessor webSocketBeanPostprocessor(
             @Qualifier(BeanIdentifiers.ADAPTER_IDENTIFIER) @Autowired(required = false) String webSocketAdapterIdentifier,
             @Qualifier(BeanIdentifiers.ADAPTER) WebSocketAdapter webSocketAdapter,
             @Qualifier(BeanIdentifiers.MESSAGE_TRANSCRIBER) MessageTranscriber<String> webSocketMessageTranscriber,
             Nova nova) {
-        return new WebSocketBeanPostprocessor(webSocketAdapter, webSocketMessageTranscriber, new MetricsCollector(webSocketAdapterIdentifier, nova.metrics));
+        return new WebSocketBeanProcessor(webSocketAdapter, webSocketMessageTranscriber, new MetricsCollector(webSocketAdapterIdentifier, nova.metrics));
     }
 }
