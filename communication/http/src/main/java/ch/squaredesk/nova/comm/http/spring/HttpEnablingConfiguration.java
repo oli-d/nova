@@ -22,7 +22,6 @@ import java.util.concurrent.TimeUnit;
 public class HttpEnablingConfiguration {
     public interface BeanIdentifiers {
         String ADAPTER_IDENTIFIER = "NOVA.HTTP.ADAPTER_IDENTIFIER";
-        String DEFAULT_REQUEST_TIMEOUT_IN_SECONDS = "NOVA.HTTP.DEFAULT_REQUEST_TIMEOUT_IN_SECONDS";
         String OBJECT_MAPPER = "NOVA.HTTP.OBJECT_MAPPER";
         String MESSAGE_TRANSCRIBER = "NOVA.HTTP.MESSAGE_TRANSCRIBER";
 
@@ -33,7 +32,7 @@ public class HttpEnablingConfiguration {
     @Bean(BeanIdentifiers.ADAPTER_INSTANCE)
     HttpAdapter httpAdapter(@Qualifier(HttpClientProvidingConfiguration.BeanIdentifiers.CLIENT) @Autowired(required = false) AsyncHttpClient httpClient,
                             @Qualifier(HttpServerProvidingConfiguration.BeanIdentifiers.SERVER) @Autowired(required = false) HttpServer httpServer,
-                            @Qualifier(BeanIdentifiers.DEFAULT_REQUEST_TIMEOUT_IN_SECONDS) int defaultHttpRequestTimeoutInSeconds,
+                            @Qualifier(HttpClientProvidingConfiguration.BeanIdentifiers.DEFAULT_REQUEST_TIMEOUT_IN_SECONDS) int defaultHttpRequestTimeoutInSeconds,
                             @Qualifier(BeanIdentifiers.ADAPTER_IDENTIFIER) @Autowired(required=false) String defaultHttpAdapterIdentifier,
                             @Qualifier(BeanIdentifiers.MESSAGE_TRANSCRIBER) MessageTranscriber<String> httpMessageTranscriber,
                             Nova nova) {
@@ -45,11 +44,6 @@ public class HttpEnablingConfiguration {
                 .setMessageTranscriber(httpMessageTranscriber)
                 .setMetrics(nova.metrics)
                 .build();
-    }
-
-    @Bean(BeanIdentifiers.DEFAULT_REQUEST_TIMEOUT_IN_SECONDS)
-    int defaultHttpRequestTimeoutInSeconds(Environment environment) {
-        return environment.getProperty(BeanIdentifiers.DEFAULT_REQUEST_TIMEOUT_IN_SECONDS, Integer.class, 30);
     }
 
     @Bean(BeanIdentifiers.ADAPTER_IDENTIFIER)

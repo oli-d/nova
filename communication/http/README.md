@@ -63,7 +63,7 @@ Similar concept for the ```AsyncHttpClient``` which is provided by the
   |-----------------------------------------------------|----------------------------------------------------------|---------------|
   | NOVA.HTTP.CLIENT.COMPRESSION_ENFORCED               | Enforce HTTP compression if set to ```true```                 | false        |
   | NOVA.HTTP.CLIENT.CONNECTION_TIMEOUT_IN_SECONDS      | Set the maximum time in seconds we can wait when connecting to a remote host | 5    |
-  | NOVA.HTTP.CLIENT.DEFAULT_REQUEST_TIMEOUT_IN_SECONDS | the maximum time in seconds we wait by default until the response is completed | 30        |
+  | NOVA.HTTP.CLIENT.DEFAULT_REQUEST_TIMEOUT_IN_SECONDS | the maximum time in seconds we wait (by default) for a request to complete | 30        |
   | NOVA.HTTP.CLIENT.WEB_SOCKET_TIMEOUT_IN_SECONDS      | the maximum time in seconds a WebSocket can stay idle                            | 0 (forever) |
   | NOVA.HTTP.CLIENT.CERTIFICATE                        | the certificate. Switches on SSL                         | <null>        |
   | NOVA.HTTP.CLIENT.KEY_STORE                          | the keystore to use. Switches on SSL                     | <null>        |
