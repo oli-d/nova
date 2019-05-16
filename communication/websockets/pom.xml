@@ -22,6 +22,10 @@
 		<relativePath>../../parentpom</relativePath>
 	</parent>
 
+	<properties>
+		<grizzly.version>2.4.4</grizzly.version>
+	</properties>
+
 	<dependencies>
 		<dependency>
 			<groupId>ch.squaredesk.nova</groupId>

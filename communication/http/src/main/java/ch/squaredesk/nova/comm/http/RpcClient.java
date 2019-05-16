@@ -58,6 +58,10 @@ public class RpcClient extends ch.squaredesk.nova.comm.rpc.RpcClient<String, Req
             requestBuilder = client.preparePost(requestMessageMetaData.destination.toString()).setBody(requestAsString);
         } else if (requestMessageMetaData.details.requestMethod == HttpRequestMethod.PUT) {
             requestBuilder = client.preparePut(requestMessageMetaData.destination.toString()).setBody(requestAsString);
+        } else if (requestMessageMetaData.details.requestMethod == HttpRequestMethod.PATCH) {
+            requestBuilder = client.preparePatch(requestMessageMetaData.destination.toString()).setBody(requestAsString);
+        } else if (requestMessageMetaData.details.requestMethod == HttpRequestMethod.OPTIONS) {
+            requestBuilder = client.prepareOptions(requestMessageMetaData.destination.toString()).setBody(requestAsString);
         } else if (requestMessageMetaData.details.requestMethod == HttpRequestMethod.DELETE) {
             requestBuilder = client.prepareDelete(requestMessageMetaData.destination.toString()).setBody(requestAsString);
         } else {

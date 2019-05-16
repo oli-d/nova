@@ -230,6 +230,71 @@ public class HttpAdapter extends CommAdapter<String> implements HttpServerBeanLi
         return sendRequest(destination, request, new RequestInfo(HttpRequestMethod.PUT, headers), replyTranscriber, timeout, timeUnit );
     }
 
+    /////////////////// PATCH convenience methods
+    public <T, U> Single<RpcReply<U>> sendPatchRequest(
+                String destination,
+                T request,
+                Class<U> replyType) {
+        return sendRequest(destination, request, new RequestInfo(HttpRequestMethod.PATCH), replyType, null, null);
+    }
+
+    public <T, U> Single<RpcReply<U>> sendPatchRequest(
+                String destination,
+                T request,
+                Map<String, String> headers,
+                Class<U> replyType) {
+        return sendRequest(destination, request, new RequestInfo(HttpRequestMethod.PATCH, headers), replyType, null, null);
+    }
+
+    public <T, U> Single<RpcReply<U>> sendPatchRequest(
+                String destination,
+                T request,
+                Class<U> replyType,
+                long timeout, TimeUnit timeUnit) {
+        return sendRequest(destination, request, new RequestInfo(HttpRequestMethod.PATCH), replyType, timeout, timeUnit );
+    }
+
+    public <T, U> Single<RpcReply<U>> sendPatchRequest(
+                String destination,
+                T request,
+                Map<String, String> headers,
+                Class<U> replyType,
+                long timeout, TimeUnit timeUnit) {
+        return sendRequest(destination, request, new RequestInfo(HttpRequestMethod.PATCH, headers), replyType, timeout, timeUnit );
+    }
+
+    public <T, U> Single<RpcReply<U>> sendPatchRequest(
+                String destination,
+                T request,
+                Function<String, U> replyTranscriber) {
+        return sendRequest(destination, request, new RequestInfo(HttpRequestMethod.PATCH), replyTranscriber, null, null);
+    }
+
+    public <T, U> Single<RpcReply<U>> sendPatchRequest(
+                String destination,
+                T request,
+                Map<String, String> headers,
+                Function<String, U> replyTranscriber) {
+        return sendRequest(destination, request, new RequestInfo(HttpRequestMethod.PATCH, headers), replyTranscriber, null, null);
+    }
+
+    public <T, U> Single<RpcReply<U>> sendPatchRequest(
+                String destination,
+                T request,
+                Function<String, U> replyTranscriber,
+                long timeout, TimeUnit timeUnit) {
+        return sendRequest(destination, request, new RequestInfo(HttpRequestMethod.PATCH), replyTranscriber, timeout, timeUnit );
+    }
+
+    public <T, U> Single<RpcReply<U>> sendPatchRequest(
+                String destination,
+                T request,
+                Map<String, String> headers,
+                Function<String, U> replyTranscriber,
+                long timeout, TimeUnit timeUnit) {
+        return sendRequest(destination, request, new RequestInfo(HttpRequestMethod.PATCH, headers), replyTranscriber, timeout, timeUnit );
+    }
+
     /////////////////// DELETE convenience methods
     public <T, U> Single<RpcReply<U>> sendDeleteRequest(
                 String destination,

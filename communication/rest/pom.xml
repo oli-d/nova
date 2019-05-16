@@ -13,6 +13,10 @@
     <artifactId>rest</artifactId>
     <version>8.0.0</version>
 
+    <properties>
+        <jersey.version>2.28</jersey.version> <!-- For some reason, the latest 2.28 has still dependencies to 2.25.1 which causes version conflicts ?!?! -->
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>ch.squaredesk.nova</groupId>
@@ -49,7 +53,24 @@
                     <groupId>org.glassfish.grizzly</groupId>
                     <artifactId>grizzly-http-server</artifactId>
                 </exclusion>
+                <!--Exclude jersey server, since it it references an older version than the one we want-->
+                <exclusion>
+                    <groupId>org.glassfish.jersey.core</groupId>
+                    <artifactId>jersey-server</artifactId>
+                </exclusion>
             </exclusions>
+        </dependency>
+
+        <dependency>
+            <groupId>org.glassfish.jersey.core</groupId>
+            <artifactId>jersey-server</artifactId>
+            <version>${jersey.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.glassfish.jersey.inject</groupId>
+            <artifactId>jersey-hk2</artifactId>
+            <version>${jersey.version}</version>
         </dependency>
 
         <dependency>
