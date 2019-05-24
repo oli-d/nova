@@ -25,6 +25,8 @@ import org.glassfish.jersey.server.monitoring.ApplicationEvent;
 import org.glassfish.jersey.server.monitoring.ApplicationEventListener;
 import org.glassfish.jersey.server.monitoring.RequestEvent;
 import org.glassfish.jersey.server.monitoring.RequestEventListener;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.BeanInitializationException;
 import org.springframework.beans.factory.config.AutowireCapableBeanFactory;
 import org.springframework.beans.factory.support.BeanDefinitionRegistry;
@@ -34,13 +36,21 @@ import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.context.support.GenericApplicationContext;
 
 import javax.annotation.PreDestroy;
+import javax.ws.rs.container.ContainerRequestContext;
+import javax.ws.rs.container.ContainerRequestFilter;
+import javax.ws.rs.container.ContainerResponseFilter;
 import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.ext.ContextResolver;
 import javax.ws.rs.ext.Provider;
+import javax.ws.rs.ext.ReaderInterceptor;
+import javax.ws.rs.ext.WriterInterceptor;
 import java.io.IOException;
 import java.net.URI;
+import java.util.Map;
 
 public class RestServerStarter implements ApplicationListener<ContextRefreshedEvent> {
+    private static final Logger logger = LoggerFactory.getLogger(RestServerStarter.class);
+
     private HttpServer httpServer;
     private HttpServerSettings httpServerSettings;
     private RestBeanPostprocessor restBeanPostprocessor;
@@ -93,7 +103,6 @@ public class RestServerStarter implements ApplicationListener<ContextRefreshedEv
                         }
                     }
                 };
-
                 resourceConfig.register(new ApplicationEventListener() {
                     @Override
                     public void onEvent(ApplicationEvent event) {
@@ -105,6 +114,33 @@ public class RestServerStarter implements ApplicationListener<ContextRefreshedEv
                     }
                 });
             }
+
+            // register request filters and interceptors
+            Map<String, ContainerRequestFilter> requestFilters =
+                    contextRefreshedEvent.getApplicationContext().getBeansOfType(ContainerRequestFilter.class);
+            requestFilters.values().forEach(filter -> {
+                logger.debug("Registering request filter of type {}", filter.getClass().getName());
+                resourceConfig.register(filter);
+            });
+            Map<String, ReaderInterceptor> readerInterceptors =
+                    contextRefreshedEvent.getApplicationContext().getBeansOfType(ReaderInterceptor.class);
+            readerInterceptors.values().forEach(filter -> {
+                logger.debug("Registering reader interceptor of type {}", filter.getClass().getName());
+                resourceConfig.register(filter);
+            });
+            Map<String, WriterInterceptor> writerInterceptors =
+                    contextRefreshedEvent.getApplicationContext().getBeansOfType(WriterInterceptor.class);
+            writerInterceptors.values().forEach(filter -> {
+                logger.debug("Registering writer interceptor of type {}", filter.getClass().getName());
+                resourceConfig.register(filter);
+            });
+            Map<String, ContainerResponseFilter> responseFilters =
+                    contextRefreshedEvent.getApplicationContext().getBeansOfType(ContainerResponseFilter.class);
+            responseFilters.values().forEach(filter -> {
+                logger.debug("Registering response filter of type {}", filter.getClass().getName());
+                resourceConfig.register(filter);
+            });
+
 
             URI serverAddress = UriBuilder.fromPath("http://" + httpServerSettings.interfaceName + ":" +
                     httpServerSettings.port).build();

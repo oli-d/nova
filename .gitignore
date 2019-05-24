@@ -6,4 +6,5 @@
 .project
 !/.travis*
 !.gitignore
+!.gitattributes
 /.idea/
