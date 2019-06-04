@@ -30,7 +30,7 @@ public class RpcClient extends ch.squaredesk.nova.comm.rpc.RpcClient<String, Req
     private Map<String, String> standardHeadersForAllRequests;
     private boolean contentTypeInStandardHeaders;
 
-    RpcClient(String identifier,
+    protected RpcClient(String identifier,
                         AsyncHttpClient client,
                         Metrics metrics) {
         super(identifier, metrics);
