@@ -19,6 +19,7 @@ import io.reactivex.functions.Function;
 import io.reactivex.observers.TestObserver;
 import org.glassfish.grizzly.http.server.HttpServer;
 import org.hamcrest.MatcherAssert;
+import org.hamcrest.Matchers;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
@@ -91,6 +92,59 @@ class HttpAdapterTest {
         TestObserver<RpcReply<MyType1>> type1Observer = sut.sendGetRequest(url, replyTranscriber).test();
         type1Observer.assertError(throwable -> throwable instanceof RuntimeException && throwable.getMessage().equals("Oli"));
     }
+
+    @Test
+    void standardHeadersCanBeSetForAllRequests() {
+        String path = "/headerTest";
+        Map<String,String> standardHeaders = new HashMap<>();
+        standardHeaders.put("key1", "val1");
+        class MyConsumer implements Consumer<HttpExchange> {
+            String headerValue = null;
+
+            @Override
+            public void accept(HttpExchange httpExchange) {
+                headerValue = httpExchange.getRequestHeaders().getFirst("key1");
+            }
+        }
+        MyConsumer consumer = new MyConsumer();
+        Pair<com.sun.net.httpserver.HttpServer, Integer> serverPortPair = httpServer(path, "OK", consumer);
+        String url = "http://localhost:" + serverPortPair._2 + path;
+
+        sut.setStandardHeadersForAllRequests(standardHeaders);
+        TestObserver<RpcReply<String>> stringObserver = sut.sendGetRequest(url, String.class).test();
+
+        await().atMost(10, SECONDS).until(stringObserver::isTerminated, is(true));
+        stringObserver.assertValue(reply -> "OK".equals(reply.result));
+        MatcherAssert.assertThat(consumer.headerValue, Matchers.is("val1"));
+    }
+
+    @Test
+    void standardHeadersCanBeOverridenPerRequests() {
+        String path = "/headerTest";
+        Map<String,String> standardHeaders = new HashMap<>();
+        standardHeaders.put("key1", "val1");
+        Map<String,String> specificHeaders = new HashMap<>();
+        specificHeaders.put("key1", "val2");
+        class MyConsumer implements Consumer<HttpExchange> {
+            String headerValue = null;
+
+            @Override
+            public void accept(HttpExchange httpExchange) {
+                headerValue = httpExchange.getRequestHeaders().getFirst("key1");
+            }
+        }
+        MyConsumer consumer = new MyConsumer();
+        Pair<com.sun.net.httpserver.HttpServer, Integer> serverPortPair = httpServer(path, "OK", consumer);
+        String url = "http://localhost:" + serverPortPair._2 + path;
+
+        sut.setStandardHeadersForAllRequests(standardHeaders);
+        TestObserver<RpcReply<String>> stringObserver = sut.sendGetRequest(url, specificHeaders, String.class).test();
+
+        await().atMost(10, SECONDS).until(stringObserver::isTerminated, is(true));
+        stringObserver.assertValue(reply -> "OK".equals(reply.result));
+        MatcherAssert.assertThat(consumer.headerValue, Matchers.is("val2"));
+    }
+
 
     @Test
     void parametersGetProperlyTransmitted() {

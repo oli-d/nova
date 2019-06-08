@@ -113,8 +113,8 @@ public class RpcClient extends ch.squaredesk.nova.comm.rpc.RpcClient<String, Req
     }
 
     public void setStandardHeadersForAllRequests(Map<String, String> standardHeadersForAllRequests) {
-        this.standardHeadersForAllRequests = standardHeadersForAllRequests;
-        this.contentTypeInStandardHeaders = headersContainContentType(standardHeadersForAllRequests);
+        this.standardHeadersForAllRequests = new HashMap<>(standardHeadersForAllRequests);
+        this.contentTypeInStandardHeaders = headersContainContentType(this.standardHeadersForAllRequests);
     }
 
     private static boolean headersContainContentType (Map<String, String> headersToCheck) {
@@ -123,7 +123,7 @@ public class RpcClient extends ch.squaredesk.nova.comm.rpc.RpcClient<String, Req
 
     private static void addHeadersToRequest (Map<String, String> headersToAdd, AsyncHttpClient.BoundRequestBuilder requestBuilder) {
         if (headersToAdd != null) {
-            headersToAdd.entrySet().forEach(entry -> requestBuilder.addHeader(entry.getKey(), entry.getValue()));
+            headersToAdd.entrySet().forEach(entry -> requestBuilder.setHeader(entry.getKey(), entry.getValue()));
         }
     }
 }

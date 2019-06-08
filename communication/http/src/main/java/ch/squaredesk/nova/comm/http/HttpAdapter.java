@@ -27,6 +27,7 @@ import org.slf4j.LoggerFactory;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 import static java.util.Objects.requireNonNull;
@@ -48,6 +49,14 @@ public class HttpAdapter extends CommAdapter<String> implements HttpServerBeanLi
 
     public <T> FrozenHttpAdapter<T> freeze (Class<T> typeClass) {
         return new FrozenHttpAdapter<>(this, typeClass);
+    }
+
+    public void setStandardHeadersForAllRequests (Map<String, String> standardHeaders) {
+        Optional.ofNullable(rpcClient).ifPresent(client -> client.setStandardHeadersForAllRequests(standardHeaders));
+    }
+
+    public Optional<Map<String, String>> getStandardHeadersForAllRequests () {
+        return Optional.ofNullable(rpcClient).map(RpcClient::getStandardHeadersForAllRequests);
     }
 
     ///////// The client side
