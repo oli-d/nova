@@ -12,10 +12,8 @@
 package ch.squaredesk.nova.comm.rest;
 
 import ch.squaredesk.nova.comm.http.HttpServerSettings;
-import ch.squaredesk.nova.spring.NovaProvidingConfiguration;
-import org.glassfish.grizzly.http.server.HttpServer;
-import org.junit.jupiter.api.*;
-import org.springframework.cache.support.NullValue;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.context.annotation.Bean;
@@ -24,10 +22,9 @@ import org.springframework.context.annotation.Import;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
-import java.util.Set;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.*;
+import static org.hamcrest.Matchers.is;
 
 class RestEnablingConfigurationTest {
     HttpServerSettings serverConfiguration;

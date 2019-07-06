@@ -11,8 +11,8 @@
 package ch.squaredesk.nova.comm.http.spring;
 
 import ch.squaredesk.nova.Nova;
-import ch.squaredesk.nova.comm.http.HttpServerSettings;
 import ch.squaredesk.nova.comm.http.HttpServerFactory;
+import ch.squaredesk.nova.comm.http.HttpServerSettings;
 import org.glassfish.grizzly.http.server.HttpServer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;

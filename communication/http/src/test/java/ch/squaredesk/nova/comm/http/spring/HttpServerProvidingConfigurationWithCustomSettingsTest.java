@@ -1,7 +1,6 @@
 package ch.squaredesk.nova.comm.http.spring;
 
 import ch.squaredesk.nova.comm.http.HttpServerSettings;
-import ch.squaredesk.nova.spring.NovaProvidingConfiguration;
 import org.glassfish.grizzly.http.server.HttpServer;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Tag;

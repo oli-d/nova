@@ -3,7 +3,10 @@ package ch.squaredesk.nova.comm.http.spring;
 import ch.squaredesk.net.PortFinder;
 import ch.squaredesk.nova.comm.DefaultMessageTranscriberForStringAsTransportType;
 import ch.squaredesk.nova.comm.MessageTranscriber;
-import ch.squaredesk.nova.comm.http.*;
+import ch.squaredesk.nova.comm.http.HttpAdapter;
+import ch.squaredesk.nova.comm.http.HttpRequestSender;
+import ch.squaredesk.nova.comm.http.HttpServerSettings;
+import ch.squaredesk.nova.comm.http.RpcInvocation;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -25,8 +28,6 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import java.math.BigDecimal;
-
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 @Tag("medium")
 @ExtendWith(SpringExtension.class)

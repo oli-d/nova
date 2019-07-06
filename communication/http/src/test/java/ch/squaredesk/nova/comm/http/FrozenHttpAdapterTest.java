@@ -12,10 +12,7 @@
 package ch.squaredesk.nova.comm.http;
 
 import ch.squaredesk.net.PortFinder;
-import ch.squaredesk.nova.comm.DefaultMessageTranscriberForStringAsTransportType;
 import ch.squaredesk.nova.tuples.Pair;
-import com.fasterxml.jackson.annotation.JsonFormat;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sun.net.httpserver.HttpExchange;
 import io.reactivex.observers.TestObserver;
 import org.glassfish.grizzly.http.server.HttpServer;
@@ -26,7 +23,6 @@ import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.io.OutputStream;
-import java.math.BigDecimal;
 import java.net.InetSocketAddress;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Consumer;

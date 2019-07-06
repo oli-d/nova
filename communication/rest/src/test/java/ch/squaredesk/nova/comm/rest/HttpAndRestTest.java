@@ -13,10 +13,8 @@ package ch.squaredesk.nova.comm.rest;
 
 import ch.squaredesk.nova.comm.http.HttpAdapter;
 import ch.squaredesk.nova.comm.http.HttpServerSettings;
-import ch.squaredesk.nova.comm.http.RpcInvocation;
 import ch.squaredesk.nova.comm.http.RpcReply;
 import io.reactivex.observers.TestObserver;
-import io.reactivex.subscribers.TestSubscriber;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;

@@ -11,7 +11,6 @@
 package ch.squaredesk.nova.comm.rest.example;
 
 import ch.squaredesk.nova.comm.rest.RestEnablingConfiguration;
-import ch.squaredesk.nova.spring.NovaProvidingConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;

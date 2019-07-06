@@ -13,19 +13,13 @@ package ch.squaredesk.nova.comm.rest;
 
 import ch.squaredesk.nova.Nova;
 import ch.squaredesk.nova.comm.http.HttpServerSettings;
-import ch.squaredesk.nova.comm.http.RpcServer;
 import ch.squaredesk.nova.metrics.Metrics;
-import ch.squaredesk.nova.spring.NovaProvidingConfiguration;
-import org.glassfish.grizzly.http.server.HttpServer;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.annotation.*;
-import org.springframework.core.annotation.Order;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Import;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 

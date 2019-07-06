@@ -16,7 +16,6 @@ import com.ning.http.client.FluentCaseInsensitiveStringsMap;
 import com.ning.http.client.Response;
 import io.reactivex.Single;
 import io.reactivex.functions.Function;
-import io.reactivex.schedulers.Schedulers;
 
 import java.util.Collections;
 import java.util.HashMap;
