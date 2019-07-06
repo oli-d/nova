@@ -21,5 +21,5 @@ import java.lang.annotation.Target;
 public @interface OnError {
     String value();
     boolean captureTimings() default true;
-    // TODO boolean dispatchOnBusinessLogicThread() default false;
+    boolean logInvocations() default true;
 }

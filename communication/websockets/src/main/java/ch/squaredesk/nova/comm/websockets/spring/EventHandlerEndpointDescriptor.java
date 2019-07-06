@@ -17,15 +17,18 @@ class EventHandlerEndpointDescriptor {
     final Method methodToInvoke;
     final String destination;
     final boolean captureTimings;
+    final boolean logInvocations;
 
     EventHandlerEndpointDescriptor(
             Object objectToInvokeMethodOn,
             Method methodToInvoke,
             String destination,
-            boolean captureMetrics) {
+            boolean captureMetrics,
+            boolean logInvocations) {
         this.objectToInvokeMethodOn = objectToInvokeMethodOn;
         this.methodToInvoke = methodToInvoke;
         this.destination = destination;
         this.captureTimings = captureMetrics;
+        this.logInvocations = logInvocations;
     }
 }

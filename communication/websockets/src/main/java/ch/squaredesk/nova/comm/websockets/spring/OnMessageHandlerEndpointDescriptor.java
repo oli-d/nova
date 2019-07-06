@@ -29,8 +29,9 @@ class OnMessageHandlerEndpointDescriptor extends EventHandlerEndpointDescriptor 
             Function<?, String> marshaller,
             Function<String, ?> unmarshaller,
             boolean captureMetrics,
+            boolean logInvocations,
             BackpressureStrategy backpressureStrategy) {
-        super(objectToInvokeMethodOn, methodToInvoke, destination, captureMetrics);
+        super(objectToInvokeMethodOn, methodToInvoke, destination, captureMetrics, logInvocations);
         this.messageType = messageType;
         this.marshaller = marshaller;
         this.unmarshaller = unmarshaller;

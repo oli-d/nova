@@ -5,17 +5,12 @@ import ch.squaredesk.nova.comm.websockets.WebSocketAdapter;
 import ch.squaredesk.nova.comm.websockets.spring.WebSocketEnablingConfiguration;
 import ch.squaredesk.nova.comm.websockets.spring.annotation.OnConnect;
 import ch.squaredesk.nova.comm.websockets.spring.annotation.OnMessage;
-import ch.squaredesk.nova.metrics.Metrics;
 import ch.squaredesk.nova.spring.NovaProvidingConfiguration;
-import com.ning.http.client.AsyncHttpClient;
-import com.ning.http.client.AsyncHttpClientConfig;
-import org.glassfish.grizzly.http.server.HttpServer;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 
-import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
 public class EchoServerAnnotated {

@@ -74,6 +74,7 @@ class BeanExaminer {
                             marshaller,
                             unmarshaller,
                             annotation.captureTimings(),
+                            annotation.logInvocations(),
                             annotation.backpressureStrategy());
                 })
                 .toList()
@@ -124,7 +125,8 @@ class BeanExaminer {
                             bean,
                             method,
                             getDestinationFrom(annotation),
-                            getCaptureTimings(annotation));
+                            getCaptureTimings(annotation),
+                            getLogInvocations(annotation));
                 })
                 .toList()
                 .blockingGet();
@@ -170,6 +172,11 @@ class BeanExaminer {
 
     private static boolean getCaptureTimings(Annotation annotation) throws Exception {
         Method valueProvider = annotation.getClass().getDeclaredMethod("captureTimings");
+        return (boolean) valueProvider.invoke(annotation);
+    }
+
+    private static boolean getLogInvocations(Annotation annotation) throws Exception {
+        Method valueProvider = annotation.getClass().getDeclaredMethod("logInvocations");
         return (boolean) valueProvider.invoke(annotation);
     }
 

@@ -12,41 +12,57 @@
 package ch.squaredesk.nova.comm.websockets.spring;
 
 import ch.squaredesk.nova.comm.websockets.CloseReason;
-import ch.squaredesk.nova.comm.websockets.MetricsCollector;
 import ch.squaredesk.nova.comm.websockets.WebSocket;
+import ch.squaredesk.nova.metrics.Metrics;
 import ch.squaredesk.nova.tuples.Pair;
+import io.dropwizard.metrics5.Timer;
 import io.reactivex.functions.Consumer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.lang.reflect.Method;
 
-
-class CloseEventHandlerMethodInvoker implements Consumer<Pair<WebSocket, CloseReason>> {
+class CloseEventHandlerMethodInvoker {
     private final static Logger LOGGER = LoggerFactory.getLogger(CloseEventHandlerMethodInvoker.class);
-    private final Object objectToInvokeMethodOn;
-    private final Method methodToInvoke;
-    private final MetricsCollector metricsCollector;
 
-    private CloseEventHandlerMethodInvoker(Object objectToInvokeMethodOn, Method methodToInvoke, MetricsCollector metricsCollector) {
-        this.objectToInvokeMethodOn = objectToInvokeMethodOn;
-        this.methodToInvoke = methodToInvoke;
-        this.metricsCollector = metricsCollector;
-    }
+    static Consumer<Pair<WebSocket, CloseReason>> createFor(EventHandlerEndpointDescriptor endpointDescriptor,
+                                                    String adapterIdentifier,
+                                                    Metrics metrics) {
 
-    @Override
-    public void accept(Pair<WebSocket, CloseReason> webSocketCloseReasonPair) {
-        // FIXME: timing metrics
-        try {
-            methodToInvoke.invoke(objectToInvokeMethodOn, webSocketCloseReasonPair._1, webSocketCloseReasonPair._2);
-        } catch (Exception e) {
-            LOGGER.error("Unable to invoke web socket event handler {} ", methodToInvoke.getName(), e);
+
+        Consumer<Pair<WebSocket, CloseReason>> consumer = webSocketCloseReasonPair -> {
+            if (endpointDescriptor.logInvocations) {
+                LOGGER.debug("Invoking close event handler {}.{} for socket {} and close reason {}",
+                        endpointDescriptor.objectToInvokeMethodOn.getClass().getSimpleName(),
+                        endpointDescriptor.methodToInvoke.getName(),
+                        webSocketCloseReasonPair._1,
+                        webSocketCloseReasonPair._2
+                );
+            }
+
+            try {
+                endpointDescriptor.methodToInvoke.invoke(
+                        endpointDescriptor.objectToInvokeMethodOn,
+                        webSocketCloseReasonPair._1,
+                        webSocketCloseReasonPair._2);
+            } catch (Exception e) {
+                LOGGER.error("Unable to invoke web socket event handler {} ", endpointDescriptor.methodToInvoke.getName(), e);
+            }
+        };
+
+        if (endpointDescriptor.captureTimings) {
+            Timer timer = metrics.getTimer(adapterIdentifier, "invocationTime",
+                    endpointDescriptor.objectToInvokeMethodOn.getClass().getSimpleName(),
+                    endpointDescriptor.methodToInvoke.getName());
+            return incoming -> {
+                Timer.Context context = timer.time();
+                try {
+                    consumer.accept(incoming);
+                } finally {
+                    context.stop();
+                }
+            };
+        } else {
+            return consumer;
         }
-    }
-
-    static CloseEventHandlerMethodInvoker createFor(EventHandlerEndpointDescriptor endpointDescriptor, MetricsCollector metricsCollector) {
-        return new CloseEventHandlerMethodInvoker(endpointDescriptor.objectToInvokeMethodOn,
-                endpointDescriptor.methodToInvoke,
-                endpointDescriptor.captureTimings ? metricsCollector : null);
     }
 }

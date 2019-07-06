@@ -11,40 +11,53 @@
 
 package ch.squaredesk.nova.comm.websockets.spring;
 
-import ch.squaredesk.nova.comm.websockets.MetricsCollector;
 import ch.squaredesk.nova.comm.websockets.WebSocket;
+import ch.squaredesk.nova.metrics.Metrics;
+import io.dropwizard.metrics5.Timer;
 import io.reactivex.functions.Consumer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.lang.reflect.Method;
 
-
-class ConnectEventHandlerMethodInvoker implements Consumer<WebSocket> {
+class ConnectEventHandlerMethodInvoker {
     private final static Logger LOGGER = LoggerFactory.getLogger(ConnectEventHandlerMethodInvoker.class);
-    private final Object objectToInvokeMethodOn;
-    private final Method methodToInvoke;
-    private final MetricsCollector metricsCollector;
 
-    private ConnectEventHandlerMethodInvoker(Object objectToInvokeMethodOn, Method methodToInvoke, MetricsCollector metricsCollector) {
-        this.objectToInvokeMethodOn = objectToInvokeMethodOn;
-        this.methodToInvoke = methodToInvoke;
-        this.metricsCollector = metricsCollector;
-    }
+    static Consumer<WebSocket> createFor(EventHandlerEndpointDescriptor endpointDescriptor,
+                                                            String adapterIdentifier,
+                                                            Metrics metrics) {
 
-    @Override
-    public void accept(WebSocket webSocket) {
-        // FIXME: timing metrics
-        try {
-            methodToInvoke.invoke(objectToInvokeMethodOn, webSocket);
-        } catch (Exception e) {
-            LOGGER.error("Unable to invoke web socket event handler {} ", methodToInvoke.getName(), e);
+
+        Consumer<WebSocket> consumer = webSocket -> {
+            if (endpointDescriptor.logInvocations) {
+                LOGGER.debug("Invoking connect event handler {}.{} for socket {}",
+                        endpointDescriptor.objectToInvokeMethodOn.getClass().getSimpleName(),
+                        endpointDescriptor.methodToInvoke.getName(),
+                        webSocket
+                );
+            }
+            try {
+                endpointDescriptor.methodToInvoke.invoke(
+                        endpointDescriptor.objectToInvokeMethodOn,
+                        webSocket);
+            } catch (Exception e) {
+                LOGGER.error("Unable to invoke web socket event handler {} ", endpointDescriptor.methodToInvoke.getName(), e);
+            }
+        };
+
+        if (endpointDescriptor.captureTimings) {
+            Timer timer = metrics.getTimer(adapterIdentifier, "invocationTime",
+                    endpointDescriptor.objectToInvokeMethodOn.getClass().getSimpleName(),
+                    endpointDescriptor.methodToInvoke.getName());
+            return incoming -> {
+                Timer.Context context = timer.time();
+                try {
+                    consumer.accept(incoming);
+                } finally {
+                    context.stop();
+                }
+            };
+        } else {
+            return consumer;
         }
-    }
-
-    static ConnectEventHandlerMethodInvoker createFor(EventHandlerEndpointDescriptor endpointDescriptor, MetricsCollector metricsCollector) {
-        return new ConnectEventHandlerMethodInvoker(endpointDescriptor.objectToInvokeMethodOn,
-                endpointDescriptor.methodToInvoke,
-                endpointDescriptor.captureTimings ? metricsCollector : null);
     }
 }

@@ -4,7 +4,6 @@ import ch.squaredesk.nova.Nova;
 import ch.squaredesk.nova.comm.DefaultMessageTranscriberForStringAsTransportType;
 import ch.squaredesk.nova.comm.MessageTranscriber;
 import ch.squaredesk.nova.comm.http.spring.HttpServerProvidingConfiguration;
-import ch.squaredesk.nova.comm.websockets.MetricsCollector;
 import ch.squaredesk.nova.comm.websockets.WebSocketAdapter;
 import ch.squaredesk.nova.spring.NovaProvidingConfiguration;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -61,6 +60,6 @@ public class WebSocketEnablingConfiguration {
             @Qualifier(BeanIdentifiers.ADAPTER) WebSocketAdapter webSocketAdapter,
             @Qualifier(BeanIdentifiers.MESSAGE_TRANSCRIBER) MessageTranscriber<String> webSocketMessageTranscriber,
             Nova nova) {
-        return new WebSocketBeanProcessor(webSocketAdapter, webSocketMessageTranscriber, new MetricsCollector(webSocketAdapterIdentifier, nova.metrics));
+        return new WebSocketBeanProcessor(webSocketAdapter, webSocketMessageTranscriber, webSocketAdapterIdentifier, nova.metrics);
     }
 }

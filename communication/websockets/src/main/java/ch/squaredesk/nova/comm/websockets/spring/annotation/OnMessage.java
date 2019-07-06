@@ -26,5 +26,5 @@ public @interface OnMessage {
     BackpressureStrategy backpressureStrategy() default BackpressureStrategy.BUFFER;
     String messageMarshallerClassName() default "";
     String messageUnmarshallerClassName() default "";
-    // TODO boolean dispatchOnBusinessLogicThread() default false;
+    boolean logInvocations() default true;
 }

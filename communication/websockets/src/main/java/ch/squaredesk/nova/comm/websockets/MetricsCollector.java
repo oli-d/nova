@@ -16,7 +16,6 @@ import io.dropwizard.metrics5.Meter;
 
 import static java.util.Objects.requireNonNull;
 
-// TODO: split up in client and server part and make package private?
 public class MetricsCollector {
     private final Metrics metrics;
     private final String identifierPrefix;

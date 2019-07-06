@@ -12,11 +12,9 @@
 package ch.squaredesk.nova.comm.websockets.spring;
 
 import ch.squaredesk.nova.comm.MessageTranscriber;
-import ch.squaredesk.nova.comm.http.spring.HttpEnablingConfiguration;
 import ch.squaredesk.nova.comm.http.spring.HttpServerBeanListener;
-import ch.squaredesk.nova.comm.http.spring.HttpServerProvidingConfiguration;
-import ch.squaredesk.nova.comm.websockets.MetricsCollector;
 import ch.squaredesk.nova.comm.websockets.WebSocketAdapter;
+import ch.squaredesk.nova.metrics.Metrics;
 import org.glassfish.grizzly.http.server.HttpServer;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
@@ -28,17 +26,20 @@ import java.util.Arrays;
 
 
 public class WebSocketBeanProcessor implements ApplicationContextAware, HttpServerBeanListener, ApplicationListener<ContextRefreshedEvent> {
-    private final MetricsCollector metricsCollector;
     private final WebSocketAdapter webSocketAdapter;
+    private final String adapterIdentifier;
     private final BeanExaminer beanExaminer;
     private ApplicationContext applicationContext;
+    private final Metrics metrics;
     private boolean wiredUp = false;
 
     public WebSocketBeanProcessor(WebSocketAdapter webSocketAdapter,
                                   MessageTranscriber<String> messageTranscriber,
-                                  MetricsCollector metricsCollector) {
-        this.metricsCollector = metricsCollector;
+                                  String adapterIdentifier,
+                                  Metrics metrics) {
         this.webSocketAdapter = webSocketAdapter;
+        this.adapterIdentifier = adapterIdentifier;
+        this.metrics = metrics;
         beanExaminer = new BeanExaminer(messageTranscriber);
     }
 
@@ -57,37 +58,23 @@ public class WebSocketBeanProcessor implements ApplicationContextAware, HttpServ
         beanExaminer.onConnectHandlersIn(bean).forEach(handlerDescriptor ->
             webSocketAdapter
                 .acceptConnections(handlerDescriptor.destination)
-                .subscribe(ConnectEventHandlerMethodInvoker.createFor(handlerDescriptor, metricsCollector)));
+                .subscribe(ConnectEventHandlerMethodInvoker.createFor(handlerDescriptor, adapterIdentifier, metrics)));
 
         beanExaminer.onCloseHandlersIn(bean).forEach(handlerDescriptor ->
             webSocketAdapter
                 .acceptConnections(handlerDescriptor.destination)
-                .subscribe(webSocket -> webSocket.onClose(CloseEventHandlerMethodInvoker.createFor(handlerDescriptor, metricsCollector))));
+                .subscribe(webSocket -> webSocket.onClose(CloseEventHandlerMethodInvoker.createFor(handlerDescriptor, adapterIdentifier, metrics))));
 
         beanExaminer.onErrorHandlersIn(bean).forEach(handlerDescriptor ->
             webSocketAdapter
                 .acceptConnections(handlerDescriptor.destination)
-                .subscribe(webSocket -> webSocket.onError(ErrorEventHandlerMethodInvoker.createFor(handlerDescriptor, metricsCollector))));
+                .subscribe(webSocket -> webSocket.onError(ErrorEventHandlerMethodInvoker.createFor(handlerDescriptor, adapterIdentifier, metrics))));
 
         beanExaminer.onMessageEndpointsIn(bean).forEach(endpointDescriptor->
             webSocketAdapter
                 .acceptConnections(endpointDescriptor.destination)
-                .subscribe(webSocket -> webSocket.messages(endpointDescriptor.messageType).subscribe(OnMessageMethodInvoker.createFor(endpointDescriptor, metricsCollector))));
-                    /* FIXME: no Flowables at the moment
-                    if (endpointDescriptor.backpressureStrategy!=null) {
-                        switch (endpointDescriptor.backpressureStrategy) {
-                            case BUFFER:
-                                messages = messages.onBackpressureBuffer();
-                                break;
-                            case DROP:
-                                messages = messages.onBackpressureDrop();
-                                break;
-                            case LATEST:
-                                messages = messages.onBackpressureLatest();
-                                break;
-                        }
-                    }
-                    */
+                .subscribe(webSocket -> webSocket.messages(endpointDescriptor.messageType).subscribe(
+                        OnMessageMethodInvoker.createFor(endpointDescriptor, adapterIdentifier, metrics))));
 
         return bean;
     }
