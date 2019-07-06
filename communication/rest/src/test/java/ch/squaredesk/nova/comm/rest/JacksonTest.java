@@ -12,6 +12,7 @@
 package ch.squaredesk.nova.comm.rest;
 
 import ch.squaredesk.nova.comm.http.HttpRequestSender;
+import ch.squaredesk.nova.comm.http.HttpRequestSender.RequestHeaders;
 import ch.squaredesk.nova.comm.http.HttpServerSettings;
 import ch.squaredesk.nova.comm.http.spring.HttpEnablingConfiguration;
 import ch.squaredesk.nova.spring.NovaProvidingConfiguration;
@@ -57,7 +58,7 @@ public class JacksonTest {
 
         // send entity as JSON
         HttpRequestSender.HttpResponse httpResponse = HttpRequestSender.sendPutRequest("http://localhost:" + httpServerSettings.port +"/echo",
-                om.writeValueAsString(sentPerson), "application-json");
+                om.writeValueAsString(sentPerson), RequestHeaders.createForContentType("application/json"));
 
         // expect that the handler retrieved a properly unmarshalled entity
         assertThat(httpResponse.returnCode, is(200));
@@ -76,7 +77,7 @@ public class JacksonTest {
 
         // send entity as JSON
         HttpRequestSender.HttpResponse httpResponse = HttpRequestSender.sendPutRequest("http://localhost:" + httpServerSettings.port + "/echo",
-                om.writeValueAsString(sentPerson), "application-json");
+                om.writeValueAsString(sentPerson), RequestHeaders.createForContentType("application/json"));
 
         // expect that the handler retrieved a properly unmarshalled entity
         assertThat(httpResponse.returnCode, is(400));
@@ -92,7 +93,7 @@ public class JacksonTest {
 
         // send entity as JSON
         HttpRequestSender.HttpResponse httpResponse = HttpRequestSender.sendPutRequest("http://localhost:" + httpServerSettings.port + "/echo",
-                sentPersonAsString, "application-json");
+                sentPersonAsString, RequestHeaders.createForContentType("application/json"));
 
         // expect that the handler retrieved a properly unmarshalled entity
         assertThat(httpResponse.returnCode, is(200));

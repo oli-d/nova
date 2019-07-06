@@ -17,6 +17,9 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
 
 public class HttpRequestSender {
     private HttpRequestSender() {
@@ -26,32 +29,32 @@ public class HttpRequestSender {
         return sendPutRequest(new URL(url), request, null);
     }
 
-    public static HttpResponse sendPutRequest (String url, String request, String contentType) throws IOException {
-        return sendPutRequest(new URL(url), request, contentType);
+    public static HttpResponse sendPutRequest (String url, String request, RequestHeaders requestHeaders) throws IOException {
+        return sendPutRequest(new URL(url), request, requestHeaders);
     }
 
     public static HttpResponse sendPutRequest (URL url, String request) throws IOException {
         return sendPutRequest( url, request, null);
     }
 
-    public static HttpResponse sendPutRequest (URL url, String request, String contentType) throws IOException {
-        return sendRequest("PUT", url, request, contentType);
+    public static HttpResponse sendPutRequest (URL url, String request, RequestHeaders requestHeaders) throws IOException {
+        return sendRequest("PUT", url, request, requestHeaders);
     }
 
     public static HttpResponse sendPostRequest (String url, String request) throws IOException {
         return sendPostRequest(new URL(url), request, null);
     }
 
-    public static HttpResponse sendPostRequest (String url, String request, String contentType) throws IOException {
-        return sendPostRequest(new URL(url), request, contentType);
+    public static HttpResponse sendPostRequest (String url, String request, RequestHeaders requestHeaders) throws IOException {
+        return sendPostRequest(new URL(url), request, requestHeaders);
     }
 
     public static HttpResponse sendPostRequest (URL url, String request) throws IOException {
         return sendPostRequest( url, request, null);
     }
 
-    public static HttpResponse sendPostRequest (URL url, String request, String contentType) throws IOException {
-        return sendRequest("POST", url, request, contentType);
+    public static HttpResponse sendPostRequest (URL url, String request, RequestHeaders requestHeaders) throws IOException {
+        return sendRequest("POST", url, request, requestHeaders);
     }
 
     public static HttpResponse sendGetRequest (String url) throws IOException {
@@ -62,7 +65,7 @@ public class HttpRequestSender {
         return sendRequest("GET", url, null, null);
     }
 
-    public static HttpResponse sendRequest (String method, URL url, String request, String contentType) throws IOException {
+    public static HttpResponse sendRequest (String method, URL url, String request, RequestHeaders requestHeaders) throws IOException {
         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
 
         if ("POST".equals(method) || "PUT".equals(method)) {
@@ -71,10 +74,8 @@ public class HttpRequestSender {
         connection.setRequestMethod(method);
         String charset = "UTF-8";
         connection.setRequestProperty("Accept-Charset", charset);
-        if (contentType != null) {
-            connection.setRequestProperty("Content-Type", "application/json");
-        } else {
-            connection.setRequestProperty("Content-Type", "text/plain");
+        if (requestHeaders != null) {
+            requestHeaders.entrySet().forEach(entry -> connection.setRequestProperty(entry.getKey(), entry.getValue()));
         }
 
         if (request!=null) {
@@ -106,6 +107,35 @@ public class HttpRequestSender {
         reader.close();
 
         return new HttpResponse(responseCode, sb.toString().trim());
+    }
+
+    public static class RequestHeaders {
+        private final Map<String, String> map = new HashMap<>();
+
+        private RequestHeaders() {
+        }
+
+        public static RequestHeaders create(String headerName, String value) {
+            return new RequestHeaders().add(headerName, value);
+        }
+
+        public static RequestHeaders createForContentType(String contentType) {
+            return new RequestHeaders().addContentType(contentType);
+        }
+
+        public RequestHeaders addContentType (String contentType) {
+            map.put("Content-Type", contentType);
+            return this;
+        }
+
+        public RequestHeaders add (String headerName, String value) {
+            map.put(headerName, value);
+            return this;
+        }
+
+        public Set<Map.Entry<String, String>> entrySet() {
+            return map.entrySet();
+        }
     }
 
     public static class HttpResponse {
