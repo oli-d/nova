@@ -52,6 +52,7 @@ public class RestServerStarter implements ApplicationListener<ContextRefreshedEv
     private RestBeanPostprocessor restBeanPostprocessor;
     private ObjectMapper httpObjectMapper;
     private boolean captureRestMetrics;
+    private boolean logInvocations;
     private Nova nova;
 
     public RestServerStarter(HttpServerSettings httpServerSettings,

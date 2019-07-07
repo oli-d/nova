@@ -28,6 +28,7 @@ import org.springframework.core.env.Environment;
 public class RestEnablingConfiguration {
     public interface BeanIdentifiers {
         String CAPTURE_METRICS = "NOVA.REST.CAPTURE_METRICS";
+        String LOG_INVOCATIONS = "NOVA.REST.LOG_INVOCATIONS";
         String REST_SERVER = "NOVA.REST.SERVER.INSTANCE";
     }
 
@@ -41,6 +42,27 @@ public class RestEnablingConfiguration {
         }
 
         return captureMetrics;
+    }
+
+    @Bean(BeanIdentifiers.LOG_INVOCATIONS)
+    boolean logInvocations(Environment environment) {
+        boolean logInvocations = true;
+        try {
+            logInvocations = Boolean.valueOf(environment.getProperty(BeanIdentifiers.LOG_INVOCATIONS, "true"));
+        } catch (Exception e) {
+            // noop, stick to default value
+        }
+
+        return logInvocations;
+    }
+
+    @Bean
+    RestInvocationLogger restInvocationLogger(@Qualifier(BeanIdentifiers.LOG_INVOCATIONS) boolean logInvocations) {
+        if (logInvocations) {
+            return new RestInvocationLogger();
+        } else {
+            return null;
+        }
     }
 
     @Bean
