@@ -56,21 +56,21 @@ class FrozenHttpAdapterTest {
     }
 
     @Test
-    void nullDestinationThrows() {
-        Throwable t = assertThrows(IllegalArgumentException.class,
-                () -> sut.sendGetRequest(null));
-        assertThat(t.getMessage(), containsString("Invalid URL format"));
+    void nullDestinationReturnError() {
+        TestObserver observer = sut.sendGetRequest(null).test();
+
+        observer.assertError(t -> t instanceof IllegalArgumentException && ((IllegalArgumentException) t).getMessage().contains("Invalid URL format"));
     }
 
     @Test
-    void invalidDestinationFormatThrows() {
-        Throwable t = assertThrows(IllegalArgumentException.class,
-                () -> sut.sendPostRequest("\\ßö ", "1.0"));
-        assertThat(t.getMessage(), containsString("Invalid URL format"));
+    void invalidDestinationFormatReturnError() {
+        TestObserver observer = sut.sendPostRequest("\\ßö ", "1.0").test();
+
+        observer.assertError(t -> t instanceof IllegalArgumentException && ((IllegalArgumentException) t).getMessage().contains("Invalid URL format"));
     }
 
     @Test
-    void notExistingDestinationThrows() throws Exception {
+    void notExistingDestinationReturnError() throws Exception {
         TestObserver<RpcReply<String>> observer = sut
                 .sendPostRequest("http://cvf.bn.c", "")
                 .test();
@@ -79,7 +79,7 @@ class FrozenHttpAdapterTest {
     }
 
     @Test
-    void noReplyWithinTimeoutThrows() throws Exception {
+    void noReplyWithinTimeoutReturnError() throws Exception {
         Pair<com.sun.net.httpserver.HttpServer, Integer> serverPortPair =
                 httpServer("/timeoutTest", "noResponse", httpExchange -> {
                     try {
@@ -92,7 +92,7 @@ class FrozenHttpAdapterTest {
         TestObserver<RpcReply<String>> observer = sut
                 .sendGetRequest("http://localhost:" + serverPortPair._2 + "/timeoutTest", 10l, MILLISECONDS)
                 .test();
-        observer.await(1, SECONDS);
+        observer.await(5, SECONDS);
         observer.assertError(TimeoutException.class);
     }
 

@@ -19,11 +19,13 @@ import ch.squaredesk.nova.comm.http.spring.HttpServerBeanListener;
 import com.ning.http.client.AsyncHttpClient;
 import io.reactivex.Flowable;
 import io.reactivex.Single;
+import io.reactivex.functions.Consumer;
 import io.reactivex.functions.Function;
 import org.glassfish.grizzly.http.server.HttpServer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Map;
@@ -59,10 +61,15 @@ public class HttpAdapter extends CommAdapter<String> implements HttpServerBeanLi
         return Optional.ofNullable(rpcClient).map(RpcClient::getStandardHeadersForAllRequests);
     }
 
+    /////////
+    /////////
     ///////// The client side
     /////////
     /////////
+
+    /////////
     /////////////////// GET convenience methods
+    /////////
     public <U> Single<RpcReply<U>> sendGetRequest(String destination, Class<U> replyType) {
         return sendRequest(destination, null, new RequestInfo(HttpRequestMethod.GET), replyType, null, null );
     }
@@ -109,7 +116,30 @@ public class HttpAdapter extends CommAdapter<String> implements HttpServerBeanLi
         return sendRequest(destination, null, new RequestInfo(HttpRequestMethod.GET, headers), replyTranscriber, timeout, timeUnit);
     }
 
+    public Single<RpcReply<InputStream>> sendGetRequestAndRetrieveResponseAsStream(String destination) {
+        return sendRequestAndRetrieveResponseAsStream(destination, null, new RequestInfo(HttpRequestMethod.GET), null, null );
+    }
+
+    public Single<RpcReply<InputStream>> sendGetRequestAndRetrieveResponseAsStream(String destination, Map<String, String> headers) {
+        return sendRequestAndRetrieveResponseAsStream(destination, null, new RequestInfo(HttpRequestMethod.GET, headers), null, null );
+    }
+
+    public Single<RpcReply<InputStream>> sendGetRequestAndRetrieveResponseAsStream(
+            String destination,
+            long timeout, TimeUnit timeUnit) {
+        return sendRequestAndRetrieveResponseAsStream(destination, null, new RequestInfo(HttpRequestMethod.GET), timeout, timeUnit);
+    }
+
+    public Single<RpcReply<InputStream>> sendGetRequestAndRetrieveResponseAsStream(
+            String destination,
+            Map<String, String> headers,
+            long timeout, TimeUnit timeUnit) {
+        return sendRequestAndRetrieveResponseAsStream(destination, null, new RequestInfo(HttpRequestMethod.GET, headers), timeout, timeUnit);
+    }
+
+    /////////
     /////////////////// POST convenience methods
+    /////////
     public <T, U> Single<RpcReply<U>> sendPostRequest(
                 String destination,
                 T request,
@@ -174,7 +204,37 @@ public class HttpAdapter extends CommAdapter<String> implements HttpServerBeanLi
         return sendRequest(destination, request, new RequestInfo(HttpRequestMethod.POST, headers), replyTranscriber, timeout, timeUnit );
     }
 
+    public <T> Single<RpcReply<InputStream>> sendPostRequestAndRetrieveResponseAsStream(
+            String destination,
+            T request) {
+        return sendRequestAndRetrieveResponseAsStream(destination, request, new RequestInfo(HttpRequestMethod.POST),  null, null);
+    }
+
+    public <T> Single<RpcReply<InputStream>> sendPostRequestAndRetrieveResponseAsStream(
+            String destination,
+            T request,
+            Map<String, String> headers) {
+        return sendRequestAndRetrieveResponseAsStream(destination, request, new RequestInfo(HttpRequestMethod.POST, headers),  null, null);
+    }
+
+    public <T> Single<RpcReply<InputStream>> sendPostRequestAndRetrieveResponseAsStream(
+            String destination,
+            T request,
+            long timeout, TimeUnit timeUnit) {
+        return sendRequestAndRetrieveResponseAsStream(destination, request, new RequestInfo(HttpRequestMethod.POST),  timeout, timeUnit );
+    }
+
+    public <T> Single<RpcReply<InputStream>> sendPostRequestAndRetrieveResponseAsStream(
+            String destination,
+            T request,
+            Map<String, String> headers,
+            long timeout, TimeUnit timeUnit) {
+        return sendRequestAndRetrieveResponseAsStream(destination, request, new RequestInfo(HttpRequestMethod.POST, headers),  timeout, timeUnit );
+    }
+
+    /////////
     /////////////////// PUT convenience methods
+    /////////
     public <T, U> Single<RpcReply<U>> sendPutRequest(
                 String destination,
                 T request,
@@ -239,7 +299,37 @@ public class HttpAdapter extends CommAdapter<String> implements HttpServerBeanLi
         return sendRequest(destination, request, new RequestInfo(HttpRequestMethod.PUT, headers), replyTranscriber, timeout, timeUnit );
     }
 
+    public <T> Single<RpcReply<InputStream>> sendPutRequestAndRetrieveResponseAsStream(
+                String destination,
+                T request) {
+        return sendRequestAndRetrieveResponseAsStream(destination, request, new RequestInfo(HttpRequestMethod.PUT),  null, null);
+    }
+
+    public <T> Single<RpcReply<InputStream>> sendPutRequestAndRetrieveResponseAsStream(
+                String destination,
+                T request,
+                Map<String, String> headers) {
+        return sendRequestAndRetrieveResponseAsStream(destination, request, new RequestInfo(HttpRequestMethod.PUT, headers),  null, null);
+    }
+
+    public <T> Single<RpcReply<InputStream>> sendPutRequestAndRetrieveResponseAsStream(
+                String destination,
+                T request,
+                long timeout, TimeUnit timeUnit) {
+        return sendRequestAndRetrieveResponseAsStream(destination, request, new RequestInfo(HttpRequestMethod.PUT),  timeout, timeUnit );
+    }
+
+    public <T> Single<RpcReply<InputStream>> sendPutRequestAndRetrieveResponseAsStream(
+                String destination,
+                T request,
+                Map<String, String> headers,
+                long timeout, TimeUnit timeUnit) {
+        return sendRequestAndRetrieveResponseAsStream(destination, request, new RequestInfo(HttpRequestMethod.PUT, headers),  timeout, timeUnit );
+    }
+
+    /////////
     /////////////////// PATCH convenience methods
+    /////////
     public <T, U> Single<RpcReply<U>> sendPatchRequest(
                 String destination,
                 T request,
@@ -304,7 +394,37 @@ public class HttpAdapter extends CommAdapter<String> implements HttpServerBeanLi
         return sendRequest(destination, request, new RequestInfo(HttpRequestMethod.PATCH, headers), replyTranscriber, timeout, timeUnit );
     }
 
+    public <T> Single<RpcReply<InputStream>> sendPatchRequestAndRetrieveResponseAsStream(
+                String destination,
+                T request) {
+        return sendRequestAndRetrieveResponseAsStream(destination, request, new RequestInfo(HttpRequestMethod.PATCH), null, null);
+    }
+
+    public <T> Single<RpcReply<InputStream>> sendPatchRequestAndRetrieveResponseAsStream(
+                String destination,
+                T request,
+                Map<String, String> headers) {
+        return sendRequestAndRetrieveResponseAsStream(destination, request, new RequestInfo(HttpRequestMethod.PATCH, headers), null, null);
+    }
+
+    public <T> Single<RpcReply<InputStream>> sendPatchRequestAndRetrieveResponseAsStream(
+                String destination,
+                T request,
+                long timeout, TimeUnit timeUnit) {
+        return sendRequestAndRetrieveResponseAsStream(destination, request, new RequestInfo(HttpRequestMethod.PATCH), timeout, timeUnit );
+    }
+
+    public <T> Single<RpcReply<InputStream>> sendPatchRequestAndRetrieveResponseAsStream(
+                String destination,
+                T request,
+                Map<String, String> headers,
+                long timeout, TimeUnit timeUnit) {
+        return sendRequestAndRetrieveResponseAsStream(destination, request, new RequestInfo(HttpRequestMethod.PATCH, headers), timeout, timeUnit );
+    }
+
+    /////////
     /////////////////// DELETE convenience methods
+    /////////
     public <T, U> Single<RpcReply<U>> sendDeleteRequest(
                 String destination,
                 T request,
@@ -369,7 +489,37 @@ public class HttpAdapter extends CommAdapter<String> implements HttpServerBeanLi
         return sendRequest(destination, request, new RequestInfo(HttpRequestMethod.DELETE, headers), replyTranscriber, timeout, timeUnit );
     }
 
-    /////////////////// convenience methods
+    public <T> Single<RpcReply<InputStream>> sendDeleteRequestAndRetrieveResponseAsStream(
+                String destination,
+                T request) {
+        return sendRequestAndRetrieveResponseAsStream(destination, request, new RequestInfo(HttpRequestMethod.DELETE), null, null);
+    }
+
+    public <T> Single<RpcReply<InputStream>> sendDeleteRequestAndRetrieveResponseAsStream(
+                String destination,
+                T request,
+                Map<String, String> headers) {
+        return sendRequestAndRetrieveResponseAsStream(destination, request, new RequestInfo(HttpRequestMethod.DELETE, headers), null, null);
+    }
+
+    public <T> Single<RpcReply<InputStream>> sendDeleteRequestAndRetrieveResponseAsStream(
+                String destination,
+                T request,
+                long timeout, TimeUnit timeUnit) {
+        return sendRequestAndRetrieveResponseAsStream(destination, request, new RequestInfo(HttpRequestMethod.DELETE), timeout, timeUnit );
+    }
+
+    public <T> Single<RpcReply<InputStream>> sendDeleteRequestAndRetrieveResponseAsStream(
+                String destination,
+                T request,
+                Map<String, String> headers,
+                long timeout, TimeUnit timeUnit) {
+        return sendRequestAndRetrieveResponseAsStream(destination, request, new RequestInfo(HttpRequestMethod.DELETE, headers), timeout, timeUnit );
+    }
+
+    /////////
+    /////////////////// other convenience methods
+    /////////
     public <T, U> Single<RpcReply<U>> sendRequest(
                 String destination,
                 T request,
@@ -447,7 +597,40 @@ public class HttpAdapter extends CommAdapter<String> implements HttpServerBeanLi
         return sendRequest(destination, request, new RequestInfo(requestMethod, headers), replyTranscriber, timeout, timeUnit);
     }
 
-    /////////////////// finally, the implementation
+    public <T> Single<RpcReply<InputStream>> sendRequestAndRetrieveResponseAsStream(
+                String destination,
+                T request,
+                HttpRequestMethod requestMethod) {
+        return sendRequestAndRetrieveResponseAsStream(destination, request, new RequestInfo(requestMethod), null, null);
+    }
+
+    public <T> Single<RpcReply<InputStream>> sendRequestAndRetrieveResponseAsStream(
+                String destination,
+                T request,
+                HttpRequestMethod requestMethod,
+                Map<String, String> headers) {
+        return sendRequestAndRetrieveResponseAsStream(destination, request, new RequestInfo(requestMethod, headers), null, null);
+    }
+
+    public <T> Single<RpcReply<InputStream>> sendRequestAndRetrieveResponseAsStream(
+                String destination,
+                T request,
+                HttpRequestMethod requestMethod,
+                long timeout,
+                TimeUnit timeUnit) {
+        return sendRequestAndRetrieveResponseAsStream(destination, request, new RequestInfo(requestMethod), timeout, timeUnit);
+    }
+
+    public <T> Single<RpcReply<InputStream>> sendRequestAndRetrieveResponseAsStream(
+                String destination,
+                T request,
+                HttpRequestMethod requestMethod,
+                Map<String, String> headers,
+                long timeout,
+                TimeUnit timeUnit) {
+        return sendRequestAndRetrieveResponseAsStream(destination, request, new RequestInfo(requestMethod, headers), timeout, timeUnit);
+    }
+
     public <T, U> Single<RpcReply<U>> sendRequest (
                 String destination,
                 T request,
@@ -463,6 +646,11 @@ public class HttpAdapter extends CommAdapter<String> implements HttpServerBeanLi
                 timeout, timeUnit);
     }
 
+    /////////
+    /////////
+    /////////////////// finally, the implementation
+    /////////
+    /////////
     public <T, U> Single<RpcReply<U>> sendRequest (
                 String destination,
                 T request,
@@ -470,8 +658,53 @@ public class HttpAdapter extends CommAdapter<String> implements HttpServerBeanLi
                 Function<String, U> replyTranscriber,
                 Long timeout, TimeUnit timeUnit) {
 
+        return doSendRequest(
+                destination,
+                httpInfo,
+                (sendingInfo, theTimeout, theTimeUnit) ->
+                        rpcClient.sendRequest(
+                                request,
+                                sendingInfo,
+                                messageTranscriber.getOutgoingMessageTranscriber(request),
+                                replyTranscriber,
+                                theTimeout, theTimeUnit),
+                timeout, timeUnit);
+    }
+
+    public <T> Single<RpcReply<InputStream>> sendRequestAndRetrieveResponseAsStream (
+                String destination,
+                T request,
+                RequestInfo httpInfo,
+                Long timeout, TimeUnit timeUnit) {
+
+        return doSendRequest(
+                destination,
+                httpInfo,
+                (sendingInfo, theTimeout, theTimeUnit) ->
+                        rpcClient.sendRequestAndRetrieveResponseAsStream(
+                                request,
+                                sendingInfo,
+                                messageTranscriber.getOutgoingMessageTranscriber(request),
+                                theTimeout, theTimeUnit),
+                timeout, timeUnit);
+    }
+
+    @FunctionalInterface
+    public interface RequestSender<T> {
+        Single<RpcReply<T>> apply (RequestMessageMetaData metaData, long timeout, TimeUnit timeUnit);
+    }
+
+    private <T> Single<RpcReply<T>> doSendRequest (
+                String destination,
+                RequestInfo httpInfo,
+                RequestSender<T> requestSender,
+                Long timeout, TimeUnit timeUnit) {
+
+
         if (timeout!=null) {
-            requireNonNull(timeUnit, "timeUnit must not be null if timeout specified");
+            if (timeUnit==null) {
+                return Single.error(new NullPointerException("timeUnit must not be null if timeout specified"));
+            }
         } else {
             timeout = defaultRequestTimeout;
             timeUnit = defaultRequestTimeUnit;
@@ -481,19 +714,20 @@ public class HttpAdapter extends CommAdapter<String> implements HttpServerBeanLi
         try {
             url = new URL(destination);
         } catch (MalformedURLException e) {
-            throw new IllegalArgumentException("Invalid URL format " + destination,e);
+            return Single.error(new IllegalArgumentException("Invalid URL format " + destination,e));
         }
 
         RequestMessageMetaData sendingInfo = new RequestMessageMetaData(url, httpInfo);
 
-        return rpcClient.sendRequest(
-                request,
-                sendingInfo,
-                messageTranscriber.getOutgoingMessageTranscriber(request),
-                replyTranscriber,
-                timeout, timeUnit);
+        try {
+            return requestSender.apply(sendingInfo, timeout, timeUnit);
+        } catch (Exception e) {
+            return Single.error(e);
+        }
     }
 
+    /////////
+    /////////
     ///////// The server side
     /////////
     /////////
@@ -522,6 +756,8 @@ public class HttpAdapter extends CommAdapter<String> implements HttpServerBeanLi
     }
 
 
+    /////////
+    /////////
     ///////// The builder
     /////////
     /////////

@@ -25,8 +25,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
-import java.io.IOException;
-import java.io.OutputStream;
+import java.io.*;
 import java.net.URL;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Consumer;
@@ -51,6 +50,41 @@ class RpcClientTest {
     @AfterEach
     void tearDown() {
         sut.shutdown();
+    }
+
+    @Test
+    void replyCanProperlyBeRetrieved() throws Exception {
+        Pair<Integer, SimpleHttpServer> portServerPair = createHttpServer(httpExchange -> {
+            String response = "This is the response";
+            try {
+                try {
+                    httpExchange.sendResponseHeaders(200, response.length());
+                    OutputStream os = httpExchange.getResponseBody();
+                    os.write(response.getBytes());
+                    os.close();
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        }).blockingGet();
+
+        try {
+            RequestInfo ri = new RequestInfo(HttpRequestMethod.GET);
+            RequestMessageMetaData meta = new RequestMessageMetaData(new URL("http://localhost:" + portServerPair._1 + "/"), ri);
+
+            Single<RpcReply<String>> replySingle = sut.sendRequest("", meta, s -> s, s -> s, 5, SECONDS);
+
+            TestObserver<RpcReply<String>> observer = replySingle.test();
+            await().atMost(3, SECONDS).until(observer::valueCount, is(1));
+            observer.assertComplete();
+
+            RpcReply<String> rpcReply = observer.values().get(0);
+            assertThat(rpcReply.result, is("This is the response"));
+        } finally {
+            portServerPair._2.close();
+        }
     }
 
     @Test
@@ -86,6 +120,42 @@ class RpcClientTest {
             RpcReply<String> rpcReply = observer.values().get(0);
             assertThat(rpcReply.metaData.details.headerParams.get("header1"), is("value1"));
             assertThat(rpcReply.metaData.details.headerParams.get("header2"), is("value2"));
+        } finally {
+            portServerPair._2.close();
+        }
+    }
+
+    @Test
+    void replyStreamCanProperlyBeRetrieved() throws Exception {
+        Pair<Integer, SimpleHttpServer> portServerPair = createHttpServer(httpExchange -> {
+            String response = "This is the response";
+            try {
+                try {
+                    httpExchange.sendResponseHeaders(200, response.length());
+                    OutputStream os = httpExchange.getResponseBody();
+                    os.write(response.getBytes());
+                    os.close();
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        }).blockingGet();
+
+        try {
+            RequestInfo ri = new RequestInfo(HttpRequestMethod.GET);
+            RequestMessageMetaData meta = new RequestMessageMetaData(new URL("http://localhost:" + portServerPair._1 + "/"), ri);
+
+            Single<RpcReply<InputStream>> replySingle = sut.sendRequestAndRetrieveResponseAsStream("", meta, s -> s, 5, SECONDS);
+
+            TestObserver<RpcReply<InputStream>> observer = replySingle.test();
+            await().atMost(3, SECONDS).until(observer::valueCount, is(1));
+            observer.assertComplete();
+
+            RpcReply<InputStream> rpcReply = observer.values().get(0);
+            BufferedReader replyStreamReader = new BufferedReader(new InputStreamReader(rpcReply.result));
+            assertThat(replyStreamReader.readLine(), is("This is the response"));
         } finally {
             portServerPair._2.close();
         }

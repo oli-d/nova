@@ -65,6 +65,10 @@ public class HttpRequestSender {
         return sendRequest("GET", url, null, null);
     }
 
+    public static HttpResponse sendGetRequest (URL url, RequestHeaders requestHeaders) throws IOException {
+        return sendRequest("GET", url, null, requestHeaders);
+    }
+
     public static HttpResponse sendRequest (String method, URL url, String request, RequestHeaders requestHeaders) throws IOException {
         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
 
