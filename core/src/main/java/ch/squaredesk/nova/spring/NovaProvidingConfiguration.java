@@ -13,7 +13,6 @@ package ch.squaredesk.nova.spring;
 
 import ch.squaredesk.nova.Nova;
 import io.reactivex.BackpressureStrategy;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

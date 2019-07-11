@@ -10,18 +10,21 @@
 
 package ch.squaredesk.nova.metrics;
 
+import ch.squaredesk.nova.tuples.Pair;
+import org.hamcrest.Matchers;
+import org.hamcrest.junit.MatcherAssert;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.net.InetAddress;
+import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
-import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-public class MetricsTest {
+class MetricsTest {
     private Metrics sut;
 
     @BeforeEach
@@ -46,11 +49,26 @@ public class MetricsTest {
     }
 
     @Test
-    void dumpIncludesServerDetails() throws Exception {
-        MetricsDump dump = sut.dump();
+    void defaultDumpDoesntContainAdditionalInfo() {
+        MetricsDump metricsDump = sut.dump();
+        MatcherAssert.assertThat(metricsDump.additionalInfo.size(), Matchers.is(0));
+    }
 
-        InetAddress inetAddress = InetAddress.getLocalHost();
-        assertThat(dump.hostName, is(inetAddress.getHostName()));
-        assertThat(dump.hostAddress, is(inetAddress.getHostAddress()));
+    @Test
+    void additionalInfoIsIncludedInEveryDump() {
+        List<MetricsDump> metricsDumps = sut
+                .dumpContinuously(1L, TimeUnit.MILLISECONDS,
+                        Arrays.asList(new Pair<>("key", "value"), new Pair<>("oli", "d")))
+                .take(3)
+                .toList()
+                .blockingGet();
+
+        metricsDumps.forEach(metricsDump -> {
+            MatcherAssert.assertThat(metricsDump.additionalInfo.size(), Matchers.is(2));
+            MatcherAssert.assertThat(metricsDump.additionalInfo.get(0)._1, Matchers.is("key"));
+            MatcherAssert.assertThat(metricsDump.additionalInfo.get(0)._2, Matchers.is("value"));
+            MatcherAssert.assertThat(metricsDump.additionalInfo.get(1)._1, Matchers.is("oli"));
+            MatcherAssert.assertThat(metricsDump.additionalInfo.get(1)._2, Matchers.is("d"));
+        });
     }
 }
