@@ -11,7 +11,7 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 
-class MetricsDumpToMapConverterTest {
+class MetricsConverterTest {
 
     @Test
     void nullDumpThrows() {
@@ -37,6 +37,7 @@ class MetricsDumpToMapConverterTest {
             String key = metricName.toString();
             assertTrue(dumpAsMap.containsKey(key));
             assertTrue(dumpAsMap.get(key).containsKey("type"));
+            assertThat(dumpAsMap.get(key).get("key"), is("val"));
         });
     }
 
@@ -53,8 +54,8 @@ class MetricsDumpToMapConverterTest {
         dumpAsMap.entrySet().stream()
                 .filter(entry -> dump.metrics.keySet().contains(entry.getKey()))
                 .forEach(entry -> {
-                    assertThat(((Map) entry.getValue()).get("key1"), is("value1"));
-                    assertThat(((Map) entry.getValue()).get("key2"), is("value2"));
+                    assertThat(entry.getValue().get("key1"), is("value1"));
+                    assertThat(entry.getValue().get("key2"), is("value2"));
                 });
     }
 }

@@ -16,8 +16,6 @@ import java.util.Objects;
 
 public class SerializableMetricsDump {
     public long timestamp;
-    public String hostName;
-    public String hostAddress;
     public Map<String, Map<String, Object>> metrics;
 
     public SerializableMetricsDump() {
@@ -26,9 +24,7 @@ public class SerializableMetricsDump {
     public static SerializableMetricsDump createFor (MetricsDump metricsDump) {
         SerializableMetricsDump dump = new SerializableMetricsDump();
         dump.timestamp = metricsDump.timestamp;
-        dump.hostAddress = metricsDump.hostAddress;
-        dump.hostName = metricsDump.hostName;
-        dump.metrics = MetricsConverter.convert(metricsDump.metrics);
+        dump.metrics = MetricsConverter.convert(metricsDump);
         return dump;
     }
 
@@ -38,13 +34,11 @@ public class SerializableMetricsDump {
         if (o == null || getClass() != o.getClass()) return false;
         SerializableMetricsDump that = (SerializableMetricsDump) o;
         return timestamp == that.timestamp &&
-                Objects.equals(hostName, that.hostName) &&
-                Objects.equals(hostAddress, that.hostAddress) &&
                 Objects.equals(metrics, that.metrics);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(timestamp, hostName, hostAddress, metrics);
+        return Objects.hash(timestamp, metrics);
     }
 }

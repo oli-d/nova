@@ -37,13 +37,11 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ElasticMetricsReporterTest {
-    private Map<String, Object> additionalMetricsAttributes = new HashMap<>();
     private ElasticMetricsReporter sut;
 
     @BeforeEach
     void setup() {
-        additionalMetricsAttributes.put("additionalKey", "additionalValue");
-        sut = new ElasticMetricsReporter("127.0.0.1",9300,"index", additionalMetricsAttributes);
+        sut = new ElasticMetricsReporter("127.0.0.1",9300,"index");
     }
 
     @Test
@@ -71,7 +69,11 @@ class ElasticMetricsReporterTest {
         metrics.getCounter("test","counter1");
         metrics.getMeter("test","meter1");
         metrics.register(new MyMetric(), "test","myMetric1");
-        MetricsDump dump = metrics.dump();
+        MetricsDump dump = metrics.dump(Arrays.asList(
+                new Pair<>("host", "myMachine"),
+                new Pair<>("hostAddress", "myAddress"),
+                new Pair<>("additionalKey", "additionalValue")
+        ));
 
         TestObserver<BulkRequest> bulkRequestObserver = sut.requestFor(dump).test();
         bulkRequestObserver.assertComplete();
@@ -84,11 +86,11 @@ class ElasticMetricsReporterTest {
             assertTrue(request instanceof IndexRequest);
             IndexRequest ir = (IndexRequest)request;
             Map<String,Object> sourceAsMap = getMapFrom(ir.source());
-            assertNotNull(sourceAsMap.get("host"));
-            assertNotNull(sourceAsMap.get("hostAddress"));
             assertThat(sourceAsMap.get("@timestamp"), is(dump.timestamp));
+            dump.additionalInfo.forEach(entry -> {
+                assertThat(sourceAsMap.get(entry._1), is(entry._2));
+            });
             assertThat(sourceAsMap.get("name"),Matchers.oneOf("test.counter1","test.meter1","test.myMetric1"));
-            assertThat(sourceAsMap.get("additionalKey"), is("additionalValue"));
         }
     }
 
@@ -98,7 +100,11 @@ class ElasticMetricsReporterTest {
         metrics.getCounter("test","counter1");
         metrics.getMeter("test","meter1");
         metrics.register(new MyMetric(), "test","myMetric1");
-        MetricsDump dump = metrics.dump();
+        MetricsDump dump = metrics.dump(Arrays.asList(
+                new Pair<>("host", "myMachine2"),
+                new Pair<>("hostAddress", "myAddress2"),
+                new Pair<>("additionalKey", "additionalValue2")
+        ));
         SerializableMetricsDump serializableDump = SerializableMetricsDump.createFor(dump);
 
         TestObserver<BulkRequest> bulkRequestObserver = sut.requestFor(serializableDump).test();
@@ -112,11 +118,11 @@ class ElasticMetricsReporterTest {
             assertTrue(request instanceof IndexRequest);
             IndexRequest ir = (IndexRequest)request;
             Map<String,Object> sourceAsMap = getMapFrom(ir.source());
-            assertNotNull(sourceAsMap.get("host"));
-            assertNotNull(sourceAsMap.get("hostAddress"));
             assertThat(sourceAsMap.get("@timestamp"), is(dump.timestamp));
-            assertThat(sourceAsMap.get("name"),Matchers.oneOf("test.counter1","test.meter1","test.myMetric1"));
-            assertThat(sourceAsMap.get("additionalKey"), is("additionalValue"));
+            dump.additionalInfo.forEach(entry -> {
+                assertThat(sourceAsMap.get(entry._1), is(entry._2));
+            });
+            assertThat(sourceAsMap.get("name"), Matchers.oneOf("test.counter1", "test.meter1", "test.myMetric1"));
         }
     }
 
@@ -147,7 +153,7 @@ class ElasticMetricsReporterTest {
             assertNotNull(ir.type());
             assertThat(ir.type(), is("doc"));
             Map<String, Object> sourceAsMap = getMapFrom(ir.source());
-            assertNotNull(sourceAsMap.get("host"));
+            assertNotNull(sourceAsMap.get("@timestamp"));
             assertNotNull(sourceAsMap.get("someAttribute"));
             assertThat(sourceAsMap.get("name"), Matchers.oneOf("test.counter1", "test.meter1", "test.myMetric1"));
             assertThat(sourceAsMap.get("type"), Matchers.oneOf("counter", "meter", "MyMetric"));
