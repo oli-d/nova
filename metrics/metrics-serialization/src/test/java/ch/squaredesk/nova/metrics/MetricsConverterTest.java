@@ -1,9 +1,10 @@
 package ch.squaredesk.nova.metrics;
 
 import ch.squaredesk.nova.Nova;
+import ch.squaredesk.nova.tuples.Pair;
 import org.junit.jupiter.api.Test;
 
-import java.util.HashMap;
+import java.util.Arrays;
 import java.util.Map;
 
 import static org.hamcrest.Matchers.is;
@@ -20,15 +21,15 @@ class MetricsDumpToMapConverterTest {
     @Test
     void nullAdditionalAttributesIsOk() {
         Nova nova = Nova.builder().build();
-        assertNotNull(MetricsConverter.convert(nova.metrics.dump().metrics, null));
+        assertNotNull(MetricsConverter.convert(nova.metrics.dump(null)));
     }
 
     @Test
     void metricsDumpConvertedAsExpected() {
         Nova nova = Nova.builder().build();
-        MetricsDump dump = nova.metrics.dump();
+        MetricsDump dump = nova.metrics.dump(Arrays.asList(new Pair<>("key", "val")));
 
-        Map<String, Map<String, Object>> dumpAsMap = MetricsConverter.convert(dump.metrics);
+        Map<String, Map<String, Object>> dumpAsMap = MetricsConverter.convert(dump);
 
         dump.metrics.keySet().forEach(key -> assertTrue(dumpAsMap.containsKey(key.toString())));
         assertThat(dumpAsMap.size(), is(dump.metrics.size() ));
@@ -42,12 +43,12 @@ class MetricsDumpToMapConverterTest {
     @Test
     void additionalAttributesUsedForEveryMetric() {
         Nova nova = Nova.builder().build();
-        MetricsDump dump = nova.metrics.dump();
-        Map<String, Object> additionalAttributes = new HashMap<>();
-        additionalAttributes.put("key1", "value1");
-        additionalAttributes.put("key2", "value2");
+        MetricsDump dump = nova.metrics.dump(Arrays.asList(
+                new Pair<>("key1", "value1"),
+                new Pair<>("key2", "value2")
+        ));
 
-        Map<String, Map<String, Object>> dumpAsMap = MetricsConverter.convert(dump.metrics, additionalAttributes);
+        Map<String, Map<String, Object>> dumpAsMap = MetricsConverter.convert(dump);
 
         dumpAsMap.entrySet().stream()
                 .filter(entry -> dump.metrics.keySet().contains(entry.getKey()))

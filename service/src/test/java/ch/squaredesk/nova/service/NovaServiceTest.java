@@ -11,6 +11,7 @@
 package ch.squaredesk.nova.service;
 
 import ch.squaredesk.nova.Nova;
+import ch.squaredesk.nova.metrics.MetricsDump;
 import ch.squaredesk.nova.service.annotation.OnServiceInit;
 import ch.squaredesk.nova.service.annotation.OnServiceShutdown;
 import ch.squaredesk.nova.service.annotation.OnServiceStartup;
@@ -27,13 +28,16 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Component;
 
+import java.net.InetAddress;
+import java.util.concurrent.TimeUnit;
+
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.*;
 
 @Tag("medium")
-public class NovaServiceTest {
+class NovaServiceTest {
     @AfterEach
     void tearDown() {
         System.clearProperty(NovaServiceConfiguration.BeanIdentifiers.CONFIG_FILE);
@@ -44,13 +48,25 @@ public class NovaServiceTest {
     }
 
     @Test
-    void serviceCannotBeStartedWithoutConfig() {
-        AnnotationConfigApplicationContext ctx = new AnnotationConfigApplicationContext();
-        ctx.refresh();
+    void metricsDumpContainsServiceInformation() throws Exception {
+        InetAddress inetAddress = InetAddress.getLocalHost();
+        MyService sut = MyService.createInstance(MyService.class, MyConfigWithInstanceIdAndServiceName.class);
 
-        assertThrows(
-                NoSuchBeanDefinitionException.class,
-                () -> ctx.getBean(MyService.class));
+        MetricsDump dump = sut
+                .dumpMetricsContinuously(1, TimeUnit.MILLISECONDS)
+                .blockingFirst();
+
+        assertThat(dump.additionalInfo.size(), is(5));
+        assertThat(dump.additionalInfo.get(0)._1, is("hostName"));
+        assertThat(dump.additionalInfo.get(0)._2, is(inetAddress.getHostName()));
+        assertThat(dump.additionalInfo.get(1)._1, is("hostAddress"));
+        assertThat(dump.additionalInfo.get(1)._2, is(inetAddress.getHostAddress()));
+        assertThat(dump.additionalInfo.get(2)._1, is("serviceName"));
+        assertThat(dump.additionalInfo.get(2)._2, is("Name"));
+        assertThat(dump.additionalInfo.get(3)._1, is("serviceInstanceId"));
+        assertThat(dump.additionalInfo.get(3)._2, is("ID"));
+        assertThat(dump.additionalInfo.get(4)._1, is("serviceInstanceName"));
+        assertThat(dump.additionalInfo.get(4)._2, is("Name.ID"));
     }
 
     @Test
@@ -144,7 +160,7 @@ public class NovaServiceTest {
     }
 
     @Test
-    void serviceNameCanBeSpecifiedWithEnvironmentProperty() throws Exception {
+    void serviceNameCanBeSpecifiedWithEnvironmentProperty() {
         System.setProperty(NovaServiceConfiguration.BeanIdentifiers.NAME, "ABC");
         AnnotationConfigApplicationContext ctx = new AnnotationConfigApplicationContext();
         ctx.register(MyConfig.class, NovaServiceConfiguration.class);
@@ -155,7 +171,7 @@ public class NovaServiceTest {
     }
 
     @Test
-    void defaultServiceNameUsedIfNotSpecified() throws Exception {
+    void defaultServiceNameUsedIfNotSpecified() {
         AnnotationConfigApplicationContext ctx = new AnnotationConfigApplicationContext();
         ctx.register(MyConfig.class, NovaServiceConfiguration.class);
         ctx.refresh();
@@ -260,6 +276,27 @@ public class NovaServiceTest {
         @Bean(NovaServiceConfiguration.BeanIdentifiers.INSTANCE)
         public MyService serviceInstance() {
             return new MyService();
+        }
+    }
+
+    @Configuration
+    public static class MyConfigWithInstanceIdAndServiceName {
+        @Autowired
+        Environment env;
+
+        @Bean(NovaServiceConfiguration.BeanIdentifiers.INSTANCE)
+        public MyService serviceInstance() {
+            return new MyService();
+        }
+
+        @Bean(NovaServiceConfiguration.BeanIdentifiers.INSTANCE_IDENTIFIER)
+        public String instanceId() {
+            return "ID";
+        }
+
+        @Bean(NovaServiceConfiguration.BeanIdentifiers.NAME)
+        public String serviceName() {
+            return "Name";
         }
     }
 
