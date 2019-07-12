@@ -11,18 +11,17 @@
 package ch.squaredesk.nova.service;
 
 import ch.squaredesk.nova.Nova;
-import ch.squaredesk.nova.metrics.Metrics;
 import ch.squaredesk.nova.metrics.MetricsDump;
 import ch.squaredesk.nova.service.annotation.LifecycleBeanProcessor;
 import ch.squaredesk.nova.tuples.Pair;
 import io.reactivex.Observable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 
-import javax.annotation.PostConstruct;
 import java.net.InetAddress;
 import java.util.Arrays;
 import java.util.List;
@@ -30,7 +29,7 @@ import java.util.Objects;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-public abstract class NovaService {
+public abstract class NovaService implements InitializingBean {
     private List<Pair<String, String>> additionalInfoForMetricsDump;
 
     private Lifeline lifeline = new Lifeline();
@@ -58,8 +57,8 @@ public abstract class NovaService {
         this.logger = LoggerFactory.getLogger(getClass());
     }
 
-    @PostConstruct
-    public void initServiceName() {
+    @Override
+    public void afterPropertiesSet() {
         if (serviceName == null) {
             serviceName = getClass().getSimpleName();
             logger.info("The service name was not provided, so we derived it from the class name: {} ", serviceName);

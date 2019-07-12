@@ -10,13 +10,11 @@
 package ch.squaredesk.nova.comm.jms.spring;
 
 import ch.squaredesk.nova.comm.jms.JmsAdapter;
+import org.springframework.beans.factory.DisposableBean;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.event.ContextRefreshedEvent;
 
-import javax.annotation.PreDestroy;
-import java.io.IOException;
-
-public class JmsAdapterStarter implements ApplicationListener<ContextRefreshedEvent> {
+public class JmsAdapterStarter implements ApplicationListener<ContextRefreshedEvent>, DisposableBean {
     private final JmsAdapter jmsAdapter;
     private final boolean autoStartAdapterWhenApplicationContextRefreshed;
 
@@ -40,8 +38,8 @@ public class JmsAdapterStarter implements ApplicationListener<ContextRefreshedEv
         jmsAdapter.start();
     }
 
-    @PreDestroy
-    public void shutdown() {
+    @Override
+    public void destroy() throws Exception {
         if (jmsAdapter != null) {
             try {
                 jmsAdapter.shutdown();
@@ -50,6 +48,4 @@ public class JmsAdapterStarter implements ApplicationListener<ContextRefreshedEv
             }
         }
     }
-
-
 }

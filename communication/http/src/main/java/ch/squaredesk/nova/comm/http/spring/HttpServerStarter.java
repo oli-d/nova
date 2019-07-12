@@ -10,14 +10,14 @@
 package ch.squaredesk.nova.comm.http.spring;
 
 import org.glassfish.grizzly.http.server.HttpServer;
+import org.springframework.beans.factory.DisposableBean;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.event.ContextRefreshedEvent;
 
-import javax.annotation.PreDestroy;
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
-public class HttpServerStarter implements ApplicationListener<ContextRefreshedEvent> {
+public class HttpServerStarter implements ApplicationListener<ContextRefreshedEvent>, DisposableBean {
     private final HttpServer httpServer;
     private final boolean autoStartServerWhenApplicationContextRefreshed;
 
@@ -43,8 +43,8 @@ public class HttpServerStarter implements ApplicationListener<ContextRefreshedEv
         }
     }
 
-    @PreDestroy
-    public void shutdown() {
+    @Override
+    public void destroy() {
         if (httpServer != null) {
             try {
                 httpServer.shutdown().get(5, TimeUnit.SECONDS);
@@ -53,6 +53,4 @@ public class HttpServerStarter implements ApplicationListener<ContextRefreshedEv
             }
         }
     }
-
-
 }
