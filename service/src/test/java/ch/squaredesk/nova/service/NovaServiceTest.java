@@ -15,6 +15,8 @@ import ch.squaredesk.nova.metrics.MetricsDump;
 import ch.squaredesk.nova.service.annotation.OnServiceInit;
 import ch.squaredesk.nova.service.annotation.OnServiceShutdown;
 import ch.squaredesk.nova.service.annotation.OnServiceStartup;
+import ch.squaredesk.nova.spring.NovaProvidingConfiguration;
+import ch.squaredesk.nova.tuples.Pair;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -29,11 +31,11 @@ import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Component;
 
 import java.net.InetAddress;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.containsString;
-import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 @Tag("medium")
@@ -67,13 +69,6 @@ class NovaServiceTest {
         assertThat(dump.additionalInfo.get(3)._2, is("ID"));
         assertThat(dump.additionalInfo.get(4)._1, is("serviceInstanceName"));
         assertThat(dump.additionalInfo.get(4)._2, is("Name.ID"));
-    }
-
-    @Test
-    void serviceCannotBeCreatedWithConfigThatDoesntReturnNovaInstance() {
-        assertThrows(
-                UnsatisfiedDependencyException.class,
-                () -> MyService.createInstance(MyService.class, MyCrippledConfig.class));
     }
 
     @Test
@@ -171,19 +166,25 @@ class NovaServiceTest {
     }
 
     @Test
-    void defaultServiceNameUsedIfNotSpecified() {
+    void calculatedServiceNameUsedForMetricDumpsIfNotSpecified() {
         AnnotationConfigApplicationContext ctx = new AnnotationConfigApplicationContext();
         ctx.register(MyConfig.class, NovaServiceConfiguration.class);
         ctx.refresh();
         MyService sut = ctx.getBean(MyService.class);
 
-        assertThat(sut.serviceName, is("MyService"));
+        List<Pair<String, String>> additionalInfoForMetricsDump = sut.calculateAdditionalInfoForMetricsDump();
+
+        assertThat(additionalInfoForMetricsDump.stream().anyMatch(p -> "hostName".equals(p._1)), is(true));
+        assertThat(additionalInfoForMetricsDump.stream().anyMatch(p -> "hostAddress".equals(p._1)), is(true));
+        assertThat(additionalInfoForMetricsDump.stream().anyMatch(p -> "serviceName".equals(p._1) && "MyService".equals(p._2)), is(true));
+        assertThat(additionalInfoForMetricsDump.stream().anyMatch(p -> "serviceInstanceId".equals(p._1) && p._2 != null), is(true));
+        assertThat(additionalInfoForMetricsDump.stream().anyMatch(p -> "serviceInstanceName".equals(p._1) && p._2 != null), is(true));
     }
 
     @Test
     void defaultConfigsLoadedAutomaticallyIfPresent() {
         AnnotationConfigApplicationContext ctx = new AnnotationConfigApplicationContext();
-        ctx.register(MyConfigWithProperty.class, NovaServiceConfiguration.class);
+        ctx.register(NovaServiceConfiguration.class, MyConfigWithProperty.class);
         ctx.refresh();
         assertThat(ctx.getBean("foo"), is ("bar"));
     }
@@ -254,19 +255,6 @@ class NovaServiceTest {
         }
     }
 
-
-    @Configuration
-    public static class MyCrippledConfig  {
-        @Bean
-        public Nova nova() {
-            return null;
-        }
-
-        @Bean
-        public Object serviceInstance() {
-            return new MyService();
-        }
-    }
 
     @Configuration
     public static class MyConfig {

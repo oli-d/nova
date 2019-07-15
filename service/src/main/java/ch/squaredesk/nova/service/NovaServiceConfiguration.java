@@ -21,15 +21,13 @@ import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.core.env.Environment;
 
-import java.util.Optional;
 import java.util.UUID;
-import java.util.stream.Stream;
 
 @Configuration
 @PropertySource(value="classpath:defaults.properties", ignoreResourceNotFound = true)
 @PropertySource(value="file:${NOVA.SERVICE.CONFIG_FILE}", ignoreResourceNotFound = true)
 @PropertySource(value="classpath:${NOVA.SERVICE.CONFIG_FILE}", ignoreResourceNotFound = true)
-@Import({AnnotationEnablingConfiguration.class, NovaProvidingConfiguration.class})
+@Import({NovaProvidingConfiguration.class, AnnotationEnablingConfiguration.class})
 public class NovaServiceConfiguration  {
     public interface BeanIdentifiers {
         String INSTANCE  = "NOVA.SERVICE.INSTANCE";

@@ -21,9 +21,8 @@ class MetricsCollector {
     private final Meter totalNumberOfSentMessages;
 
     MetricsCollector(String identifier, Metrics metrics) {
-        Objects.requireNonNull(metrics, "metrics must not be null");
-        this.metrics = metrics;
-        this.identifierPrefix = Metrics.name("messageSender", identifier).toString();
+        this.metrics = Objects.requireNonNull(metrics, "metrics must not be null");
+        this.identifierPrefix = Metrics.name(identifier, "messageSender").toString();
         totalNumberOfSentMessages = metrics.getMeter(this.identifierPrefix,"sent","total");
     }
 

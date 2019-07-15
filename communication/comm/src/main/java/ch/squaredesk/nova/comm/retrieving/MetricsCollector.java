@@ -23,10 +23,14 @@ public class MetricsCollector {
     private final Counter totalNumberOfSubscriptions;
     private final Counter totalNumberOfUnparsableMessages;
 
+    MetricsCollector(Metrics metrics) {
+        this (null, metrics);
+    }
+
     MetricsCollector(String identifier, Metrics metrics) {
         requireNonNull(metrics, "metrics must not be null");
         this.metrics = metrics;
-        this.identifierPrefix = Metrics.name("messageReceiver", identifier).toString();
+        this.identifierPrefix = Metrics.name(identifier, "messageReceiver").toString();
         totalNumberOfReceivedMessages = metrics.getMeter(this.identifierPrefix,"received","total");
         totalNumberOfSubscriptions = metrics.getCounter(this.identifierPrefix,"subscriptions","total");
         totalNumberOfUnparsableMessages = metrics.getCounter(this.identifierPrefix,"unparsable","total");

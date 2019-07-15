@@ -117,6 +117,8 @@ public class KafkaAdapter extends CommAdapter<String> {
 
     public static class Builder extends CommAdapterBuilder<String, KafkaAdapter> {
         private String serverAddress;
+        private String brokerClientId;
+        private String consumerGroupId;
         private String identifier;
         private MessageSender messageSender;
         private MessageReceiver messageReceiver;
@@ -170,6 +172,16 @@ public class KafkaAdapter extends CommAdapter<String> {
             return this;
         }
 
+        public Builder setBrokerClientId(String value) {
+            this.brokerClientId = value;
+            return this;
+        }
+
+        public Builder setConsumerGroupId(String value) {
+            this.consumerGroupId = value;
+            return this;
+        }
+
 //        public Builder setSubscriptionScheduler(Scheduler scheduler) {
 //            this.subscriptionScheduler = scheduler;
 //            return this;
@@ -206,13 +218,12 @@ public class KafkaAdapter extends CommAdapter<String> {
 
         public KafkaAdapter createInstance() {
             // set a few default consumer and producer properties
-            String clientId = identifier == null ? "KafkaAdapter-"+UUID.randomUUID() : identifier;
-            String groupId = identifier == null ? "KafkaAdapter-ReadGroup" : identifier + "ReadGroup";
+            String clientId = brokerClientId == null ? "KafkaAdapter-"+UUID.randomUUID() : brokerClientId;
             setPropertyIfNotPresent(consumerProperties, ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, serverAddress);
             setPropertyIfNotPresent(consumerProperties, ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
             setPropertyIfNotPresent(consumerProperties, ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
             setPropertyIfNotPresent(consumerProperties, ConsumerConfig.CLIENT_ID_CONFIG, clientId);
-            setPropertyIfNotPresent(consumerProperties, ConsumerConfig.GROUP_ID_CONFIG, groupId);
+            setPropertyIfNotPresent(consumerProperties, ConsumerConfig.GROUP_ID_CONFIG, consumerGroupId);
 
             setPropertyIfNotPresent(producerProperties, ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, serverAddress);
             setPropertyIfNotPresent(producerProperties, ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());

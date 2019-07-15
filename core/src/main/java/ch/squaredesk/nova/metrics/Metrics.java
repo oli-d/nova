@@ -13,6 +13,7 @@ package ch.squaredesk.nova.metrics;
 import ch.squaredesk.nova.tuples.Pair;
 import io.dropwizard.metrics5.*;
 import io.dropwizard.metrics5.Timer;
+import io.reactivex.Flowable;
 import io.reactivex.Observable;
 import org.slf4j.LoggerFactory;
 
@@ -35,7 +36,7 @@ public class Metrics {
      * Returns an observable that continuously emits all registered metrics. The passed parameters define the
      * interval between two dumps.
      */
-    public Observable<MetricsDump> dumpContinuously(long interval, TimeUnit timeUnit) {
+    public Flowable<MetricsDump> dumpContinuously(long interval, TimeUnit timeUnit) {
         return dumpContinuously(interval, timeUnit, Collections.emptyList());
     }
 
@@ -43,13 +44,13 @@ public class Metrics {
      * Returns an observable that continuously emits all registered metrics. The passed parameters define the
      * interval between two dumps. The passed additionalInfo will be added on every dump
      */
-    public Observable<MetricsDump> dumpContinuously(long interval, TimeUnit timeUnit, List<Pair<String, String>> additionalInfo) {
+    public Flowable<MetricsDump> dumpContinuously(long interval, TimeUnit timeUnit, List<Pair<String, String>> additionalInfo) {
         if (interval <= 0) {
             throw new IllegalArgumentException("interval must be greater than 0");
         }
         Objects.requireNonNull(timeUnit, "timeUnit must not be null");
 
-        return Observable
+        return Flowable
                 .interval(interval, interval, timeUnit)
                 .map(count -> dump(additionalInfo));
     }

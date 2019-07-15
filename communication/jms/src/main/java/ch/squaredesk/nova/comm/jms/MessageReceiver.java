@@ -38,7 +38,7 @@ class MessageReceiver
     MessageReceiver(String identifier,
                     JmsObjectRepository jmsObjectRepository,
                     Metrics metrics) {
-        super(identifier, metrics);
+        super(Metrics.name("jms", identifier).toString(), metrics);
         this.jmsObjectRepository = jmsObjectRepository;
     }
 
@@ -59,6 +59,7 @@ class MessageReceiver
                         while (incomingMessage == null) {
                             Message m = null;
                             try {
+                                metricsCollector.messageReceived(destinationId);
                                 m = consumer.receive();
                             } catch (Exception e) {
                                 // noop, the consumer was closed

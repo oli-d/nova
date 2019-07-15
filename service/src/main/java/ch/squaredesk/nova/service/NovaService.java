@@ -13,25 +13,24 @@ package ch.squaredesk.nova.service;
 import ch.squaredesk.nova.Nova;
 import ch.squaredesk.nova.metrics.MetricsDump;
 import ch.squaredesk.nova.service.annotation.LifecycleBeanProcessor;
+import ch.squaredesk.nova.spring.NovaProvidingConfiguration;
 import ch.squaredesk.nova.tuples.Pair;
-import io.reactivex.Observable;
+import io.reactivex.Flowable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 
 import java.net.InetAddress;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-public abstract class NovaService implements InitializingBean {
-    private List<Pair<String, String>> additionalInfoForMetricsDump;
-
+public abstract class NovaService {
     private Lifeline lifeline = new Lifeline();
 
     private boolean started = false;
@@ -43,52 +42,24 @@ public abstract class NovaService implements InitializingBean {
 
     @Autowired
     LifecycleBeanProcessor lifecycleBeanProcessor;
-    @Autowired
-    protected Nova nova;
-    @Autowired
-    @Qualifier(NovaServiceConfiguration.BeanIdentifiers.INSTANCE_IDENTIFIER)
+    @Autowired @Qualifier(NovaServiceConfiguration.BeanIdentifiers.INSTANCE_IDENTIFIER)
     protected String instanceId;
-    @Autowired(required = false)
-    @Qualifier(NovaServiceConfiguration.BeanIdentifiers.NAME)
+    @Autowired(required = false) @Qualifier(NovaServiceConfiguration.BeanIdentifiers.NAME)
     protected String serviceName;
+
+    @Autowired(required = false) @Qualifier(NovaProvidingConfiguration.BeanIdentifiers.NOVA)
+    public Nova nova;
 
 
     protected NovaService() {
         this.logger = LoggerFactory.getLogger(getClass());
     }
 
-    @Override
-    public void afterPropertiesSet() {
-        if (serviceName == null) {
-            serviceName = getClass().getSimpleName();
-            logger.info("The service name was not provided, so we derived it from the class name: {} ", serviceName);
-        }
-
-        Pair<String, String> hostName;
-        Pair<String, String> hostAddress;
-        try {
-            InetAddress myInetAddress = InetAddress.getLocalHost();
-            hostName = Pair.create("hostName", myInetAddress.getHostName());
-            hostAddress = Pair.create("hostAddress", myInetAddress.getHostAddress());
-        } catch (Exception ex) {
-            logger.warn("Unable to determine my IP address. MetricDumps will be lacking this information.");
-            hostName = Pair.create("hostName", "n/a");
-            hostAddress = Pair.create("hostAddress", "n/a");
-        }
-        additionalInfoForMetricsDump = Arrays.asList(
-            hostName,
-            hostAddress,
-            Pair.create("serviceName", serviceName),
-            Pair.create("serviceInstanceId", instanceId),
-            Pair.create("serviceInstanceName", serviceName + "." + instanceId)
-        );
-    }
-
     private void doInit() {
         Objects.requireNonNull(nova);
 
         if (registerShutdownHook) {
-            Runtime.getRuntime().addShutdownHook(new Thread(()->shutdown()));
+            Runtime.getRuntime().addShutdownHook(new Thread(this::shutdown));
         }
         lifecycleBeanProcessor.invokeInitHandlers();
     }
@@ -126,8 +97,40 @@ public abstract class NovaService implements InitializingBean {
         return started;
     }
 
-    public Observable<MetricsDump> dumpMetricsContinuously (long interval, TimeUnit timeUnit) {
-        return nova.metrics.dumpContinuously(interval, timeUnit, additionalInfoForMetricsDump);
+    List<Pair<String, String>> calculateAdditionalInfoForMetricsDump() {
+        Pair<String, String> hostName;
+        Pair<String, String> hostAddress;
+        try {
+            InetAddress myInetAddress = InetAddress.getLocalHost();
+            hostName = Pair.create("hostName", myInetAddress.getHostName());
+            hostAddress = Pair.create("hostAddress", myInetAddress.getHostAddress());
+        } catch (Exception ex) {
+            logger.warn("Unable to determine my IP address. MetricDumps will be lacking this information.");
+            hostName = Pair.create("hostName", "n/a");
+            hostAddress = Pair.create("hostAddress", "n/a");
+        }
+
+        List<Pair<String, String>> additionalInfoForMetricsDump = new ArrayList<>(Arrays.asList(
+                hostName,
+                hostAddress
+        ));
+
+        if (serviceName == null) {
+            serviceName = getClass().getSimpleName();
+            logger.info("The service name was not provided, so for the metric dumps we derived it from the class name: {} ", serviceName);
+        }
+        additionalInfoForMetricsDump.add(Pair.create("serviceName", serviceName));
+        if (instanceId != null) {
+            additionalInfoForMetricsDump.add(Pair.create("serviceInstanceId", instanceId));
+            String serviceInstanceName = serviceName + "." + instanceId;
+            additionalInfoForMetricsDump.add(Pair.create("serviceInstanceName", serviceInstanceName));
+        }
+
+        return additionalInfoForMetricsDump;
+    }
+
+    public Flowable<MetricsDump> dumpMetricsContinuously (long interval, TimeUnit timeUnit) {
+        return nova.metrics.dumpContinuously(interval, timeUnit, calculateAdditionalInfoForMetricsDump());
     }
 
     private class Lifeline extends Thread {

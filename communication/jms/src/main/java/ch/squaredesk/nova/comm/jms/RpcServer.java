@@ -37,7 +37,7 @@ public class RpcServer extends ch.squaredesk.nova.comm.rpc.RpcServer<Destination
               MessageSender messageSender,
               MessageTranscriber<String> messageTranscriber,
               Metrics metrics) {
-        super(identifier, messageTranscriber, metrics);
+        super(Metrics.name("jms", identifier).toString(), messageTranscriber, metrics);
 
         requireNonNull(messageSender, "messageSender must not be null");
         requireNonNull(messageReceiver, "messageReceiver must not be null");

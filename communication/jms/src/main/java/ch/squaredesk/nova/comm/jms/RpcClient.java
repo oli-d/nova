@@ -27,7 +27,7 @@ public class RpcClient extends ch.squaredesk.nova.comm.rpc.RpcClient<String, Out
                      MessageSender messageSender,
                      MessageReceiver messageReceiver,
                      Metrics metrics) {
-        super(identifier, metrics);
+        super(Metrics.name("jms", identifier).toString(), metrics);
         this.messageSender = messageSender;
         this.messageReceiver = messageReceiver;
     }

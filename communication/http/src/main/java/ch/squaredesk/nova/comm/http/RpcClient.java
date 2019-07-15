@@ -34,7 +34,7 @@ public class RpcClient extends ch.squaredesk.nova.comm.rpc.RpcClient<String, Req
     protected RpcClient(String identifier,
                         AsyncHttpClient client,
                         Metrics metrics) {
-        super(identifier, metrics);
+        super(Metrics.name("http", identifier).toString(), metrics);
         this.client = client;
     }
 

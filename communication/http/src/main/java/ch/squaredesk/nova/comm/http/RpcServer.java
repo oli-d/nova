@@ -48,7 +48,7 @@ public class RpcServer extends ch.squaredesk.nova.comm.rpc.RpcServer<String, Str
         this(identifier, httpServer, new DefaultMessageTranscriberForStringAsTransportType(), metrics);
     }
     public RpcServer(String identifier, HttpServer httpServer, MessageTranscriber<String> messageTranscriber, Metrics metrics) {
-        super(identifier, messageTranscriber, metrics);
+        super(Metrics.name("http", identifier).toString(), messageTranscriber, metrics);
         this.httpServer = httpServer;
     }
 

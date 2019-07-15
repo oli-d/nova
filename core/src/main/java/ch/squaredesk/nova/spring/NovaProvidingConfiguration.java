@@ -22,6 +22,8 @@ import org.springframework.core.env.Environment;
 public class NovaProvidingConfiguration {
     public interface BeanIdentifiers {
         String NOVA = "NOVA.INSTANCE";
+
+        String SETTINGS = "NOVA.SETTINGS";
         String IDENTIFIER = "NOVA.ID";
         String DEFAULT_BACKPRESSURE_STRATEGY = "NOVA.EVENTS.DEFAULT_BACKPRESSURE_STRATEGY";
         String WARN_ON_UNHANDLED_EVENTS = "NOVA.EVENTS.WARN_ON_UNHANDLED";
@@ -29,16 +31,23 @@ public class NovaProvidingConfiguration {
     }
 
     @Bean(BeanIdentifiers.NOVA)
-    public Nova nova(@Qualifier(BeanIdentifiers.IDENTIFIER) String identifier,
+    public Nova nova(@Qualifier(BeanIdentifiers.SETTINGS) NovaSettings settings) {
+        return Nova.builder()
+                .setIdentifier(settings.identifier)
+                .setDefaultBackpressureStrategy(settings.defaultBackpressureStrategy)
+                .setWarnOnUnhandledEvent(settings.warnOnUnhandledEvent)
+                .captureJvmMetrics(settings.captureJvmMetrics)
+                .build();
+    }
+
+    @Bean(BeanIdentifiers.SETTINGS)
+    public NovaSettings novaSettings(@Qualifier(BeanIdentifiers.IDENTIFIER) String identifier,
                      @Qualifier(BeanIdentifiers.DEFAULT_BACKPRESSURE_STRATEGY) BackpressureStrategy defaultBackpressureStrategy,
                      @Qualifier(BeanIdentifiers.WARN_ON_UNHANDLED_EVENTS) boolean warnOnUnhandledEvent,
                      @Qualifier(BeanIdentifiers.CAPTURE_VM_METRICS) boolean captureJvmMetrics) {
-        return Nova.builder()
-                .setIdentifier(identifier)
-                .setDefaultBackpressureStrategy(defaultBackpressureStrategy)
-                .setWarnOnUnhandledEvent(warnOnUnhandledEvent)
-                .captureJvmMetrics(captureJvmMetrics)
-                .build();
+        return new NovaSettings(
+                identifier, defaultBackpressureStrategy, warnOnUnhandledEvent, captureJvmMetrics
+        );
     }
 
     @Bean(BeanIdentifiers.IDENTIFIER)

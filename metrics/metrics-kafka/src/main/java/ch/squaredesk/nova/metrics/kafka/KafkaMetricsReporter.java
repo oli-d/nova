@@ -31,7 +31,10 @@ public class KafkaMetricsReporter implements Consumer<MetricsDump> {
     @Override
     public void accept(MetricsDump metricsDump) {
         try {
-            kafkaAdapter.sendMessage(topicName, SerializableMetricsDump.createFor(metricsDump)).subscribe();
+            kafkaAdapter.sendMessage(topicName, SerializableMetricsDump.createFor(metricsDump)).subscribe(
+                    metaData -> logger.trace("Successfully sent message {}", metaData),
+                    error -> logger.error("Unable to send MetricsDump to topic {}", topicName, error)
+            );
         } catch (Exception e) {
             logger.error("Unable to send metrics dump", e);
         }

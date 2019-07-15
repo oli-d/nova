@@ -22,7 +22,7 @@ public class RpcServerMetricsCollector {
 
     RpcServerMetricsCollector(String identifier, Metrics metrics) {
         this.metrics = metrics;
-        this.identifierPrefix = Metrics.name("rpcServer", identifier).toString();
+        this.identifierPrefix = Metrics.name(identifier, "rpcServer").toString();
         totalNumberOfReceivedRequests = metrics.getMeter(this.identifierPrefix,"requests","total");
         totalNumberOfCompletedRequests = metrics.getMeter(this.identifierPrefix,"completed","total");
         totalNumberOfErrorRequests = metrics.getMeter(this.identifierPrefix,"error","total");

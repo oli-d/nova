@@ -1,6 +1,7 @@
 package ch.squaredesk.nova.comm.kafka.spring;
 
 import ch.squaredesk.nova.Nova;
+import ch.squaredesk.nova.comm.CommAdapterBuilder;
 import ch.squaredesk.nova.comm.DefaultMessageTranscriberForStringAsTransportType;
 import ch.squaredesk.nova.comm.MessageTranscriber;
 import ch.squaredesk.nova.comm.kafka.KafkaAdapter;
@@ -27,6 +28,8 @@ public class KafkaEnablingConfiguration {
         String OBJECT_MAPPER = "NOVA.KAFKA.OBJECT_MAPPER";
         String MESSAGE_TRANSCRIBER = "NOVA.KAFKA.MESSAGE_TRANSCRIBER";
         String CONSUMER_PROPERTIES = "NOVA.KAFKA.CONSUMER_PROPERTIES";
+        String CONSUMER_GROUP_ID = "NOVA.KAFKA.CONSUMER_GROUP_ID";
+        String BROKER_CLIENT_ID = "NOVA.KAFKA.BROKER_CLIENT_ID";
         String PRODUCER_PROPERTIES = "NOVA.KAFKA.PRODUCER_PROPERTIES";
         String ADAPTER_SETTINGS = "NOVA.KAFKA.ADAPTER_SETTINGS";
         String ADAPTER = "NOVA.KAFKA.ADAPTER";
@@ -34,13 +37,17 @@ public class KafkaEnablingConfiguration {
 
     @Bean(BeanIdentifiers.ADAPTER)
     KafkaAdapter kafkaAdapter (@Qualifier(BeanIdentifiers.ADAPTER_SETTINGS) KafkaAdapterSettings kafkaAdapterSettings,
+                               @Qualifier(BeanIdentifiers.BROKER_CLIENT_ID) @Autowired(required = false) String brokerClientId,
                                @Qualifier(BeanIdentifiers.CONSUMER_PROPERTIES) @Autowired(required = false) Properties consumerProperties,
+                               @Qualifier(BeanIdentifiers.CONSUMER_GROUP_ID) @Autowired(required = false) String consumerGroupId,
                                @Qualifier(BeanIdentifiers.PRODUCER_PROPERTIES) @Autowired(required = false) Properties producerProperties,
                                @Qualifier(BeanIdentifiers.MESSAGE_TRANSCRIBER) MessageTranscriber<String> kafkaMessageTranscriber,
                                Nova nova) {
         return KafkaAdapter.builder()
                 .setServerAddress(kafkaAdapterSettings.serverAddress)
+                .setBrokerClientId(brokerClientId)
                 .setConsumerProperties(consumerProperties)
+                .setConsumerGroupId(consumerGroupId)
                 .setMessagePollingTimeout(kafkaAdapterSettings.pollTimeoutInMilliseconds, TimeUnit.MILLISECONDS)
                 .setProducerProperties(producerProperties)
                 .setIdentifier(kafkaAdapterSettings.identifier)
@@ -65,7 +72,7 @@ public class KafkaEnablingConfiguration {
     }
 
     @Bean(BeanIdentifiers.ADAPTER_SETTINGS)
-    KafkaAdapterSettings kafkaAdapterSettings (@Qualifier(BeanIdentifiers.ADAPTER_IDENTIFIER) String kafkaAdapterIdentifier,
+    KafkaAdapterSettings kafkaAdapterSettings (@Autowired(required = false) @Qualifier(BeanIdentifiers.ADAPTER_IDENTIFIER) String kafkaAdapterIdentifier,
                                @Qualifier(BeanIdentifiers.SERVER_ADDRESS) String kafkaServerAddress,
                                @Qualifier(BeanIdentifiers.POLL_TIMEOUT_IN_MS) long kafkaPollTimeoutInMilliseconds) {
         return new KafkaAdapterSettings(

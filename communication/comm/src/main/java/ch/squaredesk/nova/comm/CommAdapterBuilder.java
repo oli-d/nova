@@ -20,8 +20,8 @@ public abstract class CommAdapterBuilder<TransportMessageType, CommAdapterType e
     protected CommAdapterBuilder() {
     }
 
-    public CommAdapterBuilder<TransportMessageType, CommAdapterType> setMessageTranscriber(MessageTranscriber<TransportMessageType> registry) {
-        this.messageTranscriber = registry;
+    public CommAdapterBuilder<TransportMessageType, CommAdapterType> setMessageTranscriber(MessageTranscriber<TransportMessageType> transcriber) {
+        this.messageTranscriber = transcriber;
         return this;
     }
 

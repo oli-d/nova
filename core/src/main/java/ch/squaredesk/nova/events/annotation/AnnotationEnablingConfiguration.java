@@ -10,16 +10,11 @@
 
 package ch.squaredesk.nova.events.annotation;
 
-import ch.squaredesk.nova.Nova;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
 public class AnnotationEnablingConfiguration {
-    @Autowired
-    protected Nova nova;
-
     @Bean
     public static  EventHandlingBeanPostprocessor eventHandlingBeanPostProcessor() {
         return new EventHandlingBeanPostprocessor();

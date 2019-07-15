@@ -42,7 +42,7 @@ public class MessageReceiver
                               Properties consumerProperties,
                               long pollTimeout, TimeUnit pollTimeUnit,
                               Metrics metrics) {
-        super(identifier, metrics);
+        super(Metrics.name("kafka", identifier).toString(), metrics);
 
         AtomicBoolean shutdown = new AtomicBoolean(false);
 
@@ -97,7 +97,7 @@ public class MessageReceiver
                         // only happens, if shutdown was initiated
                         emitter.onComplete();
                     } else {
-                        logger.debug("Read consumer records, size = {}", consumerRecords.count());
+                        logger.trace("Read consumer records, size = {}", consumerRecords.count());
                         emitter.onNext(consumerRecords);
                     }
                 },
@@ -115,6 +115,7 @@ public class MessageReceiver
                 .subscribeOn(scheduler)
                 .flatMap(MessageReceiver::observableFor)
                 .map(record -> {
+                    metricsCollector.messageReceived(record.topic());
                     RetrieveInfo kafkaSpecificInfo = new RetrieveInfo();
                     IncomingMessageMetaData metaData = new IncomingMessageMetaData(record.topic(), kafkaSpecificInfo);
                     return new IncomingMessage<>(record.value(), metaData);

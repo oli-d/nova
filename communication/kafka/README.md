@@ -25,7 +25,9 @@ configuration values are
   | NOVA.KAFKA.ADAPTER_SETTINGS             | a ```KafkaAdapterSettings``` instance, containing all aforementioned config values. Handy if you want to read the configuration or override multiple defaults programmatically. |  |
   | | | |
   | NOVA.KAFKA.OBJECT_MAPPER                | the ObjectMapper to use when transcribing incoming / outgoing messages| default ObjectMapper, for details see [here](../comm/README.md) |
+  | NOVA.KAFKA.BROKER_CLIENT_ID             | the ID to use when connecting to the Kafka broker                     |  |
   | NOVA.KAFKA.CONSUMER_PROPERTIES          | the properties to use to create the Kafka consumer                    |  |
+  | NOVA.KAFKA.CONSUMER_GROUP_ID            | the consumer group ID to use when polling from the broker             |  |
   | NOVA.KAFKA.PRODUCER_PROPERTIES          | the properties to use to create the Kafka producer                    |  |
   | NOVA.KAFKA.MESSAGE_TRANSCRIBER          | the transcriber to use for incoming / outgoing messages               | default transcriber, for details see [here](../comm/README.md) |
   | | | |

@@ -15,6 +15,7 @@ import ch.squaredesk.nova.comm.DefaultMessageTranscriberForStringAsTransportType
 import ch.squaredesk.nova.comm.http.spring.HttpServerBeanListener;
 import ch.squaredesk.nova.comm.websockets.client.WebSocketFactory;
 import ch.squaredesk.nova.comm.websockets.server.ServerEndpointFactory;
+import ch.squaredesk.nova.metrics.Metrics;
 import com.ning.http.client.AsyncHttpClient;
 import io.reactivex.Observable;
 import io.reactivex.subjects.BehaviorSubject;
@@ -40,7 +41,7 @@ public class WebSocketAdapter extends CommAdapter<String> implements HttpServerB
 
     private WebSocketAdapter(Builder builder) {
         super(builder.messageTranscriber, builder.metrics);
-        this.metricsCollector = new MetricsCollector(builder.identifier, builder.metrics);
+        this.metricsCollector = new MetricsCollector(Metrics.name("ws", builder.identifier).toString(), builder.metrics);
         setHttpServer(builder.httpServer);
         this.httpClient = builder.httpClient;
         this.serverEndpointFactory = new ServerEndpointFactory();
