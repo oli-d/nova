@@ -33,6 +33,7 @@ class KafkaAdapterErrorTest {
         sut = KafkaAdapter.builder()
                 .setServerAddress("127.0.0.1:" + KAFKA_PORT)
                 .setIdentifier("Test")
+                .setConsumerGroupId("KafkaAdapterErrorTest")
                 .build();
     }
 

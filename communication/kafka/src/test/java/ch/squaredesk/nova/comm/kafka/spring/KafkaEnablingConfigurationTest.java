@@ -17,8 +17,9 @@ import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 @ExtendWith(SpringExtension.class)
 @ContextConfiguration(classes = {
-        KafkaEnablingConfigurationTest.AdapterDisablingConfig.class,
-        KafkaEnablingConfiguration.class})
+        KafkaEnablingConfiguration.class,
+        KafkaEnablingConfigurationTest.AdapterDisablingConfig.class
+        })
 class KafkaEnablingConfigurationTest {
     @Autowired
     KafkaAdapterSettings kafkaAdapterSettings;

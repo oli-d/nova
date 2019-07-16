@@ -25,6 +25,7 @@ class KafkaAdapterCreationTest {
     void setUp() {
         this.sutBuilder = KafkaAdapter.builder()
                 .setServerAddress("127.0.0.1:11000")
+                .setConsumerGroupId("KafkaAdapterErrorTest")
         ;
     }
 
