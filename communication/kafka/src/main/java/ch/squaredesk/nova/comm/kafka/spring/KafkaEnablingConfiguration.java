@@ -61,6 +61,16 @@ public class KafkaEnablingConfiguration {
         return environment.getProperty(BeanIdentifiers.ADAPTER_IDENTIFIER);
     }
 
+    @Bean(BeanIdentifiers.CONSUMER_GROUP_ID)
+    String kafkaConsumerGroupId (Environment environment) {
+        return environment.getProperty(BeanIdentifiers.CONSUMER_GROUP_ID);
+    }
+
+    @Bean(BeanIdentifiers.BROKER_CLIENT_ID)
+    String kafkaBrokerClientId (Environment environment) {
+        return environment.getProperty(BeanIdentifiers.BROKER_CLIENT_ID);
+    }
+
     @Bean(BeanIdentifiers.SERVER_ADDRESS)
     String kafkaServerAddress (Environment environment) {
         return environment.getProperty(BeanIdentifiers.SERVER_ADDRESS);
