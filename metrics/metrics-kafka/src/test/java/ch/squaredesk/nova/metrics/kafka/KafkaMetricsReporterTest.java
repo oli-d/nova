@@ -60,6 +60,7 @@ class KafkaMetricsReporterTest {
                 .addProducerProperty(ProducerConfig.BATCH_SIZE_CONFIG, "1")
                 .addConsumerProperty(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest")
                 .addConsumerProperty(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "true")
+                .addConsumerProperty(ConsumerConfig.GROUP_ID_CONFIG, "KafkaMetricsReporterTest")
                 .build();
 
         sut = new KafkaMetricsReporter(kafkaAdapter, "test.metrics");

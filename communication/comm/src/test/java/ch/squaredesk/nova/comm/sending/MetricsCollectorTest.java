@@ -33,16 +33,16 @@ class MetricsCollectorTest {
     void messageSentCanBeInvokedWithNull() {
         sut.messageSent(null);
 
-        assertThat(metrics.getMeter("messageSender", "test", "sent", "total").getCount(), is(1L));
-        assertThat(metrics.getMeter("messageSender", "test", "sent", "null").getCount(), is(1L));
+        assertThat(metrics.getMeter("test", "messageSender", "sent", "total").getCount(), is(1L));
+        assertThat(metrics.getMeter("test", "messageSender", "sent", "null").getCount(), is(1L));
     }
 
     @Test
     void messageReceived() {
         sut.messageSent("destination1");
 
-        assertThat(metrics.getMeter("messageSender", "test", "sent", "total").getCount(), is(1L));
-        assertThat(metrics.getMeter("messageSender", "test", "sent", "destination1").getCount(), is(1L));
+        assertThat(metrics.getMeter("test","messageSender", "sent", "total").getCount(), is(1L));
+        assertThat(metrics.getMeter("test", "messageSender", "sent", "destination1").getCount(), is(1L));
     }
 
 }

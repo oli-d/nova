@@ -125,7 +125,7 @@ public class MessageReceiver
 
     private static Flowable<ConsumerRecord<String, String>> observableFor (ConsumerRecords<String, String> records) {
         return Flowable.generate(
-                () -> records.iterator(),
+                records::iterator,
                 (iterator, emitter) -> {
                     if (iterator.hasNext()) {
                         emitter.onNext(iterator.next());

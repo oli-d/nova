@@ -41,7 +41,7 @@ public class WebSocketAdapter extends CommAdapter<String> implements HttpServerB
 
     private WebSocketAdapter(Builder builder) {
         super(builder.messageTranscriber, builder.metrics);
-        this.metricsCollector = new MetricsCollector(Metrics.name("ws", builder.identifier).toString(), builder.metrics);
+        this.metricsCollector = new MetricsCollector(builder.identifier, builder.metrics);
         setHttpServer(builder.httpServer);
         this.httpClient = builder.httpClient;
         this.serverEndpointFactory = new ServerEndpointFactory();

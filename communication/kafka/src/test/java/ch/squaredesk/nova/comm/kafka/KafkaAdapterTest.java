@@ -19,6 +19,7 @@ import io.reactivex.Single;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.functions.Consumer;
 import io.reactivex.observers.TestObserver;
+import org.apache.kafka.clients.CommonClientConfigs;
 import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.admin.CreateTopicsResult;
 import org.apache.kafka.clients.admin.NewTopic;
@@ -56,22 +57,16 @@ class KafkaAdapterTest {
     @BeforeEach
     void setUp(KafkaHelper kafkaHelper) throws Exception {
         Properties adminClientProps = new Properties();
-        adminClientProps.put("bootstrap.servers", "127.0.0.1:" + kafkaHelper.kafkaPort());
-//        String clientId = "KafkaAdminClient-"+UUID.randomUUID();
-//        String groupId = identifier == null ? "KafkaAdapter-ReadGroup" : identifier + "ReadGroup";
-//        setPropertyIfNotPresent(consumerProperties, ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, serverAddress);
-//        setPropertyIfNotPresent(consumerProperties, ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
-//        setPropertyIfNotPresent(consumerProperties, ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
-//        setPropertyIfNotPresent(consumerProperties, ConsumerConfig.CLIENT_ID_CONFIG, clientId);
-//        setPropertyIfNotPresent(consumerProperties, ConsumerConfig.GROUP_ID_CONFIG, groupId);
+        adminClientProps.put(CommonClientConfigs.BOOTSTRAP_SERVERS_CONFIG, "127.0.0.1:" + kafkaHelper.kafkaPort());
         adminClient = AdminClient.create(adminClientProps);
 
         sut = KafkaAdapter.builder()
                 .setServerAddress("127.0.0.1:" + kafkaHelper.kafkaPort())
-                .setIdentifier("Test" + UUID.randomUUID())
+                .setBrokerClientId("Test" + UUID.randomUUID())
                 .addProducerProperty(ProducerConfig.BATCH_SIZE_CONFIG, "1")
                 .addConsumerProperty(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest")
                 .addConsumerProperty(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "true")
+                .addConsumerProperty(ConsumerConfig.GROUP_ID_CONFIG, "KafkaAdapterTest")
                 .build();
     }
 

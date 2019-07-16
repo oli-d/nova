@@ -243,7 +243,7 @@ public class KafkaAdapter extends CommAdapter<String> {
         }
 
         private static void setPropertyIfNotPresent (Properties props, String key, String value) {
-            if (!props.containsKey(key)) {
+            if (value != null && !props.containsKey(key)) {
                 props.setProperty(key, value);
             }
         }
