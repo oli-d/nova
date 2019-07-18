@@ -27,15 +27,13 @@ public class RpcClientMetricsCollector {
     }
 
 
-    public void rpcCompleted(Object request, Object reply) {
-        String id = request == null ? "null" : request.getClass().getSimpleName();
-        Meter specificMeter = metrics.getMeter( identifierPrefix, "completed", id);
+    public void rpcCompleted(String destination, Object reply) {
+        Meter specificMeter = metrics.getMeter( identifierPrefix, "completed", destination);
         mark(specificMeter, totalNumberOfCompletedRequests);
     }
 
-    public void rpcTimedOut(Object request) {
-        String id = request == null ? "null" : request.getClass().getSimpleName();
-        Meter specificMeter = metrics.getMeter(identifierPrefix, "timeout", id);
+    public void rpcTimedOut(String destination) {
+        Meter specificMeter = metrics.getMeter(identifierPrefix, "timeout", destination);
         mark(specificMeter, totalNumberOfTimedOutRequests);
     }
 

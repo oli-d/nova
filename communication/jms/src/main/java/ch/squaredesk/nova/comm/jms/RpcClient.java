@@ -48,13 +48,14 @@ public class RpcClient extends ch.squaredesk.nova.comm.rpc.RpcClient<String, Out
 
         // listen to RPC reply. This must be done BEFORE sending the request, otherwise we could miss a very fast response
         // if the Observable is hot
+        String metricsInfo = String.valueOf(requestMetaData.destination) + "." + String.valueOf(request);
         Single<RpcReply<ReplyType>> replySingle =
                 messageReceiver.messages(requestMetaData.details.replyDestination, replyTranscriber)
                 .filter(incomingMessage ->
                         incomingMessage.metaData.details != null &&
                                 requestMetaData.details.correlationId.equals(incomingMessage.metaData.details.correlationId))
                 .take(1)
-                .doOnNext(reply -> metricsCollector.rpcCompleted(request, reply))
+                .doOnNext(reply -> metricsCollector.rpcCompleted(metricsInfo, reply))
                 .map(incomingMessage -> new RpcReply<>(incomingMessage.message, incomingMessage.metaData))
                 .singleOrError();
 
@@ -71,7 +72,7 @@ public class RpcClient extends ch.squaredesk.nova.comm.rpc.RpcClient<String, Out
                 .timeout(timeout, timeUnit)
                 .doOnError(t -> {
                     if (t instanceof TimeoutException) {
-                        metricsCollector.rpcTimedOut(request);
+                        metricsCollector.rpcTimedOut(metricsInfo);
                     }
                 });
     }

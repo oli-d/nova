@@ -25,20 +25,20 @@ class RpcClientMetricsCollectorTest {
         sut.rpcCompleted("req1", "reply1");
 
         assertThat(metrics.getMeter("rpcClient","completed","total").getCount(), is(1L));
-        assertThat(metrics.getMeter("rpcClient","completed","String").getCount(), is(1L));
+        assertThat(metrics.getMeter("rpcClient","completed","req1").getCount(), is(1L));
 
         assertThat(metrics.getMeter("rpcClient","timeout","total").getCount(), is(0L));
-        assertThat(metrics.getMeter("rpcClient","timeout","String").getCount(), is(0L));
+        assertThat(metrics.getMeter("rpcClient","timeout","req1").getCount(), is(0L));
     }
 
     @Test
     void rpcCompletedWithNullRequestAndReplyPossible() {
-        sut.rpcCompleted(null, null);
+        sut.rpcCompleted("dest", null);
 
         assertThat(metrics.getMeter("rpcClient","completed","total").getCount(), is(1L));
-        assertThat(metrics.getMeter("rpcClient","completed","null").getCount(), is(1L));
+        assertThat(metrics.getMeter("rpcClient","completed","dest").getCount(), is(1L));
         assertThat(metrics.getMeter("rpcClient","timeout","total").getCount(), is(0L));
-        assertThat(metrics.getMeter("rpcClient","timeout","null").getCount(), is(0L));
+        assertThat(metrics.getMeter("rpcClient","timeout","dest").getCount(), is(0L));
     }
 
     @Test
@@ -46,10 +46,10 @@ class RpcClientMetricsCollectorTest {
         sut.rpcTimedOut("req2");
 
         assertThat(metrics.getMeter("rpcClient","completed","total").getCount(), is(0L));
-        assertThat(metrics.getMeter("rpcClient","completed","String").getCount(), is(0L));
+        assertThat(metrics.getMeter("rpcClient","completed", "req2").getCount(), is(0L));
 
         assertThat(metrics.getMeter("rpcClient","timeout","total").getCount(), is(1L));
-        assertThat(metrics.getMeter("rpcClient","timeout","String").getCount(), is(1L));
+        assertThat(metrics.getMeter("rpcClient","timeout","req2").getCount(), is(1L));
     }
 
 }

@@ -38,7 +38,7 @@ public class MetricsCollector {
 
 
     public void unparsableMessageReceived(Object destination) {
-        metrics.getCounter(identifierPrefix, "unparsable", String.valueOf(destination)).inc();
+        metrics.getCounter(identifierPrefix, "unparsable").inc();
         totalNumberOfUnparsableMessages.inc();
     }
 
