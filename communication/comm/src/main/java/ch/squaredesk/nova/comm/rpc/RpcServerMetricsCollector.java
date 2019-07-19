@@ -12,6 +12,7 @@ package ch.squaredesk.nova.comm.rpc;
 
 import ch.squaredesk.nova.metrics.Metrics;
 import io.dropwizard.metrics5.Meter;
+import io.dropwizard.metrics5.Timer;
 
 public class RpcServerMetricsCollector {
     private final Metrics metrics;
@@ -29,26 +30,25 @@ public class RpcServerMetricsCollector {
     }
 
 
-    public void requestReceived (Object destination) {
-        Meter specificMeter = metrics.getMeter(identifierPrefix, "requests", String.valueOf(destination));
-        mark(specificMeter,totalNumberOfReceivedRequests);
+    public Timer.Context requestReceived (Object destination) {
+        Timer specificMeter = metrics.getTimer(identifierPrefix, "requests", destination == null ? null : String.valueOf(destination));
+        totalNumberOfReceivedRequests.mark();
+        return specificMeter.time();
     }
 
-    public void requestCompleted(Object destination, Object reply) {
-        Meter specificMeter = metrics.getMeter(identifierPrefix, "completed", String.valueOf(destination));
-        mark(specificMeter, totalNumberOfCompletedRequests);
-    }
-
-    public void requestCompletedExceptionally(Object destination, Throwable error) {
-        Meter specificMeter = metrics.getMeter(identifierPrefix, "error", String.valueOf(destination));
-        mark(specificMeter, totalNumberOfErrorRequests);
-    }
-
-    private void mark(Meter... meters) {
-        for (Meter m : meters) {
-            m.mark();
+    public void requestCompleted(Timer.Context context, Object reply) {
+        if (context != null) {
+            context.stop();
         }
+        totalNumberOfCompletedRequests.mark();
     }
 
-
+    public void requestCompletedExceptionally(Timer.Context context, Object destination, Throwable error) {
+        if (context != null) {
+            context.stop();
+        }
+        Meter specificMeter = metrics.getMeter(identifierPrefix, "error", destination == null ? null : String.valueOf(destination));
+        specificMeter.mark();
+        totalNumberOfErrorRequests.mark();
+    }
 }

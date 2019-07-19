@@ -12,7 +12,9 @@ package ch.squaredesk.nova.comm.rest;
 
 import ch.squaredesk.nova.Nova;
 import ch.squaredesk.nova.comm.http.HttpServerSettings;
+import ch.squaredesk.nova.comm.http.MetricsCollectorInfoCreator;
 import ch.squaredesk.nova.comm.http.spring.HttpServerBeanNotifier;
+import ch.squaredesk.nova.metrics.Metrics;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.dropwizard.metrics5.Timer;
@@ -88,11 +90,11 @@ public class RestServerStarter implements ApplicationListener<ContextRefreshedEv
 
             if (captureRestMetrics && nova != null) {
                 RequestEventListener requestEventListener = event -> {
-                    String eventId = event.getContainerRequest().getPath(true);
-                    Timer timer = nova.metrics.getTimer("rest", eventId);
+                    String eventId = event.getContainerRequest().getPath(true).replaceAll("/", ".");
                     if (event.getType() == RequestEvent.Type.RESOURCE_METHOD_START) {
+                        Timer timer = nova.metrics.getTimer("rest", eventId);
                         event.getContainerRequest().setProperty("metricsContext", timer.time());
-                    } else if (event.getType() == RequestEvent.Type.RESOURCE_METHOD_FINISHED) {
+                    } else if (event.getType() == RequestEvent.Type.RESP_FILTERS_START) {
                         ((Timer.Context) event.getContainerRequest().getProperty("metricsContext")).stop();
                         if (event.getException() != null) {
                             nova.metrics.getCounter("rest", eventId, "errors").inc();

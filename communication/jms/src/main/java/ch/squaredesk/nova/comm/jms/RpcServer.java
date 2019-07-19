@@ -14,6 +14,7 @@ import ch.squaredesk.nova.comm.DefaultMessageTranscriberForStringAsTransportType
 import ch.squaredesk.nova.comm.MessageTranscriber;
 import ch.squaredesk.nova.comm.retrieving.IncomingMessage;
 import ch.squaredesk.nova.metrics.Metrics;
+import io.dropwizard.metrics5.Timer;
 import io.reactivex.Flowable;
 
 import javax.jms.Destination;
@@ -50,7 +51,7 @@ public class RpcServer extends ch.squaredesk.nova.comm.rpc.RpcServer<Destination
         return messageReceiver.messages(destination, messageTranscriber.getIncomingMessageTranscriber(requestType))
                 .filter(this::isRpcRequest)
                 .map(incomingRequest -> {
-                    metricsCollector.requestReceived(incomingRequest.metaData.destination);
+                    Timer.Context timerContext = metricsCollector.requestReceived(incomingRequest.metaData.destination);
                     return new RpcInvocation<>(
                             incomingRequest,
                             reply -> {
@@ -63,11 +64,11 @@ public class RpcServer extends ch.squaredesk.nova.comm.rpc.RpcServer<Destination
                                         null);
                                 OutgoingMessageMetaData meta = new OutgoingMessageMetaData(incomingRequest.metaData.details.replyDestination, sendingInfo);
                                 messageSender.send(reply._1, meta).subscribe();
-                                metricsCollector.requestCompleted(incomingRequest.metaData.destination, reply);
+                                metricsCollector.requestCompleted(timerContext, reply);
                             },
                             error -> {
                                 // TODO: Is there a sensible default action we could perform?
-                                metricsCollector.requestCompletedExceptionally(incomingRequest.metaData.destination, error);
+                                metricsCollector.requestCompletedExceptionally(timerContext, incomingRequest.metaData.destination, error);
                             });
                 });
     }

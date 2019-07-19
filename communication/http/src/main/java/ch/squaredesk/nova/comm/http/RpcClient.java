@@ -86,7 +86,7 @@ public class RpcClient extends ch.squaredesk.nova.comm.rpc.RpcClient<String, Req
                 .map(response -> {
                     ReplyMessageMetaData metaData = createMetaDataFromReply(requestMessageMetaData, response);
                     U result = responseMapper.apply(response);
-                    metricsCollector.rpcCompleted(MetricsCollectorInforCreator.createInfoFor(requestMessageMetaData.destination), result);
+                    metricsCollector.rpcCompleted(MetricsCollectorInfoCreator.createInfoFor(requestMessageMetaData.destination), result);
                     return new RpcReply<>(result, metaData);
                 })
                 .timeout(timeout, timeUnit);

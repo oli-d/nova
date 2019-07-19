@@ -5,6 +5,7 @@ import ch.squaredesk.nova.comm.MessageTranscriber;
 import ch.squaredesk.nova.comm.http.spring.HttpServerBeanListener;
 import ch.squaredesk.nova.comm.retrieving.IncomingMessage;
 import ch.squaredesk.nova.metrics.Metrics;
+import io.dropwizard.metrics5.Timer;
 import io.reactivex.BackpressureStrategy;
 import io.reactivex.Flowable;
 import io.reactivex.subjects.PublishSubject;
@@ -29,7 +30,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
-import static ch.squaredesk.nova.comm.http.MetricsCollectorInforCreator.createInfoFor;
+import static ch.squaredesk.nova.comm.http.MetricsCollectorInfoCreator.createInfoFor;
 
 public class RpcServer extends ch.squaredesk.nova.comm.rpc.RpcServer<String, String> implements HttpServerBeanListener {
     private static final Logger logger = LoggerFactory.getLogger(RpcServer.class);
@@ -225,6 +226,7 @@ public class RpcServer extends ch.squaredesk.nova.comm.rpc.RpcServer<String, Str
                             messageTranscriber.getIncomingMessageTranscriber(targetType).apply(incomingMessageAsString);
                     RequestInfo requestInfo = httpSpecificInfoFrom(request);
                     RequestMessageMetaData metaData = new RequestMessageMetaData(destination, requestInfo);
+                    Timer.Context timerContext = metricsCollector.requestReceived(createInfoFor(destination));
 
                     RpcInvocation<IncomingMessageType> rpci =
                             new RpcInvocation<>(
@@ -245,9 +247,9 @@ public class RpcServer extends ch.squaredesk.nova.comm.rpc.RpcServer<String, Str
                                             }
                                             response.setStatus(statusCode);
                                             writeResponse(replyInfo._1, out);
-                                            metricsCollector.requestCompleted(createInfoFor(destination), replyInfo._1);
+                                            metricsCollector.requestCompleted(timerContext, replyInfo._1);
                                         } catch (Exception e) {
-                                            metricsCollector.requestCompletedExceptionally(createInfoFor(destination), e);
+                                            metricsCollector.requestCompletedExceptionally(timerContext, createInfoFor(destination), e);
                                             logger.error("An error occurred trying to send HTTP response " + replyInfo, e);
                                             try {
                                                 response.sendError(500, "Internal server error");
@@ -270,7 +272,6 @@ public class RpcServer extends ch.squaredesk.nova.comm.rpc.RpcServer<String, Str
                                     messageTranscriber
                             );
 
-                    metricsCollector.requestReceived(createInfoFor(destination));
                     stream.onNext(rpci);
                 }
             });
