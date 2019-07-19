@@ -95,9 +95,12 @@ public class RestServerStarter implements ApplicationListener<ContextRefreshedEv
                         Timer timer = nova.metrics.getTimer("rest", eventId);
                         event.getContainerRequest().setProperty("metricsContext", timer.time());
                     } else if (event.getType() == RequestEvent.Type.RESP_FILTERS_START) {
-                        ((Timer.Context) event.getContainerRequest().getProperty("metricsContext")).stop();
-                        if (event.getException() != null) {
-                            nova.metrics.getCounter("rest", eventId, "errors").inc();
+                        Timer.Context timerContext = (Timer.Context) event.getContainerRequest().getProperty("metricsContext");
+                        if (timerContext != null) {
+                            timerContext.stop();
+                            if (event.getException() != null) {
+                                nova.metrics.getCounter("rest", eventId, "errors").inc();
+                            }
                         }
                     }
                 };
