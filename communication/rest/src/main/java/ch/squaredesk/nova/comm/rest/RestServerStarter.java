@@ -94,7 +94,6 @@ public class RestServerStarter implements ApplicationListener<ContextRefreshedEv
                         event.getContainerRequest().setProperty("metricsContext", timer.time());
                     } else if (event.getType() == RequestEvent.Type.RESOURCE_METHOD_FINISHED) {
                         ((Timer.Context) event.getContainerRequest().getProperty("metricsContext")).stop();
-                        nova.metrics.getCounter("rest", eventId, "total").inc();
                         if (event.getException() != null) {
                             nova.metrics.getCounter("rest", eventId, "errors").inc();
                         }
