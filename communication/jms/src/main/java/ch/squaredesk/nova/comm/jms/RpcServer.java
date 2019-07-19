@@ -50,7 +50,7 @@ public class RpcServer extends ch.squaredesk.nova.comm.rpc.RpcServer<Destination
         return messageReceiver.messages(destination, messageTranscriber.getIncomingMessageTranscriber(requestType))
                 .filter(this::isRpcRequest)
                 .map(incomingRequest -> {
-                    metricsCollector.requestReceived(incomingRequest.message);
+                    metricsCollector.requestReceived(incomingRequest.metaData.destination);
                     return new RpcInvocation<>(
                             incomingRequest,
                             reply -> {
@@ -63,11 +63,11 @@ public class RpcServer extends ch.squaredesk.nova.comm.rpc.RpcServer<Destination
                                         null);
                                 OutgoingMessageMetaData meta = new OutgoingMessageMetaData(incomingRequest.metaData.details.replyDestination, sendingInfo);
                                 messageSender.send(reply._1, meta).subscribe();
-                                metricsCollector.requestCompleted(incomingRequest.message, reply);
+                                metricsCollector.requestCompleted(incomingRequest.metaData.destination, reply);
                             },
                             error -> {
                                 // TODO: Is there a sensible default action we could perform?
-                                metricsCollector.requestCompletedExceptionally(incomingRequest.message, error);
+                                metricsCollector.requestCompletedExceptionally(incomingRequest.metaData.destination, error);
                             });
                 });
     }

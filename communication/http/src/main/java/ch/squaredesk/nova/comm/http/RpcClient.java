@@ -13,7 +13,6 @@ package ch.squaredesk.nova.comm.http;
 import ch.squaredesk.nova.metrics.Metrics;
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.FluentCaseInsensitiveStringsMap;
-import com.ning.http.client.RequestBuilder;
 import com.ning.http.client.Response;
 import io.reactivex.Single;
 import io.reactivex.functions.Function;
@@ -87,12 +86,11 @@ public class RpcClient extends ch.squaredesk.nova.comm.rpc.RpcClient<String, Req
                 .map(response -> {
                     ReplyMessageMetaData metaData = createMetaDataFromReply(requestMessageMetaData, response);
                     U result = responseMapper.apply(response);
-                    metricsCollector.rpcCompleted(String.valueOf(requestMessageMetaData.destination), result);
+                    metricsCollector.rpcCompleted(MetricsCollectorInforCreator.createInfoFor(requestMessageMetaData.destination), result);
                     return new RpcReply<>(result, metaData);
                 })
                 .timeout(timeout, timeUnit);
     }
-
 
     private AsyncHttpClient.BoundRequestBuilder createRequestBuilder(String requestAsString, RequestMessageMetaData requestMessageMetaData, long timeout, TimeUnit timeUnit) {
         requireNonNull(timeUnit, "timeUnit must not be null");

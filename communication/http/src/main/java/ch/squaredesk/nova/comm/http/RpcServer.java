@@ -29,6 +29,8 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
+import static ch.squaredesk.nova.comm.http.MetricsCollectorInforCreator.createInfoFor;
+
 public class RpcServer extends ch.squaredesk.nova.comm.rpc.RpcServer<String, String> implements HttpServerBeanListener {
     private static final Logger logger = LoggerFactory.getLogger(RpcServer.class);
 
@@ -243,9 +245,9 @@ public class RpcServer extends ch.squaredesk.nova.comm.rpc.RpcServer<String, Str
                                             }
                                             response.setStatus(statusCode);
                                             writeResponse(replyInfo._1, out);
-                                            metricsCollector.requestCompleted(incomingMessage, replyInfo._1);
+                                            metricsCollector.requestCompleted(createInfoFor(destination), replyInfo._1);
                                         } catch (Exception e) {
-                                            metricsCollector.requestCompletedExceptionally(incomingMessage, e);
+                                            metricsCollector.requestCompletedExceptionally(createInfoFor(destination), e);
                                             logger.error("An error occurred trying to send HTTP response " + replyInfo, e);
                                             try {
                                                 response.sendError(500, "Internal server error");
@@ -268,7 +270,7 @@ public class RpcServer extends ch.squaredesk.nova.comm.rpc.RpcServer<String, Str
                                     messageTranscriber
                             );
 
-                    metricsCollector.requestReceived(rpci.request);
+                    metricsCollector.requestReceived(createInfoFor(destination));
                     stream.onNext(rpci);
                 }
             });

@@ -15,7 +15,7 @@ import io.dropwizard.metrics5.Meter;
 
 import java.util.Objects;
 
-class MetricsCollector {
+public class MetricsCollector {
     private final Metrics metrics;
     private final String identifierPrefix;
     private final Meter totalNumberOfSentMessages;

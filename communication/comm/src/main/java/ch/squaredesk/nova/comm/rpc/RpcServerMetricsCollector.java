@@ -29,21 +29,18 @@ public class RpcServerMetricsCollector {
     }
 
 
-    public void requestReceived (Object request) {
-        String id = request == null ? "null" : request.getClass().getSimpleName();
-        Meter specificMeter = metrics.getMeter(identifierPrefix, "requests", id);
+    public void requestReceived (Object destination) {
+        Meter specificMeter = metrics.getMeter(identifierPrefix, "requests", String.valueOf(destination));
         mark(specificMeter,totalNumberOfReceivedRequests);
     }
 
-    public void requestCompleted(Object request, Object reply) {
-        String id = request == null ? "null" : request.getClass().getSimpleName();
-        Meter specificMeter = metrics.getMeter(identifierPrefix, "completed", id);
+    public void requestCompleted(Object destination, Object reply) {
+        Meter specificMeter = metrics.getMeter(identifierPrefix, "completed", String.valueOf(destination));
         mark(specificMeter, totalNumberOfCompletedRequests);
     }
 
-    public void requestCompletedExceptionally(Object request, Throwable error) {
-        String id = request == null ? "null" : request.getClass().getSimpleName();
-        Meter specificMeter = metrics.getMeter(identifierPrefix, "error", id);
+    public void requestCompletedExceptionally(Object destination, Throwable error) {
+        Meter specificMeter = metrics.getMeter(identifierPrefix, "error", String.valueOf(destination));
         mark(specificMeter, totalNumberOfErrorRequests);
     }
 

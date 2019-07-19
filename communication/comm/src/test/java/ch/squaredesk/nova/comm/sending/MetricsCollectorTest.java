@@ -38,7 +38,7 @@ class MetricsCollectorTest {
     }
 
     @Test
-    void messageReceived() {
+    void messageSending() {
         sut.messageSent("destination1");
 
         assertThat(metrics.getMeter("test","messageSender", "sent", "total").getCount(), is(1L));

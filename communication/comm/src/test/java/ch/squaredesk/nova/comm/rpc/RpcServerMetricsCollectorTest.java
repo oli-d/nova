@@ -25,13 +25,13 @@ class RpcServerMetricsCollectorTest {
         sut.requestReceived("req1");
 
         assertThat(metrics.getMeter("rpcServer.requests.total").getCount(), Matchers.is(1L));
-        assertThat(metrics.getMeter("rpcServer.requests.String").getCount(), Matchers.is(1L));
+        assertThat(metrics.getMeter("rpcServer.requests.req1").getCount(), Matchers.is(1L));
         assertThat(metrics.getMeter("rpcServer.completed.total").getCount(), Matchers.is(0L));
-        assertThat(metrics.getMeter("rpcServer.completed.String").getCount(), Matchers.is(0L));
+        assertThat(metrics.getMeter("rpcServer.completed.req1").getCount(), Matchers.is(0L));
         assertThat(metrics.getMeter("rpcServer.timeout.total").getCount(), Matchers.is(0L));
-        assertThat(metrics.getMeter("rpcServer.timeout.String").getCount(), Matchers.is(0L));
+        assertThat(metrics.getMeter("rpcServer.timeout.req1").getCount(), Matchers.is(0L));
         assertThat(metrics.getMeter("rpcServer.error.total").getCount(), Matchers.is(0L));
-        assertThat(metrics.getMeter("rpcServer.error.String").getCount(), Matchers.is(0L));
+        assertThat(metrics.getMeter("rpcServer.error.req1").getCount(), Matchers.is(0L));
     }
 
     @Test
@@ -53,13 +53,13 @@ class RpcServerMetricsCollectorTest {
         sut.requestCompleted("req1", "reply1");
 
         assertThat(metrics.getMeter("rpcServer.requests.total").getCount(), Matchers.is(0L));
-        assertThat(metrics.getMeter("rpcServer.requests.String").getCount(), Matchers.is(0L));
+        assertThat(metrics.getMeter("rpcServer.requests.req1").getCount(), Matchers.is(0L));
         assertThat(metrics.getMeter("rpcServer.completed.total").getCount(), Matchers.is(1L));
-        assertThat(metrics.getMeter("rpcServer.completed.String").getCount(), Matchers.is(1L));
+        assertThat(metrics.getMeter("rpcServer.completed.req1").getCount(), Matchers.is(1L));
         assertThat(metrics.getMeter("rpcServer.timeout.total").getCount(), Matchers.is(0L));
-        assertThat(metrics.getMeter("rpcServer.timeout.String").getCount(), Matchers.is(0L));
+        assertThat(metrics.getMeter("rpcServer.timeout.req1").getCount(), Matchers.is(0L));
         assertThat(metrics.getMeter("rpcServer.error.total").getCount(), Matchers.is(0L));
-        assertThat(metrics.getMeter("rpcServer.error.String").getCount(), Matchers.is(0L));
+        assertThat(metrics.getMeter("rpcServer.error.req1").getCount(), Matchers.is(0L));
     }
 
     @Test
@@ -81,13 +81,13 @@ class RpcServerMetricsCollectorTest {
         sut.requestCompletedExceptionally("req3", new RuntimeException("4 test"));
 
         assertThat(metrics.getMeter("rpcServer.requests.total").getCount(), Matchers.is(0L));
-        assertThat(metrics.getMeter("rpcServer.requests.String").getCount(), Matchers.is(0L));
+        assertThat(metrics.getMeter("rpcServer.requests.req3").getCount(), Matchers.is(0L));
         assertThat(metrics.getMeter("rpcServer.completed.total").getCount(), Matchers.is(0L));
-        assertThat(metrics.getMeter("rpcServer.completed.String").getCount(), Matchers.is(0L));
+        assertThat(metrics.getMeter("rpcServer.completed.req3").getCount(), Matchers.is(0L));
         assertThat(metrics.getMeter("rpcServer.timeout.total").getCount(), Matchers.is(0L));
-        assertThat(metrics.getMeter("rpcServer.timeout.String").getCount(), Matchers.is(0L));
+        assertThat(metrics.getMeter("rpcServer.timeout.req3").getCount(), Matchers.is(0L));
         assertThat(metrics.getMeter("rpcServer.error.total").getCount(), Matchers.is(1L));
-        assertThat(metrics.getMeter("rpcServer.error.String").getCount(), Matchers.is(1L));
+        assertThat(metrics.getMeter("rpcServer.error.req3").getCount(), Matchers.is(1L));
     }
 
     @Test

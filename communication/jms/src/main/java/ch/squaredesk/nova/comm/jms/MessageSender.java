@@ -56,7 +56,8 @@ public class MessageSender extends ch.squaredesk.nova.comm.sending.MessageSender
                         meta.details.priority,
                         meta.details.timeToLive);
             }
-            return Single.just(meta.setJmsMessage(textMessage));
+            return Single.just(meta.setJmsMessage(textMessage))
+                    .doOnSuccess(m -> metricsCollector.messageSent(m.destination));
         } catch (Exception e) {
             return Single.error(e);
         }
