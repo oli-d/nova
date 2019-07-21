@@ -10,39 +10,32 @@
 
 package ch.squaredesk.nova.metrics;
 
+import ch.squaredesk.nova.tuples.Pair;
 import io.dropwizard.metrics5.Metric;
 import io.dropwizard.metrics5.MetricName;
 
-import java.net.InetAddress;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 
 public class MetricsDump {
-    private static InetAddress myInetAddress;
-
-    static {
-        try {
-            myInetAddress = InetAddress.getLocalHost();
-        } catch (Exception ex) {
-            // swallow
-        }
-    }
-
     public final long timestamp;
-    public final String hostName;
-    public final String hostAddress;
     public final Map<MetricName, Metric> metrics;
+    public final List<Pair<String, String>> additionalInfo;
 
     public MetricsDump(Map<MetricName, Metric> metrics) {
-        this.timestamp = System.currentTimeMillis();
-
-        if (myInetAddress == null) {
-            this.hostName = "n/a";
-            this.hostAddress = "n/a";
-        } else {
-            this.hostName = myInetAddress.getHostName();
-            this.hostAddress = myInetAddress.getHostAddress();
-        }
-        this.metrics = metrics;
+        this(metrics, Collections.emptyList());
     }
 
+    public MetricsDump(Map<MetricName, Metric> metrics, Pair<String, String>... additionalInfo) {
+        this(metrics, Arrays.asList(additionalInfo));
+    }
+
+    public MetricsDump(Map<MetricName, Metric> metrics, List<Pair<String, String>> additionalInfo) {
+        this.timestamp = System.currentTimeMillis();
+
+        this.metrics = metrics;
+        this.additionalInfo = additionalInfo;
+    }
 }

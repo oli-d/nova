@@ -19,18 +19,14 @@ import org.springframework.core.env.Environment;
 
 @Configuration
 @Import(RestEnablingConfiguration.class)
-public class TimeServiceConfig extends NovaServiceConfiguration<TimeService> {
-    @Autowired
-    Environment env;
-
-    @Override
+public class TimeServiceConfig  {
     @Bean
     public TimeService serviceInstance() {
         return new TimeService();
     }
 
     @Bean
-    public TimeRequestHandler timeRequestHandler() {
+    public TimeRequestHandler timeRequestHandler(Environment env) {
         return new TimeRequestHandler(env.getProperty("messagePrefix",""));
     }
 }

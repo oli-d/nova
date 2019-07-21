@@ -10,13 +10,14 @@
 
 package ch.squaredesk.nova.metrics;
 
+import ch.squaredesk.nova.tuples.Pair;
 import io.dropwizard.metrics5.*;
+import io.dropwizard.metrics5.Timer;
+import io.reactivex.Flowable;
 import io.reactivex.Observable;
 import org.slf4j.LoggerFactory;
 
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 public class Metrics {
@@ -24,19 +25,34 @@ public class Metrics {
     private Slf4jReporter logReporter;
 
     public MetricsDump dump() {
-        return new MetricsDump(metricRegistry.getMetrics());
+        return dump(Collections.emptyList());
+    }
+
+    public MetricsDump dump(List<Pair<String, String>> additionalInfo) {
+        return new MetricsDump(metricRegistry.getMetrics(), additionalInfo);
     }
 
     /**
-     * Returns an observable that continuously dumps all registered metrics. The passed parameters define the
+     * Returns an observable that continuously emits all registered metrics. The passed parameters define the
      * interval between two dumps.
      */
-    public Observable<MetricsDump> dumpContinuously(long interval, TimeUnit timeUnit) {
-        if (interval <= 0) throw new IllegalArgumentException("interval must be greater than 0");
+    public Flowable<MetricsDump> dumpContinuously(long interval, TimeUnit timeUnit) {
+        return dumpContinuously(interval, timeUnit, Collections.emptyList());
+    }
+
+    /**
+     * Returns an observable that continuously emits all registered metrics. The passed parameters define the
+     * interval between two dumps. The passed additionalInfo will be added on every dump
+     */
+    public Flowable<MetricsDump> dumpContinuously(long interval, TimeUnit timeUnit, List<Pair<String, String>> additionalInfo) {
+        if (interval <= 0) {
+            throw new IllegalArgumentException("interval must be greater than 0");
+        }
         Objects.requireNonNull(timeUnit, "timeUnit must not be null");
 
-        return Observable.interval(interval, interval, timeUnit)
-                .map(count -> dump());
+        return Flowable
+                .interval(interval, interval, timeUnit)
+                .map(count -> dump(additionalInfo));
     }
 
 

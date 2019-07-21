@@ -12,8 +12,8 @@ package ch.squaredesk.nova.service;
 
 
 import ch.squaredesk.nova.events.annotation.AnnotationEnablingConfiguration;
-import ch.squaredesk.nova.events.annotation.NovaProvidingConfiguration;
 import ch.squaredesk.nova.service.annotation.LifecycleBeanProcessor;
+import ch.squaredesk.nova.spring.NovaProvidingConfiguration;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -21,36 +21,32 @@ import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.core.env.Environment;
 
-import java.util.Optional;
 import java.util.UUID;
-import java.util.stream.Stream;
 
 @Configuration
 @PropertySource(value="classpath:defaults.properties", ignoreResourceNotFound = true)
-@PropertySource(value="file:${NOVA.SERVICE.CONFIG}", ignoreResourceNotFound = true)
-@PropertySource(value="classpath:${NOVA.SERVICE.CONFIG}", ignoreResourceNotFound = true)
-@Import({AnnotationEnablingConfiguration.class, NovaProvidingConfiguration.class})
-public abstract class NovaServiceConfiguration<ServiceType>  {
+@PropertySource(value="file:${NOVA.SERVICE.CONFIG_FILE}", ignoreResourceNotFound = true)
+@PropertySource(value="classpath:${NOVA.SERVICE.CONFIG_FILE}", ignoreResourceNotFound = true)
+@Import({NovaProvidingConfiguration.class, AnnotationEnablingConfiguration.class})
+public class NovaServiceConfiguration  {
+    public interface BeanIdentifiers {
+        String INSTANCE  = "NOVA.SERVICE.INSTANCE";
+        String INSTANCE_IDENTIFIER = "NOVA.SERVICE.INSTANCE_IDENTIFIER";
+        String NAME = "NOVA.SERVICE.NAME";
+        String REGISTER_SHUTDOWN_HOOK = "NOVA.SERVICE.REGISTER_SHUTDOWN_HOOK";
+        String CONFIG_FILE = "NOVA.SERVICE.CONFIG_FILE";
+    }
     @Autowired
     protected Environment environment;
 
-    @Bean(name = "instanceId")
+    @Bean(BeanIdentifiers.INSTANCE_IDENTIFIER)
     public String instanceId() {
-        return environment.getProperty("NOVA.SERVICE.INSTANCE_ID", UUID.randomUUID().toString());
+        return environment.getProperty(BeanIdentifiers.INSTANCE_IDENTIFIER, UUID.randomUUID().toString());
     }
 
-    @Bean(name = "serviceName")
+    @Bean(BeanIdentifiers.NAME)
     public String serviceName() {
-        String name = environment.getProperty("NOVA.SERVICE.NAME", (String)null);
-        if (name == null) {
-            String configClassName = getClass().getSimpleName();
-            Optional<Integer> indexOfConfigSubstring = Stream.of("config", "conf", "cfg")
-                    .map(testString -> configClassName.toLowerCase().indexOf(testString))
-                    .max(Integer::compareTo);
-            name = configClassName.substring(0, indexOfConfigSubstring.orElse(configClassName.length()));
-        }
-
-        return name;
+        return environment.getProperty(BeanIdentifiers.NAME);
     }
 
     @Bean
@@ -58,17 +54,15 @@ public abstract class NovaServiceConfiguration<ServiceType>  {
         return new LifecycleBeanProcessor();
     }
 
-    @Bean
+    @Bean(BeanIdentifiers.REGISTER_SHUTDOWN_HOOK)
     public boolean registerShutdownHook() {
         boolean registerShutdownHook = true;
         try {
             registerShutdownHook = Boolean.parseBoolean(
-                    environment.getProperty("NOVA.SERVICE.REGISTER_SHUTDOWN_HOOK", "TRUE"));
+                    environment.getProperty(BeanIdentifiers.REGISTER_SHUTDOWN_HOOK, "TRUE"));
         } catch (Exception e) {
             // noop, stick with default
         }
         return registerShutdownHook;
     }
-
-    public abstract ServiceType serviceInstance();
 }

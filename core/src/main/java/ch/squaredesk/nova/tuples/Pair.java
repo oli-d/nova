@@ -39,4 +39,8 @@ public class Pair<T,U> {
     public int hashCode() {
         return Objects.hash(_1, _2);
     }
+
+    public static <T, U> Pair<T,U> create (T t, U u) {
+        return new Pair<>(t, u);
+    }
 }

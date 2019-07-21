@@ -17,6 +17,7 @@ import ch.squaredesk.nova.metrics.CpuMeter;
 import ch.squaredesk.nova.metrics.GarbageCollectionMeter;
 import ch.squaredesk.nova.metrics.MemoryMeter;
 import ch.squaredesk.nova.metrics.Metrics;
+import ch.squaredesk.nova.spring.NovaSettings;
 import io.reactivex.BackpressureStrategy;
 
 public class Nova {
@@ -27,10 +28,10 @@ public class Nova {
     public final Metrics metrics;
 
     private Nova(Builder builder) {
-        metrics = builder.metrics;
-        identifier = builder.identifier;
-        eventBus = new EventBus(identifier, builder.eventBusConfig, metrics);
-        filesystem = new Filesystem();
+        this.identifier = builder.identifier;
+        this.eventBus = new EventBus(identifier, builder.eventBusConfig, builder.metrics);
+        this.filesystem = new Filesystem();
+        this.metrics = builder.metrics;
     }
 
     public static Builder builder() {
@@ -70,6 +71,14 @@ public class Nova {
         }
 
 
+        public Builder withSettings(NovaSettings novaSettings) {
+            this.identifier = novaSettings.identifier;
+            this.defaultBackpressureStrategy = novaSettings.defaultBackpressureStrategy;
+            this.captureJvmMetrics = novaSettings.captureJvmMetrics;
+            this.warnOnUnhandledEvent = novaSettings.warnOnUnhandledEvent;
+            return this;
+        }
+
         public Nova build() {
             if (metrics == null) {
                 metrics = new Metrics();
@@ -88,5 +97,6 @@ public class Nova {
 
             return new Nova(this);
         }
+
     }
 }

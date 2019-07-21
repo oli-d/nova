@@ -11,18 +11,24 @@
 package ch.squaredesk.nova.service;
 
 import ch.squaredesk.nova.Nova;
+import ch.squaredesk.nova.metrics.MetricsDump;
 import ch.squaredesk.nova.service.annotation.LifecycleBeanProcessor;
+import ch.squaredesk.nova.spring.NovaProvidingConfiguration;
+import ch.squaredesk.nova.tuples.Pair;
+import io.reactivex.Flowable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
 
-import java.lang.reflect.Method;
+import java.net.InetAddress;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 public abstract class NovaService {
     private Lifeline lifeline = new Lifeline();
@@ -31,18 +37,19 @@ public abstract class NovaService {
 
     protected final Logger logger;
 
-    @Autowired
-    AnnotationConfigApplicationContext applicationContext;
-    @Autowired
+    @Qualifier(NovaServiceConfiguration.BeanIdentifiers.REGISTER_SHUTDOWN_HOOK)
     boolean registerShutdownHook;
+
     @Autowired
     LifecycleBeanProcessor lifecycleBeanProcessor;
-    @Autowired
-    protected Nova nova;
-    @Autowired
+    @Autowired @Qualifier(NovaServiceConfiguration.BeanIdentifiers.INSTANCE_IDENTIFIER)
     protected String instanceId;
-    @Autowired
+    @Autowired(required = false) @Qualifier(NovaServiceConfiguration.BeanIdentifiers.NAME)
     protected String serviceName;
+
+    @Autowired(required = false) @Qualifier(NovaProvidingConfiguration.BeanIdentifiers.NOVA)
+    public Nova nova;
+
 
     protected NovaService() {
         this.logger = LoggerFactory.getLogger(getClass());
@@ -52,7 +59,7 @@ public abstract class NovaService {
         Objects.requireNonNull(nova);
 
         if (registerShutdownHook) {
-            Runtime.getRuntime().addShutdownHook(new Thread(()->shutdown()));
+            Runtime.getRuntime().addShutdownHook(new Thread(this::shutdown));
         }
         lifecycleBeanProcessor.invokeInitHandlers();
     }
@@ -82,8 +89,6 @@ public abstract class NovaService {
             lifeline = new Lifeline();
             started = false;
 
-            applicationContext.close();
-
             logger.info("Shutdown procedure completed for service {}, instance {}.", serviceName, instanceId);
         }
     }
@@ -92,6 +97,41 @@ public abstract class NovaService {
         return started;
     }
 
+    List<Pair<String, String>> calculateAdditionalInfoForMetricsDump() {
+        Pair<String, String> hostName;
+        Pair<String, String> hostAddress;
+        try {
+            InetAddress myInetAddress = InetAddress.getLocalHost();
+            hostName = Pair.create("hostName", myInetAddress.getHostName());
+            hostAddress = Pair.create("hostAddress", myInetAddress.getHostAddress());
+        } catch (Exception ex) {
+            logger.warn("Unable to determine my IP address. MetricDumps will be lacking this information.");
+            hostName = Pair.create("hostName", "n/a");
+            hostAddress = Pair.create("hostAddress", "n/a");
+        }
+
+        List<Pair<String, String>> additionalInfoForMetricsDump = new ArrayList<>(Arrays.asList(
+                hostName,
+                hostAddress
+        ));
+
+        if (serviceName == null) {
+            serviceName = getClass().getSimpleName();
+            logger.info("The service name was not provided, so for the metric dumps we derived it from the class name: {} ", serviceName);
+        }
+        additionalInfoForMetricsDump.add(Pair.create("serviceName", serviceName));
+        if (instanceId != null) {
+            additionalInfoForMetricsDump.add(Pair.create("serviceInstanceId", instanceId));
+            String serviceInstanceName = serviceName + "." + instanceId;
+            additionalInfoForMetricsDump.add(Pair.create("serviceInstanceName", serviceInstanceName));
+        }
+
+        return additionalInfoForMetricsDump;
+    }
+
+    public Flowable<MetricsDump> dumpMetricsContinuously (long interval, TimeUnit timeUnit) {
+        return nova.metrics.dumpContinuously(interval, timeUnit, calculateAdditionalInfoForMetricsDump());
+    }
 
     private class Lifeline extends Thread {
         private final CountDownLatch shutdownLatch = new CountDownLatch(1);
@@ -113,44 +153,12 @@ public abstract class NovaService {
         }
     }
 
-    private static void assertIsAnnotated(Class classToCheck, Class annotationToCheckFor) {
-        boolean annotated = Arrays.stream(classToCheck.getAnnotations())
-                .anyMatch(anno -> anno.annotationType().equals(annotationToCheckFor));
-        if (!annotated) {
-            throw new IllegalArgumentException("the class " + classToCheck.getName() + " must be annotated with @" +
-                    annotationToCheckFor.getSimpleName());
-        }
-    }
+    public static <T extends NovaService> T createInstance(Class<T> serviceClass, Class<?> ...configurationClasses) {
 
-    private static void assertIsAnnotated(Class classToCheck, String methodToFind, Class annotationToCheckFor) {
-        Method methodToCheck;
-        try {
-            methodToCheck = classToCheck.getMethod(methodToFind);
-        } catch (Exception e) {
-            throw new RuntimeException("Unable to instantiate service", e);
-        }
+        AnnotationConfigApplicationContext ctx = new AnnotationConfigApplicationContext();
 
-        boolean annotated = Arrays.stream(methodToCheck.getAnnotations())
-                .anyMatch(anno -> anno.annotationType().equals(annotationToCheckFor));
-        if (!annotated) {
-            throw new IllegalArgumentException("the method " + methodToFind + "() must be annotated with @" +
-                    annotationToCheckFor.getSimpleName());
-        }
-    }
-
-    public static <T extends NovaService, U extends NovaServiceConfiguration<T>>
-        T createInstance(Class<T> serviceClass, Class<U> configurationClass) {
-
-        // ensure, that the passed config class is properly annotated
-        assertIsAnnotated(configurationClass, Configuration.class);
-
-        // and, that we also have an appropriate service bean creator
-        assertIsAnnotated(configurationClass, "serviceInstance", Bean.class);
-
-        AnnotationConfigApplicationContext ctx =
-                new AnnotationConfigApplicationContext();
-
-        ctx.register(configurationClass);
+        ctx.register(NovaServiceConfiguration.class);
+        ctx.register(configurationClasses);
         ctx.refresh();
 
         T service = ctx.getBean(serviceClass);

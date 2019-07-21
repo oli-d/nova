@@ -21,7 +21,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class NovaTest {
     @Test
-    void jvmMetricsAreCapturedByDefault() throws Exception {
+    void jvmMetricsAreCapturedByDefault() {
         Nova sut = Nova.builder().build();
 
         MetricsDump metricsDump = sut.metrics.dump();
@@ -31,12 +31,11 @@ public class NovaTest {
     }
 
     @Test
-    void jvmMetricsCapturingCanBeSwitchedOff() throws Exception {
+    void jvmMetricsCapturingCanBeSwitchedOff() {
         Nova sut = Nova.builder().captureJvmMetrics(false).build();
 
         MetricsDump metricsDump = sut.metrics.dump();
         assertNull(metricsDump.metrics.get(Metrics.name("jvm.mem")));
         assertNull(metricsDump.metrics.get(Metrics.name("jvm.gc")));
     }
-
 }
