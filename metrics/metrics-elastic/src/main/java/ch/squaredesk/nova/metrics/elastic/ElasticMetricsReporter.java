@@ -20,16 +20,14 @@ import org.apache.http.HttpHost;
 import org.elasticsearch.action.bulk.BulkRequest;
 import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.index.IndexRequest;
-import org.elasticsearch.client.Requests;
-import org.elasticsearch.client.RestClient;
-import org.elasticsearch.client.RestClientBuilder;
-import org.elasticsearch.client.RestHighLevelClient;
+import org.elasticsearch.client.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.time.Instant;
 import java.time.ZoneId;
+import java.util.Arrays;
 import java.util.Map;
 import java.util.Objects;
 
@@ -37,16 +35,21 @@ public class ElasticMetricsReporter implements Consumer<MetricsDump> {
     private static final Logger logger = LoggerFactory.getLogger(ElasticMetricsReporter.class);
 
     private final Consumer<Throwable> defaultExceptionHandler;
-    private final String elasticServer;
-    private final int elasticPort;
+    private final HttpHost[] elasticServers;
     private final String indexName;
     private final ZoneId zoneForTimestamps = ZoneId.of("UTC");
     private RestClient restClient;
     private RestHighLevelClient client;
 
-    public ElasticMetricsReporter(String elasticServer, int elasticPort, String indexName) {
-        this.elasticServer = elasticServer;
-        this.elasticPort = elasticPort;
+    public ElasticMetricsReporter(String indexName, String ... elasticServers) {
+        this(indexName,
+                Arrays.stream(elasticServers)
+                        .map(HttpHost::new)
+                        .toArray(HttpHost[]::new));
+    }
+
+    public ElasticMetricsReporter(String indexName, HttpHost ... elasticServers) {
+        this.elasticServers = elasticServers;
         this.indexName = indexName;
         defaultExceptionHandler = exception -> logger.error("Unable to upload metrics to index " + indexName, exception);
     }
@@ -77,15 +80,16 @@ public class ElasticMetricsReporter implements Consumer<MetricsDump> {
     }
 
     public void startup() {
-        logger.info("Connecting to Elasticsearch @ " + elasticServer + ":" + elasticPort);
+        logger.info("Connecting to Elasticsearch @ {}", Arrays.toString(elasticServers));
         try {
-            RestClientBuilder restClientBuilder = RestClient.builder(new HttpHost(elasticServer, elasticPort, "http"));
+            HttpHost[] httpHosts = Arrays.stream(elasticServers).map(HttpHost::new).toArray(HttpHost[]::new);
+            RestClientBuilder restClientBuilder = RestClient.builder(httpHosts);
             restClient = restClientBuilder.build();
             client = new RestHighLevelClient(restClientBuilder);
         } catch (Exception e) {
-            logger.error("Unable to connect to Elastic @ " + elasticServer + ":" + elasticPort, e);
+            logger.error("Unable to connect to Elastic @ {}", Arrays.toString(elasticServers), e);
         }
-        logger.info("\tsuccessfully established connection to Elastic @ " + elasticServer + ":" + elasticPort + " :-)");
+        logger.info("\tsuccessfully established connection to Elastic @ {} :-)", Arrays.toString(elasticServers));
     }
 
     public void shutdown() {
@@ -106,7 +110,7 @@ public class ElasticMetricsReporter implements Consumer<MetricsDump> {
 
         bulkRequestSingle.subscribe(
                 bulkRequest -> {
-                    BulkResponse response = client.bulk(bulkRequest);
+                    BulkResponse response = client.bulk(bulkRequest, RequestOptions.DEFAULT);
                     if (response.hasFailures()) {
                         logger.warn("Error uploading metrics: " + response.buildFailureMessage());
                     } else {
