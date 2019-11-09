@@ -120,12 +120,7 @@ public class HttpRequestSender {
                 errorReader.close();
                 return new HttpResponse(responseCode, sb.toString().trim());
             } else {
-                BufferedReader replyReader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
-                while (replyReader.ready()) {
-                    sb.append(replyReader.readLine()).append('\n');
-                }
-                replyReader.close();
-                return new HttpResponse(responseCode, sb.toString());
+                return new HttpResponse(responseCode, connection.getResponseMessage());
             }
         }
 
