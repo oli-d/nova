@@ -11,10 +11,9 @@
 package ch.squaredesk.nova.metrics;
 
 import ch.squaredesk.nova.tuples.Pair;
-import io.dropwizard.metrics5.*;
 import io.dropwizard.metrics5.Timer;
+import io.dropwizard.metrics5.*;
 import io.reactivex.Flowable;
-import io.reactivex.Observable;
 import org.slf4j.LoggerFactory;
 
 import java.util.*;

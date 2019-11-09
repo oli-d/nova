@@ -11,7 +11,6 @@
 package ch.squaredesk.nova.comm.kafka;
 
 import ch.squaredesk.nova.metrics.Metrics;
-import io.reactivex.Completable;
 import io.reactivex.Single;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.Producer;

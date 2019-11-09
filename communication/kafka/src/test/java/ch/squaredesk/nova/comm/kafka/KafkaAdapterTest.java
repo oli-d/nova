@@ -14,7 +14,6 @@ import com.github.charithe.kafka.KafkaHelper;
 import com.github.charithe.kafka.KafkaJunitExtension;
 import com.github.charithe.kafka.KafkaJunitExtensionConfig;
 import com.github.charithe.kafka.StartupMode;
-import io.reactivex.Completable;
 import io.reactivex.Single;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.functions.Consumer;

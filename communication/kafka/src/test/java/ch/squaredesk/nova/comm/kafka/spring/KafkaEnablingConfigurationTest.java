@@ -1,7 +1,6 @@
 package ch.squaredesk.nova.comm.kafka.spring;
 
 import ch.squaredesk.nova.comm.kafka.KafkaAdapter;
-import ch.squaredesk.nova.spring.NovaProvidingConfiguration;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;

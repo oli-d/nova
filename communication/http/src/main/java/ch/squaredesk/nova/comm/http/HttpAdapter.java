@@ -19,7 +19,6 @@ import ch.squaredesk.nova.comm.http.spring.HttpServerBeanListener;
 import com.ning.http.client.AsyncHttpClient;
 import io.reactivex.Flowable;
 import io.reactivex.Single;
-import io.reactivex.functions.Consumer;
 import io.reactivex.functions.Function;
 import org.glassfish.grizzly.http.server.HttpServer;
 import org.slf4j.Logger;

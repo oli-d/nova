@@ -15,7 +15,6 @@ import ch.squaredesk.nova.comm.DefaultMessageTranscriberForStringAsTransportType
 import ch.squaredesk.nova.comm.http.spring.HttpServerBeanListener;
 import ch.squaredesk.nova.comm.websockets.client.WebSocketFactory;
 import ch.squaredesk.nova.comm.websockets.server.ServerEndpointFactory;
-import ch.squaredesk.nova.metrics.Metrics;
 import com.ning.http.client.AsyncHttpClient;
 import io.reactivex.Observable;
 import io.reactivex.subjects.BehaviorSubject;

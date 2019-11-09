@@ -10,19 +10,16 @@
 
 package ch.squaredesk.nova.service;
 
-import ch.squaredesk.nova.Nova;
 import ch.squaredesk.nova.metrics.MetricsDump;
 import ch.squaredesk.nova.service.annotation.OnServiceInit;
 import ch.squaredesk.nova.service.annotation.OnServiceShutdown;
 import ch.squaredesk.nova.service.annotation.OnServiceStartup;
-import ch.squaredesk.nova.spring.NovaProvidingConfiguration;
 import ch.squaredesk.nova.tuples.Pair;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.BeanInitializationException;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
-import org.springframework.beans.factory.UnsatisfiedDependencyException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.context.annotation.Bean;
@@ -35,7 +32,8 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.*;
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.*;
 
 @Tag("medium")

@@ -11,7 +11,6 @@
 package ch.squaredesk.nova.comm.jms;
 
 import ch.squaredesk.nova.metrics.Metrics;
-import io.reactivex.Completable;
 import io.reactivex.Single;
 
 import javax.jms.Destination;

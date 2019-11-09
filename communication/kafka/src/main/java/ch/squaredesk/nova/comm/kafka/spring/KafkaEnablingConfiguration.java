@@ -1,7 +1,6 @@
 package ch.squaredesk.nova.comm.kafka.spring;
 
 import ch.squaredesk.nova.Nova;
-import ch.squaredesk.nova.comm.CommAdapterBuilder;
 import ch.squaredesk.nova.comm.DefaultMessageTranscriberForStringAsTransportType;
 import ch.squaredesk.nova.comm.MessageTranscriber;
 import ch.squaredesk.nova.comm.kafka.KafkaAdapter;

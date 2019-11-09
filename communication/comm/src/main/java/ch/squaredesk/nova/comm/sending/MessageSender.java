@@ -13,7 +13,6 @@ package ch.squaredesk.nova.comm.sending;
 
 
 import ch.squaredesk.nova.metrics.Metrics;
-import io.reactivex.Completable;
 import io.reactivex.Single;
 import io.reactivex.functions.Function;
 
