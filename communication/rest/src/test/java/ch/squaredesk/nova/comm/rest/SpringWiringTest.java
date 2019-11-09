@@ -12,6 +12,7 @@
 package ch.squaredesk.nova.comm.rest;
 
 import ch.squaredesk.nova.Nova;
+import ch.squaredesk.nova.comm.http.HttpRequestSender;
 import ch.squaredesk.nova.comm.http.HttpServerSettings;
 import ch.squaredesk.nova.metrics.Metrics;
 import org.junit.jupiter.api.Test;
@@ -44,7 +45,7 @@ class SpringWiringTest {
 
         assertThat(metrics.getTimer("rest", "foo").getCount(), is(0L));
 
-        String replyAsString = HttpHelper.getResponseBody(serverUrl + "/foo", null);
+        String replyAsString = HttpRequestSender.sendGetRequest(serverUrl + "/foo").replyMessage;
         assertThat(replyAsString, is("MyBean"));
         assertThat(metrics.getTimer("rest", "foo").getCount(), is(1L));
     }

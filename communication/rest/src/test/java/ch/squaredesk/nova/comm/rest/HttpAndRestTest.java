@@ -12,6 +12,7 @@
 package ch.squaredesk.nova.comm.rest;
 
 import ch.squaredesk.nova.comm.http.HttpAdapter;
+import ch.squaredesk.nova.comm.http.HttpRequestSender;
 import ch.squaredesk.nova.comm.http.HttpServerSettings;
 import ch.squaredesk.nova.comm.http.RpcReply;
 import io.reactivex.observers.TestObserver;
@@ -55,8 +56,8 @@ class HttpAndRestTest {
                 invocation -> invocation.complete("YourBean", 200)
         );
 
-        String response1 = HttpHelper.getResponseBody(serverUrl + "/foo1", "some request");
-        String response2 = HttpHelper.getResponseBody(serverUrl + "/foo2", "some request");
+        String response1 = HttpRequestSender.sendGetRequest(serverUrl + "/foo1").replyMessage;
+        String response2 = HttpRequestSender.sendGetRequest(serverUrl + "/foo2").replyMessage;
 
         assertThat(response1, is("YourBean"));
         assertThat(response2, is("MyBean"));
