@@ -65,8 +65,28 @@ public class HttpRequestSender {
         return sendRequest("GET", url, null, null);
     }
 
+    public static HttpResponse sendGetRequest (String url, RequestHeaders requestHeaders) throws IOException {
+        return sendGetRequest(new URL(url), requestHeaders);
+    }
+
     public static HttpResponse sendGetRequest (URL url, RequestHeaders requestHeaders) throws IOException {
         return sendRequest("GET", url, null, requestHeaders);
+    }
+
+    public static HttpResponse sendOptionsRequest (String url) throws IOException {
+        return sendOptionsRequest(new URL(url));
+    }
+
+    public static HttpResponse sendOptionsRequest (URL url) throws IOException {
+        return sendOptionsRequest(url, null);
+    }
+
+    public static HttpResponse sendOptionsRequest (String url, RequestHeaders requestHeaders) throws IOException {
+        return sendOptionsRequest(new URL(url), requestHeaders);
+    }
+
+    public static HttpResponse sendOptionsRequest (URL url, RequestHeaders requestHeaders) throws IOException {
+        return sendRequest("OPTIONS", url, null, requestHeaders);
     }
 
     public static HttpResponse sendRequest (String method, URL url, String request, RequestHeaders requestHeaders) throws IOException {
@@ -100,7 +120,12 @@ public class HttpRequestSender {
                 errorReader.close();
                 return new HttpResponse(responseCode, sb.toString().trim());
             } else {
-                return new HttpResponse(responseCode, connection.getResponseMessage());
+                BufferedReader replyReader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+                while (replyReader.ready()) {
+                    sb.append(replyReader.readLine()).append('\n');
+                }
+                replyReader.close();
+                return new HttpResponse(responseCode, sb.toString());
             }
         }
 
