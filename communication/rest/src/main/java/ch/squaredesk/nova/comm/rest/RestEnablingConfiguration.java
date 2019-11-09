@@ -15,6 +15,7 @@ import ch.squaredesk.nova.Nova;
 import ch.squaredesk.nova.comm.http.HttpServerSettings;
 import ch.squaredesk.nova.comm.http.spring.HttpEnablingConfiguration;
 import ch.squaredesk.nova.comm.http.spring.HttpServerProvidingConfiguration;
+import ch.squaredesk.nova.tuples.Pair;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -23,12 +24,16 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.core.env.Environment;
 
+import java.util.Collection;
+import java.util.Collections;
+
 @Configuration
 @Import({HttpEnablingConfiguration.class})
 public class RestEnablingConfiguration {
     public interface BeanIdentifiers {
         String CAPTURE_METRICS = "NOVA.REST.CAPTURE_METRICS";
         String LOG_INVOCATIONS = "NOVA.REST.LOG_INVOCATIONS";
+        String REST_SERVER_PROPERTIES = "NOVA.REST.SERVER.PROPERTIES";
         String REST_SERVER = "NOVA.REST.SERVER.INSTANCE";
     }
 
@@ -65,13 +70,19 @@ public class RestEnablingConfiguration {
         }
     }
 
+    @Bean(BeanIdentifiers.REST_SERVER_PROPERTIES)
+    Collection<Pair<String, Object>> restServerProperties() {
+        return Collections.emptyList();
+    }
+
     @Bean
     RestServerStarter restServerStarter(@Qualifier(HttpServerProvidingConfiguration.BeanIdentifiers.SETTINGS) HttpServerSettings httpServerSettings,
+                                        @Qualifier(BeanIdentifiers.REST_SERVER_PROPERTIES) Collection<Pair<String, Object>> restServerProperties,
                                         RestBeanPostprocessor restBeanPostprocessor,
                                         @Qualifier(HttpEnablingConfiguration.BeanIdentifiers.OBJECT_MAPPER) @Autowired(required = false) ObjectMapper httpObjectMapper,
                                         @Qualifier(BeanIdentifiers.CAPTURE_METRICS) boolean captureRestMetrics,
                                         Nova nova) {
-        return new RestServerStarter(httpServerSettings, restBeanPostprocessor, httpObjectMapper, captureRestMetrics, nova);
+        return new RestServerStarter(httpServerSettings, restServerProperties, restBeanPostprocessor, httpObjectMapper, captureRestMetrics, nova);
     }
 
     @Bean

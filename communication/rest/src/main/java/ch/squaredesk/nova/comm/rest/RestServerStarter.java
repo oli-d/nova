@@ -12,9 +12,8 @@ package ch.squaredesk.nova.comm.rest;
 
 import ch.squaredesk.nova.Nova;
 import ch.squaredesk.nova.comm.http.HttpServerSettings;
-import ch.squaredesk.nova.comm.http.MetricsCollectorInfoCreator;
 import ch.squaredesk.nova.comm.http.spring.HttpServerBeanNotifier;
-import ch.squaredesk.nova.metrics.Metrics;
+import ch.squaredesk.nova.tuples.Pair;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.dropwizard.metrics5.Timer;
@@ -23,6 +22,7 @@ import org.glassfish.jersey.grizzly2.httpserver.GrizzlyHttpServerFactory;
 import org.glassfish.jersey.jackson.JacksonFeature;
 import org.glassfish.jersey.media.multipart.MultiPartFeature;
 import org.glassfish.jersey.server.ResourceConfig;
+import org.glassfish.jersey.server.ServerProperties;
 import org.glassfish.jersey.server.monitoring.ApplicationEvent;
 import org.glassfish.jersey.server.monitoring.ApplicationEventListener;
 import org.glassfish.jersey.server.monitoring.RequestEvent;
@@ -44,13 +44,14 @@ import javax.ws.rs.ext.ReaderInterceptor;
 import javax.ws.rs.ext.WriterInterceptor;
 import java.io.IOException;
 import java.net.URI;
-import java.util.Map;
+import java.util.*;
 
 public class RestServerStarter implements ApplicationListener<ContextRefreshedEvent> {
     private static final Logger logger = LoggerFactory.getLogger(RestServerStarter.class);
 
     private HttpServer httpServer;
     private HttpServerSettings httpServerSettings;
+    private final Collection<Pair<String, Object>> restServerProperties;
     private RestBeanPostprocessor restBeanPostprocessor;
     private ObjectMapper httpObjectMapper;
     private boolean captureRestMetrics;
@@ -58,11 +59,13 @@ public class RestServerStarter implements ApplicationListener<ContextRefreshedEv
     private Nova nova;
 
     public RestServerStarter(HttpServerSettings httpServerSettings,
+                             Collection<Pair<String, Object>> restServerProperties,
                              RestBeanPostprocessor restBeanPostprocessor,
                              ObjectMapper httpObjectMapper,
                              boolean captureRestMetrics,
                              Nova nova) {
         this.httpServerSettings = httpServerSettings;
+        this.restServerProperties = Optional.ofNullable(restServerProperties).orElse(Collections.emptyList());
         this.restBeanPostprocessor = restBeanPostprocessor;
         this.httpObjectMapper = httpObjectMapper;
         this.captureRestMetrics = captureRestMetrics;
@@ -75,7 +78,14 @@ public class RestServerStarter implements ApplicationListener<ContextRefreshedEv
         if (httpServer == null) {
             ResourceConfig resourceConfig = new ResourceConfig()
                     .register(MultiPartFeature.class)
-                    .register(JacksonFeature.class);
+                    .register(JacksonFeature.class)
+                    // by default, we disable the WADL generation for security reasons
+                    .property(ServerProperties.WADL_FEATURE_DISABLE, true);
+
+            restServerProperties
+                    .stream()
+                    .filter(Objects::nonNull)
+                    .forEach(prop -> resourceConfig.property(prop._1, prop._2));
 
             // do we have a specific ObjectMapper?
             if (httpObjectMapper != null) {

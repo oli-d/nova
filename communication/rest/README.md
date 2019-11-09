@@ -10,7 +10,13 @@ Simply import the ```RestEnablingConfiguration``` class and you are ready to go.
 Doing so ensures, that a local server is started and all annotated handlers are properly registered.
 
 The server is created with the default settings described in the [http](../http/README.md)
-package.
+package. In addition, you can define the following REST specific configuration:
+
+| Environnment variable / bean name | Description                   | Default value |
+|-----------------------------------|-------------------------------|---------------|
+| CAPTURE_METRICS                   | Enable metrics capturing      | ```true``` |
+| NOVA.REST.LOG_INVOCATIONS         | Log REST endpoint invocations | ```true``` |
+| NOVA.REST.SERVER.PROPERTIES       | A collection of ```Pair<String, Object>``` entities, that set specific server properties. For details, check the documentation of [Jersey](https://eclipse-ee4j.github.io/jersey.github.io/documentation/latest), the underlying implementation we use  | _empty_        |
 
 
 So, as an example, if you write the following class:
