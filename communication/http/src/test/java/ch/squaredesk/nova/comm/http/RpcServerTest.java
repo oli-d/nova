@@ -1,5 +1,6 @@
 package ch.squaredesk.nova.comm.http;
 
+import ch.squaredesk.net.PortFinder;
 import ch.squaredesk.nova.metrics.Metrics;
 import io.reactivex.Flowable;
 import io.reactivex.schedulers.Schedulers;
@@ -26,12 +27,14 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 @Tag("medium")
 class RpcServerTest {
-    private HttpServerSettings rsc = HttpServerSettings.builder().interfaceName("localhost").port(10000).build();
-    private HttpServer httpServer = HttpServerFactory.serverFor(rsc);
+    private HttpServerSettings rsc;
+    private HttpServer httpServer;
     private RpcServer sut;
 
     @BeforeEach
     void setup() {
+        rsc = HttpServerSettings.builder().interfaceName("localhost").port(PortFinder.findFreePort()).build();
+        httpServer = HttpServerFactory.serverFor(rsc);
         sut = new RpcServer(httpServer, new Metrics());
     }
 
