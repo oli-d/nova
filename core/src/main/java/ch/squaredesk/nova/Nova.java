@@ -11,14 +11,12 @@
 package ch.squaredesk.nova;
 
 import ch.squaredesk.nova.events.EventBus;
-import ch.squaredesk.nova.events.EventBusConfig;
+import ch.squaredesk.nova.events.EventDispatchConfig;
 import ch.squaredesk.nova.filesystem.Filesystem;
 import ch.squaredesk.nova.metrics.CpuMeter;
 import ch.squaredesk.nova.metrics.GarbageCollectionMeter;
 import ch.squaredesk.nova.metrics.MemoryMeter;
 import ch.squaredesk.nova.metrics.Metrics;
-import ch.squaredesk.nova.spring.NovaSettings;
-import io.reactivex.BackpressureStrategy;
 
 public class Nova {
 
@@ -29,7 +27,7 @@ public class Nova {
 
     private Nova(Builder builder) {
         this.identifier = builder.identifier;
-        this.eventBus = new EventBus(identifier, builder.eventBusConfig, builder.metrics);
+        this.eventBus = new EventBus(identifier, builder.eventDispatchConfig, builder.metrics);
         this.filesystem = new Filesystem();
         this.metrics = builder.metrics;
     }
@@ -42,10 +40,7 @@ public class Nova {
         private String identifier = "";
         private Metrics metrics;
         private boolean captureJvmMetrics = true;
-
-        private BackpressureStrategy defaultBackpressureStrategy = BackpressureStrategy.BUFFER;
-        private boolean warnOnUnhandledEvent = false;
-        private EventBusConfig eventBusConfig;
+        private EventDispatchConfig eventDispatchConfig;
 
         private Builder() {
         }
@@ -55,13 +50,8 @@ public class Nova {
             return this;
         }
 
-        public Builder setDefaultBackpressureStrategy(BackpressureStrategy defaultBackpressureStrategy) {
-            this.defaultBackpressureStrategy = defaultBackpressureStrategy;
-            return this;
-        }
-
-        public Builder setWarnOnUnhandledEvent(boolean warnOnUnhandledEvent) {
-            this.warnOnUnhandledEvent = warnOnUnhandledEvent;
+        public Builder setEventDispatchConfig(EventDispatchConfig eventDispatchConfig) {
+            this.eventDispatchConfig = eventDispatchConfig;
             return this;
         }
 
@@ -70,14 +60,6 @@ public class Nova {
             return this;
         }
 
-
-        public Builder withSettings(NovaSettings novaSettings) {
-            this.identifier = novaSettings.identifier;
-            this.defaultBackpressureStrategy = novaSettings.defaultBackpressureStrategy;
-            this.captureJvmMetrics = novaSettings.captureJvmMetrics;
-            this.warnOnUnhandledEvent = novaSettings.warnOnUnhandledEvent;
-            return this;
-        }
 
         public Nova build() {
             if (metrics == null) {
@@ -92,8 +74,6 @@ public class Nova {
                     metrics.register(cpuMeter, "os", "cpu");
                 }
             }
-
-            eventBusConfig = new EventBusConfig(defaultBackpressureStrategy, warnOnUnhandledEvent);
 
             return new Nova(this);
         }

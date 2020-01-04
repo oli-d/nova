@@ -17,10 +17,17 @@ import java.util.concurrent.ThreadFactory;
 
 public class NovaSchedulers {
     private static final ThreadFactory threadFactoryBizLogic = runnable -> {
-        Thread t = new Thread(runnable, "BusinessLogic");
+        Thread t = new Thread(runnable, "NovaEventDispatcher");
         t.setDaemon(true);
         return t;
     };
-    public static final Scheduler businessLogicThreadScheduler =
-            Schedulers.from(Executors.newSingleThreadExecutor(threadFactoryBizLogic));
+
+    public static Scheduler eventDispatchScheduler(int threadPoolSize) {
+        if (threadPoolSize == 1) {
+            return Schedulers.from(Executors.newSingleThreadExecutor(threadFactoryBizLogic));
+        } else {
+            return Schedulers.from(Executors.newFixedThreadPool(threadPoolSize));
+        }
+
+    }
 }

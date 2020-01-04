@@ -12,20 +12,26 @@ package ch.squaredesk.nova.events;
 
 import io.reactivex.BackpressureStrategy;
 
-public class EventBusConfig {
+public class EventDispatchConfig {
     public final BackpressureStrategy defaultBackpressureStrategy;
     public final boolean warnOnUnhandledEvents;
+    public final boolean dispatchEventsOnSeparateExecutor;
+    public final int eventDispatchThreadPoolSize;
 
 
-    public EventBusConfig(BackpressureStrategy backpressureStrategy, boolean warnOnUnhandledEvents) {
+    public EventDispatchConfig(BackpressureStrategy backpressureStrategy, boolean warnOnUnhandledEvents, boolean dispatchEventsOnSeparateExecutor, int eventDispatchThreadPoolSize) {
         this.defaultBackpressureStrategy = backpressureStrategy;
         this.warnOnUnhandledEvents = warnOnUnhandledEvents;
+        this.dispatchEventsOnSeparateExecutor = dispatchEventsOnSeparateExecutor;
+        this.eventDispatchThreadPoolSize = eventDispatchThreadPoolSize;
     }
 
     @Override
     public String toString() {
         return "EventBusConfig{" +
                 "defaultBackpressureStrategy=" + defaultBackpressureStrategy +
+                "dispatchEventsOnSeparateExecutor=" + dispatchEventsOnSeparateExecutor +
+                "eventDispatchThreadPoolSize=" + eventDispatchThreadPoolSize +
                 ", warnOnUnhandledEvents=" + warnOnUnhandledEvents +
                 '}';
     }

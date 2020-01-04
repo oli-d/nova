@@ -26,7 +26,7 @@ import static java.util.Objects.requireNonNull;
 public class EventBus {
     private final Logger logger = LoggerFactory.getLogger(EventBus.class);
 
-    public final EventBusConfig eventBusConfig;
+    public final EventDispatchConfig eventDispatchConfig;
 
     // metrics
     private final EventMetricsCollector metricsCollector;
@@ -34,10 +34,10 @@ public class EventBus {
     // the event specific subjects
     private final ConcurrentHashMap<Object,Subject<Object[]>> eventSpecificSubjects;
 
-    public EventBus(String identifier, EventBusConfig eventBusConfig, Metrics metrics){
-            this.eventBusConfig = eventBusConfig;
+    public EventBus(String identifier, EventDispatchConfig eventDispatchConfig, Metrics metrics){
+            this.eventDispatchConfig = eventDispatchConfig;
             this.metricsCollector = new EventMetricsCollector(identifier, metrics);
-        logger.debug("Instantiating event loop {} using the following config {}", identifier, eventBusConfig);
+        logger.debug("Instantiating event loop {} using the following config {}", identifier, eventDispatchConfig);
         eventSpecificSubjects = new ConcurrentHashMap<>();
     }
 
@@ -55,7 +55,7 @@ public class EventBus {
             Subject<Object[]> subject = getSubjectFor(event);
             if (!subject.hasObservers()) {
                 metricsCollector.eventEmittedButNoObservers(event);
-                if (eventBusConfig.warnOnUnhandledEvents) {
+                if (eventDispatchConfig.warnOnUnhandledEvents) {
                     logger.warn("Trying to dispatch event {}, but no observers could be found. Data: {}",
                             event, Arrays.toString(data));
                 }
@@ -69,7 +69,7 @@ public class EventBus {
     }
 
     public Flowable<Object[]> on(Object event) {
-        return on(event, eventBusConfig.defaultBackpressureStrategy);
+        return on(event, eventDispatchConfig.defaultBackpressureStrategy);
     }
 
 

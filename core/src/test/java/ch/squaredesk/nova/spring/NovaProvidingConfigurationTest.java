@@ -50,8 +50,8 @@ class NovaProvidingConfigurationTest {
         assertThat(sut.identifier, is(""));
         assertNotNull(sut.metrics.getMetrics().get(Metrics.name("jvm.mem")));
         assertNotNull(sut.metrics.getMetrics().get(Metrics.name("jvm.gc")));
-        assertThat(sut.eventBus.eventBusConfig.warnOnUnhandledEvents, is(false));
-        assertThat(sut.eventBus.eventBusConfig.defaultBackpressureStrategy, is(BackpressureStrategy.BUFFER));
+        assertThat(sut.eventBus.eventDispatchConfig.warnOnUnhandledEvents, is(false));
+        assertThat(sut.eventBus.eventDispatchConfig.defaultBackpressureStrategy, is(BackpressureStrategy.BUFFER));
     }
 
     @Test
@@ -65,14 +65,14 @@ class NovaProvidingConfigurationTest {
     void warnOnUnhandledEventCanBeOverridenWithEnvironmentVariable() {
         System.setProperty(WARN_ON_UNHANDLED_EVENTS, "true");
         Nova sut = createSut();
-        assertThat(sut.eventBus.eventBusConfig.warnOnUnhandledEvents, is(true));
+        assertThat(sut.eventBus.eventDispatchConfig.warnOnUnhandledEvents, is(true));
     }
 
     @Test
     void defaultBackpressureStrategyCanBeOverridenWithEnvironmentVariable() {
         System.setProperty(DEFAULT_BACKPRESSURE_STRATEGY, BackpressureStrategy.DROP.toString());
         Nova sut = createSut();
-        assertThat(sut.eventBus.eventBusConfig.defaultBackpressureStrategy, is(BackpressureStrategy.DROP));
+        assertThat(sut.eventBus.eventDispatchConfig.defaultBackpressureStrategy, is(BackpressureStrategy.DROP));
     }
 
     @Test

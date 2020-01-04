@@ -11,10 +11,12 @@
 package ch.squaredesk.nova.events.annotation;
 
 import ch.squaredesk.nova.Nova;
+import ch.squaredesk.nova.events.EventDispatchConfig;
 import ch.squaredesk.nova.metrics.Metrics;
 import io.dropwizard.metrics5.MetricName;
 import io.dropwizard.metrics5.Timer;
 import io.reactivex.Flowable;
+import io.reactivex.Scheduler;
 import io.reactivex.functions.Consumer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,13 +27,13 @@ import org.springframework.context.event.ContextRefreshedEvent;
 
 import java.lang.reflect.Method;
 import java.util.Arrays;
-import java.util.Objects;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Collectors;
 
 public class EventHandlingBeanPostprocessor implements BeanPostProcessor, ApplicationListener<ContextRefreshedEvent> {
     private final Logger logger = LoggerFactory.getLogger(EventHandlingBeanPostprocessor.class);
     private final BeanExaminer beanExaminer = new BeanExaminer();
+    private Scheduler eventDisptachScheduler = null;
 
     final CopyOnWriteArrayList<EventHandlerDescription> handlerDescriptions = new CopyOnWriteArrayList<>();
 
@@ -49,8 +51,10 @@ public class EventHandlingBeanPostprocessor implements BeanPostProcessor, Applic
     @Override
     public void onApplicationEvent(ContextRefreshedEvent event) {
         Nova nova = event.getApplicationContext().getBean(Nova.class);
-        Objects.requireNonNull(nova,
-                "Unable to initialize event handling, since no Nova instance was found in ApplicationContext");
+        EventDispatchConfig eventDispatchConfig = event.getApplicationContext().getBean(EventDispatchConfig.class);
+        if (eventDispatchConfig.dispatchEventsOnSeparateExecutor) {
+            eventDisptachScheduler = NovaSchedulers.eventDispatchScheduler(eventDispatchConfig.eventDispatchThreadPoolSize);
+        }
         EventContext eventContext = new EventContext(nova.metrics, nova.eventBus);
         handlerDescriptions.forEach(hd -> registerEventHandler(hd, eventContext, nova.identifier));
     }
@@ -69,8 +73,8 @@ public class EventHandlingBeanPostprocessor implements BeanPostProcessor, Applic
                 eventConsumer = new TimeMeasuringEventHandlingMethodInvoker(timer, invoker);
             }
             Flowable<Object[]> flowable = eventContext.eventBus.on(event, eventHandlerDescription.backpressureStrategy);
-            if (eventHandlerDescription.dispatchOnBusinessLogicThread) {
-                flowable = flowable.observeOn(NovaSchedulers.businessLogicThreadScheduler);
+            if (eventDisptachScheduler != null) {
+                flowable = flowable.observeOn(eventDisptachScheduler);
             }
             flowable.subscribe(eventConsumer);
         }

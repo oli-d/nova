@@ -1,17 +1,15 @@
 package ch.squaredesk.nova.spring;
 
-import io.reactivex.BackpressureStrategy;
+import ch.squaredesk.nova.events.EventDispatchConfig;
 
 public class NovaSettings {
     public final String identifier;
-    public final BackpressureStrategy defaultBackpressureStrategy;
-    public final Boolean warnOnUnhandledEvent;
+    public final EventDispatchConfig eventDispatchConfig;
     public final Boolean captureJvmMetrics;
 
-    public NovaSettings(String identifier, BackpressureStrategy defaultBackpressureStrategy, Boolean warnOnUnhandledEvent, Boolean captureJvmMetrics) {
+    public NovaSettings(String identifier, EventDispatchConfig eventDispatchConfig, Boolean captureJvmMetrics) {
         this.identifier = identifier;
-        this.defaultBackpressureStrategy = defaultBackpressureStrategy;
-        this.warnOnUnhandledEvent = warnOnUnhandledEvent;
+        this.eventDispatchConfig = eventDispatchConfig;
         this.captureJvmMetrics = captureJvmMetrics;
     }
 }

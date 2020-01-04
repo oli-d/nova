@@ -9,20 +9,17 @@ public class EventHandlerDescription {
     public final Method methodToInvoke;
     public final String[] events;
     public final BackpressureStrategy backpressureStrategy;
-    public final boolean dispatchOnBusinessLogicThread;
     public final boolean captureInvocationTimeMetrics;
 
     public EventHandlerDescription(Object bean, 
                                    Method methodToInvoke, 
                                    String[] events, 
                                    BackpressureStrategy backpressureStrategy, 
-                                   boolean dispatchOnBusinessLogicThread, 
                                    boolean captureInvocationTimeMetrics) {
         this.bean = bean;
         this.methodToInvoke = methodToInvoke;
         this.events = events;
         this.backpressureStrategy = backpressureStrategy;
-        this.dispatchOnBusinessLogicThread = dispatchOnBusinessLogicThread;
         this.captureInvocationTimeMetrics = captureInvocationTimeMetrics;
     }
 }
