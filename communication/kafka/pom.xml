@@ -1,11 +1,12 @@
 <!--
-  ~ Copyright (c) Squaredesk GmbH and Oliver Dotzauer.
+  ~ Copyright (c) 2020 Squaredesk GmbH and Oliver Dotzauer.
   ~
   ~ This program is distributed under the squaredesk open source license. See the LICENSE file
   ~ distributed with this work for additional information regarding copyright ownership. You may also
   ~ obtain a copy of the license at
   ~
   ~   https://squaredesk.ch/license/oss/LICENSE
+  ~
   -->
 
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
@@ -15,18 +16,18 @@
 	<parent>
 		<groupId>ch.squaredesk.nova</groupId>
 		<artifactId>parentpom</artifactId>
-		<version>8.0.0</version>
+		<version>9.0.0</version>
 		<relativePath>../../parentpom</relativePath>
 	</parent>
 
 	<artifactId>kafka</artifactId>
-	<version>8.0.0</version>
+	<version>9.0.0</version>
 
 	<dependencies>
 		<dependency>
 			<groupId>ch.squaredesk.nova</groupId>
 			<artifactId>comm</artifactId>
-			<version>8.0.0</version>
+			<version>9.0.0</version>
 		</dependency>
 		<!-- Normally, we should already get jackson transitively from the comm module dependency. However, if we do so,
              a wrong version gets imported (?!?!?!), therefore we have to explicitly import it here (again). -->
@@ -60,7 +61,7 @@
 		<dependency>
 			<groupId>ch.squaredesk.nova</groupId>
 			<artifactId>test-utils</artifactId>
-			<version>8.0.0</version>
+			<version>9.0.0</version>
             <scope>test</scope>
 		</dependency>
 	</dependencies>

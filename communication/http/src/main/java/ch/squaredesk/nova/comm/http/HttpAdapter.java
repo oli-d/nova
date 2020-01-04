@@ -1,5 +1,5 @@
 /*
- * Copyright (c) Squaredesk GmbH and Oliver Dotzauer.
+ * Copyright (c) 2020 Squaredesk GmbH and Oliver Dotzauer.
  *
  * This program is distributed under the squaredesk open source license. See the LICENSE file
  * distributed with this work for additional information regarding copyright ownership. You may also
@@ -15,7 +15,6 @@ import ch.squaredesk.nova.comm.CommAdapter;
 import ch.squaredesk.nova.comm.CommAdapterBuilder;
 import ch.squaredesk.nova.comm.DefaultMessageTranscriberForStringAsTransportType;
 import ch.squaredesk.nova.comm.MessageTranscriber;
-import ch.squaredesk.nova.comm.http.spring.HttpServerBeanListener;
 import com.ning.http.client.AsyncHttpClient;
 import io.reactivex.Flowable;
 import io.reactivex.Single;
@@ -33,7 +32,7 @@ import java.util.concurrent.TimeUnit;
 
 import static java.util.Objects.requireNonNull;
 
-public class HttpAdapter extends CommAdapter<String> implements HttpServerBeanListener {
+public class HttpAdapter extends CommAdapter<String> implements HttpServerInstanceListener {
     private final RpcClient rpcClient;
     private final RpcServer rpcServer;
     private final Long defaultRequestTimeout;
@@ -748,9 +747,9 @@ public class HttpAdapter extends CommAdapter<String> implements HttpServerBeanLi
 
     ///////// Spring wiring
     @Override
-    public void httpServerAvailableInContext(HttpServer httpServer) {
+    public void httpServerInstanceCreated(HttpServer httpServer) {
         if (this.rpcServer != null) {
-            this.rpcServer.httpServerAvailableInContext(httpServer);
+            this.rpcServer.httpServerInstanceCreated(httpServer);
         }
     }
 

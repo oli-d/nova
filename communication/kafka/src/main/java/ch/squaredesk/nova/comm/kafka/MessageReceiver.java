@@ -1,11 +1,12 @@
 /*
- * Copyright (c) Squaredesk GmbH and Oliver Dotzauer.
+ * Copyright (c) 2020 Squaredesk GmbH and Oliver Dotzauer.
  *
  * This program is distributed under the squaredesk open source license. See the LICENSE file
  * distributed with this work for additional information regarding copyright ownership. You may also
  * obtain a copy of the license at
  *
  *   https://squaredesk.ch/license/oss/LICENSE
+ *
  */
 
 package ch.squaredesk.nova.comm.kafka;
@@ -22,6 +23,7 @@ import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
@@ -50,7 +52,7 @@ public class MessageReceiver
             ConsumerRecords<String, String> consumerRecords = null;
             do {
                 try {
-                    consumerRecords = consumer.poll(pollTimeUnit.toMillis(pollTimeout));
+                    consumerRecords = consumer.poll(Duration.ofMillis(pollTimeUnit.toMillis(pollTimeout)));
                 } catch (Exception ex) {
                     break;
                 }

@@ -1,11 +1,21 @@
+/*
+ * Copyright (c) 2020 Squaredesk GmbH and Oliver Dotzauer.
+ *
+ * This program is distributed under the squaredesk open source license. See the LICENSE file
+ * distributed with this work for additional information regarding copyright ownership. You may also
+ * obtain a copy of the license at
+ *
+ *   https://squaredesk.ch/license/oss/LICENSE
+ *
+ */
+
 package ch.squaredesk.nova.comm.http;
 
 import ch.squaredesk.nova.comm.DefaultMessageTranscriberForStringAsTransportType;
 import ch.squaredesk.nova.comm.MessageTranscriber;
-import ch.squaredesk.nova.comm.http.spring.HttpServerBeanListener;
 import ch.squaredesk.nova.comm.retrieving.IncomingMessage;
 import ch.squaredesk.nova.metrics.Metrics;
-import io.dropwizard.metrics5.Timer;
+import com.codahale.metrics.Timer;
 import io.reactivex.BackpressureStrategy;
 import io.reactivex.Flowable;
 import io.reactivex.subjects.PublishSubject;
@@ -32,7 +42,7 @@ import java.util.concurrent.TimeUnit;
 
 import static ch.squaredesk.nova.comm.http.MetricsCollectorInfoCreator.createInfoFor;
 
-public class RpcServer extends ch.squaredesk.nova.comm.rpc.RpcServer<String, String> implements HttpServerBeanListener {
+public class RpcServer extends ch.squaredesk.nova.comm.rpc.RpcServer<String, String> implements HttpServerInstanceListener {
     private static final Logger logger = LoggerFactory.getLogger(RpcServer.class);
 
     private final Map<String, Flowable<RpcInvocation>> mapDestinationToIncomingMessages = new ConcurrentHashMap<>();
@@ -167,7 +177,7 @@ public class RpcServer extends ch.squaredesk.nova.comm.rpc.RpcServer<String, Str
     }
 
     @Override
-    public void httpServerAvailableInContext(HttpServer httpServer) {
+    public void httpServerInstanceCreated(HttpServer httpServer) {
         if (this.httpServer == null) {
             logger.info("httpServer available, RpcServer functional");
         }

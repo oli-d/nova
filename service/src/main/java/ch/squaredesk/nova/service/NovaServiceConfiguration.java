@@ -1,11 +1,12 @@
 /*
- * Copyright (c) Squaredesk GmbH and Oliver Dotzauer.
+ * Copyright (c) 2020 Squaredesk GmbH and Oliver Dotzauer.
  *
  * This program is distributed under the squaredesk open source license. See the LICENSE file
  * distributed with this work for additional information regarding copyright ownership. You may also
  * obtain a copy of the license at
  *
  *   https://squaredesk.ch/license/oss/LICENSE
+ *
  */
 
 package ch.squaredesk.nova.service;
@@ -13,7 +14,6 @@ package ch.squaredesk.nova.service;
 
 import ch.squaredesk.nova.events.annotation.AnnotationEnablingConfiguration;
 import ch.squaredesk.nova.service.annotation.LifecycleBeanProcessor;
-import ch.squaredesk.nova.spring.NovaProvidingConfiguration;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -24,10 +24,6 @@ import org.springframework.core.env.Environment;
 import java.util.UUID;
 
 @Configuration
-@PropertySource(value="classpath:defaults.properties", ignoreResourceNotFound = true)
-@PropertySource(value="file:${NOVA.SERVICE.CONFIG_FILE}", ignoreResourceNotFound = true)
-@PropertySource(value="classpath:${NOVA.SERVICE.CONFIG_FILE}", ignoreResourceNotFound = true)
-@Import({NovaProvidingConfiguration.class, AnnotationEnablingConfiguration.class})
 public class NovaServiceConfiguration  {
     public interface BeanIdentifiers {
         String INSTANCE  = "NOVA.SERVICE.INSTANCE";

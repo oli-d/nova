@@ -1,11 +1,12 @@
 /*
- * Copyright (c) Squaredesk GmbH and Oliver Dotzauer.
+ * Copyright (c) 2020 Squaredesk GmbH and Oliver Dotzauer.
  *
  * This program is distributed under the squaredesk open source license. See the LICENSE file
  * distributed with this work for additional information regarding copyright ownership. You may also
  * obtain a copy of the license at
  *
  *   https://squaredesk.ch/license/oss/LICENSE
+ *
  */
 
 package ch.squaredesk.nova.service;
@@ -13,7 +14,6 @@ package ch.squaredesk.nova.service;
 import ch.squaredesk.nova.Nova;
 import ch.squaredesk.nova.metrics.MetricsDump;
 import ch.squaredesk.nova.service.annotation.LifecycleBeanProcessor;
-import ch.squaredesk.nova.spring.NovaProvidingConfiguration;
 import ch.squaredesk.nova.tuples.Pair;
 import io.reactivex.Flowable;
 import org.slf4j.Logger;
@@ -47,7 +47,7 @@ public abstract class NovaService {
     @Autowired(required = false) @Qualifier(NovaServiceConfiguration.BeanIdentifiers.NAME)
     protected String serviceName;
 
-    @Autowired(required = false) @Qualifier(NovaProvidingConfiguration.BeanIdentifiers.NOVA)
+    // @Autowired(required = false) @Qualifier(NovaProvidingConfiguration.BeanIdentifiers.NOVA)
     public Nova nova;
 
 

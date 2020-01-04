@@ -37,7 +37,7 @@ This is the list of parameters you can configure:
 * ```identifier``` - Sets an identifier, which will be used for logging and metrics. Very useful if you plan to use 
 multiple Nova instances in your VM. Default value is ```"Nova"```
 
-* ```warnOnUnhandledEvents``` - Specifies, whether a warning should be logged, if an event was emitted on the EventBus, 
+* ```warnOnUnhandledEvent``` - Specifies, whether a warning should be logged, if an event was emitted on the EventBus, 
 but no subscribers existed. Default value is ```false```.
 
 * ```defaultBackpressureStrategy``` - Defines the default behaviour (which can be overriden whenever you subscribe for 

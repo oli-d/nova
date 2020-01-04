@@ -1,23 +1,22 @@
 /*
- * Copyright (c) Squaredesk GmbH and Oliver Dotzauer.
+ * Copyright (c) 2020 Squaredesk GmbH and Oliver Dotzauer.
  *
  * This program is distributed under the squaredesk open source license. See the LICENSE file
  * distributed with this work for additional information regarding copyright ownership. You may also
  * obtain a copy of the license at
  *
  *   https://squaredesk.ch/license/oss/LICENSE
+ *
  */
 
 package ch.squaredesk.nova.metrics;
-
-import io.dropwizard.metrics5.MetricName;
 
 import java.lang.management.GarbageCollectorMXBean;
 import java.lang.management.ManagementFactory;
 import java.util.*;
 import java.util.regex.Pattern;
 
-import static io.dropwizard.metrics5.MetricRegistry.name;
+import static ch.squaredesk.nova.metrics.Metrics.name;
 
 /**
  * This class is heavily inspired by the GarbageCollectorMetricSet of the dropwizards metrics-jvm package (dependency:
@@ -48,8 +47,8 @@ public class GarbageCollectionMeter implements CompoundMetric {
     }
 
     @Override
-    public Map<MetricName, Object> getValues() {
-        final Map<MetricName, Object> values = new HashMap<>();
+    public Map<String, Object> getValues() {
+        final Map<String, Object> values = new HashMap<>();
         for (final GarbageCollectorMXBean gc : garbageCollectors) {
             final String name = WHITESPACE.matcher(gc.getName()).replaceAll("-");
             values.put(name(name, "count"), gc.getCollectionCount());

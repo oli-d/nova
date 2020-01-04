@@ -1,11 +1,12 @@
 /*
- * Copyright (c) Squaredesk GmbH and Oliver Dotzauer.
+ * Copyright (c) 2020 Squaredesk GmbH and Oliver Dotzauer.
  *
  * This program is distributed under the squaredesk open source license. See the LICENSE file
  * distributed with this work for additional information regarding copyright ownership. You may also
  * obtain a copy of the license at
  *
  *   https://squaredesk.ch/license/oss/LICENSE
+ *
  */
 
 package ch.squaredesk.nova;
@@ -17,7 +18,6 @@ import ch.squaredesk.nova.metrics.CpuMeter;
 import ch.squaredesk.nova.metrics.GarbageCollectionMeter;
 import ch.squaredesk.nova.metrics.MemoryMeter;
 import ch.squaredesk.nova.metrics.Metrics;
-import ch.squaredesk.nova.spring.NovaSettings;
 import io.reactivex.BackpressureStrategy;
 
 public class Nova {
@@ -70,14 +70,6 @@ public class Nova {
             return this;
         }
 
-
-        public Builder withSettings(NovaSettings novaSettings) {
-            this.identifier = novaSettings.identifier;
-            this.defaultBackpressureStrategy = novaSettings.defaultBackpressureStrategy;
-            this.captureJvmMetrics = novaSettings.captureJvmMetrics;
-            this.warnOnUnhandledEvent = novaSettings.warnOnUnhandledEvent;
-            return this;
-        }
 
         public Nova build() {
             if (metrics == null) {
