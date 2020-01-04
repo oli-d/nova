@@ -26,7 +26,7 @@ public class NovaSchedulers {
         if (threadPoolSize == 1) {
             return Schedulers.from(Executors.newSingleThreadExecutor(threadFactoryBizLogic));
         } else {
-            return Schedulers.from(Executors.newFixedThreadPool(threadPoolSize));
+            return Schedulers.from(Executors.newFixedThreadPool(threadPoolSize, threadFactoryBizLogic));
         }
 
     }
