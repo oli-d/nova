@@ -18,7 +18,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @ConfigurationProperties("nova.http.server")
-public class HttpServerSettings {
+public class HttpServerConfigurationProperties {
     /** Defines, whether HTTP server mode should be enabled */
     private boolean enable = true;
     /** The interface, the HTTP server should listen to */

@@ -14,7 +14,7 @@ import ch.squaredesk.net.PortFinder;
 import ch.squaredesk.nova.Nova;
 import ch.squaredesk.nova.autoconfig.NovaAutoConfiguration;
 import ch.squaredesk.nova.comm.http.autoconfig.HttpAdapterAutoConfig;
-import ch.squaredesk.nova.comm.http.autoconfig.HttpServerSettings;
+import ch.squaredesk.nova.comm.http.autoconfig.HttpServerConfigurationProperties;
 import ch.squaredesk.nova.comm.websockets.CloseReason;
 import ch.squaredesk.nova.comm.websockets.WebSocket;
 import ch.squaredesk.nova.comm.websockets.WebSocketAdapter;
@@ -54,7 +54,7 @@ public class SpringWiringTest {
                 .withUserConfiguration(MyConfig.class)
                 .run(appContext -> {
                     Nova nova = appContext.getBean(Nova.class);
-                    HttpServerSettings serverSettings = appContext.getBean(HttpServerSettings.class);
+                    HttpServerConfigurationProperties serverSettings = appContext.getBean(HttpServerConfigurationProperties.class);
                     int port = serverSettings.getPort();
                     WebSocketAdapter webSocketAdapter = appContext.getBean(WebSocketAdapter.class);
                     MyBean myBean = appContext.getBean(MyBean.class);

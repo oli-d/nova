@@ -15,22 +15,19 @@ import ch.squaredesk.nova.Nova;
 import ch.squaredesk.nova.comm.http.autoconfig.BeanIdentifiers;
 import ch.squaredesk.nova.comm.http.autoconfig.HttpAdapterAutoConfig;
 import ch.squaredesk.nova.comm.http.autoconfig.HttpAdapterMessageTranscriberAutoConfig;
-import ch.squaredesk.nova.comm.http.autoconfig.HttpServerSettings;
+import ch.squaredesk.nova.comm.http.autoconfig.HttpServerConfigurationProperties;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 
 @Configuration
 @AutoConfigureBefore(HttpAdapterAutoConfig.class)
-@EnableConfigurationProperties({RestSettings.class, HttpServerSettings.class})
 @Import(HttpAdapterMessageTranscriberAutoConfig.class)
 public class RestAutoConfig {
 
@@ -42,31 +39,31 @@ public class RestAutoConfig {
 
     @Bean
     @ConditionalOnMissingBean(name = BeanIdentifiers.SERVER)
-    RestServerStarter restServerStarter(HttpServerSettings httpServerSettings,
-                                        RestSettings restSettings,
+    RestServerStarter restServerStarter(HttpServerConfigurationProperties httpServerConfigurationProperties,
+                                        RestConfigurationProperties restConfigurationProperties,
                                         RestBeanPostprocessor restBeanPostprocessor,
                                         @Qualifier(BeanIdentifiers.OBJECT_MAPPER) @Autowired(required = false) ObjectMapper httpObjectMapper,
                                         Nova nova) {
 
         ch.squaredesk.nova.comm.http.HttpServerSettings serverSettings =
                 ch.squaredesk.nova.comm.http.HttpServerSettings.builder()
-                        .port(httpServerSettings.getPort())
-                        .compressData(httpServerSettings.isCompressData())
-                        .sslNeedsClientAuth(httpServerSettings.isSslNeedsClientAuth())
-                        .sslKeyStorePass(httpServerSettings.getSslKeyStorePass())
-                        .sslKeyStorePath(httpServerSettings.getSslKeyStorePath())
-                        .sslTrustStorePass(httpServerSettings.getSslTrustStorePass())
-                        .sslTrustStorePath(httpServerSettings.getSslTrustStorePath())
-                        .interfaceName(httpServerSettings.getInterfaceName())
-                        .addCompressibleMimeTypes(httpServerSettings.getCompressibleMimeTypes().toArray(new String[0]))
+                        .port(httpServerConfigurationProperties.getPort())
+                        .compressData(httpServerConfigurationProperties.isCompressData())
+                        .sslNeedsClientAuth(httpServerConfigurationProperties.isSslNeedsClientAuth())
+                        .sslKeyStorePass(httpServerConfigurationProperties.getSslKeyStorePass())
+                        .sslKeyStorePath(httpServerConfigurationProperties.getSslKeyStorePath())
+                        .sslTrustStorePass(httpServerConfigurationProperties.getSslTrustStorePass())
+                        .sslTrustStorePath(httpServerConfigurationProperties.getSslTrustStorePath())
+                        .interfaceName(httpServerConfigurationProperties.getInterfaceName())
+                        .addCompressibleMimeTypes(httpServerConfigurationProperties.getCompressibleMimeTypes().toArray(new String[0]))
                         .build();
 
         return new RestServerStarter(
                 serverSettings,
-                restSettings.getServerProperties(),
+                restConfigurationProperties.getServerProperties(),
                 restBeanPostprocessor,
                 httpObjectMapper,
-                restSettings.isCaptureMetrics(),
+                restConfigurationProperties.isCaptureMetrics(),
                 nova);
     }
 

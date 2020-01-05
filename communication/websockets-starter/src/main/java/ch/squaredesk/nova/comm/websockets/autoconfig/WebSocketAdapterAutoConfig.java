@@ -22,23 +22,21 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
-@EnableConfigurationProperties(WebSocketAdapterSettings.class)
 @AutoConfigureAfter(HttpAdapterAutoConfig.class)
 public class WebSocketAdapterAutoConfig {
     @Bean
     @ConditionalOnMissingBean(WebSocketAdapter.class)
     WebSocketAdapter webSocketAdapter(
-            WebSocketAdapterSettings webSocketAdapterSettings,
+            WebSocketAdapterConfigurationProperties webSocketAdapterConfigurationProperties,
             @Qualifier(BeanIdentifiers.MESSAGE_TRANSCRIBER) MessageTranscriber<String> webSocketMessageTranscriber,
             @Qualifier(BeanIdentifiers.SERVER) @Autowired(required = false) HttpServer httpServer,
             Nova nova) {
         return WebSocketAdapter.builder()
-                .setIdentifier(webSocketAdapterSettings.getAdapterIdentifier())
+                .setIdentifier(webSocketAdapterConfigurationProperties.getAdapterIdentifier())
                 .setHttpServer(httpServer)
                 .setMessageTranscriber(webSocketMessageTranscriber)
                 .setMetrics(nova.metrics)
@@ -50,13 +48,13 @@ public class WebSocketAdapterAutoConfig {
     @ConditionalOnMissingBean(WebSocketBeanProcessor.class)
     WebSocketBeanProcessor webSocketBeanPostprocessor(
             WebSocketAdapter webSocketAdapter,
-            WebSocketAdapterSettings webSocketAdapterSettings,
+            WebSocketAdapterConfigurationProperties webSocketAdapterConfigurationProperties,
             @Qualifier(BeanIdentifiers.MESSAGE_TRANSCRIBER) MessageTranscriber<String> webSocketMessageTranscriber,
             Nova nova) {
         return new WebSocketBeanProcessor(
                 webSocketAdapter,
                 webSocketMessageTranscriber,
-                webSocketAdapterSettings.getAdapterIdentifier(),
+                webSocketAdapterConfigurationProperties.getAdapterIdentifier(),
                 nova.metrics);
     }
 }

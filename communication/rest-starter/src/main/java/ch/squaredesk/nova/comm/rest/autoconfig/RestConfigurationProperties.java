@@ -16,7 +16,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import java.util.Properties;
 
 @ConfigurationProperties("nova.http.rest")
-public class RestSettings {
+public class RestConfigurationProperties {
     private boolean logInvocations = true;
     private boolean captureMetrics = true;
     private Properties serverProperties;

@@ -16,7 +16,7 @@ import ch.squaredesk.nova.Nova;
 import ch.squaredesk.nova.autoconfig.NovaAutoConfiguration;
 import ch.squaredesk.nova.comm.http.HttpRequestSender;
 import ch.squaredesk.nova.comm.http.autoconfig.HttpAdapterMessageTranscriberAutoConfig;
-import ch.squaredesk.nova.comm.http.autoconfig.HttpServerSettings;
+import ch.squaredesk.nova.comm.http.autoconfig.HttpServerConfigurationProperties;
 import ch.squaredesk.nova.comm.http.autoconfig.HttpAdapterAutoConfig;
 import ch.squaredesk.nova.metrics.Metrics;
 import org.hamcrest.Matchers;
@@ -46,7 +46,7 @@ class SpringWiringTest {
             .run(appContext -> {
                 Nova nova = appContext.getBean(Nova.class);
                 Metrics metrics = nova.metrics;
-                HttpServerSettings serverSettings = appContext.getBean(HttpServerSettings.class);
+                HttpServerConfigurationProperties serverSettings = appContext.getBean(HttpServerConfigurationProperties.class);
                 int port = serverSettings.getPort();
                 String serverUrl = "http://127.0.0.1:" + port;
 

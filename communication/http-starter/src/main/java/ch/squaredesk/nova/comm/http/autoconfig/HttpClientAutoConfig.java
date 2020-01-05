@@ -15,7 +15,6 @@ import ch.squaredesk.nova.comm.http.AsyncHttpClientFactory;
 import com.ning.http.client.AsyncHttpClient;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -25,16 +24,15 @@ import java.nio.file.Files;
 import java.util.Optional;
 
 @Configuration
-@EnableConfigurationProperties(HttpClientSettings.class)
 @ConditionalOnProperty(name = "nova.http.client.enable", havingValue = "true", matchIfMissing = true)
 public class HttpClientAutoConfig {
 
     @Bean(BeanIdentifiers.CLIENT)
     @ConditionalOnMissingBean(name = BeanIdentifiers.CLIENT)
-    AsyncHttpClient httpClient(HttpClientSettings httpClientSettings) {
-        String sslCertificateContent = httpClientSettings.getSslCertificateContent();
+    AsyncHttpClient httpClient(HttpClientConfigurationProperties httpClientConfigurationProperties) {
+        String sslCertificateContent = httpClientConfigurationProperties.getSslCertificateContent();
         if (sslCertificateContent == null || sslCertificateContent.trim().isEmpty()) {
-            sslCertificateContent = Optional.ofNullable(httpClientSettings.getSslCertificatePath())
+            sslCertificateContent = Optional.ofNullable(httpClientConfigurationProperties.getSslCertificatePath())
                     .map(certPath -> {
                         try {
                             byte[] content = Files.readAllBytes(new File(certPath).toPath());
@@ -49,15 +47,15 @@ public class HttpClientAutoConfig {
 
         ch.squaredesk.nova.comm.http.HttpClientSettings settings =
                 ch.squaredesk.nova.comm.http.HttpClientSettings.builder()
-                .compressionEnforced(httpClientSettings.isCompressionEnforced())
-                .connectionTimeoutInSeconds(httpClientSettings.getConnectionTimeoutInSeconds())
-                .defaultRequestTimeoutInSeconds(httpClientSettings.getDefaultRequestTimeoutInSeconds())
-                .sslAcceptAnyCertificate(httpClientSettings.isAcceptAnyCertificate())
+                .compressionEnforced(httpClientConfigurationProperties.isCompressionEnforced())
+                .connectionTimeoutInSeconds(httpClientConfigurationProperties.getConnectionTimeoutInSeconds())
+                .defaultRequestTimeoutInSeconds(httpClientConfigurationProperties.getDefaultRequestTimeoutInSeconds())
+                .sslAcceptAnyCertificate(httpClientConfigurationProperties.isAcceptAnyCertificate())
                 .sslCertificateContent(sslCertificateContent)
-                .sslKeyStorePass(httpClientSettings.getSslKeyStorePass())
-                .sslKeyStorePath(httpClientSettings.getSslKeyStorePath())
-                .userAgent(httpClientSettings.getUserAgent())
-                .webSocketTimeoutInSeconds(httpClientSettings.getWebSocketTimeoutInSeconds())
+                .sslKeyStorePass(httpClientConfigurationProperties.getSslKeyStorePass())
+                .sslKeyStorePath(httpClientConfigurationProperties.getSslKeyStorePath())
+                .userAgent(httpClientConfigurationProperties.getUserAgent())
+                .webSocketTimeoutInSeconds(httpClientConfigurationProperties.getWebSocketTimeoutInSeconds())
                 .build();
 
         return AsyncHttpClientFactory.clientFor(settings);

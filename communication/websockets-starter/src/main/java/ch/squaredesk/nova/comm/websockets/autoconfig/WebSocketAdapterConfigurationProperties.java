@@ -14,7 +14,7 @@ package ch.squaredesk.nova.comm.websockets.autoconfig;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 @ConfigurationProperties("nova.ws")
-public class WebSocketAdapterSettings {
+public class WebSocketAdapterConfigurationProperties {
     private String adapterIdentifier;
 
     public String getAdapterIdentifier() {

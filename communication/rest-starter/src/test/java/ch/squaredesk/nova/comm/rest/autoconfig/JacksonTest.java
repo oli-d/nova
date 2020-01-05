@@ -17,7 +17,7 @@ import ch.squaredesk.nova.comm.http.HttpRequestSender;
 import ch.squaredesk.nova.comm.http.HttpRequestSender.RequestHeaders;
 import ch.squaredesk.nova.comm.http.autoconfig.BeanIdentifiers;
 import ch.squaredesk.nova.comm.http.autoconfig.HttpAdapterAutoConfig;
-import ch.squaredesk.nova.comm.http.autoconfig.HttpServerSettings;
+import ch.squaredesk.nova.comm.http.autoconfig.HttpServerConfigurationProperties;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -54,12 +54,12 @@ public class JacksonTest {
                 .withUserConfiguration(MyConfigForTest.class)
                 .withPropertyValues("nova.http.server.port=" + PortFinder.findFreePort())
                 .run(context -> {
-                    HttpServerSettings httpServerSettings = context.getBean(HttpServerSettings.class);
+                    HttpServerConfigurationProperties httpServerConfigurationProperties = context.getBean(HttpServerConfigurationProperties.class);
                     ObjectMapper om = new ObjectMapper().findAndRegisterModules();
                     Person sentPerson = new Person("Lea", "Dotzauer", LocalDate.of(2005,9,16));
 
                     // send entity as JSON
-                    HttpRequestSender.HttpResponse httpResponse = HttpRequestSender.sendPutRequest("http://localhost:" + httpServerSettings.getPort() +"/echo",
+                    HttpRequestSender.HttpResponse httpResponse = HttpRequestSender.sendPutRequest("http://localhost:" + httpServerConfigurationProperties.getPort() +"/echo",
                             om.writeValueAsString(sentPerson), RequestHeaders.createForContentType("application/json"));
 
                     // expect that the handler retrieved a properly unmarshalled entity
@@ -76,12 +76,12 @@ public class JacksonTest {
         applicationContextRunner
                 .withUserConfiguration(MyConfigForTest.class)
                 .run(context -> {
-                    HttpServerSettings httpServerSettings = context.getBean(HttpServerSettings.class);
+                    HttpServerConfigurationProperties httpServerConfigurationProperties = context.getBean(HttpServerConfigurationProperties.class);
                     ObjectMapper om = new ObjectMapper();
                     Person sentPerson = new Person("Lea", "Dotzauer", LocalDate.of(2005,9,16));
 
                     // send entity as JSON
-                    HttpRequestSender.HttpResponse httpResponse = HttpRequestSender.sendPutRequest("http://localhost:" + httpServerSettings.getPort() + "/echo",
+                    HttpRequestSender.HttpResponse httpResponse = HttpRequestSender.sendPutRequest("http://localhost:" + httpServerConfigurationProperties.getPort() + "/echo",
                             om.writeValueAsString(sentPerson), RequestHeaders.createForContentType("application/json"));
 
                     // expect that the handler retrieved a properly unmarshalled entity
@@ -94,13 +94,13 @@ public class JacksonTest {
         applicationContextRunner
                 .withUserConfiguration(MyConfigForTestWithSpecificObjectMapper.class)
                 .run(context -> {
-                    HttpServerSettings httpServerSettings = context.getBean(HttpServerSettings.class);
+                    HttpServerConfigurationProperties httpServerConfigurationProperties = context.getBean(HttpServerConfigurationProperties.class);
                     ObjectMapper objectMapper = context.getBean(ObjectMapper.class);
                     Person sentPerson = new Person("Lea", "Dotzauer", LocalDate.of(2005, 9, 16));
                     String sentPersonAsString = objectMapper.writeValueAsString(sentPerson);
 
                     // send entity as JSON
-                    HttpRequestSender.HttpResponse httpResponse = HttpRequestSender.sendPutRequest("http://localhost:" + httpServerSettings.getPort() + "/echo",
+                    HttpRequestSender.HttpResponse httpResponse = HttpRequestSender.sendPutRequest("http://localhost:" + httpServerConfigurationProperties.getPort() + "/echo",
                             sentPersonAsString, RequestHeaders.createForContentType("application/json"));
 
                     // expect that the handler retrieved a properly unmarshalled entity

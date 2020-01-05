@@ -14,7 +14,7 @@ package ch.squaredesk.nova.comm.http.autoconfig;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 @ConfigurationProperties("nova.http.client")
-public class HttpClientSettings {
+public class HttpClientConfigurationProperties {
     /** Defines, whether HTTP client mode should be enabled */
     private boolean enable = true;
     /** Default amount of seconds to wait for a reponse before a timeout is triggered */

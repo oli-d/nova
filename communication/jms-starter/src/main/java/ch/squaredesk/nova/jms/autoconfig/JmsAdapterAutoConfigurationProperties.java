@@ -17,7 +17,7 @@ import javax.jms.Message;
 import javax.jms.Session;
 
 @ConfigurationProperties("nova.jms")
-public class JmsAdapterAutoConfigSettings {
+public class JmsAdapterAutoConfigurationProperties {
     /** The default delivery mode for messages sent to the broker */
     private int defaultMessageDeliveryMode = Message.DEFAULT_DELIVERY_MODE;
     /** The default priority for messages sent to the broker */

@@ -16,7 +16,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import java.util.Properties;
 
 @ConfigurationProperties("nova.kafka")
-public class KafkaAdapterSettings {
+public class KafkaAdapterConfigurationProperties {
     /** The (optional) identifier of the HTTP adapter */
     private String adapterIdentifier;
     private String serverAddress;

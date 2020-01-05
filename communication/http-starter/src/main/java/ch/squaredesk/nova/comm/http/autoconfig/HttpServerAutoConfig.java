@@ -16,27 +16,25 @@ import org.glassfish.grizzly.http.server.HttpServer;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
-@EnableConfigurationProperties(HttpServerSettings.class)
 @ConditionalOnMissingBean(name = "theBigHttpServerInhibitor")
 public class HttpServerAutoConfig {
     @Bean(BeanIdentifiers.SERVER)
-    HttpServer httpServer(HttpServerSettings httpServerSettings) {
+    HttpServer httpServer(HttpServerConfigurationProperties httpServerConfigurationProperties) {
         ch.squaredesk.nova.comm.http.HttpServerSettings serverSettings =
                 ch.squaredesk.nova.comm.http.HttpServerSettings.builder()
-                .port(httpServerSettings.getPort())
-                .compressData(httpServerSettings.isCompressData())
-                .sslNeedsClientAuth(httpServerSettings.isSslNeedsClientAuth())
-                .sslKeyStorePass(httpServerSettings.getSslKeyStorePass())
-                .sslKeyStorePath(httpServerSettings.getSslKeyStorePath())
-                .sslTrustStorePass(httpServerSettings.getSslTrustStorePass())
-                .sslTrustStorePath(httpServerSettings.getSslTrustStorePath())
-                .interfaceName(httpServerSettings.getInterfaceName())
-                .addCompressibleMimeTypes(httpServerSettings.getCompressibleMimeTypes().toArray(new String[0]))
+                .port(httpServerConfigurationProperties.getPort())
+                .compressData(httpServerConfigurationProperties.isCompressData())
+                .sslNeedsClientAuth(httpServerConfigurationProperties.isSslNeedsClientAuth())
+                .sslKeyStorePass(httpServerConfigurationProperties.getSslKeyStorePass())
+                .sslKeyStorePath(httpServerConfigurationProperties.getSslKeyStorePath())
+                .sslTrustStorePass(httpServerConfigurationProperties.getSslTrustStorePass())
+                .sslTrustStorePath(httpServerConfigurationProperties.getSslTrustStorePath())
+                .interfaceName(httpServerConfigurationProperties.getInterfaceName())
+                .addCompressibleMimeTypes(httpServerConfigurationProperties.getCompressibleMimeTypes().toArray(new String[0]))
                 .build();
         return HttpServerFactory.serverFor(serverSettings);
     }

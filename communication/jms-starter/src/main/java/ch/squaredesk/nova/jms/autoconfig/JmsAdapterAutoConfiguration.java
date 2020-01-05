@@ -20,7 +20,6 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
@@ -34,11 +33,10 @@ import java.util.function.Supplier;
 @Configuration
 @Import(JmsAdapterMessageTranscriberAutoConfiguration.class)
 @ConditionalOnBean({ConnectionFactory.class, Nova.class})
-@EnableConfigurationProperties(JmsAdapterAutoConfigSettings.class)
 public class JmsAdapterAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean(JmsAdapter.class)
-    JmsAdapter jmsAdapter(JmsAdapterAutoConfigSettings jmsAdapterAutoConfigSettings,
+    JmsAdapter jmsAdapter(JmsAdapterAutoConfigurationProperties jmsAdapterAutoConfigurationProperties,
                           ConnectionFactory connectionFactory,
                           @Qualifier(BeanIdentifiers.CORRELATION_ID_GENERATOR)
                           Supplier<String> correlationIdGenerator,
@@ -48,15 +46,15 @@ public class JmsAdapterAutoConfiguration {
                           MessageTranscriber<String> jmsMessageTranscriber,
                           Nova nova) {
         return JmsAdapter.builder()
-                .setIdentifier(jmsAdapterAutoConfigSettings.getAdapterIdentifier())
-                .setDefaultMessageDeliveryMode(jmsAdapterAutoConfigSettings.getDefaultMessageDeliveryMode())
-                .setDefaultMessagePriority(jmsAdapterAutoConfigSettings.getDefaultMessagePriority())
-                .setDefaultMessageTimeToLive(jmsAdapterAutoConfigSettings.getDefaultMessageTimeToLive())
-                .setDefaultRpcTimeout(jmsAdapterAutoConfigSettings.getDefaultJmsRpcTimeoutInSeconds(), TimeUnit.SECONDS)
-                .setConsumerSessionAckMode(jmsAdapterAutoConfigSettings.getConsumerSessionAckMode())
-                .setConsumerSessionTransacted(jmsAdapterAutoConfigSettings.isConsumerSessionTransacted())
-                .setProducerSessionAckMode(jmsAdapterAutoConfigSettings.getProducerSessionAckMode())
-                .setProducerSessionTransacted(jmsAdapterAutoConfigSettings.isProducerSessionTransacted())
+                .setIdentifier(jmsAdapterAutoConfigurationProperties.getAdapterIdentifier())
+                .setDefaultMessageDeliveryMode(jmsAdapterAutoConfigurationProperties.getDefaultMessageDeliveryMode())
+                .setDefaultMessagePriority(jmsAdapterAutoConfigurationProperties.getDefaultMessagePriority())
+                .setDefaultMessageTimeToLive(jmsAdapterAutoConfigurationProperties.getDefaultMessageTimeToLive())
+                .setDefaultRpcTimeout(jmsAdapterAutoConfigurationProperties.getDefaultJmsRpcTimeoutInSeconds(), TimeUnit.SECONDS)
+                .setConsumerSessionAckMode(jmsAdapterAutoConfigurationProperties.getConsumerSessionAckMode())
+                .setConsumerSessionTransacted(jmsAdapterAutoConfigurationProperties.isConsumerSessionTransacted())
+                .setProducerSessionAckMode(jmsAdapterAutoConfigurationProperties.getProducerSessionAckMode())
+                .setProducerSessionTransacted(jmsAdapterAutoConfigurationProperties.isProducerSessionTransacted())
                 .setConnectionFactory(connectionFactory)
                 .setCorrelationIdGenerator(correlationIdGenerator)
                 .setDestinationIdGenerator(destinationIdGenerator)

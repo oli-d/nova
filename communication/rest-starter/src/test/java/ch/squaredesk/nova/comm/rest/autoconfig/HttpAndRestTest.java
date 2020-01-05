@@ -17,22 +17,17 @@ import ch.squaredesk.nova.comm.http.HttpAdapter;
 import ch.squaredesk.nova.comm.http.HttpRequestSender;
 import ch.squaredesk.nova.comm.http.RpcReply;
 import ch.squaredesk.nova.comm.http.autoconfig.HttpAdapterAutoConfig;
-import ch.squaredesk.nova.comm.http.autoconfig.HttpServerSettings;
+import ch.squaredesk.nova.comm.http.autoconfig.HttpServerConfigurationProperties;
 import io.reactivex.observers.TestObserver;
 import org.awaitility.Awaitility;
 import org.awaitility.Duration;
 import org.hamcrest.Matchers;
 import org.hamcrest.junit.MatcherAssert;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Import;
-import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
@@ -54,7 +49,7 @@ class HttpAndRestTest {
                 .withUserConfiguration(MyMixedConfig.class)
                 .withPropertyValues("nova.http.server.port=" + PortFinder.findFreePort())
                 .run(appContext -> {
-                    ch.squaredesk.nova.comm.http.autoconfig.HttpServerSettings serverSettings = appContext.getBean(HttpServerSettings.class);
+                    HttpServerConfigurationProperties serverSettings = appContext.getBean(HttpServerConfigurationProperties.class);
                     int port = serverSettings.getPort();
                     HttpAdapter httpAdapter = appContext.getBean(HttpAdapter.class);
 
@@ -72,7 +67,7 @@ class HttpAndRestTest {
         applicationContextRunner
                 .withUserConfiguration(MyMixedConfig.class)
                 .run(appContext -> {
-                    ch.squaredesk.nova.comm.http.autoconfig.HttpServerSettings serverSettings = appContext.getBean(HttpServerSettings.class);
+                    HttpServerConfigurationProperties serverSettings = appContext.getBean(HttpServerConfigurationProperties.class);
                     int port = serverSettings.getPort();
                     HttpAdapter httpAdapter = appContext.getBean(HttpAdapter.class);
 
