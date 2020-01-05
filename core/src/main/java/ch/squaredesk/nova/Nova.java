@@ -12,7 +12,8 @@
 package ch.squaredesk.nova;
 
 import ch.squaredesk.nova.events.EventBus;
-import ch.squaredesk.nova.events.EventBusConfig;
+import ch.squaredesk.nova.events.EventDispatchConfig;
+import ch.squaredesk.nova.events.EventDispatchMode;
 import ch.squaredesk.nova.filesystem.Filesystem;
 import ch.squaredesk.nova.metrics.CpuMeter;
 import ch.squaredesk.nova.metrics.GarbageCollectionMeter;
@@ -29,9 +30,15 @@ public class Nova {
 
     private Nova(Builder builder) {
         this.identifier = builder.identifier;
-        this.eventBus = new EventBus(identifier, builder.eventBusConfig, builder.metrics);
         this.filesystem = new Filesystem();
         this.metrics = builder.metrics;
+        EventDispatchConfig dispatchConfig = new EventDispatchConfig(
+                builder.defaultBackpressureStrategy,
+                builder.warnOnUnhandledEvents,
+                builder.eventDispatchMode,
+                builder.parallelism
+        );
+        this.eventBus = new EventBus(identifier, dispatchConfig, builder.metrics);
     }
 
     public static Builder builder() {
@@ -42,10 +49,10 @@ public class Nova {
         private String identifier = "";
         private Metrics metrics;
         private boolean captureJvmMetrics = true;
-
+        private boolean warnOnUnhandledEvents = false;
         private BackpressureStrategy defaultBackpressureStrategy = BackpressureStrategy.BUFFER;
-        private boolean warnOnUnhandledEvent = false;
-        private EventBusConfig eventBusConfig;
+        private EventDispatchMode eventDispatchMode = EventDispatchMode.BLOCKING;
+        private int parallelism = 0;
 
         private Builder() {
         }
@@ -55,13 +62,23 @@ public class Nova {
             return this;
         }
 
+        public Builder setParallelism(int parallelism) {
+            this.parallelism = parallelism;
+            return this;
+        }
+
+        public Builder setEventDispatchMode(EventDispatchMode eventDispatchMode) {
+            this.eventDispatchMode = eventDispatchMode;
+            return this;
+        }
+
         public Builder setDefaultBackpressureStrategy(BackpressureStrategy defaultBackpressureStrategy) {
             this.defaultBackpressureStrategy = defaultBackpressureStrategy;
             return this;
         }
 
-        public Builder setWarnOnUnhandledEvent(boolean warnOnUnhandledEvent) {
-            this.warnOnUnhandledEvent = warnOnUnhandledEvent;
+        public Builder setWarnOnUnhandledEvents(boolean warnOnUnhandledEvents) {
+            this.warnOnUnhandledEvents = warnOnUnhandledEvents;
             return this;
         }
 
@@ -84,8 +101,6 @@ public class Nova {
                     metrics.register(cpuMeter, "os", "cpu");
                 }
             }
-
-            eventBusConfig = new EventBusConfig(defaultBackpressureStrategy, warnOnUnhandledEvent);
 
             return new Nova(this);
         }

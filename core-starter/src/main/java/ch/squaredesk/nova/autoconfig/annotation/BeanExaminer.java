@@ -34,7 +34,6 @@ class BeanExaminer {
                             m,
                             annotation.value(),
                             annotation.backpressureStrategy(),
-                            annotation.dispatchOnBusinessLogicThread(),
                             annotation.enableInvocationTimeMetrics());
                 })
                 .toArray(EventHandlerDescription[]::new);

@@ -14,7 +14,6 @@ package ch.squaredesk.nova.autoconfig.annotation;
 import ch.squaredesk.nova.Nova;
 import ch.squaredesk.nova.metrics.Metrics;
 import com.codahale.metrics.Timer;
-import io.reactivex.Flowable;
 import io.reactivex.functions.Consumer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,7 +24,6 @@ import org.springframework.context.event.ContextRefreshedEvent;
 
 import java.lang.reflect.Method;
 import java.util.Arrays;
-import java.util.Objects;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Collectors;
 
@@ -49,8 +47,6 @@ public class EventHandlingBeanPostprocessor implements BeanPostProcessor, Applic
     @Override
     public void onApplicationEvent(ContextRefreshedEvent event) {
         Nova nova = event.getApplicationContext().getBean("NOVA.INSTANCE", Nova.class);
-        Objects.requireNonNull(nova,
-                "Unable to initialize event handling, since no Nova instance was found in ApplicationContext");
         EventContext eventContext = new EventContext(nova.metrics, nova.eventBus);
         handlerDescriptions.forEach(hd -> registerEventHandler(hd, eventContext, nova.identifier));
     }
@@ -68,11 +64,9 @@ public class EventHandlingBeanPostprocessor implements BeanPostProcessor, Applic
                 Timer timer = eventContext.metrics.getTimer(timerName);
                 eventConsumer = new TimeMeasuringEventHandlingMethodInvoker(timer, invoker);
             }
-            Flowable<Object[]> flowable = eventContext.eventBus.on(event, eventHandlerDescription.backpressureStrategy);
-            if (eventHandlerDescription.dispatchOnBusinessLogicThread) {
-                flowable = flowable.observeOn(NovaSchedulers.businessLogicThreadScheduler);
-            }
-            flowable.subscribe(eventConsumer);
+            eventContext
+                    .eventBus.on(event, eventHandlerDescription.backpressureStrategy)
+                    .subscribe(eventConsumer);
         }
     }
 
@@ -82,7 +76,7 @@ public class EventHandlingBeanPostprocessor implements BeanPostProcessor, Applic
                 .append(method.getName())
                 .append('(')
                 .append(Arrays.stream(method.getParameterTypes())
-                        .map(paramterClass -> paramterClass.getSimpleName())
+                        .map(Class::getSimpleName)
                         .collect(Collectors.joining(", ")))
                 .append(')');
         return sb.toString();

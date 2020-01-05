@@ -125,7 +125,7 @@ public class SpringWiringTest {
         private List<String> listInvocationParams = new CopyOnWriteArrayList<>();
         private List<Thread> listInvocationThreads = new CopyOnWriteArrayList<>();
 
-        @OnEvent(value = "e", dispatchOnBusinessLogicThread = true, backpressureStrategy = BackpressureStrategy.BUFFER)
+        @OnEvent(value = "e")
         public void onE1(String f) throws Exception {
             TimeUnit.MILLISECONDS.sleep(10);
             listInvocationParams.add(f);

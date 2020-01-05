@@ -39,7 +39,7 @@ public class EventBusTest {
     void setup() {
         eventBus = new EventBus(
                 "test",
-                new EventBusConfig(BackpressureStrategy.BUFFER, false),
+                new EventDispatchConfig(BackpressureStrategy.BUFFER, false, EventDispatchMode.BLOCKING, 1),
                 new Metrics());
     }
 

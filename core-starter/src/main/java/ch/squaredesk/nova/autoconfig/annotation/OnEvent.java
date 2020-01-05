@@ -24,5 +24,4 @@ public @interface OnEvent {
     String[] value() default {};
     boolean enableInvocationTimeMetrics() default true;
     BackpressureStrategy backpressureStrategy() default BackpressureStrategy.BUFFER;
-    boolean dispatchOnBusinessLogicThread() default false;
 }

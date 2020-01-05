@@ -22,16 +22,19 @@ import org.springframework.context.annotation.Configuration;
 
 @Configuration
 @ConditionalOnClass(Nova.class)
-@EnableConfigurationProperties(NovaSettings.class)
+@EnableConfigurationProperties({NovaConfigurationProperties.class, EventDispatchConfigurationProperties.class})
 public class NovaAutoConfiguration {
     @Bean("NOVA.INSTANCE")
     @ConditionalOnMissingBean(name = "NOVA.INSTANCE")
-    public Nova nova(NovaSettings settings) {
+    public Nova nova(NovaConfigurationProperties novaConfigurationProperties,
+                     EventDispatchConfigurationProperties eventDispatchConfigurationProperties) {
         return Nova.builder()
-                .setIdentifier(settings.getIdentifier())
-                .setDefaultBackpressureStrategy(settings.getDefaultBackpressureStrategy())
-                .setWarnOnUnhandledEvent(settings.getWarnOnUnhandledEvent())
-                .captureJvmMetrics(settings.getCaptureJvmMetrics())
+                .setIdentifier(novaConfigurationProperties.getIdentifier())
+                .captureJvmMetrics(novaConfigurationProperties.isCaptureJvmMetrics())
+                .setWarnOnUnhandledEvents(eventDispatchConfigurationProperties.getWarnOnUnhandledEvent())
+                .setDefaultBackpressureStrategy(eventDispatchConfigurationProperties.getBackpressureStrategy())
+                .setEventDispatchMode(eventDispatchConfigurationProperties.getEventDispatchMode())
+                .setParallelism(eventDispatchConfigurationProperties.getParallelism())
                 .build();
     }
 

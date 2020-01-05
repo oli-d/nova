@@ -14,32 +14,68 @@ package ch.squaredesk.nova.events;
 import ch.squaredesk.nova.metrics.Metrics;
 import io.reactivex.BackpressureStrategy;
 import io.reactivex.Flowable;
+import io.reactivex.Scheduler;
+import io.reactivex.schedulers.Schedulers;
 import io.reactivex.subjects.PublishSubject;
 import io.reactivex.subjects.Subject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Arrays;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
 
 import static java.util.Objects.requireNonNull;
 
 public class EventBus {
     private final Logger logger = LoggerFactory.getLogger(EventBus.class);
 
-    public final EventBusConfig eventBusConfig;
-
-    // metrics
+    private final boolean warnOnUnhandledEvents;
+    private final Scheduler defaultScheduler;
+    private final BackpressureStrategy defaultBackpressureStrategy;
     private final EventMetricsCollector metricsCollector;
-
-    // the event specific subjects
     private final ConcurrentHashMap<Object,Subject<Object[]>> eventSpecificSubjects;
 
-    public EventBus(String identifier, EventBusConfig eventBusConfig, Metrics metrics){
-            this.eventBusConfig = eventBusConfig;
-            this.metricsCollector = new EventMetricsCollector(identifier, metrics);
-        logger.debug("Instantiating event loop {} using the following config {}", identifier, eventBusConfig);
-        eventSpecificSubjects = new ConcurrentHashMap<>();
+    public EventBus(String identifier,
+                    EventDispatchConfig eventDispatchConfig,
+                    Metrics metrics){
+        logger.debug(
+                "Instantiating event loop {} using {}",
+                identifier,
+                eventDispatchConfig);
+        this.defaultBackpressureStrategy = eventDispatchConfig.defaultBackpressureStrategy;
+        this.warnOnUnhandledEvents = eventDispatchConfig.warnOnUnhandledEvents;
+        this.metricsCollector = new EventMetricsCollector(identifier, metrics);
+        this.eventSpecificSubjects = new ConcurrentHashMap<>();
+        this.defaultScheduler = EventBus.createDefaultSchedulerFrom(eventDispatchConfig);
+    }
+
+    private static Scheduler createDefaultSchedulerFrom (EventDispatchConfig config) {
+        switch (config.eventDispatchMode) {
+            case BLOCKING:
+                // nothing to do
+                return null;
+            case NON_BLOCKING_FIXED_THREAD_POOL:
+                ThreadFactory threadFactoryBizLogic = runnable -> {
+                    Thread t = new Thread(runnable, "NovaEventDispatcher");
+                    t.setDaemon(true);
+                    return t;
+                };
+                if (config.parallelism > 1) {
+                    return Schedulers.from(Executors.newFixedThreadPool(config.parallelism, threadFactoryBizLogic));
+                } else {
+                    return Schedulers.from(Executors.newSingleThreadExecutor(threadFactoryBizLogic));
+                }
+            case NON_BLOCKING_WORK_STEALING_POOL:
+                if (config.parallelism == 0) {
+                    return Schedulers.from(Executors.newWorkStealingPool());
+                } else {
+                    return Schedulers.from(Executors.newWorkStealingPool(config.parallelism));
+                }
+        }
+        throw new RuntimeException("Unsupported EventDispatchMode " + config.eventDispatchMode);
     }
 
     private Subject<Object[]> getSubjectFor(Object event) {
@@ -56,7 +92,7 @@ public class EventBus {
             Subject<Object[]> subject = getSubjectFor(event);
             if (!subject.hasObservers()) {
                 metricsCollector.eventEmittedButNoObservers(event);
-                if (eventBusConfig.warnOnUnhandledEvents) {
+                if (warnOnUnhandledEvents) {
                     logger.warn("Trying to dispatch event {}, but no observers could be found. Data: {}",
                             event, Arrays.toString(data));
                 }
@@ -70,13 +106,24 @@ public class EventBus {
     }
 
     public Flowable<Object[]> on(Object event) {
-        return on(event, eventBusConfig.defaultBackpressureStrategy);
+        return on(event, defaultBackpressureStrategy, defaultScheduler);
+    }
+
+    public Flowable<Object[]> on(Object event, BackpressureStrategy backpressureStrategy) {
+        return on(event, backpressureStrategy, defaultScheduler);
     }
 
 
-    public Flowable<Object[]> on(Object event, BackpressureStrategy backpressureStrategy) {
-        requireNonNull(event, "event must not be null");
-        return getSubjectFor(event).toFlowable(backpressureStrategy);
+    public Flowable<Object[]> on(Object event, BackpressureStrategy backpressureStrategy, Scheduler scheduler) {
+        Flowable<Object[]> flowable =
+                getSubjectFor(requireNonNull(event, "event must not be null"))
+                .toFlowable(Optional.ofNullable(backpressureStrategy).orElse(defaultBackpressureStrategy));
+
+        if (scheduler != null) {
+            flowable = flowable.observeOn(scheduler);
+        }
+
+        return flowable;
     }
 
 }

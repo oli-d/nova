@@ -4,7 +4,7 @@ core-starter
 This package provides the spring boot starter and auto configuration for the Nova instance.
 
 The possible configuration properties need to be prefixed with "nova." and can be looked up in the class
-```ch.squaredesk.nova.autoconfig.NovaSettings```. 
+```ch.squaredesk.nova.autoconfig.NovaConfigurationProperties```. 
 
 Currently, the following properties can be set:
 
