@@ -9,7 +9,7 @@
  *
  */
 
-package ch.squaredesk.nova.service.annotation;
+package ch.squaredesk.nova.service.autoconfig.annotation;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;

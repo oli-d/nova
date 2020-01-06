@@ -8,11 +8,8 @@
  *   https://squaredesk.ch/license/oss/LICENSE
  *
  */
-package ch.squaredesk.nova.service;
+package ch.squaredesk.nova.service.autoconfig;
 
-
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
 
 public class TimeService /* extends NovaService */ {
     // @OnServiceInit

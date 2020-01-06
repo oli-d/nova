@@ -16,11 +16,13 @@ import org.glassfish.grizzly.http.server.HttpServer;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
 @ConditionalOnMissingBean(name = "theBigHttpServerInhibitor")
+@EnableConfigurationProperties(HttpServerConfigurationProperties.class)
 public class HttpServerAutoConfig {
     @Bean(BeanIdentifiers.SERVER)
     HttpServer httpServer(HttpServerConfigurationProperties httpServerConfigurationProperties) {

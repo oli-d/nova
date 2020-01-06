@@ -17,12 +17,13 @@ import ch.squaredesk.nova.comm.jms.DefaultDestinationIdGenerator;
 import ch.squaredesk.nova.comm.jms.JmsAdapter;
 import ch.squaredesk.nova.comm.jms.UIDCorrelationIdGenerator;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.boot.autoconfigure.ImportAutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Import;
 
 import javax.jms.ConnectionFactory;
 import javax.jms.Destination;
@@ -31,7 +32,8 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 @Configuration
-@Import(JmsAdapterMessageTranscriberAutoConfiguration.class)
+@ImportAutoConfiguration(JmsAdapterMessageTranscriberAutoConfiguration.class)
+@EnableConfigurationProperties(JmsAdapterAutoConfigurationProperties.class)
 @ConditionalOnBean({ConnectionFactory.class, Nova.class})
 public class JmsAdapterAutoConfiguration {
     @Bean

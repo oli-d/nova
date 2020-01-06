@@ -22,6 +22,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.ImportAutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -30,11 +31,12 @@ import java.util.concurrent.TimeUnit;
 @Configuration
 @ImportAutoConfiguration({HttpServerAutoConfig.class, HttpClientAutoConfig.class, HttpAdapterMessageTranscriberAutoConfig.class})
 @AutoConfigureAfter(NovaAutoConfiguration.class)
+@EnableConfigurationProperties(HttpAdapterConfigurationProperties.class)
 public class HttpAdapterAutoConfig {
     @Bean
     @ConditionalOnMissingBean(HttpAdapter.class)
     public HttpAdapter httpAdapter(
-            HttpAdapterSettings adapterSettings,
+            HttpAdapterConfigurationProperties adapterSettings,
             HttpClientConfigurationProperties clientSettings,
             @Qualifier(BeanIdentifiers.CLIENT) @Autowired(required = false) AsyncHttpClient httpClient,
             @Qualifier(BeanIdentifiers.SERVER) @Autowired(required = false) HttpServer httpServer,

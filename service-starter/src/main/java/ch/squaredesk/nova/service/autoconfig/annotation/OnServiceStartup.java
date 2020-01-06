@@ -9,7 +9,7 @@
  *
  */
 
-package ch.squaredesk.nova.service.annotation;
+package ch.squaredesk.nova.service.autoconfig.annotation;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

@@ -164,6 +164,7 @@
 
         <module>service</module>
         <module>examples</module>
+        <module>service-starter</module>
     </modules>
 
     <profiles>

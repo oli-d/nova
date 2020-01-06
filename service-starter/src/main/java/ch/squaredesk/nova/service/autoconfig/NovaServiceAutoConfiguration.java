@@ -9,22 +9,19 @@
  *
  */
 
-package ch.squaredesk.nova.service;
+package ch.squaredesk.nova.service.autoconfig;
 
 
-import ch.squaredesk.nova.events.annotation.AnnotationEnablingConfiguration;
-import ch.squaredesk.nova.service.annotation.LifecycleBeanProcessor;
+import ch.squaredesk.nova.service.autoconfig.annotation.LifecycleBeanProcessor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Import;
-import org.springframework.context.annotation.PropertySource;
 import org.springframework.core.env.Environment;
 
 import java.util.UUID;
 
 @Configuration
-public class NovaServiceConfiguration  {
+public class NovaServiceAutoConfiguration {
     public interface BeanIdentifiers {
         String INSTANCE  = "NOVA.SERVICE.INSTANCE";
         String INSTANCE_IDENTIFIER = "NOVA.SERVICE.INSTANCE_IDENTIFIER";
@@ -61,4 +58,19 @@ public class NovaServiceConfiguration  {
         }
         return registerShutdownHook;
     }
+
+    /*
+    public static <T extends NovaService> T createInstance(Class<T> serviceClass, Class<?> ...configurationClasses) {
+
+        AnnotationConfigApplicationContext ctx = new AnnotationConfigApplicationContext();
+
+        ctx.register(NovaServiceAutoConfiguration.class);
+        ctx.register(configurationClasses);
+        ctx.refresh();
+
+        T service = ctx.getBean(serviceClass);
+        ((NovaService)service).doInit();
+        return service;
+    }
+    */
 }

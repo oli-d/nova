@@ -8,7 +8,7 @@
  *   https://squaredesk.ch/license/oss/LICENSE
  *
  */
-package ch.squaredesk.nova.service;
+package ch.squaredesk.nova.service.autoconfig;
 
 
 import javax.ws.rs.GET;

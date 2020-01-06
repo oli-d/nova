@@ -17,7 +17,7 @@ import ch.squaredesk.nova.comm.http.HttpRequestSender;
 import ch.squaredesk.nova.comm.http.autoconfig.HttpAdapterAutoConfig;
 import ch.squaredesk.nova.comm.http.autoconfig.HttpServerConfigurationProperties;
 import org.hamcrest.Matchers;
-import org.hamcrest.junit.MatcherAssert;
+import org.hamcrest.MatcherAssert;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
@@ -34,9 +34,6 @@ import javax.ws.rs.container.ContainerResponseFilter;
 import javax.ws.rs.ext.WriterInterceptor;
 import javax.ws.rs.ext.WriterInterceptorContext;
 import java.io.IOException;
-
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 class HandlersAndInterceptorsTest {
     private ApplicationContextRunner applicationContextRunner = new ApplicationContextRunner()

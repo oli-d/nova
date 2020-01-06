@@ -22,7 +22,7 @@ import io.reactivex.observers.TestObserver;
 import org.awaitility.Awaitility;
 import org.awaitility.Duration;
 import org.hamcrest.Matchers;
-import org.hamcrest.junit.MatcherAssert;
+import org.hamcrest.MatcherAssert;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
@@ -33,7 +33,6 @@ import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 
 import static org.hamcrest.Matchers.is;
-import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 class HttpAndRestTest {
     private ApplicationContextRunner applicationContextRunner = new ApplicationContextRunner()

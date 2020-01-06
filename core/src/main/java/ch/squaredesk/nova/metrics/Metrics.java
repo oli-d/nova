@@ -12,24 +12,27 @@
 package ch.squaredesk.nova.metrics;
 
 import ch.squaredesk.nova.tuples.Pair;
-import com.codahale.metrics.*;
 import com.codahale.metrics.Timer;
+import com.codahale.metrics.*;
 import io.reactivex.Flowable;
 import org.slf4j.LoggerFactory;
 
 import java.util.*;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
 
 public class Metrics {
     public final MetricRegistry metricRegistry = new MetricRegistry();
     private Slf4jReporter logReporter;
+    private List<Pair<String, String>> additionalInfo = new CopyOnWriteArrayList<>();
 
     public MetricsDump dump() {
-        return dump(Collections.emptyList());
+        return new MetricsDump(metricRegistry.getMetrics(), additionalInfo);
     }
 
-    public MetricsDump dump(List<Pair<String, String>> additionalInfo) {
-        return new MetricsDump(metricRegistry.getMetrics(), additionalInfo);
+    public void addAdditionalInfoForDumps (String key, String value) {
+        Optional.ofNullable(key)
+                .ifPresent(k -> additionalInfo.add(Pair.create(k, value)));
     }
 
     /**
@@ -37,14 +40,6 @@ public class Metrics {
      * interval between two dumps.
      */
     public Flowable<MetricsDump> dumpContinuously(long interval, TimeUnit timeUnit) {
-        return dumpContinuously(interval, timeUnit, Collections.emptyList());
-    }
-
-    /**
-     * Returns an observable that continuously emits all registered metrics. The passed parameters define the
-     * interval between two dumps. The passed additionalInfo will be added on every dump
-     */
-    public Flowable<MetricsDump> dumpContinuously(long interval, TimeUnit timeUnit, List<Pair<String, String>> additionalInfo) {
         if (interval <= 0) {
             throw new IllegalArgumentException("interval must be greater than 0");
         }
@@ -52,7 +47,7 @@ public class Metrics {
 
         return Flowable
                 .interval(interval, interval, timeUnit)
-                .map(count -> dump(additionalInfo));
+                .map(count -> dump());
     }
 
 

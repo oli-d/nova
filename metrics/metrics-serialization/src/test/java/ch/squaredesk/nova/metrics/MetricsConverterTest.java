@@ -32,13 +32,14 @@ class MetricsConverterTest {
     @Test
     void nullAdditionalAttributesIsOk() {
         Nova nova = Nova.builder().build();
-        assertNotNull(MetricsConverter.convert(nova.metrics.dump(null)));
+        assertNotNull(MetricsConverter.convert(nova.metrics.dump()));
     }
 
     @Test
     void metricsDumpConvertedAsExpected() {
         Nova nova = Nova.builder().build();
-        MetricsDump dump = nova.metrics.dump(Arrays.asList(new Pair<>("key", "val")));
+        nova.metrics.addAdditionalInfoForDumps("key", "val");
+        MetricsDump dump = nova.metrics.dump();
 
         Map<String, Map<String, Object>> dumpAsMap = MetricsConverter.convert(dump);
 
@@ -55,10 +56,9 @@ class MetricsConverterTest {
     @Test
     void additionalAttributesUsedForEveryMetric() {
         Nova nova = Nova.builder().build();
-        MetricsDump dump = nova.metrics.dump(Arrays.asList(
-                new Pair<>("key1", "value1"),
-                new Pair<>("key2", "value2")
-        ));
+        nova.metrics.addAdditionalInfoForDumps("key1", "value1");
+        nova.metrics.addAdditionalInfoForDumps("key2", "value2");
+        MetricsDump dump = nova.metrics.dump();
 
         Map<String, Map<String, Object>> dumpAsMap = MetricsConverter.convert(dump);
 

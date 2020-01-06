@@ -15,7 +15,9 @@ import ch.squaredesk.nova.Nova;
 import ch.squaredesk.nova.comm.MessageTranscriber;
 import ch.squaredesk.nova.comm.kafka.KafkaAdapter;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.boot.autoconfigure.ImportAutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
@@ -23,7 +25,8 @@ import org.springframework.context.annotation.Import;
 import java.util.concurrent.TimeUnit;
 
 @Configuration
-@Import(KafkaAdapterMessageTranscriberAutoConfiguration.class)
+@ImportAutoConfiguration(KafkaAdapterMessageTranscriberAutoConfiguration.class)
+@EnableConfigurationProperties(KafkaAdapterConfigurationProperties.class)
 public class KafkaAdapterAutoConfig {
 
     @Bean

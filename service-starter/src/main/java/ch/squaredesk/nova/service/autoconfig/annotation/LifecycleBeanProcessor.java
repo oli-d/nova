@@ -9,7 +9,7 @@
  *
  */
 
-package ch.squaredesk.nova.service.annotation;
+package ch.squaredesk.nova.service.autoconfig.annotation;
 
 import ch.squaredesk.nova.tuples.Pair;
 import org.slf4j.Logger;

@@ -11,25 +11,12 @@
 
 package ch.squaredesk.nova.service;
 
+import ch.squaredesk.nova.Nova;
 import ch.squaredesk.nova.metrics.MetricsDump;
-import ch.squaredesk.nova.service.annotation.OnServiceInit;
-import ch.squaredesk.nova.service.annotation.OnServiceShutdown;
-import ch.squaredesk.nova.service.annotation.OnServiceStartup;
-import ch.squaredesk.nova.tuples.Pair;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.BeanInitializationException;
-import org.springframework.beans.factory.NoSuchBeanDefinitionException;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.AnnotationConfigApplicationContext;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.core.env.Environment;
-import org.springframework.stereotype.Component;
 
 import java.net.InetAddress;
-import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -39,19 +26,14 @@ import static org.junit.jupiter.api.Assertions.*;
 
 @Tag("medium")
 class NovaServiceTest {
-    @AfterEach
-    void tearDown() {
-        System.clearProperty(NovaServiceConfiguration.BeanIdentifiers.CONFIG_FILE);
-        System.clearProperty(NovaServiceConfiguration.BeanIdentifiers.INSTANCE_IDENTIFIER);
-        System.clearProperty(NovaServiceConfiguration.BeanIdentifiers.NAME);
-        System.clearProperty(NovaServiceConfiguration.BeanIdentifiers.REGISTER_SHUTDOWN_HOOK);
-        System.clearProperty("foo");
-    }
-
     @Test
-    void metricsDumpContainsServiceInformation() throws Exception {
+    void metricsDumpContainsAdditionalInformation() throws Exception {
         InetAddress inetAddress = InetAddress.getLocalHost();
-        MyService sut = MyService.createInstance(MyService.class, MyConfigWithInstanceIdAndServiceName.class);
+
+        MyService sut = new MyService(
+                new NovaServiceConfig("Name", "ID", true)
+        );
+        sut.start();
 
         MetricsDump dump = sut
                 .dumpMetricsContinuously(1, TimeUnit.MILLISECONDS)
@@ -72,7 +54,7 @@ class NovaServiceTest {
 
     @Test
     void startedServiceCannotBeRestartedWithoutShutdown() {
-        MyService sut = MyService.createInstance(MyService.class, MyConfig.class);
+        MyService sut = new MyService();
         sut.start();
         assertTrue(sut.isStarted());
 
@@ -81,7 +63,7 @@ class NovaServiceTest {
 
     @Test
     void notStartedServiceCanBeShutdownButNothingIsDoneInThatCase() {
-        MyService sut = MyService.createInstance(MyService.class, MyConfig.class);
+        MyService sut = new MyService();
 
         assertFalse(sut.isStarted());
         sut.shutdown();
@@ -92,28 +74,20 @@ class NovaServiceTest {
 
     @Test
     void exceptionInOnStartPreventsServiceStart() {
-        MyBrokenStartService sut = MyBrokenStartService
-                .createInstance(MyBrokenStartService.class, MyConfigForBrokenStartService.class);
+        MyBrokenStartService sut = new MyBrokenStartService();
         Throwable t = assertThrows(RuntimeException.class, sut::start);
         assertThat(t.getMessage(), containsString("Error invoking startup handler"));
     }
 
     @Test
     void exceptionInOnInitPreventsServiceCreation() {
-        assertThrows(BeanInitializationException.class,
-                () -> MyBrokenInitService.createInstance(MyBrokenInitService.class, MyConfigForBrokenInitService.class));
-    }
-
-    @Test
-    void earlyExceptionForServiceConfigurationThatIsNotProperlyAnnotated() {
-        Throwable t = assertThrows(NoSuchBeanDefinitionException.class,
-                () -> MyService.createInstance(MyService.class, MyConfigWithoutBeanAnnotation.class));
-        assertThat(t.getMessage(), containsString("No qualifying bean of type"));
+        assertThrows(RuntimeException.class,
+                () -> new MyBrokenInitService().start());
     }
 
     @Test
     void startedServiceCanBeRestartedAfterShutdown() {
-        MyService sut = MyService.createInstance(MyService.class, MyConfig.class);
+        MyService sut = new MyService();
 
         assertFalse(sut.isStarted());
 
@@ -133,10 +107,10 @@ class NovaServiceTest {
 
     @Test
     void lifecycleCallbacksAreBeingInvoked() {
-        MyService sut = NovaService.createInstance(MyService.class, MyConfig.class);
+        MyService sut = new MyService();
 
         assertFalse(sut.isStarted());
-        assertThat(sut.onInitInvocations,is(1));
+        assertThat(sut.onInitInvocations,is(0));
         assertThat(sut.onStartInvocations,is(0));
         assertThat(sut.onShutdownInvocations,is(0));
 
@@ -154,175 +128,59 @@ class NovaServiceTest {
     }
 
     @Test
-    void serviceNameCanBeSpecifiedWithEnvironmentProperty() {
-        System.setProperty(NovaServiceConfiguration.BeanIdentifiers.NAME, "ABC");
-        AnnotationConfigApplicationContext ctx = new AnnotationConfigApplicationContext();
-        ctx.register(MyConfig.class, NovaServiceConfiguration.class);
-        ctx.refresh();
-        MyService sut = ctx.getBean(MyService.class);
-
-        assertThat(sut.serviceName, is("ABC"));
-    }
-
-    @Test
     void calculatedServiceNameUsedForMetricDumpsIfNotSpecified() {
-        AnnotationConfigApplicationContext ctx = new AnnotationConfigApplicationContext();
-        ctx.register(MyConfig.class, NovaServiceConfiguration.class);
-        ctx.refresh();
-        MyService sut = ctx.getBean(MyService.class);
+        MyService sut = new MyService();
 
-        List<Pair<String, String>> additionalInfoForMetricsDump = sut.calculateAdditionalInfoForMetricsDump();
-
+        /*
         assertThat(additionalInfoForMetricsDump.stream().anyMatch(p -> "hostName".equals(p._1)), is(true));
         assertThat(additionalInfoForMetricsDump.stream().anyMatch(p -> "hostAddress".equals(p._1)), is(true));
         assertThat(additionalInfoForMetricsDump.stream().anyMatch(p -> "serviceName".equals(p._1) && "MyService".equals(p._2)), is(true));
         assertThat(additionalInfoForMetricsDump.stream().anyMatch(p -> "serviceInstanceId".equals(p._1) && p._2 != null), is(true));
         assertThat(additionalInfoForMetricsDump.stream().anyMatch(p -> "serviceInstanceName".equals(p._1) && p._2 != null), is(true));
+
+         */
     }
 
-    @Test
-    void defaultConfigsLoadedAutomaticallyIfPresent() {
-        AnnotationConfigApplicationContext ctx = new AnnotationConfigApplicationContext();
-        ctx.register(NovaServiceConfiguration.class, MyConfigWithProperty.class);
-        ctx.refresh();
-        assertThat(ctx.getBean("foo"), is ("bar"));
-    }
-
-    @Test
-    void noProblemIfSpecificConfigFileDoesNotExist() {
-        System.setProperty(NovaServiceConfiguration.BeanIdentifiers.CONFIG_FILE, "doesn'tExist");
-        AnnotationConfigApplicationContext ctx = new AnnotationConfigApplicationContext();
-        ctx.register(MyConfigWithProperty.class, NovaServiceConfiguration.class);
-        ctx.refresh();
-        assertThat(ctx.getBean("foo"), is ("bar"));
-    }
-
-    @Test
-    void specificConfigFileIsLoadedIfPresentAndOverridesDefaultConfig() {
-        System.setProperty(NovaServiceConfiguration.BeanIdentifiers.CONFIG_FILE, "override.properties");
-        AnnotationConfigApplicationContext ctx = new AnnotationConfigApplicationContext();
-        ctx.register(MyConfigWithProperty.class, NovaServiceConfiguration.class);
-        ctx.refresh();
-        assertThat(ctx.getBean("foo"), is ("baz"));
-    }
-
-    @Test
-    void specificConfigItemsCanAlsoBeSetViaEnvironmentVariable() {
-        System.setProperty("foo", "baz");
-        AnnotationConfigApplicationContext ctx = new AnnotationConfigApplicationContext();
-        ctx.register(MyConfigWithProperty.class, NovaServiceConfiguration.class);
-        ctx.refresh();
-        assertThat(ctx.getBean("foo"), is ("baz"));
-    }
-
-
-    @Component
-    public static class MyBrokenInitService extends NovaService {
-        @OnServiceInit
+    public static class MyBrokenInitService extends MyService {
+        @Override
         public void onInit() {
             throw new RuntimeException("for test");
         }
     }
 
-    @Component
-    public static class MyBrokenStartService extends NovaService {
-        @OnServiceStartup
+    public static class MyBrokenStartService extends MyService {
+        @Override
         public void onStart() {
             throw new RuntimeException("for test");
         }
     }
 
-    @Component
     public static class MyService extends NovaService {
         private int onInitInvocations = 0;
         private int onStartInvocations = 0;
         private int onShutdownInvocations = 0;
 
-        @OnServiceInit
+        protected MyService() {
+            this(null);
+        }
+
+        protected MyService(NovaServiceConfig novaServiceConfig) {
+            super(Nova.builder().build(), novaServiceConfig);
+            registerInitHandler(this::onInit);
+            registerStartupHandler(this::onStart);
+            registerShutdownHandler(this::onShutdown);
+        }
+
         public void onInit() {
             onInitInvocations++;
         }
 
-        @OnServiceStartup
         public void onStart() {
             onStartInvocations++;
         }
 
-        @OnServiceShutdown
         public void onShutdown() {
             onShutdownInvocations++;
-        }
-    }
-
-
-    @Configuration
-    public static class MyConfig {
-        @Autowired
-        Environment env;
-
-        @Bean(NovaServiceConfiguration.BeanIdentifiers.INSTANCE)
-        public MyService serviceInstance() {
-            return new MyService();
-        }
-    }
-
-    @Configuration
-    public static class MyConfigWithInstanceIdAndServiceName {
-        @Autowired
-        Environment env;
-
-        @Bean(NovaServiceConfiguration.BeanIdentifiers.INSTANCE)
-        public MyService serviceInstance() {
-            return new MyService();
-        }
-
-        @Bean(NovaServiceConfiguration.BeanIdentifiers.INSTANCE_IDENTIFIER)
-        public String instanceId() {
-            return "ID";
-        }
-
-        @Bean(NovaServiceConfiguration.BeanIdentifiers.NAME)
-        public String serviceName() {
-            return "Name";
-        }
-    }
-
-    @Configuration
-    public static class MyConfigWithProperty {
-        @Autowired
-        Environment env;
-
-        @Bean(NovaServiceConfiguration.BeanIdentifiers.INSTANCE)
-        public MyService serviceInstance() {
-            return new MyService();
-        }
-
-        @Bean
-        public String foo() {
-            return env.getProperty("foo");
-        }
-    }
-
-    @Configuration
-    public static class MyConfigForBrokenStartService {
-        @Bean(NovaServiceConfiguration.BeanIdentifiers.INSTANCE)
-        public MyBrokenStartService serviceInstance() {
-            return new MyBrokenStartService();
-        }
-    }
-
-    @Configuration
-    public static class MyConfigForBrokenInitService {
-        @Bean(NovaServiceConfiguration.BeanIdentifiers.INSTANCE)
-        public MyBrokenInitService serviceInstance() {
-            return new MyBrokenInitService();
-        }
-    }
-
-    @Configuration
-    public static class MyConfigWithoutBeanAnnotation {
-        public MyService serviceInstance() {
-            return new MyService();
         }
     }
 }

@@ -11,7 +11,6 @@
 
 package ch.squaredesk.nova.autoconfig;
 
-import io.reactivex.BackpressureStrategy;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 @ConfigurationProperties("nova")

@@ -20,15 +20,17 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
+import org.springframework.boot.autoconfigure.ImportAutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Import;
 
 @Configuration
 @AutoConfigureBefore(HttpAdapterAutoConfig.class)
-@Import(HttpAdapterMessageTranscriberAutoConfig.class)
+@ImportAutoConfiguration(HttpAdapterMessageTranscriberAutoConfig.class)
+@EnableConfigurationProperties({HttpServerConfigurationProperties.class, RestConfigurationProperties.class})
 public class RestAutoConfig {
 
     @Bean

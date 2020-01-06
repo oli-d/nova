@@ -15,7 +15,7 @@ package ch.squaredesk.nova.comm.http.autoconfig;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 @ConfigurationProperties("nova.http")
-public class HttpAdapterSettings {
+public class HttpAdapterConfigurationProperties {
     /** The (optional) identifier of the HTTP adapter */
     private String adapterIdentifier;
 

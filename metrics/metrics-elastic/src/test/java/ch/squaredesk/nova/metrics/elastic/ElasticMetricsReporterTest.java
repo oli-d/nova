@@ -69,11 +69,10 @@ class ElasticMetricsReporterTest {
         metrics.getCounter("test","counter1");
         metrics.getMeter("test","meter1");
         metrics.register(new MyMetric(), "test","myMetric1");
-        MetricsDump dump = metrics.dump(Arrays.asList(
-                new Pair<>("host", "myMachine"),
-                new Pair<>("hostAddress", "myAddress"),
-                new Pair<>("additionalKey", "additionalValue")
-        ));
+        metrics.addAdditionalInfoForDumps("host", "myMachine");
+        metrics.addAdditionalInfoForDumps("hostAddress", "myAddress");
+        metrics.addAdditionalInfoForDumps("additionalKey", "additionalValue");
+        MetricsDump dump = metrics.dump();
 
         TestObserver<BulkRequest> bulkRequestObserver = sut.requestFor(dump).test();
         bulkRequestObserver.assertComplete();
@@ -100,11 +99,10 @@ class ElasticMetricsReporterTest {
         metrics.getCounter("test","counter1");
         metrics.getMeter("test","meter1");
         metrics.register(new MyMetric(), "test","myMetric1");
-        MetricsDump dump = metrics.dump(Arrays.asList(
-                new Pair<>("host", "myMachine2"),
-                new Pair<>("hostAddress", "myAddress2"),
-                new Pair<>("additionalKey", "additionalValue2")
-        ));
+        metrics.addAdditionalInfoForDumps("host", "myMachine2");
+        metrics.addAdditionalInfoForDumps("hostAddress", "myAddress2");
+        metrics.addAdditionalInfoForDumps("additionalKey", "additionalValue2");
+        MetricsDump dump = metrics.dump();
         SerializableMetricsDump serializableDump = SerializableMetricsDump.createFor(dump);
 
         TestObserver<BulkRequest> bulkRequestObserver = sut.requestFor(serializableDump).test();

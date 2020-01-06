@@ -24,7 +24,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import org.glassfish.jersey.server.ManagedAsync;
 import org.hamcrest.Matchers;
-import org.hamcrest.junit.MatcherAssert;
+import org.hamcrest.MatcherAssert;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
@@ -40,6 +40,7 @@ import javax.ws.rs.container.AsyncResponse;
 import javax.ws.rs.container.Suspended;
 import javax.ws.rs.core.MediaType;
 import java.time.LocalDate;
+import java.util.Objects;
 
 public class JacksonTest {
     private ApplicationContextRunner applicationContextRunner = new ApplicationContextRunner()
@@ -65,9 +66,9 @@ public class JacksonTest {
                     // expect that the handler retrieved a properly unmarshalled entity
                     MatcherAssert.assertThat(httpResponse.returnCode, Matchers.is(200));
                     Assertions.assertNotNull(MyRestHandler.person);
-                    MatcherAssert.assertThat(MyRestHandler.person, Matchers.samePropertyValuesAs(sentPerson));
+                    MatcherAssert.assertThat(MyRestHandler.person, Matchers.is(sentPerson));
                     Person receivedPerson = om.readValue(httpResponse.replyMessage, Person.class);
-                    MatcherAssert.assertThat(receivedPerson, Matchers.samePropertyValuesAs(sentPerson));
+                    MatcherAssert.assertThat(receivedPerson, Matchers.is(sentPerson));
                 });
     }
 
@@ -106,7 +107,7 @@ public class JacksonTest {
                     // expect that the handler retrieved a properly unmarshalled entity
                     MatcherAssert.assertThat(httpResponse.returnCode, Matchers.is(200));
                     Assertions.assertNotNull(MyRestHandler.person);
-                    MatcherAssert.assertThat(MyRestHandler.person, Matchers.samePropertyValuesAs(sentPerson));
+                    MatcherAssert.assertThat(MyRestHandler.person, Matchers.is(sentPerson));
                     MatcherAssert.assertThat(sentPersonAsString, Matchers.containsString("2005-09-16")); // specific mapper was configured to write ISO
                     MatcherAssert.assertThat(httpResponse.replyMessage, Matchers.containsString("2005-09-16")); // specific mapper was configured to write ISO
                 });
@@ -123,6 +124,21 @@ public class JacksonTest {
             this.firstName = firstName;
             this.lastName = lastName;
             this.birthDate = birthDate;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            Person person = (Person) o;
+            return Objects.equals(firstName, person.firstName) &&
+                    Objects.equals(lastName, person.lastName) &&
+                    Objects.equals(birthDate, person.birthDate);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(firstName, lastName, birthDate);
         }
     }
 
