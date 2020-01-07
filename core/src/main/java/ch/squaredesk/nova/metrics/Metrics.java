@@ -12,12 +12,14 @@
 package ch.squaredesk.nova.metrics;
 
 import ch.squaredesk.nova.tuples.Pair;
-import com.codahale.metrics.Timer;
 import com.codahale.metrics.*;
 import io.reactivex.Flowable;
 import org.slf4j.LoggerFactory;
 
-import java.util.*;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
 

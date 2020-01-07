@@ -75,5 +75,7 @@ public class EchoServer implements CommandLineRunner {
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
+
+        webSocketAdapter.shutdown().get();
     }
 }

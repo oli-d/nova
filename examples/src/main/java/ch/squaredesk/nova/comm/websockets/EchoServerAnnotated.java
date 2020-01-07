@@ -11,8 +11,8 @@
 
 package ch.squaredesk.nova.comm.websockets;
 
-import ch.squaredesk.nova.comm.websockets.autoconfig.annotation.OnConnect;
-import ch.squaredesk.nova.comm.websockets.autoconfig.annotation.OnMessage;
+import ch.squaredesk.nova.comm.websockets.annotation.OnConnect;
+import ch.squaredesk.nova.comm.websockets.annotation.OnMessage;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.context.annotation.Bean;
@@ -54,6 +54,8 @@ public class EchoServerAnnotated implements CommandLineRunner {
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
+
+        webSocketAdapter.shutdown().get();
     }
 
     @Bean

@@ -20,8 +20,8 @@ import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
 
-import static org.hamcrest.Matchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
 
 class DefaultMessageTranscriberForStringAsTransportTypeTest {
     private DefaultMessageTranscriberForStringAsTransportType sut;

@@ -1,1 +1,0 @@
-org.springframework.boot.autoconfigure.EnableAutoConfiguration=ch.squaredesk.nova.comm.kafka.autoconfig.KafkaAdapterAutoConfig

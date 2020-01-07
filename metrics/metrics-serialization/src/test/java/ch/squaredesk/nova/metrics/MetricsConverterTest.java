@@ -12,14 +12,12 @@
 package ch.squaredesk.nova.metrics;
 
 import ch.squaredesk.nova.Nova;
-import ch.squaredesk.nova.tuples.Pair;
 import org.junit.jupiter.api.Test;
 
-import java.util.Arrays;
 import java.util.Map;
 
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
-import static org.hamcrest.junit.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 
 class MetricsConverterTest {

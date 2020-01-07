@@ -16,8 +16,8 @@ import org.junit.jupiter.api.Test;
 import java.util.ArrayList;
 
 import static ch.squaredesk.nova.comm.ReflectionHelper.*;
-import static org.hamcrest.Matchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.*;
 
 class ReflectionHelperTest {

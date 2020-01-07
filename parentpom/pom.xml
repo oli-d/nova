@@ -67,10 +67,6 @@
 
         <junit.jupiter.version>5.5.2</junit.jupiter.version>
         <junit.platform.version>1.2.0</junit.platform.version>
-
-        <spring.boot.version>2.2.2.RELEASE</spring.boot.version>
-
-        <jackson.version>2.10.1</jackson.version>
     </properties>
 
     <dependencyManagement>

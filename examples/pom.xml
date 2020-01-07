@@ -14,10 +14,9 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
-        <artifactId>parentpom</artifactId>
-        <groupId>ch.squaredesk.nova</groupId>
-        <version>9.0.0</version>
-        <relativePath>../parentpom/pom.xml</relativePath>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <groupId>org.springframework.boot</groupId>
+        <version>2.2.2.RELEASE</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -28,28 +27,18 @@
     <dependencies>
         <dependency>
             <groupId>ch.squaredesk.nova</groupId>
-            <artifactId>websockets-starter</artifactId>
+            <artifactId>core</artifactId>
             <version>9.0.0</version>
         </dependency>
         <dependency>
             <groupId>ch.squaredesk.nova</groupId>
-            <artifactId>core-starter</artifactId>
-            <version>9.0.0</version>
-        </dependency>
-         <dependency>
-            <groupId>ch.squaredesk.nova</groupId>
-            <artifactId>http-starter</artifactId>
-            <version>9.0.0</version>
-        </dependency>
-        <dependency>
-            <groupId>ch.squaredesk.nova</groupId>
-            <artifactId>rest-starter</artifactId>
+            <artifactId>nova-starter</artifactId>
             <version>9.0.0</version>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter</artifactId>
-            <version>${spring.boot.version}</version>
+            <artifactId>spring-boot-autoconfigure</artifactId>
+            <version>2.2.2.RELEASE</version>
         </dependency>
         <dependency>
             <groupId>org.apache.activemq</groupId>

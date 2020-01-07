@@ -29,7 +29,7 @@ import java.util.concurrent.TimeUnit;
 @SpringBootApplication
 public class MetricsExample implements CommandLineRunner {
     @Autowired
-    private Nova nova;
+    Nova nova;
 
     public static void main(String[] args) {
         SpringApplication.run(MetricsExample.class, args);

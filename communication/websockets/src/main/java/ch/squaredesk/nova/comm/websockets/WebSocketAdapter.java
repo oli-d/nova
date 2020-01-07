@@ -28,6 +28,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 public class WebSocketAdapter extends CommAdapter<String> implements HttpServerInstanceListener {
     private static final Logger logger = LoggerFactory.getLogger(WebSocketAdapter.class);
@@ -115,6 +117,14 @@ public class WebSocketAdapter extends CommAdapter<String> implements HttpServerI
 
     public static Builder builder() {
         return new Builder();
+    }
+
+    public Future<HttpServer> shutdown() {
+        return shutdown(2, TimeUnit.SECONDS);
+    }
+
+    public Future<HttpServer> shutdown(long timeout, TimeUnit timeUnit) {
+        return httpServer.shutdown(timeout, timeUnit);
     }
 
     public static class Builder extends CommAdapterBuilder<String, WebSocketAdapter>{

@@ -140,31 +140,25 @@
     <modules>
         <module>parentpom</module>
 
-        <module>test-utils</module>
-
         <module>core</module>
-        <module>core-starter</module>
+        <module>nova-starter</module>
 
         <module>communication/comm</module>
         <module>communication/jms</module>
-        <module>communication/jms-starter</module>
         <module>communication/http</module>
-        <module>communication/http-starter</module>
         <module>communication/http-test-utils</module>
-        <module>communication/rest-starter</module>
         <module>communication/rest-test-utils</module>
         <module>communication/websockets</module>
-        <module>communication/websockets-starter</module>
         <module>communication/kafka</module>
-        <module>communication/kafka-starter</module>
 
         <module>metrics/metrics-serialization</module>
         <module>metrics/metrics-elastic</module>
         <module>metrics/metrics-kafka</module>
 
         <module>service</module>
+
+        <module>test-utils</module>
         <module>examples</module>
-        <module>service-starter</module>
     </modules>
 
     <profiles>
