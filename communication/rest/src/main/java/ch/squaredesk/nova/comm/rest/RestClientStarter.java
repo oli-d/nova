@@ -13,7 +13,6 @@ package ch.squaredesk.nova.comm.rest;
 import ch.squaredesk.nova.comm.http.AsyncHttpClientFactory;
 import ch.squaredesk.nova.comm.http.HttpClientSettings;
 import ch.squaredesk.nova.comm.http.spring.HttpClientBeanNotifier;
-import ch.squaredesk.nova.tuples.Pair;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.AsyncHttpClientConfig;
@@ -28,10 +27,7 @@ import org.springframework.context.support.GenericApplicationContext;
 import javax.annotation.PreDestroy;
 import javax.ws.rs.ext.ContextResolver;
 import javax.ws.rs.ext.Provider;
-import java.util.Collection;
-import java.util.Collections;
 import java.util.Map;
-import java.util.Optional;
 
 public class RestClientStarter implements ApplicationListener<ContextRefreshedEvent> {
     private static final Logger logger = LoggerFactory.getLogger(RestServerStarter.class);

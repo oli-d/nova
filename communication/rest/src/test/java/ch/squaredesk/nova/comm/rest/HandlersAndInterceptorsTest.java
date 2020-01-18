@@ -12,7 +12,6 @@
 package ch.squaredesk.nova.comm.rest;
 
 import ch.squaredesk.nova.comm.http.HttpAdapter;
-import ch.squaredesk.nova.comm.http.HttpRequestSender;
 import ch.squaredesk.nova.comm.http.HttpServerSettings;
 import com.ning.http.client.filter.FilterContext;
 import com.ning.http.client.filter.FilterException;

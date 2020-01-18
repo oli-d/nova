@@ -14,7 +14,6 @@ import ch.squaredesk.nova.Nova;
 import ch.squaredesk.nova.comm.http.AsyncHttpClientFactory;
 import ch.squaredesk.nova.comm.http.HttpClientSettings;
 import com.ning.http.client.AsyncHttpClient;
-import org.glassfish.grizzly.http.server.HttpServer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
