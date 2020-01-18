@@ -10,12 +10,15 @@
 
 package ch.squaredesk.nova.comm.http;
 
+import ch.squaredesk.nova.comm.http.spring.HttpClientBeanListener;
 import ch.squaredesk.nova.metrics.Metrics;
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.FluentCaseInsensitiveStringsMap;
 import com.ning.http.client.Response;
 import io.reactivex.Single;
 import io.reactivex.functions.Function;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.InputStream;
 import java.util.Collections;
@@ -25,8 +28,12 @@ import java.util.concurrent.TimeUnit;
 
 import static java.util.Objects.requireNonNull;
 
-public class RpcClient extends ch.squaredesk.nova.comm.rpc.RpcClient<String, RequestMessageMetaData, ReplyMessageMetaData> {
-    private final AsyncHttpClient client;
+public class RpcClient extends ch.squaredesk.nova.comm.rpc.RpcClient<String, RequestMessageMetaData, ReplyMessageMetaData>
+    implements HttpClientBeanListener {
+
+    private static final Logger logger = LoggerFactory.getLogger(RpcClient.class);
+
+    private AsyncHttpClient client;
     private Map<String, String> standardHeadersForAllRequests;
     private boolean contentTypeInStandardHeaders;
 
@@ -155,5 +162,13 @@ public class RpcClient extends ch.squaredesk.nova.comm.rpc.RpcClient<String, Req
         if (headersToAdd != null) {
             headersToAdd.forEach(requestBuilder::setHeader);
         }
+    }
+
+    @Override
+    public void httpClientAvailableInContext(AsyncHttpClient httpClient) {
+        if (this.client == null) {
+            logger.info("httpClient available, RpcClient functional");
+        }
+        this.client = httpClient;
     }
 }

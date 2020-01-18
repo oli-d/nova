@@ -21,7 +21,12 @@ import java.util.Optional;
 public class AsyncHttpClientFactory {
     private static final Logger logger = LoggerFactory.getLogger(AsyncHttpClientFactory.class);
 
-    public static AsyncHttpClient clientFor(HttpClientSettings settings) {
+    public static AsyncHttpClient clientFor(AsyncHttpClientConfig.Builder builder) {
+        Objects.requireNonNull(builder, "Builder must not be null");
+        return new AsyncHttpClient(builder.build());
+    }
+
+    public static AsyncHttpClientConfig.Builder builderFor(HttpClientSettings settings) {
         Objects.requireNonNull(settings, "HttpClientSettings must not be null");
 
         AsyncHttpClientConfig.Builder builder = new AsyncHttpClientConfig.Builder()
@@ -35,7 +40,7 @@ public class AsyncHttpClientFactory {
 
         createSslContextFor(settings).ifPresent(sslContext -> builder.setSSLContext(sslContext));
 
-        return new AsyncHttpClient(builder.build());
+        return builder;
     }
 
     private static Optional<SSLContext> createSslContextFor (HttpClientSettings settings) {
@@ -78,7 +83,7 @@ public class AsyncHttpClientFactory {
             if (isBlank(sslKeyStorePath)) {
                 throw new IllegalArgumentException("The SSL keystore file path must be provided!");
             }
-            char[] keypass = Optional.ofNullable(sslKeystorePassword).map(pwd -> pwd.toCharArray()).orElse(null);
+            char[] keypass = Optional.ofNullable(sslKeystorePassword).map(String::toCharArray).orElse(null);
             KeyStore keyStore = getDefaultKeyStore();
             keyStore.load(new FileInputStream(sslKeyStorePath), keypass);
             return createSslContextFor(keyStore);

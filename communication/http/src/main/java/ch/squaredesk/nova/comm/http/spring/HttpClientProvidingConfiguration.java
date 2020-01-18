@@ -14,6 +14,7 @@ import ch.squaredesk.nova.Nova;
 import ch.squaredesk.nova.comm.http.AsyncHttpClientFactory;
 import ch.squaredesk.nova.comm.http.HttpClientSettings;
 import com.ning.http.client.AsyncHttpClient;
+import org.glassfish.grizzly.http.server.HttpServer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
@@ -39,7 +40,9 @@ public class HttpClientProvidingConfiguration {
         String KEY_STORE_PASSWORD_FILE = "NOVA.HTTP.CLIENT.KEY_STORE_PASSWORD_FILE";
 
         String SETTINGS = "NOVA.HTTP.CLIENT.SETTINGS";
+        String AUTO_CREATE_CLIENT = "NOVA.HTTP.CLIENT.AUTO_CREATE";
         String CLIENT = "NOVA.HTTP.CLIENT";
+        String CLIENT_NOTIFIER = "NOVA.HTTP.CLIENT.NOTIFIER";
     }
 
     @Bean(BeanIdentifiers.SETTINGS)
@@ -131,8 +134,28 @@ public class HttpClientProvidingConfiguration {
         }
     }
 
+    @Bean(BeanIdentifiers.AUTO_CREATE_CLIENT)
+    public boolean autoCreateHttpClient(Environment environment) {
+        return environment.getProperty(BeanIdentifiers.AUTO_CREATE_CLIENT, Boolean.class, true);
+    }
+
     @Bean(BeanIdentifiers.CLIENT)
-    AsyncHttpClient httpClient(@Qualifier(BeanIdentifiers.SETTINGS) HttpClientSettings httpClientSettings) {
-        return AsyncHttpClientFactory.clientFor(httpClientSettings);
+    AsyncHttpClient httpClient(@Qualifier(BeanIdentifiers.AUTO_CREATE_CLIENT) boolean autoCreateHttpServer,
+                               @Qualifier(BeanIdentifiers.SETTINGS) HttpClientSettings httpClientSettings) {
+        if (autoCreateHttpServer) {
+            return AsyncHttpClientFactory.clientFor(AsyncHttpClientFactory.builderFor(httpClientSettings));
+        } else {
+            return null;
+        }
+    }
+
+    @Bean("autoNotifyAboutHttpClientAvailability")
+    public boolean autoNotifyAboutHttpClientAvailability() {
+        return true;
+    }
+
+    @Bean(BeanIdentifiers.CLIENT_NOTIFIER)
+    public HttpClientBeanNotifier httpClientBeanNotifier(@Qualifier("autoNotifyAboutHttpClientAvailability") boolean autoNotifyAboutHttpClientAvailability) {
+        return new HttpClientBeanNotifier(autoNotifyAboutHttpClientAvailability);
     }
 }

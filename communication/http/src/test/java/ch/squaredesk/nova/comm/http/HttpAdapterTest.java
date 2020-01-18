@@ -13,6 +13,7 @@ package ch.squaredesk.nova.comm.http;
 
 import ch.squaredesk.net.PortFinder;
 import ch.squaredesk.nova.tuples.Pair;
+import com.ning.http.client.AsyncHttpClient;
 import com.sun.net.httpserver.Headers;
 import com.sun.net.httpserver.HttpExchange;
 import io.reactivex.functions.Function;
@@ -50,6 +51,7 @@ class HttpAdapterTest {
         sut = HttpAdapter
                 .builder()
                 .setHttpServer(httpServer)
+                .setHttpClient(new AsyncHttpClient())
                 .build();
     }
 
@@ -84,11 +86,12 @@ class HttpAdapterTest {
         String path = "/jacksonTest";
         Pair<com.sun.net.httpserver.HttpServer, Integer> serverPortPair = httpServer(path, "xxx");
         String url = "http://localhost:" + serverPortPair._2 + path;
-
         Function<String, MyType1> replyTranscriber = string -> {
             throw new RuntimeException("Oli");
         };
+
         TestObserver<RpcReply<MyType1>> type1Observer = sut.sendGetRequest(url, replyTranscriber).test();
+
         type1Observer.assertError(throwable -> throwable instanceof RuntimeException && throwable.getMessage().equals("Oli"));
     }
 

@@ -12,7 +12,9 @@
 package ch.squaredesk.nova.comm.rest;
 
 import ch.squaredesk.nova.Nova;
+import ch.squaredesk.nova.comm.http.HttpClientSettings;
 import ch.squaredesk.nova.comm.http.HttpServerSettings;
+import ch.squaredesk.nova.comm.http.spring.HttpClientProvidingConfiguration;
 import ch.squaredesk.nova.comm.http.spring.HttpEnablingConfiguration;
 import ch.squaredesk.nova.comm.http.spring.HttpServerProvidingConfiguration;
 import ch.squaredesk.nova.tuples.Pair;
@@ -34,6 +36,7 @@ public class RestEnablingConfiguration {
         String CAPTURE_METRICS = "NOVA.REST.CAPTURE_METRICS";
         String LOG_INVOCATIONS = "NOVA.REST.LOG_INVOCATIONS";
         String REST_SERVER_PROPERTIES = "NOVA.REST.SERVER.PROPERTIES";
+        String REST_CLIENT = "NOVA.REST.CLIENT.INSTANCE";
         String REST_SERVER = "NOVA.REST.SERVER.INSTANCE";
     }
 
@@ -86,14 +89,29 @@ public class RestEnablingConfiguration {
     }
 
     @Bean
+    RestClientStarter restClientStarter(@Qualifier(HttpClientProvidingConfiguration.BeanIdentifiers.SETTINGS) HttpClientSettings httpClientSettings) {
+        return new RestClientStarter(httpClientSettings);
+    }
+
+    @Bean
     RestBeanPostprocessor restBeanPostprocessor() {
         return new RestBeanPostprocessor();
     }
 
     /**
-     * Switch off HttpServer auto creation. We can only do this after the ApplicationContext
+     * Switch off HttpClient/Server auto creation. We can only do this after the ApplicationContext
      * is completely initialized, since we need all handler beans to be available.
      **/
+    @Bean(HttpClientProvidingConfiguration.BeanIdentifiers.AUTO_CREATE_CLIENT)
+    public boolean autoCreateHttpClient() {
+        return false;
+    }
+
+    @Bean("autoNotifyAboutHttpClientAvailability")
+    public boolean autoNotifyAboutHttpClientAvailability() {
+        return false;
+    }
+
     @Bean(HttpServerProvidingConfiguration.BeanIdentifiers.AUTO_START_SERVER)
     public boolean autoStartHttpServer() {
         return false;

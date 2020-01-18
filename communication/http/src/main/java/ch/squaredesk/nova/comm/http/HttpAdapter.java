@@ -15,6 +15,7 @@ import ch.squaredesk.nova.comm.CommAdapter;
 import ch.squaredesk.nova.comm.CommAdapterBuilder;
 import ch.squaredesk.nova.comm.DefaultMessageTranscriberForStringAsTransportType;
 import ch.squaredesk.nova.comm.MessageTranscriber;
+import ch.squaredesk.nova.comm.http.spring.HttpClientBeanListener;
 import ch.squaredesk.nova.comm.http.spring.HttpServerBeanListener;
 import com.ning.http.client.AsyncHttpClient;
 import io.reactivex.Flowable;
@@ -33,7 +34,7 @@ import java.util.concurrent.TimeUnit;
 
 import static java.util.Objects.requireNonNull;
 
-public class HttpAdapter extends CommAdapter<String> implements HttpServerBeanListener {
+public class HttpAdapter extends CommAdapter<String> implements HttpServerBeanListener, HttpClientBeanListener {
     private final RpcClient rpcClient;
     private final RpcServer rpcServer;
     private final Long defaultRequestTimeout;
@@ -754,6 +755,13 @@ public class HttpAdapter extends CommAdapter<String> implements HttpServerBeanLi
         }
     }
 
+    @Override
+    public void httpClientAvailableInContext(AsyncHttpClient httpClient) {
+        if (this.rpcClient != null) {
+            this.rpcClient.httpClientAvailableInContext(httpClient);
+        }
+    }
+
 
     /////////
     /////////
@@ -831,8 +839,7 @@ public class HttpAdapter extends CommAdapter<String> implements HttpServerBeanLi
             }
             if (rpcClient == null) {
                 if (httpClient == null) {
-                    logger.info("No httpClient provided, instantiating one with default settings...");
-                    httpClient = new AsyncHttpClient();
+                    logger.info("No httpClient provided (yet), HTTP Adapter will only be usable in server mode until HttpClient becomes available!!!");
                 }
                 rpcClient = new RpcClient(identifier, httpClient, metrics);
             }

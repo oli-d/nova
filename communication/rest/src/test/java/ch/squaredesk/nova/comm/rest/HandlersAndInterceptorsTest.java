@@ -11,8 +11,13 @@
 
 package ch.squaredesk.nova.comm.rest;
 
+import ch.squaredesk.nova.comm.http.HttpAdapter;
 import ch.squaredesk.nova.comm.http.HttpRequestSender;
 import ch.squaredesk.nova.comm.http.HttpServerSettings;
+import com.ning.http.client.filter.FilterContext;
+import com.ning.http.client.filter.FilterException;
+import com.ning.http.client.filter.RequestFilter;
+import com.ning.http.client.filter.ResponseFilter;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -42,9 +47,15 @@ class HandlersAndInterceptorsTest {
     @Autowired
     HttpServerSettings httpServerSettings;
     @Autowired
+    HttpAdapter httpAdapter;
+    @Autowired
     HandlersAndInterceptorsTest.MyRequestFilter myRequestFilter;
     @Autowired
     HandlersAndInterceptorsTest.MyResponseFilter myResponseFilter;
+    @Autowired
+    HandlersAndInterceptorsTest.MyClientRequestFilter myClientRequestFilter;
+    @Autowired
+    HandlersAndInterceptorsTest.MyClientResponseFilter myClientResponseFilter;
     @Autowired
     HandlersAndInterceptorsTest.MyWriterInterceptor myWriterInterceptor;
 
@@ -52,14 +63,19 @@ class HandlersAndInterceptorsTest {
     @Test
     void restAnnotationsCanBeMixedWithHttpAdapterInServerMode() throws Exception {
         String serverUrl = "http://127.0.0.1:" + httpServerSettings.port;
+        assertThat(myClientRequestFilter.wasCalled, is(false));
+        assertThat(myClientResponseFilter.wasCalled, is(false));
         assertThat(myRequestFilter.wasCalled, is(false));
         assertThat(myResponseFilter.wasCalled, is(false));
         assertThat(myWriterInterceptor.wasCalled, is(false));
 
-        String response = HttpRequestSender.sendPostRequest(serverUrl + "/foo", "some request")
-                .replyMessage;
+        String response = httpAdapter.sendPostRequest(serverUrl + "/foo", "some request", String.class)
+                .blockingGet()
+                .result;
 
         assertThat(response, is("MyBean"));
+        assertThat(myClientRequestFilter.wasCalled, is(true));
+        assertThat(myClientResponseFilter.wasCalled, is(true));
         assertThat(myRequestFilter.wasCalled, is(true));
         assertThat(myResponseFilter.wasCalled, is(true));
         assertThat(myWriterInterceptor.wasCalled, is(true));
@@ -81,6 +97,16 @@ class HandlersAndInterceptorsTest {
         @Bean
         public MyResponseFilter myResponseFilter() {
             return new MyResponseFilter();
+        }
+
+        @Bean
+        public MyClientRequestFilter myClientRequestFilter() {
+            return new MyClientRequestFilter();
+        }
+
+        @Bean
+        public MyClientResponseFilter myClientResponseFilter() {
+            return new MyClientResponseFilter();
         }
 
         @Bean
@@ -122,6 +148,26 @@ class HandlersAndInterceptorsTest {
         @Override
         public void filter(ContainerRequestContext requestContext, ContainerResponseContext responseContext) {
             wasCalled = true;
+        }
+    }
+
+    public static class MyClientResponseFilter implements ResponseFilter {
+        private boolean wasCalled = false;
+
+        @Override
+        public <T> FilterContext<T> filter(FilterContext<T> ctx) throws FilterException {
+            wasCalled = true;
+            return ctx;
+        }
+    }
+
+    public static class MyClientRequestFilter implements RequestFilter {
+        private boolean wasCalled = false;
+
+        @Override
+        public <T> FilterContext<T> filter(FilterContext<T> ctx) throws FilterException {
+            wasCalled = true;
+            return ctx;
         }
     }
 }
