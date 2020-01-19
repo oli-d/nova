@@ -142,7 +142,9 @@ public class RpcClient extends ch.squaredesk.nova.comm.rpc.RpcClient<String, Req
     }
 
     void shutdown() {
-        client.close();
+        if (this.client != null) {
+            client.close();
+        }
     }
 
     public Map<String, String> getStandardHeadersForAllRequests() {
