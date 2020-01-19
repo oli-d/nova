@@ -743,7 +743,9 @@ public class HttpAdapter extends CommAdapter<String> implements HttpServerBeanLi
         if (rpcServer!=null) {
             rpcServer.shutdown();
         }
-        rpcClient.shutdown();
+        if (rpcClient!=null) {
+            rpcClient.shutdown();
+        }
     }
 
 
