@@ -17,6 +17,7 @@ import ch.squaredesk.nova.comm.http.HttpServerSettings;
 import com.codahale.metrics.Timer;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.glassfish.grizzly.http.server.ErrorPageGenerator;
 import org.glassfish.grizzly.http.server.HttpServer;
 import org.glassfish.grizzly.ssl.SSLContextConfigurator;
 import org.glassfish.grizzly.ssl.SSLEngineConfigurator;
@@ -49,6 +50,7 @@ import java.net.URI;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
+import java.util.stream.Collectors;
 
 public class RestServerStarter implements ApplicationListener<ContextRefreshedEvent> {
     private static final Logger logger = LoggerFactory.getLogger(RestServerStarter.class);
@@ -173,7 +175,13 @@ public class RestServerStarter implements ApplicationListener<ContextRefreshedEv
                 resourceConfig.register(filter);
             });
 
-
+            // register default error page generator
+            Map < String, ErrorPageGenerator> defaultErrorPageGenerators =
+                    contextRefreshedEvent.getApplicationContext().getBeansOfType(ErrorPageGenerator.class);
+            if (defaultErrorPageGenerators.size() > 1) {
+                throw new RuntimeException("Unable to create and start REST server, since more than one DefaultErrorPageGenerator beans were found: " +
+                        defaultErrorPageGenerators.values().stream().map(bean -> bean.getClass().getSimpleName()).collect(Collectors.joining(",")));
+            }
             URI serverAddress = UriBuilder.fromPath(
                     "http://" + httpServerSettings.interfaceName + ":" +
                     httpServerSettings.port).build();
@@ -183,6 +191,11 @@ public class RestServerStarter implements ApplicationListener<ContextRefreshedEv
                     sslEngineConfigurator != null,
                     sslEngineConfigurator,
                     false);
+
+            defaultErrorPageGenerators.values().forEach(errorPageGenerator -> {
+                logger.debug("Registering default error page generator {}", errorPageGenerator.getClass().getName());
+                httpServer.getServerConfiguration().setDefaultErrorPageGenerator(errorPageGenerator);
+            });
 
             // register server in ApplicationContext
             GenericApplicationContext genericContext = (GenericApplicationContext) contextRefreshedEvent.getApplicationContext();

@@ -169,10 +169,12 @@ public class RpcServer extends ch.squaredesk.nova.comm.rpc.RpcServer<String, Str
     }
 
     void shutdown() {
-        try {
-            httpServer.shutdown(2, TimeUnit.SECONDS).get();
-        } catch (Exception e) {
-            logger.info("An error occurred, trying to shutdown REST HTTP server", e);
+        if (httpServer != null) {
+            try {
+                httpServer.shutdown(2, TimeUnit.SECONDS).get();
+            } catch (Exception e) {
+                logger.info("An error occurred, trying to shutdown REST HTTP server", e);
+            }
         }
     }
 

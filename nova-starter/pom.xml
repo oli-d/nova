@@ -24,7 +24,6 @@
     <artifactId>nova-starter</artifactId>
 
     <properties>
-        <jackson.version>2.10.1</jackson.version>
         <jersey.version>2.29.1</jersey.version>
         <spring.boot.version>2.2.2.RELEASE</spring.boot.version>
     </properties>
