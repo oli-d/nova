@@ -32,7 +32,7 @@ import java.util.concurrent.TimeUnit;
 
 import static java.util.Objects.requireNonNull;
 
-public class HttpAdapter extends CommAdapter<String> implements HttpServerInstanceListener {
+public class HttpAdapter extends CommAdapter<String> implements HttpServerInstanceListener, HttpClientInstanceListener {
     private final RpcClient rpcClient;
     private final RpcServer rpcServer;
     private final Long defaultRequestTimeout;
@@ -745,11 +745,17 @@ public class HttpAdapter extends CommAdapter<String> implements HttpServerInstan
     }
 
 
-    ///////// Spring wiring
     @Override
     public void httpServerInstanceCreated(HttpServer httpServer) {
         if (this.rpcServer != null) {
             this.rpcServer.httpServerInstanceCreated(httpServer);
+        }
+    }
+
+    @Override
+    public void httpClientInstanceCreated(AsyncHttpClient httpClient) {
+        if (this.rpcClient != null) {
+            this.rpcClient.httpClientInstanceCreated(httpClient);
         }
     }
 
@@ -830,14 +836,13 @@ public class HttpAdapter extends CommAdapter<String> implements HttpServerInstan
             }
             if (rpcClient == null) {
                 if (httpClient == null) {
-                    logger.info("No httpClient provided, instantiating one with default settings...");
-                    httpClient = new AsyncHttpClient();
+                    logger.info("No httpClient provided (yet), HTTP Adapter will not be usable in client mode until HttpClient becomes available!!!");
                 }
                 rpcClient = new RpcClient(identifier, httpClient, metrics);
             }
             if (rpcServer == null) {
                 if (httpServer == null) {
-                    logger.info("No httpServer provided (yet), HTTP Adapter will only be usable in client mode until HttpServer becomes available!!!");
+                    logger.info("No httpServer provided (yet), HTTP Adapter will not be usable in server mode until HttpServer becomes available!!!");
                 }
                 rpcServer = new RpcServer(identifier, httpServer, messageTranscriber, metrics);
             }

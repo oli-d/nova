@@ -13,9 +13,14 @@ package ch.squaredesk.nova.comm.rest;
 
 import ch.squaredesk.net.PortFinder;
 import ch.squaredesk.nova.NovaAutoConfiguration;
+import ch.squaredesk.nova.comm.http.HttpAdapter;
 import ch.squaredesk.nova.comm.http.HttpAdapterAutoConfig;
 import ch.squaredesk.nova.comm.http.HttpRequestSender;
 import ch.squaredesk.nova.comm.http.HttpServerConfigurationProperties;
+import com.ning.http.client.filter.FilterContext;
+import com.ning.http.client.filter.FilterException;
+import com.ning.http.client.filter.RequestFilter;
+import com.ning.http.client.filter.ResponseFilter;
 import org.glassfish.grizzly.http.server.ErrorPageGenerator;
 import org.glassfish.grizzly.http.server.Request;
 import org.hamcrest.MatcherAssert;
@@ -52,21 +57,29 @@ class HandlersAndInterceptorsTest {
                 HttpServerConfigurationProperties serverSettings = appContext.getBean(HttpServerConfigurationProperties.class);
                 int port = serverSettings.getPort();
                 String serverUrl = "http://127.0.0.1:" + port;
+                HttpAdapter httpAdapter = appContext.getBean(HttpAdapter.class);
                 HandlersAndInterceptorsTest.MyRequestFilter myRequestFilter = appContext.getBean(HandlersAndInterceptorsTest.MyRequestFilter.class);
                 HandlersAndInterceptorsTest.MyResponseFilter myResponseFilter = appContext.getBean(HandlersAndInterceptorsTest.MyResponseFilter.class);
                 HandlersAndInterceptorsTest.MyWriterInterceptor myWriterInterceptor = appContext.getBean(HandlersAndInterceptorsTest.MyWriterInterceptor.class);
+                HandlersAndInterceptorsTest.MyClientResponseFilter myClientResponseFilter = appContext.getBean(HandlersAndInterceptorsTest.MyClientResponseFilter.class);
+                HandlersAndInterceptorsTest.MyClientRequestFilter myClientRequestFilter = appContext.getBean(HandlersAndInterceptorsTest.MyClientRequestFilter.class);
 
                 MatcherAssert.assertThat(myRequestFilter.wasCalled, Matchers.is(false));
                 MatcherAssert.assertThat(myResponseFilter.wasCalled, Matchers.is(false));
                 MatcherAssert.assertThat(myWriterInterceptor.wasCalled, Matchers.is(false));
+                MatcherAssert.assertThat(myClientRequestFilter.wasCalled, Matchers.is(false));
+                MatcherAssert.assertThat(myClientResponseFilter.wasCalled, Matchers.is(false));
 
-                String response = HttpRequestSender.sendPostRequest(serverUrl + "/foo", "some request")
-                        .replyMessage;
+                String response = httpAdapter.sendPostRequest(serverUrl + "/foo", "some request", String.class)
+                        .blockingGet()
+                        .result;
 
                 MatcherAssert.assertThat(response, Matchers.is("MyBean"));
                 MatcherAssert.assertThat(myRequestFilter.wasCalled, Matchers.is(true));
                 MatcherAssert.assertThat(myResponseFilter.wasCalled, Matchers.is(true));
                 MatcherAssert.assertThat(myWriterInterceptor.wasCalled, Matchers.is(true));
+                MatcherAssert.assertThat(myClientRequestFilter.wasCalled, Matchers.is(true));
+                MatcherAssert.assertThat(myClientResponseFilter.wasCalled, Matchers.is(true));
             });
     }
 
@@ -117,6 +130,16 @@ class HandlersAndInterceptorsTest {
         }
 
         @Bean
+        public MyClientRequestFilter myClientRequestFilter() {
+            return new MyClientRequestFilter();
+        }
+
+        @Bean
+        public MyClientResponseFilter myClientResponseFilter() {
+            return new MyClientResponseFilter();
+        }
+
+        @Bean
         public MyDefaultErrorPageGenerator myDefaultErrorPageGenerator() {
             return new MyDefaultErrorPageGenerator();
         }
@@ -134,7 +157,7 @@ class HandlersAndInterceptorsTest {
     public static class MyBean2 {
         @GET
         public String restHandler(@QueryParam("query") String query)  {
-            return "MyBean2";
+            return "Hello, I should never be called in this test";
         }
     }
 
@@ -163,6 +186,26 @@ class HandlersAndInterceptorsTest {
         @Override
         public void filter(ContainerRequestContext requestContext, ContainerResponseContext responseContext) {
             wasCalled = true;
+        }
+    }
+
+    public static class MyClientResponseFilter implements ResponseFilter {
+        private boolean wasCalled = false;
+
+        @Override
+        public <T> FilterContext<T> filter(FilterContext<T> ctx) throws FilterException {
+            wasCalled = true;
+            return ctx;
+        }
+    }
+
+    public static class MyClientRequestFilter implements RequestFilter {
+        private boolean wasCalled = false;
+
+        @Override
+        public <T> FilterContext<T> filter(FilterContext<T> ctx) throws FilterException {
+            wasCalled = true;
+            return ctx;
         }
     }
 

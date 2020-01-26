@@ -17,6 +17,8 @@ import com.ning.http.client.FluentCaseInsensitiveStringsMap;
 import com.ning.http.client.Response;
 import io.reactivex.Single;
 import io.reactivex.functions.Function;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.InputStream;
 import java.util.Collections;
@@ -26,15 +28,18 @@ import java.util.concurrent.TimeUnit;
 
 import static java.util.Objects.requireNonNull;
 
-public class RpcClient extends ch.squaredesk.nova.comm.rpc.RpcClient<String, RequestMessageMetaData, ReplyMessageMetaData> {
-    private final AsyncHttpClient client;
+public class RpcClient extends ch.squaredesk.nova.comm.rpc.RpcClient<String, RequestMessageMetaData, ReplyMessageMetaData>
+                        implements HttpClientInstanceListener {
+    private static final Logger logger = LoggerFactory.getLogger(RpcClient.class);
+
+    private AsyncHttpClient client;
     private Map<String, String> standardHeadersForAllRequests;
     private boolean contentTypeInStandardHeaders;
 
     protected RpcClient(String identifier,
                         AsyncHttpClient client,
                         Metrics metrics) {
-        super(Metrics.name("http", identifier).toString(), metrics);
+        super(Metrics.name("http", identifier), metrics);
         this.client = client;
     }
 
@@ -136,7 +141,9 @@ public class RpcClient extends ch.squaredesk.nova.comm.rpc.RpcClient<String, Req
     }
 
     void shutdown() {
-        client.close();
+        if (this.client!=null) {
+            client.close();
+        }
     }
 
     public Map<String, String> getStandardHeadersForAllRequests() {
@@ -156,5 +163,13 @@ public class RpcClient extends ch.squaredesk.nova.comm.rpc.RpcClient<String, Req
         if (headersToAdd != null) {
             headersToAdd.forEach(requestBuilder::setHeader);
         }
+    }
+
+    @Override
+    public void httpClientInstanceCreated(AsyncHttpClient httpClient) {
+        if (this.client == null) {
+            logger.info("httpClient available, RpcClient functional");
+        }
+        this.client = httpClient;
     }
 }

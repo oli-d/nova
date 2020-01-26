@@ -13,6 +13,7 @@ package ch.squaredesk.nova.comm.http;
 
 import ch.squaredesk.net.PortFinder;
 import ch.squaredesk.nova.tuples.Pair;
+import com.ning.http.client.AsyncHttpClient;
 import com.sun.net.httpserver.Headers;
 import com.sun.net.httpserver.HttpExchange;
 import io.reactivex.functions.Function;
@@ -50,6 +51,7 @@ class HttpAdapterTest {
         sut = HttpAdapter
                 .builder()
                 .setHttpServer(httpServer)
+                .setHttpClient(new AsyncHttpClient())
                 .build();
     }
 

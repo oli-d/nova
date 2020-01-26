@@ -12,6 +12,7 @@
 package ch.squaredesk.nova.comm.http;
 
 import com.ning.http.client.AsyncHttpClient;
+import com.ning.http.client.AsyncHttpClientConfig;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -61,6 +62,7 @@ public class HttpClientAutoConfig {
                 .webSocketTimeoutInSeconds(httpClientConfigurationProperties.getWebSocketTimeoutInSeconds())
                 .build();
 
-        return AsyncHttpClientFactory.clientFor(settings);
+        AsyncHttpClientConfig config = AsyncHttpClientFactory.builderFor(settings).build();
+        return AsyncHttpClientFactory.clientFor(config);
     }
 }

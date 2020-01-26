@@ -14,6 +14,7 @@ package ch.squaredesk.nova.comm.rest;
 import ch.squaredesk.nova.Nova;
 import ch.squaredesk.nova.comm.http.*;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ning.http.client.AsyncHttpClient;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
@@ -29,8 +30,8 @@ import org.springframework.context.annotation.Configuration;
         HttpServerConfigurationProperties.class,
         HttpClientConfigurationProperties.class,
         RestConfigurationProperties.class})
-@ConditionalOnClass(HttpAdapter.class)
-@AutoConfigureBefore(HttpServerAutoConfig.class)
+@ConditionalOnClass({HttpAdapter.class, AsyncHttpClient.class})
+@AutoConfigureBefore({HttpServerAutoConfig.class, HttpClientAutoConfig.class})
 public class RestAutoConfig {
 
     @Bean
@@ -67,6 +68,26 @@ public class RestAutoConfig {
                 httpObjectMapper,
                 restConfigurationProperties.isCaptureMetrics(),
                 nova);
+    }
+
+    @Bean
+    @ConditionalOnMissingBean(name = BeanIdentifiers.CLIENT)
+    RestClientStarter restClientStarter(HttpClientConfigurationProperties httpClientConfigurationProperties) {
+
+        ch.squaredesk.nova.comm.http.HttpClientSettings clientSettings =
+                ch.squaredesk.nova.comm.http.HttpClientSettings.builder()
+                        .compressionEnforced(httpClientConfigurationProperties.isCompressionEnforced())
+                        .connectionTimeoutInSeconds(httpClientConfigurationProperties.getConnectionTimeoutInSeconds())
+                        .defaultRequestTimeoutInSeconds(httpClientConfigurationProperties.getDefaultRequestTimeoutInSeconds())
+                        .sslAcceptAnyCertificate(httpClientConfigurationProperties.isAcceptAnyCertificate())
+                        .sslCertificateContent(httpClientConfigurationProperties.getSslCertificateContent())
+                        .sslKeyStorePass(httpClientConfigurationProperties.getSslKeyStorePass())
+                        .sslKeyStorePath(httpClientConfigurationProperties.getSslKeyStorePath())
+                        .userAgent(httpClientConfigurationProperties.getUserAgent())
+                        .webSocketTimeoutInSeconds(httpClientConfigurationProperties.getWebSocketTimeoutInSeconds())
+                        .build();
+
+        return new RestClientStarter(clientSettings);
     }
 
     @Bean

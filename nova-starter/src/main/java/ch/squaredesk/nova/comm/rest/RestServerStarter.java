@@ -33,11 +33,11 @@ import org.glassfish.jersey.server.monitoring.RequestEventListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.BeanInitializationException;
+import org.springframework.beans.factory.DisposableBean;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.context.support.GenericApplicationContext;
 
-import javax.annotation.PreDestroy;
 import javax.ws.rs.container.ContainerRequestFilter;
 import javax.ws.rs.container.ContainerResponseFilter;
 import javax.ws.rs.core.UriBuilder;
@@ -52,7 +52,7 @@ import java.util.Optional;
 import java.util.Properties;
 import java.util.stream.Collectors;
 
-public class RestServerStarter implements ApplicationListener<ContextRefreshedEvent> {
+public class RestServerStarter implements ApplicationListener<ContextRefreshedEvent>, DisposableBean {
     private static final Logger logger = LoggerFactory.getLogger(RestServerStarter.class);
 
     private HttpServer httpServer;
@@ -176,7 +176,7 @@ public class RestServerStarter implements ApplicationListener<ContextRefreshedEv
             });
 
             // register default error page generator
-            Map < String, ErrorPageGenerator> defaultErrorPageGenerators =
+            Map <String, ErrorPageGenerator> defaultErrorPageGenerators =
                     contextRefreshedEvent.getApplicationContext().getBeansOfType(ErrorPageGenerator.class);
             if (defaultErrorPageGenerators.size() > 1) {
                 throw new RuntimeException("Unable to create and start REST server, since more than one DefaultErrorPageGenerator beans were found: " +
@@ -219,8 +219,8 @@ public class RestServerStarter implements ApplicationListener<ContextRefreshedEv
         }
     }
 
-    @PreDestroy
-    public void shutdown() {
+    @Override
+    public void destroy() {
         if (httpServer != null) {
             httpServer.shutdown();
         }

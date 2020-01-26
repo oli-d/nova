@@ -32,7 +32,7 @@ import java.util.Optional;
 public class AsyncHttpClientFactory {
     private static final Logger logger = LoggerFactory.getLogger(AsyncHttpClientFactory.class);
 
-    public static AsyncHttpClient clientFor(HttpClientSettings settings) {
+    public static AsyncHttpClientConfig.Builder builderFor (HttpClientSettings settings) {
         Objects.requireNonNull(settings, "HttpClientSettings must not be null");
 
         AsyncHttpClientConfig.Builder builder = new AsyncHttpClientConfig.Builder()
@@ -46,7 +46,11 @@ public class AsyncHttpClientFactory {
 
         createSslContextFor(settings).ifPresent(sslContext -> builder.setSSLContext(sslContext));
 
-        return new AsyncHttpClient(builder.build());
+        return builder;
+    }
+
+    public static AsyncHttpClient clientFor(AsyncHttpClientConfig config) {
+        return new AsyncHttpClient(Objects.requireNonNull(config, "AsyncHttpClientConfig must not be null"));
     }
 
     private static Optional<SSLContext> createSslContextFor (HttpClientSettings settings) {
