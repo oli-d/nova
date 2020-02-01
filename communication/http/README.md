@@ -15,65 +15,6 @@ In both cases "normal, synchronous, RPC-style" HTTP communication patterns are i
 
 ## 2. HttpAdapter instantiation
 
-### 2.1 Using Spring
-
-The easiest way to retrieve an ```HttpAdapter``` instance is using Spring. For this, we provide
-the class ```HttpEnablingConfiguration```. Simply import this in your own Spring configuration
-and you can get a bean called "httpAdapter" from the ApplicationContext.
-
-When you do so, default configuration will be applied, which can be overridden via
-environment variables or by providing the appropriate beans yourself. The possible
-configuration values are
-
-  | Environnment variable / bean name            | Description                                              | Default value |
-  |----------------------------------------------|----------------------------------------------------------|---------------|
-  | NOVA.HTTP.ADAPTER_IDENTIFIER                 | the identifier to assign to the HttpAdapter.             | <null> |
-  | NOVA.HTTP.DEFAULT_REQUEST_TIMEOUT_IN_SECONDS | the default timeout in seconds when firing HTTP requests | 30 |
-  | | | |
-  | NOVA.HTTP.CLIENT                             | the ```AsyncHttpClient``` instance, handling the outgoing communication. | An instance with default settings (see below) |
-  | NOVA.HTTP.SERVER                             | the ```HttpServer``` instance, handling the incoming communication. | An instance with default settings (see below) |
-  | NOVA.HTTP.OBJECT_MAPPER                      | the ObjectMapper to use when transcribing incoming / outgoing messages| default ObjectMapper, for details see [here](../comm/README.md) |
-  | NOVA.HTTP.MESSAGE_TRANSCRIBER                | the transcriber to use for incoming / outgoing messages  | default transcriber, for details see [here](../comm/README.md) |
-
-As described above, by default the HttpAdapter will use an ```HttpServer``` with default settings. This bean is provided by the
-```HttpServerProvidingConfiguration``` which is automatically imported. The configuration options are: 
-   
-  | Environnment variable / bean name            | Description                                              | Default value |
-  |----------------------------------------------|----------------------------------------------------------|---------------|
-  | NOVA.HTTP.SERVER.PORT                        | the port, the HTTP server listens on                     | 10000         |
-  | NOVA.HTTP.SERVER.INTERFACE_NAME              | the interface, the HTTP server listens on                | "0.0.0.0"     |
-  | NOVA.HTTP.SERVER.KEY_STORE                   | the keystore to use. Switches on SSL                     | <null>        |
-  | NOVA.HTTP.SERVER.KEY_STORE_PASSWORD          | the password for the keystore                            | <null>        |
-  | NOVA.HTTP.SERVER.KEY_STORE_PASSWORD_FILE     | the file containing the password for the keystore        | <null>        |
-  | NOVA.HTTP.SERVER.TRUST_STORE                 | the truststore to use to validate clients                | <null>        |
-  | NOVA.HTTP.SERVER.TRUST_STORE_PASSWORD        | the password for the trust store                         | <null>        |
-  | NOVA.HTTP.SERVER.TRUST_STORE_PASSWORD_FILE   | the file containing the password for the trust store     | <null>        |
-  | | | |
-  | NOVA.HTTP.SERVER.AUTO_CREATE                 | If this is false, the system will NOT automatically create an HttpServer | true |
-  | NOVA.HTTP.SERVER.AUTO_START                  | If true, the system will automatically start the HttpServer when the ApplicationContext is initialized| true |
-  | NOVA.HTTP.SERVER.SETTINGS                    | an ```HttpServerSettings``` instance, containing all aforementioned config values. Handy if you want to read the configuration or override multiple defaults programmatically. |  |
-
-Note that the ```HttpServer``` is not mandatory. The adapter can be created without it in case
-you want to work in "client mode" only.
-
-Similar concept for the ```AsyncHttpClient``` which is provided by the
-```HttpClientProvidingConfiguration```. The configuration options are:
-
-  | Environnment variable / bean name                   | Description                                              | Default value |
-  |-----------------------------------------------------|----------------------------------------------------------|---------------|
-  | NOVA.HTTP.CLIENT.COMPRESSION_ENFORCED               | Enforce HTTP compression if set to ```true```                 | false        |
-  | NOVA.HTTP.CLIENT.CONNECTION_TIMEOUT_IN_SECONDS      | Set the maximum time in seconds we can wait when connecting to a remote host | 5    |
-  | NOVA.HTTP.CLIENT.DEFAULT_REQUEST_TIMEOUT_IN_SECONDS | the maximum time in seconds we wait (by default) for a request to complete | 30        |
-  | NOVA.HTTP.CLIENT.WEB_SOCKET_TIMEOUT_IN_SECONDS      | the maximum time in seconds a WebSocket can stay idle                            | 0 (forever) |
-  | NOVA.HTTP.CLIENT.CERTIFICATE                        | the certificate. Switches on SSL                         | <null>        |
-  | NOVA.HTTP.CLIENT.KEY_STORE                          | the keystore to use. Switches on SSL                     | <null>        |
-  | NOVA.HTTP.CLIENT.KEY_STORE_PASSWORD                 | the password for the keystore                            | <null>        |
-  | NOVA.HTTP.CLIENT.KEY_STORE_PASSWORD_FILE            | the file containing the password for the keystore        | <null>        |
-  | | | |
-  | NOVA.HTTP.CLIENT.SETTINGS                           | an ```HttpClientSettings``` instance, containing all aforementioned config values. Handy if you want to read the configuration or override multiple defaults programmatically. |  |
-
-### 2.2 Manual instantiation
-
 To create a new ```HttpAdapter``` instance manually, you need to do this via its Builder:
  
 ```

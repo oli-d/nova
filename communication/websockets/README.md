@@ -9,40 +9,16 @@ send and retrieve messages via WebSockets.
 
 ## 2. WebSocketAdapter instantiation
 
-The easiest way to retrieve a ```WebSocketAdapter``` instance is using Spring. For this, we provide
-the class ```WebSocketEnablingConfiguration```. Simply import this in your own Spring configuration
-and you can get a bean called "webSocketAdapter" from the ApplicationContext.
-
-When you do so, default configuration will be applied, which can be overridden via
-environment variables or by providing the appropriate beans yourself. The possible
-configuration values are
+You can instantiate a new ```WebSocketAdapter``` instance programmatically using its builder. The possible
+configuration values you can pass are
 
 
-  | @Bean name                         | Environnment variable name                   | Description                                              | Default value |
-  |------------------------------------|----------------------------------------------|----------------------------------------------------------|---------------|
-  | webSocketAdapterIdentifier         | NOVA.WEB_SOCKET.ADAPTER_IDENTIFIER           | the identifier to assign to the HttpAdapter.             | <null> |
-  | | | | |
-  | httpServer                         | n/a                                          | the ```HttpServer``` instance, handling the incoming communication. This is an optional bean. If not provided, the HttpAdapter can only be used in client mode.| <null> |
-  | webSocketObjectMapper              | n/a                                          | the ObjectMapper to use when transcribing incoming / outgoing messages| default ObjectMapper, for details see [here](../comm/README.md) |
-  | webSocketMessageTranscriber        | n/a                                          | the transcriber to use for incoming / outgoing messages  | default transcriber, for details see [here](../comm/README.md) |
-
-As you can see from the table above, the WebSocketAdapter needs an ```HttpServer``` instance to listen to HTTP requests, which 
-you have to provide as a bean in your ApplicationContext. This can be done very easily 
-by importing the ```HttpServerProvidingConfiguration``` which will automatically provide the appropriate bean named "httpServer". 
-The configuration options are  
-   
-  | @Bean name                         | Environnment variable name                   | Description                                              | Default value |
-  |------------------------------------|----------------------------------------------|----------------------------------------------------------|---------------|
-  | httpServerPort                     | NOVA.HTTP.SERVER.PORT                        | the port, the HTTP server listens on                     | 10000         |
-  | httpServerInterfaceName            | NOVA.HTTP.SERVER.INTERFACE_NAME              | the interface, the HTTP server listens on                | "0.0.0.0"     |
-  | httpServerKeyStore                 | NOVA.HTTP.SERVER.KEY_STORE                   | the keystore to use. Switches on SSL                     | <null>        |
-  | httpServerKeyStorePass             | NOVA.HTTP.SERVER.KEY_STORE_PASS              | the password for the keystore                            | <null>        |
-  | httpServerTrustStore               | NOVA.HTTP.SERVER.TRUST_STORE                 | the truststore to use to validate clients                | <null>        |
-  | httpServerTrustStorePass           | NOVA.HTTP.SERVER.TRUST_STORE_PASS            | the password for the trust store                         | <null>        |
-  | | | | |
-  | httpServerConfigurationProperties                 | n/a                                          | an ```HttpServerSettings``` instance, containing all aforementioned config values. Handy if you want to read the configuration or override multiple defaults programmatically. |  |
-   
-Of course you can also instantiate a new ```WebSocketAdapter``` instance programmatically using its builder. 
+  | Parameter                          | Description                                              | Default value |
+  |------------------------------------|----------------------------------------------------------|---------------|
+  | identifier                         | the identifier to assign to the HttpAdapter.             | <null> |
+  | | | |
+  | httpServer                         | the ```HttpServer``` instance, handling the incoming communication. | none, attribute is mandatory |
+  | httpClient                         | the ```HttpClient``` instance, handling the outgoing communication. | none, attribute is mandatory |
 
 # 3. Usage
 
