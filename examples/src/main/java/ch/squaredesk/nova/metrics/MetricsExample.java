@@ -22,7 +22,6 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.time.Duration;
 import java.util.Random;
-import java.util.concurrent.TimeUnit;
 
 /**
  * This simple example shows a very simple use case for the Nova metrics feature.

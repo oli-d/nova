@@ -15,7 +15,6 @@ import io.reactivex.Single;
 
 import java.time.Duration;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
 
 public class FrozenHttpAdapter<T> {
     private final HttpAdapter delegate;

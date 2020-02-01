@@ -28,7 +28,6 @@ import org.springframework.context.annotation.Configuration;
 import javax.jms.ConnectionFactory;
 import javax.jms.Destination;
 import java.time.Duration;
-import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.function.Supplier;
 

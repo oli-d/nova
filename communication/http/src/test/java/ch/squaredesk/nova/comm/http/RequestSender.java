@@ -17,8 +17,6 @@ import ch.squaredesk.nova.comm.MessageTranscriber;
 import java.net.URL;
 import java.time.Duration;
 
-import static java.util.concurrent.TimeUnit.SECONDS;
-
 class RequestSender {
     private final String baseUrl;
     private final RpcClient rpcClient;

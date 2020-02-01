@@ -26,7 +26,6 @@ import javax.jms.Session;
 import java.time.Duration;
 import java.util.concurrent.TimeoutException;
 
-import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;

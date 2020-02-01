@@ -16,7 +16,6 @@ import io.reactivex.Single;
 import io.reactivex.functions.Function;
 
 import java.time.Duration;
-import java.util.concurrent.TimeUnit;
 
 import static java.util.Objects.requireNonNull;
 

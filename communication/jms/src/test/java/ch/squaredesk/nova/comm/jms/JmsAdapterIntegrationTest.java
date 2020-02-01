@@ -27,7 +27,6 @@ import java.time.Duration;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Supplier;
 
-import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;

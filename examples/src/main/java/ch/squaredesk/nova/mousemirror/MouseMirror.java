@@ -21,7 +21,6 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.MouseEvent;
 import java.time.Duration;
-import java.util.concurrent.TimeUnit;
 
 /**
  * This simple example shows how to use the Nove event queue.

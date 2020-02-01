@@ -12,27 +12,17 @@
 package ch.squaredesk.nova.comm.rest;
 
 import ch.squaredesk.net.PortFinder;
-import ch.squaredesk.nova.Nova;
 import ch.squaredesk.nova.NovaAutoConfiguration;
 import ch.squaredesk.nova.comm.http.HttpAdapterAutoConfig;
 import ch.squaredesk.nova.comm.http.HttpRequestSender;
 import ch.squaredesk.nova.comm.http.HttpServerConfigurationProperties;
-import ch.squaredesk.nova.comm.http.HttpServerSettings;
-import ch.squaredesk.nova.metrics.Metrics;
 import org.glassfish.grizzly.http.server.ErrorPageGenerator;
 import org.glassfish.grizzly.http.server.Request;
-import org.hamcrest.MatcherAssert;
-import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Import;
-import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;

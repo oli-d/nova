@@ -25,7 +25,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import java.time.Duration;
-import java.util.concurrent.TimeUnit;
 
 @Configuration
 @EnableConfigurationProperties(KafkaAdapterConfigurationProperties.class)
