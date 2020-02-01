@@ -13,6 +13,7 @@ package ch.squaredesk.nova.comm.http;
 
 import io.reactivex.Single;
 
+import java.time.Duration;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
@@ -43,16 +44,16 @@ public class FrozenHttpAdapter<T> {
     }
 
     public Single<RpcReply<T>> sendGetRequest(
-                String destination,
-                long timeout, TimeUnit timeUnit) {
-        return delegate.sendGetRequest(destination, freezeType, timeout, timeUnit);
+            String destination,
+            Duration timeout) {
+        return delegate.sendGetRequest(destination, freezeType, timeout);
     }
 
     public Single<RpcReply<T>> sendGetRequest(
                 String destination,
                 Map<String, String> headers,
-                long timeout, TimeUnit timeUnit) {
-        return delegate.sendGetRequest(destination, headers, freezeType, timeout, timeUnit);
+                Duration timeout) {
+        return delegate.sendGetRequest(destination, headers, freezeType, timeout);
     }
 
     /////////////////// POST convenience methods
@@ -72,16 +73,16 @@ public class FrozenHttpAdapter<T> {
     public Single<RpcReply<T>> sendPostRequest(
                 String destination,
                 T request,
-                long timeout, TimeUnit timeUnit) {
-        return delegate.sendPostRequest(destination, request, freezeType, timeout, timeUnit );
+                Duration timeout) {
+        return delegate.sendPostRequest(destination, request, freezeType, timeout );
     }
 
     public Single<RpcReply<T>> sendPostRequest(
                 String destination,
                 T request,
                 Map<String, String> headers,
-                long timeout, TimeUnit timeUnit) {
-        return delegate.sendPostRequest(destination, request, headers, freezeType, timeout, timeUnit );
+                Duration timeout) {
+        return delegate.sendPostRequest(destination, request, headers, freezeType, timeout );
     }
 
     /////////////////// PUT convenience methods
@@ -101,16 +102,16 @@ public class FrozenHttpAdapter<T> {
     public Single<RpcReply<T>> sendPutRequest(
                 String destination,
                 T request,
-                long timeout, TimeUnit timeUnit) {
-        return delegate.sendPutRequest(destination, request, freezeType, timeout, timeUnit );
+                Duration timeout) {
+        return delegate.sendPutRequest(destination, request, freezeType, timeout );
     }
 
     public Single<RpcReply<T>> sendPutRequest(
                 String destination,
                 Map<String, String> headers,
                 T request,
-                long timeout, TimeUnit timeUnit) {
-        return delegate.sendPutRequest(destination, request, headers, freezeType, timeout, timeUnit );
+                Duration timeout) {
+        return delegate.sendPutRequest(destination, request, headers, freezeType, timeout );
     }
 
     /////////////////// DELETE convenience methods
@@ -130,16 +131,16 @@ public class FrozenHttpAdapter<T> {
     public Single<RpcReply<T>> sendDeleteRequest(
                 String destination,
                 T request,
-                long timeout, TimeUnit timeUnit) {
-        return delegate.sendDeleteRequest(destination, request, freezeType, timeout, timeUnit );
+                Duration timeout) {
+        return delegate.sendDeleteRequest(destination, request, freezeType, timeout );
     }
 
     public Single<RpcReply<T>> sendDeleteRequest(
                 String destination,
                 T request,
                 Map<String, String> headers,
-                long timeout, TimeUnit timeUnit) {
-        return delegate.sendDeleteRequest(destination, request, headers, freezeType, timeout, timeUnit );
+                Duration timeout) {
+        return delegate.sendDeleteRequest(destination, request, headers, freezeType, timeout );
     }
 
     /////////////////// convenience methods
@@ -162,9 +163,8 @@ public class FrozenHttpAdapter<T> {
                 String destination,
                 T request,
                 HttpRequestMethod requestMethod,
-                long timeout,
-                TimeUnit timeUnit) {
-        return delegate.sendRequest(destination, request, requestMethod, freezeType, timeout, timeUnit);
+                Duration timeout) {
+        return delegate.sendRequest(destination, request, requestMethod, freezeType, timeout);
     }
 
     public Single<RpcReply<T>> sendRequest(
@@ -172,9 +172,8 @@ public class FrozenHttpAdapter<T> {
                 T request,
                 Map<String, String> headers,
                 HttpRequestMethod requestMethod,
-                long timeout,
-                TimeUnit timeUnit) {
-        return delegate.sendRequest(destination, request, requestMethod, headers, freezeType, timeout, timeUnit);
+                Duration timeout) {
+        return delegate.sendRequest(destination, request, requestMethod, headers, freezeType, timeout);
     }
 
     /////////////////// and the big one, providing all possibilities

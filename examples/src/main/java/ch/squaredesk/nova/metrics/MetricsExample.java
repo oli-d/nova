@@ -20,6 +20,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
+import java.time.Duration;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
@@ -64,7 +65,7 @@ public class MetricsExample implements CommandLineRunner {
          * ***                                                            *** *
          * ****************************************************************** *
          */
-        nova.metrics.dumpContinuouslyToLog(2, TimeUnit.SECONDS);
+        nova.metrics.dumpContinuouslyToLog(Duration.ofSeconds(2));
 
         /**
          * *************************************************************************** *

@@ -29,6 +29,7 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 
 @Configuration
@@ -68,7 +69,7 @@ public class HttpAdapterAutoConfig {
             @Qualifier(BeanIdentifiers.MESSAGE_TRANSCRIBER) MessageTranscriber<String> httpMessageTranscriber,
             Nova nova) {
         return HttpAdapter.builder()
-                .setDefaultRequestTimeout(clientSettings.getDefaultRequestTimeoutInSeconds(), TimeUnit.SECONDS)
+                .setDefaultRequestTimeout(Duration.ofSeconds(clientSettings.getDefaultRequestTimeoutInSeconds()))
                 .setHttpClient(httpClient)
                 .setHttpServer(httpServer)
                 .setIdentifier(adapterSettings.getAdapterIdentifier())

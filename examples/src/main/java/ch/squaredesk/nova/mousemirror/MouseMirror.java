@@ -20,6 +20,7 @@ import org.springframework.context.ConfigurableApplicationContext;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.MouseEvent;
+import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -63,7 +64,7 @@ public class MouseMirror {
          * *********************************************************************** *
          */
         final Nova nova = Nova.builder().build();
-        nova.metrics.dumpContinuouslyToLog(5, TimeUnit.SECONDS);
+        nova.metrics.dumpContinuouslyToLog(Duration.ofSeconds(5));
 
         /**
          * <pre>

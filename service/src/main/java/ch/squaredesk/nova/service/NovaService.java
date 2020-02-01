@@ -18,11 +18,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.InetAddress;
+import java.time.Duration;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 
 public abstract class NovaService {
     private Lifeline lifeline = new Lifeline();
@@ -139,8 +139,8 @@ public abstract class NovaService {
         }
     }
 
-    public Flowable<MetricsDump> dumpMetricsContinuously (long interval, TimeUnit timeUnit) {
-        return nova.metrics.dumpContinuously(interval, timeUnit);
+    public Flowable<MetricsDump> dumpMetricsContinuously (Duration interval) {
+        return nova.metrics.dumpContinuously(interval);
     }
 
     private class Lifeline extends Thread {

@@ -23,6 +23,7 @@ import org.junit.jupiter.api.Test;
 
 import javax.jms.ConnectionFactory;
 import javax.jms.Destination;
+import java.time.Duration;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Supplier;
 
@@ -78,7 +79,7 @@ class JmsAdapterIntegrationTest {
     void rpcWorks() throws Exception {
         Destination queue = jmsHelper.echoOnQueue("myQueue1");
 
-        TestObserver<RpcReply<String>> replyObserver = sut.sendRequest(queue, "aRequest", String.class, 500, MILLISECONDS).test().await();
+        TestObserver<RpcReply<String>> replyObserver = sut.sendRequest(queue, "aRequest", String.class, Duration.ofMillis(500)).test().await();
         ch.squaredesk.nova.comm.rpc.RpcReply reply = replyObserver.values().get(0);
         assertThat(reply.result, is("aRequest"));
     }
@@ -90,7 +91,7 @@ class JmsAdapterIntegrationTest {
         myCorrelationIdGenerator.delegate = () -> "correlationId";
 
         TestSubscriber<String> messageSubscriber = sut.messages(sharedQueue).test();
-        TestObserver<RpcReply<String>> replyObserver = sut.sendRequest(queue, sharedQueue, "aRequest", null, String.class, 20, SECONDS).test();
+        TestObserver<RpcReply<String>> replyObserver = sut.sendRequest(queue, sharedQueue, "aRequest", null, String.class, Duration.ofSeconds(20)).test();
         jmsHelper.sendReply(sharedQueue, "aReply1", null);
         jmsHelper.sendReply(sharedQueue, "aReply2", "correlationId");
         jmsHelper.sendReply(sharedQueue, "aReply3", null);

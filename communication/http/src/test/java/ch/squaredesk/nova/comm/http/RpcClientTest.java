@@ -27,6 +27,7 @@ import org.junit.jupiter.api.Test;
 
 import java.io.*;
 import java.net.URL;
+import java.time.Duration;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Consumer;
 
@@ -74,7 +75,7 @@ class RpcClientTest {
             RequestInfo ri = new RequestInfo(HttpRequestMethod.GET);
             RequestMessageMetaData meta = new RequestMessageMetaData(new URL("http://localhost:" + portServerPair._1 + "/"), ri);
 
-            Single<RpcReply<String>> replySingle = sut.sendRequest("", meta, s -> s, s -> s, 5, SECONDS);
+            Single<RpcReply<String>> replySingle = sut.sendRequest("", meta, s -> s, s -> s, Duration.ofSeconds(5));
 
             TestObserver<RpcReply<String>> observer = replySingle.test();
             await().atMost(3, SECONDS).until(observer::valueCount, is(1));
@@ -111,7 +112,7 @@ class RpcClientTest {
             RequestInfo ri = new RequestInfo(HttpRequestMethod.GET);
             RequestMessageMetaData meta = new RequestMessageMetaData(new URL("http://localhost:" + portServerPair._1 + "/"), ri);
 
-            Single<RpcReply<String>> replySingle = sut.sendRequest("", meta, s -> s, s -> s, 5, SECONDS);
+            Single<RpcReply<String>> replySingle = sut.sendRequest("", meta, s -> s, s -> s, Duration.ofSeconds(5));
 
             TestObserver<RpcReply<String>> observer = replySingle.test();
             await().atMost(3, SECONDS).until(observer::valueCount, is(1));
@@ -147,7 +148,7 @@ class RpcClientTest {
             RequestInfo ri = new RequestInfo(HttpRequestMethod.GET);
             RequestMessageMetaData meta = new RequestMessageMetaData(new URL("http://localhost:" + portServerPair._1 + "/"), ri);
 
-            Single<RpcReply<InputStream>> replySingle = sut.sendRequestAndRetrieveResponseAsStream("", meta, s -> s, 5, SECONDS);
+            Single<RpcReply<InputStream>> replySingle = sut.sendRequestAndRetrieveResponseAsStream("", meta, s -> s, Duration.ofSeconds(5));
 
             TestObserver<RpcReply<InputStream>> observer = replySingle.test();
             await().atMost(3, SECONDS).until(observer::valueCount, is(1));
@@ -193,7 +194,7 @@ class RpcClientTest {
             RequestInfo ri = new RequestInfo(HttpRequestMethod.GET);
             RequestMessageMetaData meta = new RequestMessageMetaData(new URL("http://localhost:"+portServerPair._1+"/"), ri);
 
-            Single<RpcReply<String>> replySingle = sut.sendRequest("", meta, s -> s, s -> s, 5, SECONDS)
+            Single<RpcReply<String>> replySingle = sut.sendRequest("", meta, s -> s, s -> s, Duration.ofSeconds(5))
                     .subscribeOn(Schedulers.io())
                     ;
 

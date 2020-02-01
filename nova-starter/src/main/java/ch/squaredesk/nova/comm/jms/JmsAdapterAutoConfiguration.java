@@ -27,6 +27,7 @@ import org.springframework.context.annotation.Configuration;
 
 import javax.jms.ConnectionFactory;
 import javax.jms.Destination;
+import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -75,7 +76,7 @@ public class JmsAdapterAutoConfiguration {
                 .setDefaultMessageDeliveryMode(jmsAdapterAutoConfigurationProperties.getDefaultMessageDeliveryMode())
                 .setDefaultMessagePriority(jmsAdapterAutoConfigurationProperties.getDefaultMessagePriority())
                 .setDefaultMessageTimeToLive(jmsAdapterAutoConfigurationProperties.getDefaultMessageTimeToLive())
-                .setDefaultRpcTimeout(jmsAdapterAutoConfigurationProperties.getDefaultJmsRpcTimeoutInSeconds(), TimeUnit.SECONDS)
+                .setDefaultRpcTimeout(Duration.ofSeconds(jmsAdapterAutoConfigurationProperties.getDefaultJmsRpcTimeoutInSeconds()))
                 .setConsumerSessionAckMode(jmsAdapterAutoConfigurationProperties.getConsumerSessionAckMode())
                 .setConsumerSessionTransacted(jmsAdapterAutoConfigurationProperties.isConsumerSessionTransacted())
                 .setProducerSessionAckMode(jmsAdapterAutoConfigurationProperties.getProducerSessionAckMode())

@@ -16,6 +16,7 @@ import com.codahale.metrics.*;
 import io.reactivex.Flowable;
 import org.slf4j.LoggerFactory;
 
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -41,26 +42,24 @@ public class Metrics {
      * Returns an observable that continuously emits all registered metrics. The passed parameters define the
      * interval between two dumps.
      */
-    public Flowable<MetricsDump> dumpContinuously(long interval, TimeUnit timeUnit) {
-        if (interval <= 0) {
-            throw new IllegalArgumentException("interval must be greater than 0");
+    public Flowable<MetricsDump> dumpContinuously(Duration interval) {
+        if (interval.toMillis() <= 0) {
+            throw new IllegalArgumentException("interval must be positive");
         }
-        Objects.requireNonNull(timeUnit, "timeUnit must not be null");
-
         return Flowable
-                .interval(interval, interval, timeUnit)
+                .interval(interval.toMillis(), interval.toMillis(), TimeUnit.MILLISECONDS)
                 .map(count -> dump());
     }
 
 
-    public void dumpContinuouslyToLog(long dumpInterval, TimeUnit timeUnit) {
+    public void dumpContinuouslyToLog(Duration dumpInterval) {
         if (logReporter == null) {
             logReporter = Slf4jReporter.forRegistry(metricRegistry).outputTo(LoggerFactory.getLogger(Metrics.class))
                     .convertRatesTo(TimeUnit.SECONDS).convertDurationsTo(TimeUnit.MILLISECONDS).build();
         } else {
             logReporter.close();
         }
-        logReporter.start(dumpInterval, timeUnit);
+        logReporter.start(dumpInterval.toMillis(), TimeUnit.MILLISECONDS);
     }
 
     public void dumpToLog() {

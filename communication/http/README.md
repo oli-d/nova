@@ -47,7 +47,7 @@ mandatory parameters have not been specified. The proper example would look some
 HttpAdapter httpAdapter = HttpAdapter.builder()
     .setIdentifier("MyService.Http")
     .setHttpServer(httpServer)
-    .setDefaultRequestTimeout(20, TimeUnit.SECONDS)
+    .setDefaultRequestTimeout(Duration.ofSeconds(20))
     .setMetrics(myMetrics)
     .build();
 ```
@@ -68,7 +68,7 @@ Single<RpcReply<ReplyMessageType>> sendGetRequest(String destination, Class<Repl
 and its overloaded version 
 
 ```
-Single<RpcReply<ReplyMessageType>> sendGetRequest(String destination, Class<ReplyMessageType> replyMessageType, long timeout, TimeUnit timeUnit)
+Single<RpcReply<ReplyMessageType>> sendGetRequest(String destination, Class<ReplyMessageType> replyMessageType, Duration timeout)
 ```
 
 Those methods allow you to send an HTTP GET request to the passed origin and return a ```Single``` which either

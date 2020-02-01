@@ -15,6 +15,7 @@ import ch.squaredesk.nova.metrics.Metrics;
 import io.reactivex.Single;
 import io.reactivex.functions.Function;
 
+import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
@@ -39,9 +40,9 @@ public class RpcClient extends ch.squaredesk.nova.comm.rpc.RpcClient<String, Out
             OutgoingMessageMetaData requestMetaData,
             Function<RequestType, String> requestTranscriber,
             Function<String, ReplyType> replyTranscriber,
-            long timeout, TimeUnit timeUnit) {
+            Duration timeout) {
 
-        requireNonNull(timeUnit, "timeUnit must not be null");
+        requireNonNull(timeout, "timeout must not be null");
         requireNonNull(requestMetaData, "metaData must not be null");
         requireNonNull(requestMetaData.details, "metaData.details must not be null");
         requireNonNull(requestMetaData.details.correlationId, "correlationId must not be null");
@@ -70,7 +71,7 @@ public class RpcClient extends ch.squaredesk.nova.comm.rpc.RpcClient<String, Out
         }
 
         return replySingle
-                .timeout(timeout, timeUnit)
+                .timeout(timeout.toMillis(), TimeUnit.MILLISECONDS)
                 .doOnError(t -> {
                     if (t instanceof TimeoutException) {
                         metricsCollector.rpcTimedOut(metricsInfo);

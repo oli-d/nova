@@ -26,9 +26,9 @@ import org.apache.kafka.common.serialization.StringSerializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.time.Duration;
 import java.util.Properties;
 import java.util.UUID;
-import java.util.concurrent.TimeUnit;
 
 import static java.util.Objects.requireNonNull;
 
@@ -122,16 +122,13 @@ public class KafkaAdapter extends CommAdapter<String> {
 //        private Scheduler subscriptionScheduler;
         private Properties consumerProperties = new Properties();
         private Properties producerProperties = new Properties();
-        private long pollTimeout = 1;
-        private TimeUnit pollTimeUnit = TimeUnit.SECONDS;
+        private Duration pollTimeout = Duration.ofSeconds(1);
 
         private Builder() {
         }
 
-        public Builder setMessagePollingTimeout(long pollTimeout, TimeUnit pollTimeUnit) {
-            requireNonNull(pollTimeUnit, "pollTimeUnit must not be null");
+        public Builder setMessagePollingTimeout(Duration pollTimeout) {
             this.pollTimeout = pollTimeout;
-            this.pollTimeUnit = pollTimeUnit;
             return this;
         }
 
@@ -230,7 +227,7 @@ public class KafkaAdapter extends CommAdapter<String> {
             setPropertyIfNotPresent(producerProperties, ProducerConfig.CLIENT_ID_CONFIG, clientId);
 
             if (messageReceiver == null) {
-                messageReceiver = new MessageReceiver(identifier, consumerProperties, pollTimeout, pollTimeUnit, metrics);
+                messageReceiver = new MessageReceiver(identifier, consumerProperties, pollTimeout, metrics);
             }
             if (messageSender == null) {
                 messageSender = new MessageSender(identifier, producerProperties, metrics);

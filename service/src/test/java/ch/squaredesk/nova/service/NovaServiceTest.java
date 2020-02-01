@@ -17,6 +17,7 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import java.net.InetAddress;
+import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -36,7 +37,7 @@ class NovaServiceTest {
         sut.start();
 
         MetricsDump dump = sut
-                .dumpMetricsContinuously(1, TimeUnit.MILLISECONDS)
+                .dumpMetricsContinuously(Duration.ofSeconds(1))
                 .blockingFirst();
 
         assertThat(dump.additionalInfo.size(), is(5));

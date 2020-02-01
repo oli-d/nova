@@ -21,6 +21,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.InputStream;
+import java.time.Duration;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -49,7 +50,7 @@ public class RpcClient extends ch.squaredesk.nova.comm.rpc.RpcClient<String, Req
             RequestMessageMetaData requestMessageMetaData,
             Function<T, String> requestTranscriber,
             Function<String, U> replyTranscriber,
-            long timeout, TimeUnit timeUnit) {
+            Duration timeout) {
 
         return doRequest(
                 request, requestMessageMetaData, requestTranscriber,
@@ -57,7 +58,7 @@ public class RpcClient extends ch.squaredesk.nova.comm.rpc.RpcClient<String, Req
                     String responseBody = response.getResponseBody();
                     return responseBody == null || responseBody.trim().isEmpty() ? null : replyTranscriber.apply(responseBody);
                 },
-                timeout, timeUnit
+                timeout
         );
     }
 
@@ -65,11 +66,11 @@ public class RpcClient extends ch.squaredesk.nova.comm.rpc.RpcClient<String, Req
             T request,
             RequestMessageMetaData requestMessageMetaData,
             Function<T, String> requestTranscriber,
-            long timeout, TimeUnit timeUnit) {
+            Duration timeout) {
         return doRequest(
                 request, requestMessageMetaData, requestTranscriber,
                 Response::getResponseBodyAsStream,
-                timeout, timeUnit
+                timeout
         );
     }
 
@@ -78,7 +79,7 @@ public class RpcClient extends ch.squaredesk.nova.comm.rpc.RpcClient<String, Req
                                  RequestMessageMetaData requestMessageMetaData,
                                  Function<T, String> requestTranscriber,
                                  Function<Response, U> responseMapper,
-                                 long timeout, TimeUnit timeUnit) {
+                                 Duration timeout) {
         String requestAsString;
         try {
             requestAsString = request != null ? requestTranscriber.apply(request) : null;
@@ -86,7 +87,7 @@ public class RpcClient extends ch.squaredesk.nova.comm.rpc.RpcClient<String, Req
             return Single.error(e);
         }
 
-        AsyncHttpClient.BoundRequestBuilder requestBuilder = createRequestBuilder(requestAsString, requestMessageMetaData, timeout, timeUnit);
+        AsyncHttpClient.BoundRequestBuilder requestBuilder = createRequestBuilder(requestAsString, requestMessageMetaData, timeout);
 
         return Single.fromCallable(() -> requestBuilder.execute().get())
                 .map(response -> {
@@ -95,11 +96,11 @@ public class RpcClient extends ch.squaredesk.nova.comm.rpc.RpcClient<String, Req
                     metricsCollector.rpcCompleted(MetricsCollectorInfoCreator.createInfoFor(requestMessageMetaData.destination), result);
                     return new RpcReply<>(result, metaData);
                 })
-                .timeout(timeout, timeUnit);
+                .timeout(timeout.toMillis(), TimeUnit.MILLISECONDS);
     }
 
-    private AsyncHttpClient.BoundRequestBuilder createRequestBuilder(String requestAsString, RequestMessageMetaData requestMessageMetaData, long timeout, TimeUnit timeUnit) {
-        requireNonNull(timeUnit, "timeUnit must not be null");
+    private AsyncHttpClient.BoundRequestBuilder createRequestBuilder(String requestAsString, RequestMessageMetaData requestMessageMetaData, Duration timeout) {
+        requireNonNull(timeout, "timeout must not be null");
 
         AsyncHttpClient.BoundRequestBuilder requestBuilder;
         if (requestMessageMetaData.details.requestMethod == HttpRequestMethod.POST) {
@@ -122,7 +123,7 @@ public class RpcClient extends ch.squaredesk.nova.comm.rpc.RpcClient<String, Req
             requestBuilder.addHeader("Content-Type", "application/json; charset=utf-8");
         }
 
-        return requestBuilder.setRequestTimeout((int)timeUnit.toMillis(timeout));
+        return requestBuilder.setRequestTimeout((int)timeout.toMillis());
     }
 
     private static ReplyMessageMetaData createMetaDataFromReply(RequestMessageMetaData requestMessageMetaData, Response response) {

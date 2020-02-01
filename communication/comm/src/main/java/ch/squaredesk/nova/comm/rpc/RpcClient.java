@@ -15,6 +15,7 @@ import ch.squaredesk.nova.metrics.Metrics;
 import io.reactivex.Single;
 import io.reactivex.functions.Function;
 
+import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 
 import static java.util.Objects.requireNonNull;
@@ -40,5 +41,5 @@ public abstract class RpcClient<
             RequestMetaDataType requestMetaData,
             Function<RequestType, TransportMessageType> requestTranscriber,
             Function<TransportMessageType, ReplyType> replyTranscriber,
-            long timeout, TimeUnit timeUnit);
+            Duration timeout);
 }

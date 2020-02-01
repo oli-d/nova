@@ -16,6 +16,7 @@ import org.hamcrest.Matchers;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.time.Duration;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -34,17 +35,11 @@ class MetricsTest {
     @Test
     void continuousDumpNeedsIntervalLargerThanZero() {
         IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
-                () -> sut.dumpContinuously(-1, TimeUnit.SECONDS));
-        assertThat(ex.getMessage(),containsString("interval must be greater than 0"));
+                () -> sut.dumpContinuously(Duration.ofSeconds(-1)));
+        assertThat(ex.getMessage(),containsString("interval must be positive"));
         ex = assertThrows(IllegalArgumentException.class,
-                () -> sut.dumpContinuously(0, TimeUnit.SECONDS));
-        assertThat(ex.getMessage(),containsString("interval must be greater than 0"));
-    }
-
-    @Test
-    void continuousDumpNeedsNonNullTimeUnit() {
-        NullPointerException ex = assertThrows(NullPointerException.class, () -> sut.dumpContinuously(5, null));
-        assertThat(ex.getMessage(),containsString("timeUnit must not be null"));
+                () -> sut.dumpContinuously(Duration.ZERO));
+        assertThat(ex.getMessage(),containsString("interval must be positive"));
     }
 
     @Test
@@ -59,7 +54,7 @@ class MetricsTest {
         sut.addAdditionalInfoForDumps("oli", "d");
 
         List<MetricsDump> metricsDumps = sut
-                .dumpContinuously(1L, TimeUnit.MILLISECONDS)
+                .dumpContinuously(Duration.ofMillis(1))
                 .take(3)
                 .toList()
                 .blockingGet();

@@ -15,6 +15,7 @@ import ch.squaredesk.nova.comm.DefaultMessageTranscriberForStringAsTransportType
 import ch.squaredesk.nova.comm.MessageTranscriber;
 
 import java.net.URL;
+import java.time.Duration;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
 
@@ -48,7 +49,7 @@ class RequestSender {
                 RequestMessageMetaData meta = new RequestMessageMetaData(
                     new URL(baseUrl + pathToUse),
                     new RequestInfo(HttpRequestMethod.POST));
-                rpcClient.sendRequest(payload, meta, messageTranscriber.getOutgoingMessageTranscriber(String.class), messageTranscriber.getIncomingMessageTranscriber(String.class), 15, SECONDS).blockingGet();
+                rpcClient.sendRequest(payload, meta, messageTranscriber.getOutgoingMessageTranscriber(String.class), messageTranscriber.getIncomingMessageTranscriber(String.class), Duration.ofSeconds(15)).blockingGet();
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }

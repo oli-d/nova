@@ -65,6 +65,7 @@ class HttpAndRestTest {
                     HttpServerConfigurationProperties serverSettings = appContext.getBean(HttpServerConfigurationProperties.class);
                     int port = serverSettings.getPort();
                     HttpAdapter httpAdapter = appContext.getBean(HttpAdapter.class);
+                    Awaitility.await().atMost(Duration.FIVE_SECONDS).until(httpAdapter::isServerStarted);
 
                     String serverUrl = "http://127.0.0.1:" + port;
                     httpAdapter.requests("/foo1", String.class).subscribe(

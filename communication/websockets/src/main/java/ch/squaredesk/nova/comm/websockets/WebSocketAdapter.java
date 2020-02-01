@@ -27,6 +27,7 @@ import org.glassfish.grizzly.websockets.WebSocketEngine;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.time.Duration;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -120,11 +121,11 @@ public class WebSocketAdapter extends CommAdapter<String> implements HttpServerI
     }
 
     public Future<HttpServer> shutdown() {
-        return shutdown(2, TimeUnit.SECONDS);
+        return shutdown(Duration.ofSeconds(2));
     }
 
-    public Future<HttpServer> shutdown(long timeout, TimeUnit timeUnit) {
-        return httpServer.shutdown(timeout, timeUnit);
+    public Future<HttpServer> shutdown(Duration timeout) {
+        return httpServer.shutdown(timeout.toMillis(), TimeUnit.MILLISECONDS);
     }
 
     public static class Builder extends CommAdapterBuilder<String, WebSocketAdapter>{

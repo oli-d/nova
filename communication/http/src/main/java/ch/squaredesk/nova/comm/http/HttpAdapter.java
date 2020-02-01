@@ -26,17 +26,16 @@ import org.slf4j.LoggerFactory;
 import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.time.Duration;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.TimeUnit;
 
 import static java.util.Objects.requireNonNull;
 
 public class HttpAdapter extends CommAdapter<String> implements HttpServerInstanceListener, HttpClientInstanceListener {
     private final RpcClient rpcClient;
     private final RpcServer rpcServer;
-    private final Long defaultRequestTimeout;
-    private final TimeUnit defaultRequestTimeUnit;
+    private final Duration defaultRequestTimeout;
 
 
     private HttpAdapter(Builder builder) {
@@ -44,7 +43,6 @@ public class HttpAdapter extends CommAdapter<String> implements HttpServerInstan
         this.rpcClient = builder.rpcClient;
         this.rpcServer = builder.rpcServer;
         this.defaultRequestTimeout = builder.defaultRequestTimeout;
-        this.defaultRequestTimeUnit = builder.defaultRequestTimeUnit;
     }
 
     public boolean isServerStarted () {
@@ -72,70 +70,70 @@ public class HttpAdapter extends CommAdapter<String> implements HttpServerInstan
     /////////////////// GET convenience methods
     /////////
     public <U> Single<RpcReply<U>> sendGetRequest(String destination, Class<U> replyType) {
-        return sendRequest(destination, null, new RequestInfo(HttpRequestMethod.GET), replyType, null, null );
+        return sendRequest(destination, null, new RequestInfo(HttpRequestMethod.GET), replyType, null );
     }
 
     public <U> Single<RpcReply<U>> sendGetRequest(String destination, Map<String, String> headers, Class<U> replyType) {
-        return sendRequest(destination, null, new RequestInfo(HttpRequestMethod.GET, headers), replyType, null, null );
+        return sendRequest(destination, null, new RequestInfo(HttpRequestMethod.GET, headers), replyType, null );
     }
 
     public <U> Single<RpcReply<U>> sendGetRequest(
                 String destination,
                 Class<U> replyType,
-                long timeout, TimeUnit timeUnit) {
-        return sendRequest(destination, null, new RequestInfo(HttpRequestMethod.GET), replyType, timeout, timeUnit);
+                Duration timeout) {
+        return sendRequest(destination, null, new RequestInfo(HttpRequestMethod.GET), replyType, timeout);
     }
 
     public <U> Single<RpcReply<U>> sendGetRequest(
                 String destination,
                 Map<String, String> headers,
                 Class<U> replyType,
-                long timeout, TimeUnit timeUnit) {
-        return sendRequest(destination, null, new RequestInfo(HttpRequestMethod.GET, headers), replyType, timeout, timeUnit);
+                Duration timeout) {
+        return sendRequest(destination, null, new RequestInfo(HttpRequestMethod.GET, headers), replyType, timeout);
     }
 
     public <U> Single<RpcReply<U>> sendGetRequest(String destination, Function<String, U> replyTranscriber) {
-        return sendRequest(destination, null, new RequestInfo(HttpRequestMethod.GET), replyTranscriber, null, null );
+        return sendRequest(destination, null, new RequestInfo(HttpRequestMethod.GET), replyTranscriber, null );
     }
 
     public <U> Single<RpcReply<U>> sendGetRequest(String destination, Map<String, String> headers, Function<String, U> replyTranscriber) {
-        return sendRequest(destination, null, new RequestInfo(HttpRequestMethod.GET, headers), replyTranscriber, null, null );
+        return sendRequest(destination, null, new RequestInfo(HttpRequestMethod.GET, headers), replyTranscriber, null );
     }
 
     public <U> Single<RpcReply<U>> sendGetRequest(
                 String destination,
                 Function<String, U> replyTranscriber,
-                long timeout, TimeUnit timeUnit) {
-        return sendRequest(destination, null, new RequestInfo(HttpRequestMethod.GET), replyTranscriber, timeout, timeUnit);
+                Duration timeout) {
+        return sendRequest(destination, null, new RequestInfo(HttpRequestMethod.GET), replyTranscriber, timeout);
     }
 
     public <U> Single<RpcReply<U>> sendGetRequest(
                 String destination,
                 Map<String, String> headers,
                 Function<String, U> replyTranscriber,
-                long timeout, TimeUnit timeUnit) {
-        return sendRequest(destination, null, new RequestInfo(HttpRequestMethod.GET, headers), replyTranscriber, timeout, timeUnit);
+                Duration timeout) {
+        return sendRequest(destination, null, new RequestInfo(HttpRequestMethod.GET, headers), replyTranscriber, timeout);
     }
 
     public Single<RpcReply<InputStream>> sendGetRequestAndRetrieveResponseAsStream(String destination) {
-        return sendRequestAndRetrieveResponseAsStream(destination, null, new RequestInfo(HttpRequestMethod.GET), null, null );
+        return sendRequestAndRetrieveResponseAsStream(destination, null, new RequestInfo(HttpRequestMethod.GET), null );
     }
 
     public Single<RpcReply<InputStream>> sendGetRequestAndRetrieveResponseAsStream(String destination, Map<String, String> headers) {
-        return sendRequestAndRetrieveResponseAsStream(destination, null, new RequestInfo(HttpRequestMethod.GET, headers), null, null );
+        return sendRequestAndRetrieveResponseAsStream(destination, null, new RequestInfo(HttpRequestMethod.GET, headers), null );
     }
 
     public Single<RpcReply<InputStream>> sendGetRequestAndRetrieveResponseAsStream(
             String destination,
-            long timeout, TimeUnit timeUnit) {
-        return sendRequestAndRetrieveResponseAsStream(destination, null, new RequestInfo(HttpRequestMethod.GET), timeout, timeUnit);
+            Duration timeout) {
+        return sendRequestAndRetrieveResponseAsStream(destination, null, new RequestInfo(HttpRequestMethod.GET), timeout);
     }
 
     public Single<RpcReply<InputStream>> sendGetRequestAndRetrieveResponseAsStream(
             String destination,
             Map<String, String> headers,
-            long timeout, TimeUnit timeUnit) {
-        return sendRequestAndRetrieveResponseAsStream(destination, null, new RequestInfo(HttpRequestMethod.GET, headers), timeout, timeUnit);
+            Duration timeout) {
+        return sendRequestAndRetrieveResponseAsStream(destination, null, new RequestInfo(HttpRequestMethod.GET, headers), timeout);
     }
 
     /////////
@@ -145,7 +143,7 @@ public class HttpAdapter extends CommAdapter<String> implements HttpServerInstan
                 String destination,
                 T request,
                 Class<U> replyType) {
-        return sendRequest(destination, request, new RequestInfo(HttpRequestMethod.POST), replyType, null, null);
+        return sendRequest(destination, request, new RequestInfo(HttpRequestMethod.POST), replyType, null);
     }
 
     public <T, U> Single<RpcReply<U>> sendPostRequest(
@@ -153,15 +151,15 @@ public class HttpAdapter extends CommAdapter<String> implements HttpServerInstan
                 T request,
                 Map<String, String> headers,
                 Class<U> replyType) {
-        return sendRequest(destination, request, new RequestInfo(HttpRequestMethod.POST, headers), replyType, null, null);
+        return sendRequest(destination, request, new RequestInfo(HttpRequestMethod.POST, headers), replyType, null);
     }
 
     public <T, U> Single<RpcReply<U>> sendPostRequest(
                 String destination,
                 T request,
                 Class<U> replyType,
-                long timeout, TimeUnit timeUnit) {
-        return sendRequest(destination, request, new RequestInfo(HttpRequestMethod.POST), replyType, timeout, timeUnit );
+                Duration timeout) {
+        return sendRequest(destination, request, new RequestInfo(HttpRequestMethod.POST), replyType, timeout );
     }
 
     public <T, U> Single<RpcReply<U>> sendPostRequest(
@@ -169,15 +167,15 @@ public class HttpAdapter extends CommAdapter<String> implements HttpServerInstan
                 T request,
                 Map<String, String> headers,
                 Class<U> replyType,
-                long timeout, TimeUnit timeUnit) {
-        return sendRequest(destination, request, new RequestInfo(HttpRequestMethod.POST, headers), replyType, timeout, timeUnit );
+                Duration timeout) {
+        return sendRequest(destination, request, new RequestInfo(HttpRequestMethod.POST, headers), replyType, timeout );
     }
 
     public <T, U> Single<RpcReply<U>> sendPostRequest(
                 String destination,
                 T request,
                 Function<String, U> replyTranscriber) {
-        return sendRequest(destination, request, new RequestInfo(HttpRequestMethod.POST), replyTranscriber, null, null);
+        return sendRequest(destination, request, new RequestInfo(HttpRequestMethod.POST), replyTranscriber, null);
     }
 
     public <T, U> Single<RpcReply<U>> sendPostRequest(
@@ -185,15 +183,15 @@ public class HttpAdapter extends CommAdapter<String> implements HttpServerInstan
                 T request,
                 Map<String, String> headers,
                 Function<String, U> replyTranscriber) {
-        return sendRequest(destination, request, new RequestInfo(HttpRequestMethod.POST, headers), replyTranscriber, null, null);
+        return sendRequest(destination, request, new RequestInfo(HttpRequestMethod.POST, headers), replyTranscriber, null);
     }
 
     public <T, U> Single<RpcReply<U>> sendPostRequest(
                 String destination,
                 T request,
                 Function<String, U> replyTranscriber,
-                long timeout, TimeUnit timeUnit) {
-        return sendRequest(destination, request, new RequestInfo(HttpRequestMethod.POST), replyTranscriber, timeout, timeUnit );
+                Duration timeout) {
+        return sendRequest(destination, request, new RequestInfo(HttpRequestMethod.POST), replyTranscriber, timeout );
     }
 
     public <T, U> Single<RpcReply<U>> sendPostRequest(
@@ -201,36 +199,36 @@ public class HttpAdapter extends CommAdapter<String> implements HttpServerInstan
                 T request,
                 Map<String, String> headers,
                 Function<String, U> replyTranscriber,
-                long timeout, TimeUnit timeUnit) {
-        return sendRequest(destination, request, new RequestInfo(HttpRequestMethod.POST, headers), replyTranscriber, timeout, timeUnit );
+                Duration timeout) {
+        return sendRequest(destination, request, new RequestInfo(HttpRequestMethod.POST, headers), replyTranscriber, timeout );
     }
 
     public <T> Single<RpcReply<InputStream>> sendPostRequestAndRetrieveResponseAsStream(
             String destination,
             T request) {
-        return sendRequestAndRetrieveResponseAsStream(destination, request, new RequestInfo(HttpRequestMethod.POST),  null, null);
+        return sendRequestAndRetrieveResponseAsStream(destination, request, new RequestInfo(HttpRequestMethod.POST),  null);
     }
 
     public <T> Single<RpcReply<InputStream>> sendPostRequestAndRetrieveResponseAsStream(
             String destination,
             T request,
             Map<String, String> headers) {
-        return sendRequestAndRetrieveResponseAsStream(destination, request, new RequestInfo(HttpRequestMethod.POST, headers),  null, null);
+        return sendRequestAndRetrieveResponseAsStream(destination, request, new RequestInfo(HttpRequestMethod.POST, headers),  null);
     }
 
     public <T> Single<RpcReply<InputStream>> sendPostRequestAndRetrieveResponseAsStream(
             String destination,
             T request,
-            long timeout, TimeUnit timeUnit) {
-        return sendRequestAndRetrieveResponseAsStream(destination, request, new RequestInfo(HttpRequestMethod.POST),  timeout, timeUnit );
+            Duration timeout) {
+        return sendRequestAndRetrieveResponseAsStream(destination, request, new RequestInfo(HttpRequestMethod.POST),  timeout );
     }
 
     public <T> Single<RpcReply<InputStream>> sendPostRequestAndRetrieveResponseAsStream(
             String destination,
             T request,
             Map<String, String> headers,
-            long timeout, TimeUnit timeUnit) {
-        return sendRequestAndRetrieveResponseAsStream(destination, request, new RequestInfo(HttpRequestMethod.POST, headers),  timeout, timeUnit );
+            Duration timeout) {
+        return sendRequestAndRetrieveResponseAsStream(destination, request, new RequestInfo(HttpRequestMethod.POST, headers),  timeout );
     }
 
     /////////
@@ -240,7 +238,7 @@ public class HttpAdapter extends CommAdapter<String> implements HttpServerInstan
                 String destination,
                 T request,
                 Class<U> replyType) {
-        return sendRequest(destination, request, new RequestInfo(HttpRequestMethod.PUT), replyType, null, null);
+        return sendRequest(destination, request, new RequestInfo(HttpRequestMethod.PUT), replyType, null);
     }
 
     public <T, U> Single<RpcReply<U>> sendPutRequest(
@@ -248,15 +246,15 @@ public class HttpAdapter extends CommAdapter<String> implements HttpServerInstan
                 T request,
                 Map<String, String> headers,
                 Class<U> replyType) {
-        return sendRequest(destination, request, new RequestInfo(HttpRequestMethod.PUT, headers), replyType, null, null);
+        return sendRequest(destination, request, new RequestInfo(HttpRequestMethod.PUT, headers), replyType, null);
     }
 
     public <T, U> Single<RpcReply<U>> sendPutRequest(
                 String destination,
                 T request,
                 Class<U> replyType,
-                long timeout, TimeUnit timeUnit) {
-        return sendRequest(destination, request, new RequestInfo(HttpRequestMethod.PUT), replyType, timeout, timeUnit );
+                Duration timeout) {
+        return sendRequest(destination, request, new RequestInfo(HttpRequestMethod.PUT), replyType, timeout );
     }
 
     public <T, U> Single<RpcReply<U>> sendPutRequest(
@@ -264,15 +262,15 @@ public class HttpAdapter extends CommAdapter<String> implements HttpServerInstan
                 T request,
                 Map<String, String> headers,
                 Class<U> replyType,
-                long timeout, TimeUnit timeUnit) {
-        return sendRequest(destination, request, new RequestInfo(HttpRequestMethod.PUT, headers), replyType, timeout, timeUnit );
+                Duration timeout) {
+        return sendRequest(destination, request, new RequestInfo(HttpRequestMethod.PUT, headers), replyType, timeout );
     }
 
     public <T, U> Single<RpcReply<U>> sendPutRequest(
                 String destination,
                 T request,
                 Function<String, U> replyTranscriber) {
-        return sendRequest(destination, request, new RequestInfo(HttpRequestMethod.PUT), replyTranscriber, null, null);
+        return sendRequest(destination, request, new RequestInfo(HttpRequestMethod.PUT), replyTranscriber, null);
     }
 
     public <T, U> Single<RpcReply<U>> sendPutRequest(
@@ -280,15 +278,15 @@ public class HttpAdapter extends CommAdapter<String> implements HttpServerInstan
                 T request,
                 Map<String, String> headers,
                 Function<String, U> replyTranscriber) {
-        return sendRequest(destination, request, new RequestInfo(HttpRequestMethod.PUT, headers), replyTranscriber, null, null);
+        return sendRequest(destination, request, new RequestInfo(HttpRequestMethod.PUT, headers), replyTranscriber, null);
     }
 
     public <T, U> Single<RpcReply<U>> sendPutRequest(
                 String destination,
                 T request,
                 Function<String, U> replyTranscriber,
-                long timeout, TimeUnit timeUnit) {
-        return sendRequest(destination, request, new RequestInfo(HttpRequestMethod.PUT), replyTranscriber, timeout, timeUnit );
+                Duration timeout) {
+        return sendRequest(destination, request, new RequestInfo(HttpRequestMethod.PUT), replyTranscriber, timeout );
     }
 
     public <T, U> Single<RpcReply<U>> sendPutRequest(
@@ -296,36 +294,36 @@ public class HttpAdapter extends CommAdapter<String> implements HttpServerInstan
                 T request,
                 Map<String, String> headers,
                 Function<String, U> replyTranscriber,
-                long timeout, TimeUnit timeUnit) {
-        return sendRequest(destination, request, new RequestInfo(HttpRequestMethod.PUT, headers), replyTranscriber, timeout, timeUnit );
+                Duration timeout) {
+        return sendRequest(destination, request, new RequestInfo(HttpRequestMethod.PUT, headers), replyTranscriber, timeout );
     }
 
     public <T> Single<RpcReply<InputStream>> sendPutRequestAndRetrieveResponseAsStream(
                 String destination,
                 T request) {
-        return sendRequestAndRetrieveResponseAsStream(destination, request, new RequestInfo(HttpRequestMethod.PUT),  null, null);
+        return sendRequestAndRetrieveResponseAsStream(destination, request, new RequestInfo(HttpRequestMethod.PUT),  null);
     }
 
     public <T> Single<RpcReply<InputStream>> sendPutRequestAndRetrieveResponseAsStream(
                 String destination,
                 T request,
                 Map<String, String> headers) {
-        return sendRequestAndRetrieveResponseAsStream(destination, request, new RequestInfo(HttpRequestMethod.PUT, headers),  null, null);
+        return sendRequestAndRetrieveResponseAsStream(destination, request, new RequestInfo(HttpRequestMethod.PUT, headers),  null);
     }
 
     public <T> Single<RpcReply<InputStream>> sendPutRequestAndRetrieveResponseAsStream(
                 String destination,
                 T request,
-                long timeout, TimeUnit timeUnit) {
-        return sendRequestAndRetrieveResponseAsStream(destination, request, new RequestInfo(HttpRequestMethod.PUT),  timeout, timeUnit );
+                Duration timeout) {
+        return sendRequestAndRetrieveResponseAsStream(destination, request, new RequestInfo(HttpRequestMethod.PUT),  timeout );
     }
 
     public <T> Single<RpcReply<InputStream>> sendPutRequestAndRetrieveResponseAsStream(
                 String destination,
                 T request,
                 Map<String, String> headers,
-                long timeout, TimeUnit timeUnit) {
-        return sendRequestAndRetrieveResponseAsStream(destination, request, new RequestInfo(HttpRequestMethod.PUT, headers),  timeout, timeUnit );
+                Duration timeout) {
+        return sendRequestAndRetrieveResponseAsStream(destination, request, new RequestInfo(HttpRequestMethod.PUT, headers),  timeout );
     }
 
     /////////
@@ -335,7 +333,7 @@ public class HttpAdapter extends CommAdapter<String> implements HttpServerInstan
                 String destination,
                 T request,
                 Class<U> replyType) {
-        return sendRequest(destination, request, new RequestInfo(HttpRequestMethod.PATCH), replyType, null, null);
+        return sendRequest(destination, request, new RequestInfo(HttpRequestMethod.PATCH), replyType, null);
     }
 
     public <T, U> Single<RpcReply<U>> sendPatchRequest(
@@ -343,15 +341,15 @@ public class HttpAdapter extends CommAdapter<String> implements HttpServerInstan
                 T request,
                 Map<String, String> headers,
                 Class<U> replyType) {
-        return sendRequest(destination, request, new RequestInfo(HttpRequestMethod.PATCH, headers), replyType, null, null);
+        return sendRequest(destination, request, new RequestInfo(HttpRequestMethod.PATCH, headers), replyType, null);
     }
 
     public <T, U> Single<RpcReply<U>> sendPatchRequest(
                 String destination,
                 T request,
                 Class<U> replyType,
-                long timeout, TimeUnit timeUnit) {
-        return sendRequest(destination, request, new RequestInfo(HttpRequestMethod.PATCH), replyType, timeout, timeUnit );
+                Duration timeout) {
+        return sendRequest(destination, request, new RequestInfo(HttpRequestMethod.PATCH), replyType, timeout );
     }
 
     public <T, U> Single<RpcReply<U>> sendPatchRequest(
@@ -359,15 +357,15 @@ public class HttpAdapter extends CommAdapter<String> implements HttpServerInstan
                 T request,
                 Map<String, String> headers,
                 Class<U> replyType,
-                long timeout, TimeUnit timeUnit) {
-        return sendRequest(destination, request, new RequestInfo(HttpRequestMethod.PATCH, headers), replyType, timeout, timeUnit );
+                Duration timeout) {
+        return sendRequest(destination, request, new RequestInfo(HttpRequestMethod.PATCH, headers), replyType, timeout );
     }
 
     public <T, U> Single<RpcReply<U>> sendPatchRequest(
                 String destination,
                 T request,
                 Function<String, U> replyTranscriber) {
-        return sendRequest(destination, request, new RequestInfo(HttpRequestMethod.PATCH), replyTranscriber, null, null);
+        return sendRequest(destination, request, new RequestInfo(HttpRequestMethod.PATCH), replyTranscriber, null);
     }
 
     public <T, U> Single<RpcReply<U>> sendPatchRequest(
@@ -375,15 +373,15 @@ public class HttpAdapter extends CommAdapter<String> implements HttpServerInstan
                 T request,
                 Map<String, String> headers,
                 Function<String, U> replyTranscriber) {
-        return sendRequest(destination, request, new RequestInfo(HttpRequestMethod.PATCH, headers), replyTranscriber, null, null);
+        return sendRequest(destination, request, new RequestInfo(HttpRequestMethod.PATCH, headers), replyTranscriber, null);
     }
 
     public <T, U> Single<RpcReply<U>> sendPatchRequest(
                 String destination,
                 T request,
                 Function<String, U> replyTranscriber,
-                long timeout, TimeUnit timeUnit) {
-        return sendRequest(destination, request, new RequestInfo(HttpRequestMethod.PATCH), replyTranscriber, timeout, timeUnit );
+                Duration timeout) {
+        return sendRequest(destination, request, new RequestInfo(HttpRequestMethod.PATCH), replyTranscriber, timeout );
     }
 
     public <T, U> Single<RpcReply<U>> sendPatchRequest(
@@ -391,36 +389,36 @@ public class HttpAdapter extends CommAdapter<String> implements HttpServerInstan
                 T request,
                 Map<String, String> headers,
                 Function<String, U> replyTranscriber,
-                long timeout, TimeUnit timeUnit) {
-        return sendRequest(destination, request, new RequestInfo(HttpRequestMethod.PATCH, headers), replyTranscriber, timeout, timeUnit );
+                Duration timeout) {
+        return sendRequest(destination, request, new RequestInfo(HttpRequestMethod.PATCH, headers), replyTranscriber, timeout );
     }
 
     public <T> Single<RpcReply<InputStream>> sendPatchRequestAndRetrieveResponseAsStream(
                 String destination,
                 T request) {
-        return sendRequestAndRetrieveResponseAsStream(destination, request, new RequestInfo(HttpRequestMethod.PATCH), null, null);
+        return sendRequestAndRetrieveResponseAsStream(destination, request, new RequestInfo(HttpRequestMethod.PATCH), null);
     }
 
     public <T> Single<RpcReply<InputStream>> sendPatchRequestAndRetrieveResponseAsStream(
                 String destination,
                 T request,
                 Map<String, String> headers) {
-        return sendRequestAndRetrieveResponseAsStream(destination, request, new RequestInfo(HttpRequestMethod.PATCH, headers), null, null);
+        return sendRequestAndRetrieveResponseAsStream(destination, request, new RequestInfo(HttpRequestMethod.PATCH, headers),  null);
     }
 
     public <T> Single<RpcReply<InputStream>> sendPatchRequestAndRetrieveResponseAsStream(
                 String destination,
                 T request,
-                long timeout, TimeUnit timeUnit) {
-        return sendRequestAndRetrieveResponseAsStream(destination, request, new RequestInfo(HttpRequestMethod.PATCH), timeout, timeUnit );
+                Duration timeout) {
+        return sendRequestAndRetrieveResponseAsStream(destination, request, new RequestInfo(HttpRequestMethod.PATCH), timeout );
     }
 
     public <T> Single<RpcReply<InputStream>> sendPatchRequestAndRetrieveResponseAsStream(
                 String destination,
                 T request,
                 Map<String, String> headers,
-                long timeout, TimeUnit timeUnit) {
-        return sendRequestAndRetrieveResponseAsStream(destination, request, new RequestInfo(HttpRequestMethod.PATCH, headers), timeout, timeUnit );
+                Duration timeout) {
+        return sendRequestAndRetrieveResponseAsStream(destination, request, new RequestInfo(HttpRequestMethod.PATCH, headers), timeout );
     }
 
     /////////
@@ -430,7 +428,7 @@ public class HttpAdapter extends CommAdapter<String> implements HttpServerInstan
                 String destination,
                 T request,
                 Class<U> replyType) {
-        return sendRequest(destination, request, new RequestInfo(HttpRequestMethod.DELETE), replyType, null, null);
+        return sendRequest(destination, request, new RequestInfo(HttpRequestMethod.DELETE), replyType, null);
     }
 
     public <T, U> Single<RpcReply<U>> sendDeleteRequest(
@@ -438,15 +436,15 @@ public class HttpAdapter extends CommAdapter<String> implements HttpServerInstan
                 T request,
                 Map<String, String> headers,
                 Class<U> replyType) {
-        return sendRequest(destination, request, new RequestInfo(HttpRequestMethod.DELETE, headers), replyType, null, null);
+        return sendRequest(destination, request, new RequestInfo(HttpRequestMethod.DELETE, headers), replyType, null);
     }
 
     public <T, U> Single<RpcReply<U>> sendDeleteRequest(
                 String destination,
                 T request,
                 Class<U> replyType,
-                long timeout, TimeUnit timeUnit) {
-        return sendRequest(destination, request, new RequestInfo(HttpRequestMethod.DELETE), replyType, timeout, timeUnit );
+                Duration timeout) {
+        return sendRequest(destination, request, new RequestInfo(HttpRequestMethod.DELETE), replyType, timeout );
     }
 
     public <T, U> Single<RpcReply<U>> sendDeleteRequest(
@@ -454,15 +452,15 @@ public class HttpAdapter extends CommAdapter<String> implements HttpServerInstan
                 T request,
                 Map<String, String> headers,
                 Class<U> replyType,
-                long timeout, TimeUnit timeUnit) {
-        return sendRequest(destination, request, new RequestInfo(HttpRequestMethod.DELETE, headers), replyType, timeout, timeUnit );
+                Duration timeout) {
+        return sendRequest(destination, request, new RequestInfo(HttpRequestMethod.DELETE, headers), replyType, timeout );
     }
 
     public <T, U> Single<RpcReply<U>> sendDeleteRequest(
                 String destination,
                 T request,
                 Function<String, U> replyTranscriber) {
-        return sendRequest(destination, request, new RequestInfo(HttpRequestMethod.DELETE), replyTranscriber, null, null);
+        return sendRequest(destination, request, new RequestInfo(HttpRequestMethod.DELETE), replyTranscriber, null);
     }
 
     public <T, U> Single<RpcReply<U>> sendDeleteRequest(
@@ -470,15 +468,15 @@ public class HttpAdapter extends CommAdapter<String> implements HttpServerInstan
                 T request,
                 Map<String, String> headers,
                 Function<String, U> replyTranscriber) {
-        return sendRequest(destination, request, new RequestInfo(HttpRequestMethod.DELETE, headers), replyTranscriber, null, null);
+        return sendRequest(destination, request, new RequestInfo(HttpRequestMethod.DELETE, headers), replyTranscriber, null);
     }
 
     public <T, U> Single<RpcReply<U>> sendDeleteRequest(
                 String destination,
                 T request,
                 Function<String, U> replyTranscriber,
-                long timeout, TimeUnit timeUnit) {
-        return sendRequest(destination, request, new RequestInfo(HttpRequestMethod.DELETE), replyTranscriber, timeout, timeUnit );
+                Duration timeout) {
+        return sendRequest(destination, request, new RequestInfo(HttpRequestMethod.DELETE), replyTranscriber, timeout );
     }
 
     public <T, U> Single<RpcReply<U>> sendDeleteRequest(
@@ -486,36 +484,36 @@ public class HttpAdapter extends CommAdapter<String> implements HttpServerInstan
                 T request,
                 Map<String, String> headers,
                 Function<String, U> replyTranscriber,
-                long timeout, TimeUnit timeUnit) {
-        return sendRequest(destination, request, new RequestInfo(HttpRequestMethod.DELETE, headers), replyTranscriber, timeout, timeUnit );
+                Duration timeout) {
+        return sendRequest(destination, request, new RequestInfo(HttpRequestMethod.DELETE, headers), replyTranscriber, timeout );
     }
 
     public <T> Single<RpcReply<InputStream>> sendDeleteRequestAndRetrieveResponseAsStream(
                 String destination,
                 T request) {
-        return sendRequestAndRetrieveResponseAsStream(destination, request, new RequestInfo(HttpRequestMethod.DELETE), null, null);
+        return sendRequestAndRetrieveResponseAsStream(destination, request, new RequestInfo(HttpRequestMethod.DELETE), null);
     }
 
     public <T> Single<RpcReply<InputStream>> sendDeleteRequestAndRetrieveResponseAsStream(
                 String destination,
                 T request,
                 Map<String, String> headers) {
-        return sendRequestAndRetrieveResponseAsStream(destination, request, new RequestInfo(HttpRequestMethod.DELETE, headers), null, null);
+        return sendRequestAndRetrieveResponseAsStream(destination, request, new RequestInfo(HttpRequestMethod.DELETE, headers), null);
     }
 
     public <T> Single<RpcReply<InputStream>> sendDeleteRequestAndRetrieveResponseAsStream(
                 String destination,
                 T request,
-                long timeout, TimeUnit timeUnit) {
-        return sendRequestAndRetrieveResponseAsStream(destination, request, new RequestInfo(HttpRequestMethod.DELETE), timeout, timeUnit );
+                Duration timeout) {
+        return sendRequestAndRetrieveResponseAsStream(destination, request, new RequestInfo(HttpRequestMethod.DELETE), timeout );
     }
 
     public <T> Single<RpcReply<InputStream>> sendDeleteRequestAndRetrieveResponseAsStream(
                 String destination,
                 T request,
                 Map<String, String> headers,
-                long timeout, TimeUnit timeUnit) {
-        return sendRequestAndRetrieveResponseAsStream(destination, request, new RequestInfo(HttpRequestMethod.DELETE, headers), timeout, timeUnit );
+                Duration timeout) {
+        return sendRequestAndRetrieveResponseAsStream(destination, request, new RequestInfo(HttpRequestMethod.DELETE, headers), timeout );
     }
 
     /////////
@@ -526,7 +524,7 @@ public class HttpAdapter extends CommAdapter<String> implements HttpServerInstan
                 T request,
                 HttpRequestMethod requestMethod,
                 Class<U>replyType) {
-        return sendRequest(destination, request, new RequestInfo(requestMethod), replyType, null, null);
+        return sendRequest(destination, request, new RequestInfo(requestMethod), replyType, null);
     }
 
     public <T, U> Single<RpcReply<U>> sendRequest(
@@ -535,7 +533,7 @@ public class HttpAdapter extends CommAdapter<String> implements HttpServerInstan
                 HttpRequestMethod requestMethod,
                 Map<String, String> headers,
                 Class<U>replyType) {
-        return sendRequest(destination, request, new RequestInfo(requestMethod, headers), replyType, null, null);
+        return sendRequest(destination, request, new RequestInfo(requestMethod, headers), replyType, null);
     }
 
 
@@ -544,9 +542,8 @@ public class HttpAdapter extends CommAdapter<String> implements HttpServerInstan
                 T request,
                 HttpRequestMethod requestMethod,
                 Class<U> replyType,
-                long timeout,
-                TimeUnit timeUnit) {
-        return sendRequest(destination, request, new RequestInfo(requestMethod), replyType, timeout, timeUnit);
+                Duration timeout) {
+        return sendRequest(destination, request, new RequestInfo(requestMethod), replyType, timeout);
     }
 
     public <T, U> Single<RpcReply<U>> sendRequest(
@@ -555,9 +552,8 @@ public class HttpAdapter extends CommAdapter<String> implements HttpServerInstan
                 HttpRequestMethod requestMethod,
                 Map<String, String> headers,
                 Class<U> replyType,
-                long timeout,
-                TimeUnit timeUnit) {
-        return sendRequest(destination, request, new RequestInfo(requestMethod, headers), replyType, timeout, timeUnit);
+                Duration timeout) {
+        return sendRequest(destination, request, new RequestInfo(requestMethod, headers), replyType, timeout);
     }
 
     public <T, U> Single<RpcReply<U>> sendRequest(
@@ -565,7 +561,7 @@ public class HttpAdapter extends CommAdapter<String> implements HttpServerInstan
                 T request,
                 HttpRequestMethod requestMethod,
                 Function<String, U> replyTranscriber) {
-        return sendRequest(destination, request, new RequestInfo(requestMethod), replyTranscriber, null, null);
+        return sendRequest(destination, request, new RequestInfo(requestMethod), replyTranscriber, null);
     }
 
     public <T, U> Single<RpcReply<U>> sendRequest(
@@ -574,7 +570,7 @@ public class HttpAdapter extends CommAdapter<String> implements HttpServerInstan
                 HttpRequestMethod requestMethod,
                 Map<String, String> headers,
                 Function<String, U> replyTranscriber) {
-        return sendRequest(destination, request, new RequestInfo(requestMethod, headers), replyTranscriber, null, null);
+        return sendRequest(destination, request, new RequestInfo(requestMethod, headers), replyTranscriber, null);
     }
 
     public <T, U> Single<RpcReply<U>> sendRequest(
@@ -582,9 +578,8 @@ public class HttpAdapter extends CommAdapter<String> implements HttpServerInstan
                 T request,
                 HttpRequestMethod requestMethod,
                 Function<String, U> replyTranscriber,
-                long timeout,
-                TimeUnit timeUnit) {
-        return sendRequest(destination, request, new RequestInfo(requestMethod), replyTranscriber, timeout, timeUnit);
+                Duration timeout) {
+        return sendRequest(destination, request, new RequestInfo(requestMethod), replyTranscriber, timeout);
     }
 
     public <T, U> Single<RpcReply<U>> sendRequest(
@@ -593,16 +588,15 @@ public class HttpAdapter extends CommAdapter<String> implements HttpServerInstan
                 HttpRequestMethod requestMethod,
                 Map<String, String> headers,
                 Function<String, U> replyTranscriber,
-                long timeout,
-                TimeUnit timeUnit) {
-        return sendRequest(destination, request, new RequestInfo(requestMethod, headers), replyTranscriber, timeout, timeUnit);
+                Duration timeout) {
+        return sendRequest(destination, request, new RequestInfo(requestMethod, headers), replyTranscriber, timeout);
     }
 
     public <T> Single<RpcReply<InputStream>> sendRequestAndRetrieveResponseAsStream(
                 String destination,
                 T request,
                 HttpRequestMethod requestMethod) {
-        return sendRequestAndRetrieveResponseAsStream(destination, request, new RequestInfo(requestMethod), null, null);
+        return sendRequestAndRetrieveResponseAsStream(destination, request, new RequestInfo(requestMethod),  null);
     }
 
     public <T> Single<RpcReply<InputStream>> sendRequestAndRetrieveResponseAsStream(
@@ -610,16 +604,15 @@ public class HttpAdapter extends CommAdapter<String> implements HttpServerInstan
                 T request,
                 HttpRequestMethod requestMethod,
                 Map<String, String> headers) {
-        return sendRequestAndRetrieveResponseAsStream(destination, request, new RequestInfo(requestMethod, headers), null, null);
+        return sendRequestAndRetrieveResponseAsStream(destination, request, new RequestInfo(requestMethod, headers), null);
     }
 
     public <T> Single<RpcReply<InputStream>> sendRequestAndRetrieveResponseAsStream(
                 String destination,
                 T request,
                 HttpRequestMethod requestMethod,
-                long timeout,
-                TimeUnit timeUnit) {
-        return sendRequestAndRetrieveResponseAsStream(destination, request, new RequestInfo(requestMethod), timeout, timeUnit);
+                Duration timeout) {
+        return sendRequestAndRetrieveResponseAsStream(destination, request, new RequestInfo(requestMethod), timeout);
     }
 
     public <T> Single<RpcReply<InputStream>> sendRequestAndRetrieveResponseAsStream(
@@ -627,9 +620,8 @@ public class HttpAdapter extends CommAdapter<String> implements HttpServerInstan
                 T request,
                 HttpRequestMethod requestMethod,
                 Map<String, String> headers,
-                long timeout,
-                TimeUnit timeUnit) {
-        return sendRequestAndRetrieveResponseAsStream(destination, request, new RequestInfo(requestMethod, headers), timeout, timeUnit);
+                Duration timeout) {
+        return sendRequestAndRetrieveResponseAsStream(destination, request, new RequestInfo(requestMethod, headers), timeout);
     }
 
     public <T, U> Single<RpcReply<U>> sendRequest (
@@ -637,14 +629,14 @@ public class HttpAdapter extends CommAdapter<String> implements HttpServerInstan
                 T request,
                 RequestInfo sendingInfo,
                 Class<U> replyType,
-                Long timeout, TimeUnit timeUnit) {
+                Duration timeout) {
 
         return sendRequest(
                 destination,
                 request,
                 sendingInfo,
                 messageTranscriber.getIncomingMessageTranscriber(replyType),
-                timeout, timeUnit);
+                timeout);
     }
 
     /////////
@@ -657,59 +649,50 @@ public class HttpAdapter extends CommAdapter<String> implements HttpServerInstan
                 T request,
                 RequestInfo httpInfo,
                 Function<String, U> replyTranscriber,
-                Long timeout, TimeUnit timeUnit) {
+                Duration timeout) {
 
         return doSendRequest(
                 destination,
                 httpInfo,
-                (sendingInfo, theTimeout, theTimeUnit) ->
+                (sendingInfo, theTimeout) ->
                         rpcClient.sendRequest(
                                 request,
                                 sendingInfo,
                                 messageTranscriber.getOutgoingMessageTranscriber(request),
                                 replyTranscriber,
-                                theTimeout, theTimeUnit),
-                timeout, timeUnit);
+                                theTimeout),
+                timeout);
     }
 
     public <T> Single<RpcReply<InputStream>> sendRequestAndRetrieveResponseAsStream (
                 String destination,
                 T request,
                 RequestInfo httpInfo,
-                Long timeout, TimeUnit timeUnit) {
+                Duration timeout) {
 
         return doSendRequest(
                 destination,
                 httpInfo,
-                (sendingInfo, theTimeout, theTimeUnit) ->
+                (sendingInfo, theTimeout) ->
                         rpcClient.sendRequestAndRetrieveResponseAsStream(
                                 request,
                                 sendingInfo,
                                 messageTranscriber.getOutgoingMessageTranscriber(request),
-                                theTimeout, theTimeUnit),
-                timeout, timeUnit);
+                                theTimeout),
+                timeout);
     }
 
     @FunctionalInterface
     public interface RequestSender<T> {
-        Single<RpcReply<T>> apply (RequestMessageMetaData metaData, long timeout, TimeUnit timeUnit);
+        Single<RpcReply<T>> apply (RequestMessageMetaData metaData, Duration timeout);
     }
 
     private <T> Single<RpcReply<T>> doSendRequest (
                 String destination,
                 RequestInfo httpInfo,
                 RequestSender<T> requestSender,
-                Long timeout, TimeUnit timeUnit) {
+                Duration timeout) {
 
-
-        if (timeout!=null) {
-            if (timeUnit==null) {
-                return Single.error(new NullPointerException("timeUnit must not be null if timeout specified"));
-            }
-        } else {
-            timeout = defaultRequestTimeout;
-            timeUnit = defaultRequestTimeUnit;
-        }
 
         URL url;
         try {
@@ -721,7 +704,7 @@ public class HttpAdapter extends CommAdapter<String> implements HttpServerInstan
         RequestMessageMetaData sendingInfo = new RequestMessageMetaData(url, httpInfo);
 
         try {
-            return requestSender.apply(sendingInfo, timeout, timeUnit);
+            return requestSender.apply(sendingInfo, Optional.ofNullable(timeout).orElse(defaultRequestTimeout));
         } catch (Exception e) {
             return Single.error(e);
         }
@@ -781,18 +764,13 @@ public class HttpAdapter extends CommAdapter<String> implements HttpServerInstan
         private RpcClient rpcClient;
         private RpcServer rpcServer;
         private HttpServer httpServer;
-        private Long defaultRequestTimeout;
-        private TimeUnit defaultRequestTimeUnit;
+        private Duration defaultRequestTimeout;
 
         private Builder() {
         }
 
-        public Builder setDefaultRequestTimeout(long timeout, TimeUnit timeUnit) {
-            requireNonNull(timeUnit);
-            if (timeout>0) {
-                defaultRequestTimeout = timeout;
-                defaultRequestTimeUnit = timeUnit;
-            }
+        public Builder setDefaultRequestTimeout(Duration timeout) {
+            this.defaultRequestTimeout = requireNonNull(timeout);
             return this;
         }
 
@@ -834,9 +812,8 @@ public class HttpAdapter extends CommAdapter<String> implements HttpServerInstan
             if (messageTranscriber == null) {
                 messageTranscriber = new DefaultMessageTranscriberForStringAsTransportType();
             }
-            if (defaultRequestTimeout==null) {
-                defaultRequestTimeout = 15L;
-                defaultRequestTimeUnit = TimeUnit.SECONDS;
+            if (defaultRequestTimeout==null || defaultRequestTimeout.toMillis() <= 0) {
+                defaultRequestTimeout = Duration.ofSeconds(15);
             }
             if (rpcClient == null) {
                 if (httpClient == null) {

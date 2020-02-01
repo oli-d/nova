@@ -25,6 +25,7 @@ import org.junit.jupiter.api.Test;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
+import java.time.Duration;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Consumer;
 
@@ -92,7 +93,7 @@ class FrozenHttpAdapterTest {
                 });
 
         TestObserver<RpcReply<String>> observer = sut
-                .sendGetRequest("http://localhost:" + serverPortPair._2 + "/timeoutTest", 10l, MILLISECONDS)
+                .sendGetRequest("http://localhost:" + serverPortPair._2 + "/timeoutTest", Duration.ofMillis(10))
                 .test();
         observer.await(5, SECONDS);
         observer.assertError(TimeoutException.class);

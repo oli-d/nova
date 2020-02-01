@@ -18,6 +18,7 @@ import io.reactivex.Single;
 import io.reactivex.functions.Function;
 import org.junit.jupiter.api.Test;
 
+import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -40,7 +41,7 @@ class RpcClientTest {
         }
 
         @Override
-        public <RequestType, ReplyType> Single<? extends RpcReply<ReplyType, IncomingMessageMetaData<String, Void>>> sendRequest(RequestType request, OutgoingMessageMetaData<String, Void> requestMetaData, Function<RequestType, String> requestTranscriber, Function<String, ReplyType> replyTranscriber, long timeout, TimeUnit timeUnit) {
+        public <RequestType, ReplyType> Single<? extends RpcReply<ReplyType, IncomingMessageMetaData<String, Void>>> sendRequest(RequestType request, OutgoingMessageMetaData<String, Void> requestMetaData, Function<RequestType, String> requestTranscriber, Function<String, ReplyType> replyTranscriber, Duration timeout) {
             return null;
         }
     }

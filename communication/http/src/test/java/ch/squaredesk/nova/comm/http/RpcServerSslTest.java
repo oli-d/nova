@@ -30,6 +30,7 @@ import java.net.URL;
 import java.security.KeyStore;
 import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
+import java.time.Duration;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.awaitility.Awaitility.await;
@@ -131,7 +132,7 @@ class RpcServerSslTest {
                         new URL(urlAsString),
                         new RequestInfo(HttpRequestMethod.POST));
 
-                rpcClient.sendRequest("{}", meta, s->s, s->s, 15, SECONDS).subscribe();
+                rpcClient.sendRequest("{}", meta, s->s, s->s, Duration.ofSeconds(15)).subscribe();
             } catch (Exception e) {
                 e.printStackTrace();
             }

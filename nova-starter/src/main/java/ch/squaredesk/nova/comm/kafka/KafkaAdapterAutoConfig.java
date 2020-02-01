@@ -24,6 +24,7 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 
 @Configuration
@@ -64,7 +65,7 @@ public class KafkaAdapterAutoConfig {
                 .setBrokerClientId(kafkaAdapterConfigurationProperties.getBrokerClientId())
                 .setConsumerProperties(kafkaAdapterConfigurationProperties.getConsumerProperties())
                 .setConsumerGroupId(kafkaAdapterConfigurationProperties.getConsumerGroupId())
-                .setMessagePollingTimeout(kafkaAdapterConfigurationProperties.getPollTimeoutInMs(), TimeUnit.MILLISECONDS)
+                .setMessagePollingTimeout(Duration.ofMillis(kafkaAdapterConfigurationProperties.getPollTimeoutInMs()))
                 .setProducerProperties(kafkaAdapterConfigurationProperties.getProducerProperties())
                 .setIdentifier(kafkaAdapterConfigurationProperties.getAdapterIdentifier())
                 .setMessageTranscriber(kafkaMessageTranscriber)

@@ -21,7 +21,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.jms.*;
+import java.time.Duration;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
@@ -42,8 +44,7 @@ public class JmsAdapter extends CommAdapter<String> {
     private final int defaultMessageDeliveryMode;
     private final ConcurrentLinkedDeque<Consumer<Destination>> destinationListeners = new ConcurrentLinkedDeque<>();
     private final Supplier<String> correlationIdGenerator;
-    private final long defaultRpcTimeout;
-    private final TimeUnit defaultRpcTimeUnit;
+    private final Duration defaultRpcTimeout;
 
 
     JmsAdapter(Builder builder) {
@@ -58,7 +59,6 @@ public class JmsAdapter extends CommAdapter<String> {
         this.defaultMessagePriority = builder.defaultPriority;
         this.defaultMessageTimeToLive = builder.defaultTimeToLive;
         this.defaultRpcTimeout = builder.defaultRpcTimeout;
-        this.defaultRpcTimeUnit = builder.defaultRpcTimeUnit;
     }
 
     /////////////////////////////////
@@ -184,21 +184,16 @@ public class JmsAdapter extends CommAdapter<String> {
             Map<String, Object> customHeaders,
             Function<String, U> replyTranscriber,
             Integer deliveryMode, Integer priority, Long timeToLive,
-            Long timeout, TimeUnit timeUnit) {
+            Duration timeout) {
 
         // prepare message sending info
         requireNonNull(replyDestination, "ReplyDestination must not be null");
-        if (timeout != null) {
-            requireNonNull(timeUnit, "timeUnit must not be null if timeout specified");
-        } else {
-            timeout = defaultRpcTimeout;
-            timeUnit = defaultRpcTimeUnit;
-        }
+        Duration timeoutToUse = Optional.ofNullable(timeout).orElse(defaultRpcTimeout);
         int deliveryModeToUse = deliveryMode == null ? defaultMessageDeliveryMode : deliveryMode;
         int priorityToUse = priority == null ? defaultMessagePriority : priority;
         long timeToLiveToUse = timeToLive == null ? defaultMessageTimeToLive : timeToLive;
         // it doesn't make sense to let request messages live longer than timeout:
-        timeToLiveToUse = Math.min(timeToLiveToUse, timeUnit.toMillis(timeout));
+        timeToLiveToUse = Math.min(timeToLiveToUse, timeoutToUse.toMillis());
         String correlationId = correlationIdGenerator.get();
         SendInfo jmsSpecificInfo = new SendInfo(
                 correlationId, replyDestination, customHeaders, deliveryModeToUse, priorityToUse, timeToLiveToUse);
@@ -209,7 +204,7 @@ public class JmsAdapter extends CommAdapter<String> {
                 sendingInfo,
                 messageTranscriber.getOutgoingMessageTranscriber(request),
                 replyTranscriber,
-                timeout, timeUnit)
+                timeoutToUse)
                 .doOnError(t -> examineSendExceptionForDeadDestinationAndInformListener(t, destination));
     }
 
@@ -219,9 +214,8 @@ public class JmsAdapter extends CommAdapter<String> {
             T message,
             Map<String, Object> customHeaders,
             Function<String, U> replyTranscriber,
-            long timeout, TimeUnit timeUnit) {
-
-        return sendRequest(destination, replyDestination, message, customHeaders, replyTranscriber, null, null, null,timeout, timeUnit);
+            Duration timeout) {
+        return sendRequest(destination, replyDestination, message, customHeaders, replyTranscriber, null, null, null, timeout);
     }
 
     public <T,U> Single<RpcReply<U>> sendRequest(
@@ -229,9 +223,8 @@ public class JmsAdapter extends CommAdapter<String> {
             T message,
             Map<String, Object> customHeaders,
             Function<String, U> replyTranscriber,
-            Long timeout, TimeUnit timeUnit) {
-
-        return sendRequest(destination, jmsObjectRepository.getPrivateTempQueue(), message, customHeaders, replyTranscriber, null, null, null, timeout, timeUnit);
+            Duration timeout) {
+        return sendRequest(destination, jmsObjectRepository.getPrivateTempQueue(), message, customHeaders, replyTranscriber, null, null, null, timeout);
     }
 
     public <T,U> Single<RpcReply<U>> sendRequest(
@@ -239,21 +232,21 @@ public class JmsAdapter extends CommAdapter<String> {
             T message,
             Map<String, Object> customHeaders,
             Function<String, U> replyTranscriber) {
-        return sendRequest(destination, jmsObjectRepository.getPrivateTempQueue(), message, customHeaders, replyTranscriber, null, null, null, null, null);
+        return sendRequest(destination, jmsObjectRepository.getPrivateTempQueue(), message, customHeaders, replyTranscriber, null, null, null, null);
     }
 
     public <T,U> Single<RpcReply<U>> sendRequest(
             Destination destination,
             T message,
             Function<String, U> replyTranscriber,
-            long timeout, TimeUnit timeUnit) {
-        return sendRequest(destination, jmsObjectRepository.getPrivateTempQueue(), message, null, replyTranscriber, null, null, null, timeout, timeUnit);
+            Duration timeout) {
+        return sendRequest(destination, jmsObjectRepository.getPrivateTempQueue(), message, null, replyTranscriber, null, null, null, timeout);
     }
     public <T,U> Single<RpcReply<U>> sendRequest(
             Destination destination,
             T message,
             Function<String, U> replyTranscriber) {
-        return sendRequest(destination, jmsObjectRepository.getPrivateTempQueue(), message, null, replyTranscriber, null, null, null, null, null);
+        return sendRequest(destination, jmsObjectRepository.getPrivateTempQueue(), message, null, replyTranscriber, null, null, null, null);
     }
 
     public <T, U> Single<RpcReply<U>> sendRequest(
@@ -263,8 +256,8 @@ public class JmsAdapter extends CommAdapter<String> {
             Map<String, Object> customHeaders,
             Class<U> replyType,
             Integer deliveryMode, Integer priority, Long timeToLive,
-            Long timeout, TimeUnit timeUnit) {
-        return sendRequest(destination, replyDestination, request, customHeaders, messageTranscriber.getIncomingMessageTranscriber(replyType), deliveryMode, priority, timeToLive, timeout, timeUnit);
+            Duration timeout) {
+        return sendRequest(destination, replyDestination, request, customHeaders, messageTranscriber.getIncomingMessageTranscriber(replyType), deliveryMode, priority, timeToLive, timeout);
     }
         public <T,U> Single<RpcReply<U>> sendRequest(
             Destination destination,
@@ -272,9 +265,8 @@ public class JmsAdapter extends CommAdapter<String> {
             T message,
             Map<String, Object> customHeaders,
             Class<U> replyType,
-            long timeout, TimeUnit timeUnit) {
-
-        return sendRequest(destination, replyDestination, message, customHeaders, messageTranscriber.getIncomingMessageTranscriber(replyType), null, null, null,timeout, timeUnit);
+            Duration timeout) {
+            return sendRequest(destination, replyDestination, message, customHeaders, messageTranscriber.getIncomingMessageTranscriber(replyType), null, null, null,timeout);
     }
 
     public <T,U> Single<RpcReply<U>> sendRequest(
@@ -282,9 +274,8 @@ public class JmsAdapter extends CommAdapter<String> {
             T message,
             Map<String, Object> customHeaders,
             Class<U> replyType,
-            Long timeout, TimeUnit timeUnit) {
-
-        return sendRequest(destination, jmsObjectRepository.getPrivateTempQueue(), message, customHeaders, messageTranscriber.getIncomingMessageTranscriber(replyType), null, null, null, timeout, timeUnit);
+            Duration timeout) {
+        return sendRequest(destination, jmsObjectRepository.getPrivateTempQueue(), message, customHeaders, messageTranscriber.getIncomingMessageTranscriber(replyType), null, null, null, timeout);
     }
 
     public <T,U> Single<RpcReply<U>> sendRequest(
@@ -292,21 +283,21 @@ public class JmsAdapter extends CommAdapter<String> {
             T message,
             Map<String, Object> customHeaders,
             Class<U> replyType) {
-        return sendRequest(destination, jmsObjectRepository.getPrivateTempQueue(), message, customHeaders, messageTranscriber.getIncomingMessageTranscriber(replyType), null, null, null, null, null);
+        return sendRequest(destination, jmsObjectRepository.getPrivateTempQueue(), message, customHeaders, messageTranscriber.getIncomingMessageTranscriber(replyType), null, null, null, null);
     }
 
     public <T,U> Single<RpcReply<U>> sendRequest(
             Destination destination,
             T message,
             Class<U> replyType,
-            long timeout, TimeUnit timeUnit) {
-        return sendRequest(destination, jmsObjectRepository.getPrivateTempQueue(), message, null, messageTranscriber.getIncomingMessageTranscriber(replyType), null, null, null, timeout, timeUnit);
+            Duration timeout) {
+        return sendRequest(destination, jmsObjectRepository.getPrivateTempQueue(), message, null, messageTranscriber.getIncomingMessageTranscriber(replyType), null, null, null, timeout);
     }
     public <T,U> Single<RpcReply<U>> sendRequest(
             Destination destination,
             T message,
             Class<U> replyType) {
-        return sendRequest(destination, jmsObjectRepository.getPrivateTempQueue(), message, null, messageTranscriber.getIncomingMessageTranscriber(replyType), null, null, null, null, null);
+        return sendRequest(destination, jmsObjectRepository.getPrivateTempQueue(), message, null, messageTranscriber.getIncomingMessageTranscriber(replyType), null, null, null, null);
     }
 
     /////////////////////////////////////////
@@ -394,8 +385,7 @@ public class JmsAdapter extends CommAdapter<String> {
         private MessageReceiver messageReceiver;
         private RpcServer rpcServer;
         private RpcClient rpcClient;
-        private long defaultRpcTimeout;
-        private TimeUnit defaultRpcTimeUnit;
+        private Duration defaultRpcTimeout;
 
         private Builder() {
         }
@@ -405,9 +395,8 @@ public class JmsAdapter extends CommAdapter<String> {
             return this;
         }
 
-        public Builder setDefaultRpcTimeout(long defaultRpcTimeout, TimeUnit timeUnit) {
+        public Builder setDefaultRpcTimeout(Duration defaultRpcTimeout) {
             this.defaultRpcTimeout = defaultRpcTimeout;
-            this.defaultRpcTimeUnit = timeUnit;
             return this;
         }
 
@@ -505,9 +494,8 @@ public class JmsAdapter extends CommAdapter<String> {
                 destinationIdGenerator = new DefaultDestinationIdGenerator();
             }
 
-            if (defaultRpcTimeout <= 0 || defaultRpcTimeUnit==null) {
-                defaultRpcTimeout = 30;
-                defaultRpcTimeUnit = TimeUnit.SECONDS;
+            if (defaultRpcTimeout == null) {
+                defaultRpcTimeout = Duration.ofSeconds(30);
             }
         }
 

@@ -42,7 +42,7 @@ public class MessageReceiver
 
     protected MessageReceiver(String identifier,
                               Properties consumerProperties,
-                              long pollTimeout, TimeUnit pollTimeUnit,
+                              Duration pollTimeout,
                               Metrics metrics) {
         super(Metrics.name("kafka", identifier).toString(), metrics);
 
@@ -52,7 +52,7 @@ public class MessageReceiver
             ConsumerRecords<String, String> consumerRecords = null;
             do {
                 try {
-                    consumerRecords = consumer.poll(Duration.ofMillis(pollTimeUnit.toMillis(pollTimeout)));
+                    consumerRecords = consumer.poll(pollTimeout);
                 } catch (Exception ex) {
                     break;
                 }
@@ -64,9 +64,9 @@ public class MessageReceiver
         };
 
         Runnable sleeper = () -> {
-            logger.trace("No topic subscribed yet, sleeping {} {}", pollTimeout, pollTimeUnit);
+            logger.trace("No topic subscribed yet, sleeping {}", pollTimeout);
             try {
-                Thread.currentThread().sleep(pollTimeUnit.toMillis(pollTimeout));
+                Thread.currentThread().sleep(pollTimeout.toMillis());
             } catch (InterruptedException e) {
                 // ignored
             }

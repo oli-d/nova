@@ -25,6 +25,7 @@ import org.junit.jupiter.api.Test;
 
 import javax.jms.Destination;
 import javax.jms.Session;
+import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -40,8 +41,7 @@ class JmsAdapterTest {
     private static final int defaultDeliveryMode = 1;
     private static final int defaultPriority = 2;
     private static final long defaultTtl = 3;
-    private static final long defaultRpcTimeout = 4;
-    private static final TimeUnit defaultRpcTimeoutUnit = MINUTES;
+    private static final Duration defaultRpcTimeout = Duration.ofMinutes(4);
 
     private MyMessageReceiver myMessageReceiver;
     private MyMessageSender myMessageSender;
@@ -63,7 +63,7 @@ class JmsAdapterTest {
                 .setDefaultMessageDeliveryMode(defaultDeliveryMode)
                 .setDefaultMessageTimeToLive(defaultTtl)
                 .setDefaultMessagePriority(defaultPriority)
-                .setDefaultRpcTimeout(defaultRpcTimeout, defaultRpcTimeoutUnit)
+                .setDefaultRpcTimeout(defaultRpcTimeout)
                 .build();
     }
 
@@ -148,7 +148,7 @@ class JmsAdapterTest {
     void jmsReplyToCanBeSpecified() {
         MyDestination destination = new MyDestination();
         MyDestination replyToDestination = new MyDestination();
-        sut.sendRequest(destination, replyToDestination, "message", null, String.class, 1, SECONDS);
+        sut.sendRequest(destination, replyToDestination, "message", null, String.class, Duration.ofSeconds(1));
 
         assertThat(myRpcClient.outgoingMessageMetaData.details.replyDestination, is(replyToDestination));
     }
@@ -156,13 +156,7 @@ class JmsAdapterTest {
     @Test
     void destinationMustBeProvidedOnRpc() {
         assertThrows(NullPointerException.class,
-                () -> sut.sendRequest(null, "message", null, String.class, 100L, MILLISECONDS));
-    }
-
-    @Test
-    void timeUnitMustBeProvidedIfTimeoutIsNotNull() {
-        assertThrows(NullPointerException.class,
-                () -> sut.sendRequest(new MyDestination(), "message", String.class, 1777L, null));
+                () -> sut.sendRequest(null, "message", null, String.class, Duration.ofMillis(100)));
     }
 
     @Test
@@ -170,7 +164,6 @@ class JmsAdapterTest {
         sut.sendRequest(new MyDestination(), "message", String.class);
 
         assertThat(myRpcClient.timeout, is(defaultRpcTimeout));
-        assertThat(myRpcClient.timeUnit, is(defaultRpcTimeoutUnit));
     }
 
     @Test
@@ -233,8 +226,7 @@ class JmsAdapterTest {
 
     private class MyRpcClient extends RpcClient {
         private Object request;
-        private long timeout;
-        private TimeUnit timeUnit;
+        private Duration timeout;
         private OutgoingMessageMetaData outgoingMessageMetaData;
 
         private MyRpcClient() {
@@ -242,10 +234,9 @@ class JmsAdapterTest {
         }
 
         @Override
-        public <RequestType, ReplyType> Single<RpcReply<ReplyType>> sendRequest(RequestType request, OutgoingMessageMetaData requestMetaData, Function<RequestType, String> requestTranscriber, Function<String, ReplyType> replyTranscriber, long timeout, TimeUnit timeUnit) {
+        public <RequestType, ReplyType> Single<RpcReply<ReplyType>> sendRequest(RequestType request, OutgoingMessageMetaData requestMetaData, Function<RequestType, String> requestTranscriber, Function<String, ReplyType> replyTranscriber, Duration timeout) {
             this.request = request;
             this.timeout = timeout;
-            this.timeUnit = timeUnit;
             this.outgoingMessageMetaData = requestMetaData;
             return Single.never();
         }

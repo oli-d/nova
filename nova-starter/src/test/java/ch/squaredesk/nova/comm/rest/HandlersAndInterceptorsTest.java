@@ -63,6 +63,7 @@ class HandlersAndInterceptorsTest {
                 HandlersAndInterceptorsTest.MyClientResponseFilter myClientResponseFilter = appContext.getBean(HandlersAndInterceptorsTest.MyClientResponseFilter.class);
                 HandlersAndInterceptorsTest.MyClientRequestFilter myClientRequestFilter = appContext.getBean(HandlersAndInterceptorsTest.MyClientRequestFilter.class);
 
+                Awaitility.await().atMost(Duration.FIVE_SECONDS).until(httpAdapter::isServerStarted);
                 MatcherAssert.assertThat(myRequestFilter.wasCalled, Matchers.is(false));
                 MatcherAssert.assertThat(myResponseFilter.wasCalled, Matchers.is(false));
                 MatcherAssert.assertThat(myWriterInterceptor.wasCalled, Matchers.is(false));

@@ -23,6 +23,7 @@ import javax.jms.ConnectionFactory;
 import javax.jms.Destination;
 import javax.jms.Message;
 import javax.jms.Session;
+import java.time.Duration;
 import java.util.concurrent.TimeoutException;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -98,7 +99,7 @@ class RpcClientTest {
                 Message.DEFAULT_TIME_TO_LIVE);
         OutgoingMessageMetaData metaData = new OutgoingMessageMetaData(queue, sendingDetails);
 
-        TestObserver<RpcReply<String>> replyObserver = sut.sendRequest("aRequest", metaData, s -> s, s -> s, 250, MILLISECONDS).test().await();
+        TestObserver<RpcReply<String>> replyObserver = sut.sendRequest("aRequest", metaData, s -> s, s -> s, Duration.ofMillis(250)).test().await();
 
         replyObserver.assertError(TimeoutException.class);
     }
@@ -115,7 +116,7 @@ class RpcClientTest {
                 Message.DEFAULT_TIME_TO_LIVE);
         OutgoingMessageMetaData metaData = new OutgoingMessageMetaData(queue, sendingDetails);
 
-        TestObserver<RpcReply<String>> replyObserver = sut.sendRequest("aRequest", metaData, s -> s, s -> s, 20, SECONDS).test();
+        TestObserver<RpcReply<String>> replyObserver = sut.sendRequest("aRequest", metaData, s -> s, s -> s, Duration.ofSeconds(20)).test();
         jmsHelper.sendReply(replyTo, "aReply", "c2");
 
         replyObserver.await(21, SECONDS);
@@ -136,7 +137,7 @@ class RpcClientTest {
                 Message.DEFAULT_TIME_TO_LIVE);
         OutgoingMessageMetaData metaData = new OutgoingMessageMetaData(queue, sendingDetails);
 
-        TestObserver<RpcReply<String>> replyObserver = sut.sendRequest("aRequest", metaData, s -> s, s -> s, 20, SECONDS).test();
+        TestObserver<RpcReply<String>> replyObserver = sut.sendRequest("aRequest", metaData, s -> s, s -> s, Duration.ofSeconds(20)).test();
         jmsHelper.sendReply(sharedQueue, "aReply1", null);
         jmsHelper.sendReply(sharedQueue, "aReply2", "c3");
         jmsHelper.sendReply(sharedQueue, "aReply3", null);
