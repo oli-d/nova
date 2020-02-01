@@ -1,18 +1,19 @@
 /*
- * Copyright (c) Squaredesk GmbH and Oliver Dotzauer.
+ * Copyright (c) 2020 Squaredesk GmbH and Oliver Dotzauer.
  *
  * This program is distributed under the squaredesk open source license. See the LICENSE file
  * distributed with this work for additional information regarding copyright ownership. You may also
  * obtain a copy of the license at
  *
  *   https://squaredesk.ch/license/oss/LICENSE
+ *
  */
 package ch.squaredesk.nova.comm.websockets;
 
 import ch.squaredesk.nova.comm.CommAdapter;
 import ch.squaredesk.nova.comm.CommAdapterBuilder;
 import ch.squaredesk.nova.comm.DefaultMessageTranscriberForStringAsTransportType;
-import ch.squaredesk.nova.comm.http.spring.HttpServerBeanListener;
+import ch.squaredesk.nova.comm.http.HttpServerInstanceListener;
 import ch.squaredesk.nova.comm.websockets.client.WebSocketFactory;
 import ch.squaredesk.nova.comm.websockets.server.ServerEndpointFactory;
 import com.ning.http.client.AsyncHttpClient;
@@ -27,8 +28,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
-public class WebSocketAdapter extends CommAdapter<String> implements HttpServerBeanListener {
+public class WebSocketAdapter extends CommAdapter<String> implements HttpServerInstanceListener {
     private static final Logger logger = LoggerFactory.getLogger(WebSocketAdapter.class);
 
     private HttpServer httpServer;
@@ -104,7 +107,7 @@ public class WebSocketAdapter extends CommAdapter<String> implements HttpServerB
     }
 
     @Override
-    public void httpServerAvailableInContext(HttpServer httpServer) {
+    public void httpServerInstanceCreated(HttpServer httpServer) {
         if (this.httpServer == null) {
             logger.info("httpServer available, server functionality available");
             setHttpServer(httpServer);
@@ -114,6 +117,14 @@ public class WebSocketAdapter extends CommAdapter<String> implements HttpServerB
 
     public static Builder builder() {
         return new Builder();
+    }
+
+    public Future<HttpServer> shutdown() {
+        return shutdown(2, TimeUnit.SECONDS);
+    }
+
+    public Future<HttpServer> shutdown(long timeout, TimeUnit timeUnit) {
+        return httpServer.shutdown(timeout, timeUnit);
     }
 
     public static class Builder extends CommAdapterBuilder<String, WebSocketAdapter>{

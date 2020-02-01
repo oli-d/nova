@@ -1,17 +1,19 @@
 /*
- * Copyright (c) Squaredesk GmbH and Oliver Dotzauer.
+ * Copyright (c) 2020 Squaredesk GmbH and Oliver Dotzauer.
  *
  * This program is distributed under the squaredesk open source license. See the LICENSE file
  * distributed with this work for additional information regarding copyright ownership. You may also
  * obtain a copy of the license at
  *
  *   https://squaredesk.ch/license/oss/LICENSE
+ *
  */
 
 package ch.squaredesk.nova.events.consumers;
 
 import ch.squaredesk.nova.events.EventBus;
 import ch.squaredesk.nova.events.EventDispatchConfig;
+import ch.squaredesk.nova.events.EventDispatchMode;
 import ch.squaredesk.nova.metrics.Metrics;
 import io.reactivex.BackpressureStrategy;
 import io.reactivex.functions.Consumer;
@@ -130,7 +132,7 @@ public class ConsumerWrappersTest {
         NoParameterConsumer noParamsListener = () -> latches[11].countDown();
 
         EventBus eventBus = new EventBus("id",
-                new EventDispatchConfig(BackpressureStrategy.BUFFER, false, false, 1), new Metrics());
+                new EventDispatchConfig(BackpressureStrategy.BUFFER, false, EventDispatchMode.BLOCKING, 1), new Metrics());
 
         eventBus.on("e").subscribe(noParamsListener);
         eventBus.on("e").subscribe(genericListener);
@@ -287,7 +289,7 @@ public class ConsumerWrappersTest {
         NoParameterConsumer noParamsListener = () -> latches[11].countDown();
 
         EventBus eventBus = new EventBus("id",
-                new EventDispatchConfig(BackpressureStrategy.BUFFER, false, false, 1), new Metrics());
+                new EventDispatchConfig(BackpressureStrategy.BUFFER, false, EventDispatchMode.BLOCKING, 1), new Metrics());
 
         eventBus.on("e").subscribe(noParamsListener);
         eventBus.on("e").subscribe(genericListener);

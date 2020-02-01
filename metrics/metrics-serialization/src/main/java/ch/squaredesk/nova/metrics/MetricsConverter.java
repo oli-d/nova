@@ -1,10 +1,20 @@
+/*
+ * Copyright (c) 2020 Squaredesk GmbH and Oliver Dotzauer.
+ *
+ * This program is distributed under the squaredesk open source license. See the LICENSE file
+ * distributed with this work for additional information regarding copyright ownership. You may also
+ * obtain a copy of the license at
+ *
+ *   https://squaredesk.ch/license/oss/LICENSE
+ *
+ */
+
 package ch.squaredesk.nova.metrics;
 
 import ch.squaredesk.nova.tuples.Pair;
 import ch.squaredesk.nova.tuples.Tuple3;
+import com.codahale.metrics.Metric;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.dropwizard.metrics5.Metric;
-import io.dropwizard.metrics5.MetricName;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -53,7 +63,7 @@ public class MetricsConverter {
 
     private static Map<String, Object> toMap (CompoundMetric compoundMetric) {
         Map<String, Object> returnValue = new HashMap<>();
-        Map<MetricName, Object> values = compoundMetric.getValues();
+        Map<String, Object> values = compoundMetric.getValues();
 
         if (!values.isEmpty()) {
             values.forEach((key, value) -> returnValue.put(key.toString(), value));

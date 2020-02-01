@@ -1,37 +1,43 @@
 /*
- * Copyright (c) Squaredesk GmbH and Oliver Dotzauer.
+ * Copyright (c) 2020 Squaredesk GmbH and Oliver Dotzauer.
  *
  * This program is distributed under the squaredesk open source license. See the LICENSE file
  * distributed with this work for additional information regarding copyright ownership. You may also
  * obtain a copy of the license at
  *
  *   https://squaredesk.ch/license/oss/LICENSE
+ *
  */
 
 package ch.squaredesk.nova.events;
 
 import io.reactivex.BackpressureStrategy;
 
+import java.util.Objects;
+
 public class EventDispatchConfig {
     public final BackpressureStrategy defaultBackpressureStrategy;
     public final boolean warnOnUnhandledEvents;
-    public final boolean dispatchEventsOnSeparateExecutor;
-    public final int eventDispatchThreadPoolSize;
+    public final EventDispatchMode eventDispatchMode;
+    public final int parallelism;
 
 
-    public EventDispatchConfig(BackpressureStrategy backpressureStrategy, boolean warnOnUnhandledEvents, boolean dispatchEventsOnSeparateExecutor, int eventDispatchThreadPoolSize) {
-        this.defaultBackpressureStrategy = backpressureStrategy;
+    public EventDispatchConfig(BackpressureStrategy defaultBackpressureStrategy,
+                               boolean warnOnUnhandledEvents,
+                               EventDispatchMode eventDispatchMode,
+                               int parallelism) {
+        this.defaultBackpressureStrategy = Objects.requireNonNull(defaultBackpressureStrategy);
         this.warnOnUnhandledEvents = warnOnUnhandledEvents;
-        this.dispatchEventsOnSeparateExecutor = dispatchEventsOnSeparateExecutor;
-        this.eventDispatchThreadPoolSize = eventDispatchThreadPoolSize;
+        this.eventDispatchMode = Objects.requireNonNull(eventDispatchMode);
+        this.parallelism = parallelism;
     }
 
     @Override
     public String toString() {
-        return "EventBusConfig{" +
+        return "EventDispatchonfig{" +
                 "defaultBackpressureStrategy=" + defaultBackpressureStrategy +
-                "dispatchEventsOnSeparateExecutor=" + dispatchEventsOnSeparateExecutor +
-                "eventDispatchThreadPoolSize=" + eventDispatchThreadPoolSize +
+                ", eventDispatchMode=" + eventDispatchMode +
+                ", parallelism=" + parallelism +
                 ", warnOnUnhandledEvents=" + warnOnUnhandledEvents +
                 '}';
     }

@@ -1,12 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright (c) Squaredesk GmbH and Oliver Dotzauer.
+  ~ Copyright (c) 2020 Squaredesk GmbH and Oliver Dotzauer.
   ~
   ~ This program is distributed under the squaredesk open source license. See the LICENSE file
   ~ distributed with this work for additional information regarding copyright ownership. You may also
   ~ obtain a copy of the license at
   ~
   ~   https://squaredesk.ch/license/oss/LICENSE
+  ~
   -->
 
 <project xmlns="http://maven.apache.org/POM/4.0.0"
@@ -16,7 +17,7 @@
 
     <groupId>ch.squaredesk.nova</groupId>
     <artifactId>parentpom</artifactId>
-    <version>8.0.0</version>
+    <version>9.0.0</version>
     <packaging>pom</packaging>
 
     <name>Nova parent</name>
@@ -48,12 +49,12 @@
 
     <distributionManagement>
         <snapshotRepository>
-            <id>snapshot</id>
-            <url>http://x8nexus:9999/repository/maven-snapshots/</url>
+            <id>ossrh</id>
+            <url>https://oss.sonatype.org/content/repositories/snapshots</url>
         </snapshotRepository>
         <repository>
-            <id>release</id>
-            <url>http://x8nexus:9999/repository/maven-releases/</url>
+            <id>ossrh</id>
+            <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
         </repository>
     </distributionManagement>
 
@@ -64,20 +65,25 @@
         <java.version.source>1.8</java.version.source>
         <java.version.target>1.8</java.version.target>
 
-        <junit.jupiter.version>5.2.0</junit.jupiter.version>
+        <jackson.version>2.10.1</jackson.version>
+
+        <junit.jupiter.version>5.5.2</junit.jupiter.version>
         <junit.platform.version>1.2.0</junit.platform.version>
-
-        <spring.version>5.1.7.RELEASE</spring.version>
-
-        <jackson.version>2.10.0.pr3</jackson.version>
     </properties>
 
     <dependencyManagement>
         <dependencies>
             <dependency>
-                <groupId>io.dropwizard.metrics5</groupId>
+                <groupId>io.dropwizard.metrics</groupId>
                 <artifactId>metrics-bom</artifactId>
-                <version>5.0.0</version>
+                <version>4.1.2</version>
+                <scope>import</scope>
+                <type>pom</type>
+            </dependency>
+            <dependency>
+                <groupId>org.junit</groupId>
+                <artifactId>junit-bom</artifactId>
+                <version>${junit.jupiter.version}</version>
                 <scope>import</scope>
                 <type>pom</type>
             </dependency>
@@ -89,19 +95,17 @@
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-api</artifactId>
-            <version>${junit.jupiter.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-params</artifactId>
-            <version>${junit.jupiter.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.hamcrest</groupId>
-            <version>2.0.0.0</version>
-            <artifactId>hamcrest-junit</artifactId>
+            <version>2.2</version>
+            <artifactId>hamcrest</artifactId>
             <scope>test</scope>
             <exclusions>
                 <exclusion>

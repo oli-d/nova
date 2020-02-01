@@ -1,11 +1,12 @@
 /*
- * Copyright (c) Squaredesk GmbH and Oliver Dotzauer.
+ * Copyright (c) 2020 Squaredesk GmbH and Oliver Dotzauer.
  *
  * This program is distributed under the squaredesk open source license. See the LICENSE file
  * distributed with this work for additional information regarding copyright ownership. You may also
  * obtain a copy of the license at
  *
  *   https://squaredesk.ch/license/oss/LICENSE
+ *
  */
 package ch.squaredesk.nova.metrics.elastic;
 
@@ -15,7 +16,6 @@ import ch.squaredesk.nova.metrics.MetricsDump;
 import ch.squaredesk.nova.metrics.SerializableMetricsDump;
 import ch.squaredesk.nova.tuples.Pair;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.dropwizard.metrics5.MetricName;
 import io.reactivex.observers.TestObserver;
 import org.elasticsearch.action.DocWriteRequest;
 import org.elasticsearch.action.bulk.BulkRequest;
@@ -33,6 +33,7 @@ import java.util.Map;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -69,24 +70,23 @@ class ElasticMetricsReporterTest {
         metrics.getCounter("test","counter1");
         metrics.getMeter("test","meter1");
         metrics.register(new MyMetric(), "test","myMetric1");
-        MetricsDump dump = metrics.dump(Arrays.asList(
-                new Pair<>("host", "myMachine"),
-                new Pair<>("hostAddress", "myAddress"),
-                new Pair<>("additionalKey", "additionalValue")
-        ));
+        metrics.addAdditionalInfoForDumps("host", "myMachine");
+        metrics.addAdditionalInfoForDumps("hostAddress", "myAddress");
+        metrics.addAdditionalInfoForDumps("additionalKey", "additionalValue");
+        MetricsDump dump = metrics.dump();
 
         TestObserver<BulkRequest> bulkRequestObserver = sut.requestFor(dump).test();
         bulkRequestObserver.assertComplete();
         bulkRequestObserver.assertValueCount(1);
         BulkRequest bulkRequest = bulkRequestObserver.values().get(0);
 
-        List<DocWriteRequest> requests = bulkRequest.requests();
+        List<DocWriteRequest<?>> requests = bulkRequest.requests();
         assertThat(requests.size(), is(3));
         for (DocWriteRequest request: requests) {
             assertTrue(request instanceof IndexRequest);
             IndexRequest ir = (IndexRequest)request;
             Map<String,Object> sourceAsMap = getMapFrom(ir.source());
-            assertThat(sourceAsMap.get("@timestamp"), is(dump.timestamp));
+            assertThat(sourceAsMap.get("@timestamp"), is(notNullValue()));
             dump.additionalInfo.forEach(entry -> {
                 assertThat(sourceAsMap.get(entry._1), is(entry._2));
             });
@@ -100,11 +100,10 @@ class ElasticMetricsReporterTest {
         metrics.getCounter("test","counter1");
         metrics.getMeter("test","meter1");
         metrics.register(new MyMetric(), "test","myMetric1");
-        MetricsDump dump = metrics.dump(Arrays.asList(
-                new Pair<>("host", "myMachine2"),
-                new Pair<>("hostAddress", "myAddress2"),
-                new Pair<>("additionalKey", "additionalValue2")
-        ));
+        metrics.addAdditionalInfoForDumps("host", "myMachine2");
+        metrics.addAdditionalInfoForDumps("hostAddress", "myAddress2");
+        metrics.addAdditionalInfoForDumps("additionalKey", "additionalValue2");
+        MetricsDump dump = metrics.dump();
         SerializableMetricsDump serializableDump = SerializableMetricsDump.createFor(dump);
 
         TestObserver<BulkRequest> bulkRequestObserver = sut.requestFor(serializableDump).test();
@@ -112,13 +111,13 @@ class ElasticMetricsReporterTest {
         bulkRequestObserver.assertValueCount(1);
         BulkRequest bulkRequest = bulkRequestObserver.values().get(0);
 
-        List<DocWriteRequest> requests = bulkRequest.requests();
+        List<DocWriteRequest<?>> requests = bulkRequest.requests();
         assertThat(requests.size(), is(3));
         for (DocWriteRequest request: requests) {
             assertTrue(request instanceof IndexRequest);
             IndexRequest ir = (IndexRequest)request;
             Map<String,Object> sourceAsMap = getMapFrom(ir.source());
-            assertThat(sourceAsMap.get("@timestamp"), is(dump.timestamp));
+            assertThat(sourceAsMap.get("@timestamp"), is(notNullValue()));
             dump.additionalInfo.forEach(entry -> {
                 assertThat(sourceAsMap.get(entry._1), is(entry._2));
             });
@@ -145,7 +144,7 @@ class ElasticMetricsReporterTest {
         bulkRequestObserver.assertValueCount(1);
         BulkRequest bulkRequest = bulkRequestObserver.values().get(0);
 
-        List<DocWriteRequest> requests = bulkRequest.requests();
+        List<DocWriteRequest<?>> requests = bulkRequest.requests();
         assertThat(requests.size(), is(3));
         for (DocWriteRequest request: requests) {
             assertTrue(request instanceof IndexRequest);
@@ -166,7 +165,7 @@ class ElasticMetricsReporterTest {
 
     private class MyMetric implements CompoundMetric {
         @Override
-        public Map<MetricName,Object> getValues() {
+        public Map<String,Object> getValues() {
             return new HashMap<>();
         }
     }

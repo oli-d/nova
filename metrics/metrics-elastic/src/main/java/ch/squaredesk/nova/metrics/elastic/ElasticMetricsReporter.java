@@ -1,11 +1,12 @@
 /*
- * Copyright (c) Squaredesk GmbH and Oliver Dotzauer.
+ * Copyright (c) 2020 Squaredesk GmbH and Oliver Dotzauer.
  *
  * This program is distributed under the squaredesk open source license. See the LICENSE file
  * distributed with this work for additional information regarding copyright ownership. You may also
  * obtain a copy of the license at
  *
  *   https://squaredesk.ch/license/oss/LICENSE
+ *
  */
 
 package ch.squaredesk.nova.metrics.elastic;
@@ -27,6 +28,7 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.time.Instant;
 import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.Objects;
@@ -121,15 +123,16 @@ public class ElasticMetricsReporter implements Consumer<MetricsDump> {
         );
     }
 
-    private long timestampInUtc(long timestampInMillis) {
-        return Instant.ofEpochMilli(timestampInMillis).atZone(zoneForTimestamps).toInstant().toEpochMilli();
+    private String timestampInUtc(long timestampInMillis) {
+        return Instant.ofEpochMilli(timestampInMillis)
+                .atZone(zoneForTimestamps)
+                .format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSX"));
     }
 
     private Single<BulkRequest> requestFor (Observable<Map<String, Object>> metricsAsMaps) {
         return metricsAsMaps
                 .map(map -> new IndexRequest()
                                 .index(indexName)
-                                .type("doc")
                                 .source(map)
                 )
                 .reduce(Requests.bulkRequest(),
@@ -143,7 +146,7 @@ public class ElasticMetricsReporter implements Consumer<MetricsDump> {
 
     Single<BulkRequest> requestFor(Map<String, Object> metricsDump) {
         Long timestamp = (Long) metricsDump.remove("timestamp");
-        long timestampInUtc = timestamp == null ? timestampInUtc(System.currentTimeMillis()) : timestampInUtc(timestamp);
+        String timestampInUtc = timestamp == null ? timestampInUtc(System.currentTimeMillis()) : timestampInUtc(timestamp);
         return Observable.fromIterable(metricsDump.entrySet())
                 .filter(entry -> entry.getValue() instanceof Map) // just to protect us, since at this point anyway
                 // only the Metrics should remain in the map
@@ -167,7 +170,7 @@ public class ElasticMetricsReporter implements Consumer<MetricsDump> {
     }
 
     Single<BulkRequest> requestFor(MetricsDump metricsDump) {
-        long timestampInUtc = timestampInUtc(metricsDump.timestamp);
+        String timestampInUtc = timestampInUtc(metricsDump.timestamp);
 
         Map<String, Map<String, Object>> convertedDump = MetricsConverter.convert(metricsDump);
         Observable<Map<String, Object>> enrichedMetrics = Observable.fromIterable(convertedDump.entrySet())
@@ -181,7 +184,7 @@ public class ElasticMetricsReporter implements Consumer<MetricsDump> {
     }
 
     Single<BulkRequest> requestFor(SerializableMetricsDump metricsDump) {
-        long timestampInUtc = timestampInUtc(metricsDump.timestamp);
+        String timestampInUtc = timestampInUtc(metricsDump.timestamp);
 
         Observable<Map<String, Object>> enrichedMetrics = Observable.fromIterable(metricsDump.metrics.entrySet())
                 .map(entry -> {

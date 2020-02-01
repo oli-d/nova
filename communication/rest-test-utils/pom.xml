@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright (c) Squaredesk GmbH and Oliver Dotzauer.
+  ~ Copyright (c) 2020 Squaredesk GmbH and Oliver Dotzauer.
   ~
   ~ This program is distributed under the squaredesk open source license. See the LICENSE file
   ~ distributed with this work for additional information regarding copyright ownership. You may also
@@ -16,36 +16,28 @@
     <parent>
         <artifactId>parentpom</artifactId>
         <groupId>ch.squaredesk.nova</groupId>
-        <version>8.0.0</version>
+        <version>9.0.0</version>
         <relativePath>../../parentpom</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>rest-test-utils</artifactId>
-    <version>8.0.0</version>
+    <version>9.0.0</version>
 
     <properties>
-        <jersey.version>2.28</jersey.version>
+        <jersey.version>2.29.1</jersey.version>
     </properties>
 
     <dependencies>
         <dependency>
             <groupId>ch.squaredesk.nova</groupId>
             <artifactId>http-test-utils</artifactId>
-            <version>8.0.0</version>
+            <version>9.0.0</version>
         </dependency>
-
         <dependency>
-            <groupId>org.glassfish.jersey.containers</groupId>
-            <artifactId>jersey-container-grizzly2-http</artifactId>
-            <version>${jersey.version}</version>
-            <exclusions>
-                <!--Exclude grizzly, since we already get that from the http dependency-->
-                <exclusion>
-                    <groupId>org.glassfish.grizzly</groupId>
-                    <artifactId>grizzly-http-server</artifactId>
-                </exclusion>
-            </exclusions>
+            <groupId>javax.ws.rs</groupId>
+            <artifactId>javax.ws.rs-api</artifactId>
+            <version>2.1.1</version>
         </dependency>
     </dependencies>
 

@@ -1,12 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright (c) Squaredesk GmbH and Oliver Dotzauer.
+  ~ Copyright (c) 2020 Squaredesk GmbH and Oliver Dotzauer.
   ~
   ~ This program is distributed under the squaredesk open source license. See the LICENSE file
   ~ distributed with this work for additional information regarding copyright ownership. You may also
   ~ obtain a copy of the license at
   ~
   ~   https://squaredesk.ch/license/oss/LICENSE
+  ~
   -->
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
@@ -16,23 +17,18 @@
     <parent>
         <groupId>ch.squaredesk.nova</groupId>
         <artifactId>parentpom</artifactId>
-        <version>8.0.0</version>
+        <version>9.0.0</version>
         <relativePath>../parentpom</relativePath>
     </parent>
 
     <artifactId>test-utils</artifactId>
-    <version>8.0.0</version>
+    <version>9.0.0</version>
 
     <dependencies>
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-api</artifactId>
             <version>${junit.jupiter.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework</groupId>
-            <artifactId>spring-test</artifactId>
-            <version>${spring.version}</version>
         </dependency>
     </dependencies>
 </project>

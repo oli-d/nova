@@ -1,5 +1,5 @@
 /*
- * Copyright (c) Squaredesk GmbH and Oliver Dotzauer.
+ * Copyright (c) 2020 Squaredesk GmbH and Oliver Dotzauer.
  *
  * This program is distributed under the squaredesk open source license. See the LICENSE file
  * distributed with this work for additional information regarding copyright ownership. You may also
@@ -15,8 +15,6 @@ import ch.squaredesk.nova.comm.CommAdapter;
 import ch.squaredesk.nova.comm.CommAdapterBuilder;
 import ch.squaredesk.nova.comm.DefaultMessageTranscriberForStringAsTransportType;
 import ch.squaredesk.nova.comm.MessageTranscriber;
-import ch.squaredesk.nova.comm.http.spring.HttpClientBeanListener;
-import ch.squaredesk.nova.comm.http.spring.HttpServerBeanListener;
 import com.ning.http.client.AsyncHttpClient;
 import io.reactivex.Flowable;
 import io.reactivex.Single;
@@ -34,7 +32,7 @@ import java.util.concurrent.TimeUnit;
 
 import static java.util.Objects.requireNonNull;
 
-public class HttpAdapter extends CommAdapter<String> implements HttpServerBeanListener, HttpClientBeanListener {
+public class HttpAdapter extends CommAdapter<String> implements HttpServerInstanceListener, HttpClientInstanceListener {
     private final RpcClient rpcClient;
     private final RpcServer rpcServer;
     private final Long defaultRequestTimeout;
@@ -49,6 +47,9 @@ public class HttpAdapter extends CommAdapter<String> implements HttpServerBeanLi
         this.defaultRequestTimeUnit = builder.defaultRequestTimeUnit;
     }
 
+    public boolean isServerStarted () {
+        return rpcServer != null && rpcServer.isStarted();
+    }
     public <T> FrozenHttpAdapter<T> freeze (Class<T> typeClass) {
         return new FrozenHttpAdapter<>(this, typeClass);
     }
@@ -749,21 +750,19 @@ public class HttpAdapter extends CommAdapter<String> implements HttpServerBeanLi
     }
 
 
-    ///////// Spring wiring
     @Override
-    public void httpServerAvailableInContext(HttpServer httpServer) {
+    public void httpServerInstanceCreated(HttpServer httpServer) {
         if (this.rpcServer != null) {
-            this.rpcServer.httpServerAvailableInContext(httpServer);
+            this.rpcServer.httpServerInstanceCreated(httpServer);
         }
     }
 
     @Override
-    public void httpClientAvailableInContext(AsyncHttpClient httpClient) {
+    public void httpClientInstanceCreated(AsyncHttpClient httpClient) {
         if (this.rpcClient != null) {
-            this.rpcClient.httpClientAvailableInContext(httpClient);
+            this.rpcClient.httpClientInstanceCreated(httpClient);
         }
     }
-
 
     /////////
     /////////
@@ -841,13 +840,13 @@ public class HttpAdapter extends CommAdapter<String> implements HttpServerBeanLi
             }
             if (rpcClient == null) {
                 if (httpClient == null) {
-                    logger.info("No httpClient provided (yet), HTTP Adapter will only be usable in server mode until HttpClient becomes available!!!");
+                    logger.info("No httpClient provided (yet), HTTP Adapter will not be usable in client mode until HttpClient becomes available!!!");
                 }
                 rpcClient = new RpcClient(identifier, httpClient, metrics);
             }
             if (rpcServer == null) {
                 if (httpServer == null) {
-                    logger.info("No httpServer provided (yet), HTTP Adapter will only be usable in client mode until HttpServer becomes available!!!");
+                    logger.info("No httpServer provided (yet), HTTP Adapter will not be usable in server mode until HttpServer becomes available!!!");
                 }
                 rpcServer = new RpcServer(identifier, httpServer, messageTranscriber, metrics);
             }

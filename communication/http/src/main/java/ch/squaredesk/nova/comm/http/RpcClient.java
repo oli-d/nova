@@ -1,16 +1,16 @@
 /*
- * Copyright (c) Squaredesk GmbH and Oliver Dotzauer.
+ * Copyright (c) 2020 Squaredesk GmbH and Oliver Dotzauer.
  *
  * This program is distributed under the squaredesk open source license. See the LICENSE file
  * distributed with this work for additional information regarding copyright ownership. You may also
  * obtain a copy of the license at
  *
  *   https://squaredesk.ch/license/oss/LICENSE
+ *
  */
 
 package ch.squaredesk.nova.comm.http;
 
-import ch.squaredesk.nova.comm.http.spring.HttpClientBeanListener;
 import ch.squaredesk.nova.metrics.Metrics;
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.FluentCaseInsensitiveStringsMap;
@@ -29,8 +29,7 @@ import java.util.concurrent.TimeUnit;
 import static java.util.Objects.requireNonNull;
 
 public class RpcClient extends ch.squaredesk.nova.comm.rpc.RpcClient<String, RequestMessageMetaData, ReplyMessageMetaData>
-    implements HttpClientBeanListener {
-
+                        implements HttpClientInstanceListener {
     private static final Logger logger = LoggerFactory.getLogger(RpcClient.class);
 
     private AsyncHttpClient client;
@@ -40,7 +39,7 @@ public class RpcClient extends ch.squaredesk.nova.comm.rpc.RpcClient<String, Req
     protected RpcClient(String identifier,
                         AsyncHttpClient client,
                         Metrics metrics) {
-        super(Metrics.name("http", identifier).toString(), metrics);
+        super(Metrics.name("http", identifier), metrics);
         this.client = client;
     }
 
@@ -142,7 +141,7 @@ public class RpcClient extends ch.squaredesk.nova.comm.rpc.RpcClient<String, Req
     }
 
     void shutdown() {
-        if (this.client != null) {
+        if (this.client!=null) {
             client.close();
         }
     }
@@ -167,7 +166,7 @@ public class RpcClient extends ch.squaredesk.nova.comm.rpc.RpcClient<String, Req
     }
 
     @Override
-    public void httpClientAvailableInContext(AsyncHttpClient httpClient) {
+    public void httpClientInstanceCreated(AsyncHttpClient httpClient) {
         if (this.client == null) {
             logger.info("httpClient available, RpcClient functional");
         }

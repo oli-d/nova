@@ -1,16 +1,15 @@
 /*
- * Copyright (c) Squaredesk GmbH and Oliver Dotzauer.
+ * Copyright (c) 2020 Squaredesk GmbH and Oliver Dotzauer.
  *
  * This program is distributed under the squaredesk open source license. See the LICENSE file
  * distributed with this work for additional information regarding copyright ownership. You may also
  * obtain a copy of the license at
  *
  *   https://squaredesk.ch/license/oss/LICENSE
+ *
  */
 
 package ch.squaredesk.nova.metrics;
-
-import io.dropwizard.metrics5.MetricName;
 
 import java.lang.management.ManagementFactory;
 import java.lang.management.OperatingSystemMXBean;
@@ -57,8 +56,8 @@ public class CpuMeter implements CompoundMetric {
     }
 
     @Override
-    public Map<MetricName, Object> getValues() {
-        Map<MetricName, Object> values = new HashMap<>();
+    public Map<String, Object> getValues() {
+        Map<String, Object> values = new HashMap<>();
         if (systemCpuLoadRetrievalMethod!=null) {
             values.put(Metrics.name("systemLoadPercent"), invoke(systemCpuLoadRetrievalMethod) * 100.0);
         }

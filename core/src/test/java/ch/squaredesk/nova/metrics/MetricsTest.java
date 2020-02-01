@@ -1,22 +1,21 @@
 /*
- * Copyright (c) Squaredesk GmbH and Oliver Dotzauer.
+ * Copyright (c) 2020 Squaredesk GmbH and Oliver Dotzauer.
  *
  * This program is distributed under the squaredesk open source license. See the LICENSE file
  * distributed with this work for additional information regarding copyright ownership. You may also
  * obtain a copy of the license at
  *
  *   https://squaredesk.ch/license/oss/LICENSE
+ *
  */
 
 package ch.squaredesk.nova.metrics;
 
-import ch.squaredesk.nova.tuples.Pair;
+import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
-import org.hamcrest.junit.MatcherAssert;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -56,9 +55,11 @@ class MetricsTest {
 
     @Test
     void additionalInfoIsIncludedInEveryDump() {
+        sut.addAdditionalInfoForDumps("key", "value");
+        sut.addAdditionalInfoForDumps("oli", "d");
+
         List<MetricsDump> metricsDumps = sut
-                .dumpContinuously(1L, TimeUnit.MILLISECONDS,
-                        Arrays.asList(new Pair<>("key", "value"), new Pair<>("oli", "d")))
+                .dumpContinuously(1L, TimeUnit.MILLISECONDS)
                 .take(3)
                 .toList()
                 .blockingGet();

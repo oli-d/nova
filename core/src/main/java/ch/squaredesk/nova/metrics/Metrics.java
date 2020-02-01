@@ -1,34 +1,40 @@
 /*
- * Copyright (c) Squaredesk GmbH and Oliver Dotzauer.
+ * Copyright (c) 2020 Squaredesk GmbH and Oliver Dotzauer.
  *
  * This program is distributed under the squaredesk open source license. See the LICENSE file
  * distributed with this work for additional information regarding copyright ownership. You may also
  * obtain a copy of the license at
  *
  *   https://squaredesk.ch/license/oss/LICENSE
+ *
  */
 
 package ch.squaredesk.nova.metrics;
 
 import ch.squaredesk.nova.tuples.Pair;
-import io.dropwizard.metrics5.Timer;
-import io.dropwizard.metrics5.*;
+import com.codahale.metrics.*;
 import io.reactivex.Flowable;
 import org.slf4j.LoggerFactory;
 
-import java.util.*;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
 
 public class Metrics {
     public final MetricRegistry metricRegistry = new MetricRegistry();
     private Slf4jReporter logReporter;
+    private List<Pair<String, String>> additionalInfo = new CopyOnWriteArrayList<>();
 
     public MetricsDump dump() {
-        return dump(Collections.emptyList());
+        return new MetricsDump(metricRegistry.getMetrics(), additionalInfo);
     }
 
-    public MetricsDump dump(List<Pair<String, String>> additionalInfo) {
-        return new MetricsDump(metricRegistry.getMetrics(), additionalInfo);
+    public void addAdditionalInfoForDumps (String key, String value) {
+        Optional.ofNullable(key)
+                .ifPresent(k -> additionalInfo.add(Pair.create(k, value)));
     }
 
     /**
@@ -36,14 +42,6 @@ public class Metrics {
      * interval between two dumps.
      */
     public Flowable<MetricsDump> dumpContinuously(long interval, TimeUnit timeUnit) {
-        return dumpContinuously(interval, timeUnit, Collections.emptyList());
-    }
-
-    /**
-     * Returns an observable that continuously emits all registered metrics. The passed parameters define the
-     * interval between two dumps. The passed additionalInfo will be added on every dump
-     */
-    public Flowable<MetricsDump> dumpContinuously(long interval, TimeUnit timeUnit, List<Pair<String, String>> additionalInfo) {
         if (interval <= 0) {
             throw new IllegalArgumentException("interval must be greater than 0");
         }
@@ -51,7 +49,7 @@ public class Metrics {
 
         return Flowable
                 .interval(interval, interval, timeUnit)
-                .map(count -> dump(additionalInfo));
+                .map(count -> dump());
     }
 
 
@@ -73,7 +71,7 @@ public class Metrics {
         logReporter.report();
     }
 
-    public <T extends Metric> void register(MetricName metricName, T metric) {
+    public <T extends Metric> void register(String metricName, T metric) {
         metricRegistry.register(metricName, metric);
     }
 
@@ -81,7 +79,7 @@ public class Metrics {
         register(name(idPathFirst,idPathRemainder), metric);
     }
 
-    public boolean remove(MetricName metricName) {
+    public boolean remove(String metricName) {
         return metricRegistry.remove(metricName);
     }
 
@@ -89,7 +87,7 @@ public class Metrics {
         return remove(name(idPathFirst,idPathRemainder));
     }
 
-    public Meter getMeter(MetricName metricName) {
+    public Meter getMeter(String metricName) {
         return metricRegistry.meter(metricName);
     }
 
@@ -97,7 +95,7 @@ public class Metrics {
         return getMeter(name(idPathFirst,idPathRemainder));
     }
 
-    public Counter getCounter(MetricName metricName) {
+    public Counter getCounter(String metricName) {
         return metricRegistry.counter(metricName);
     }
 
@@ -105,7 +103,7 @@ public class Metrics {
         return getCounter(name(idPathFirst,idPathRemainder));
     }
 
-    public Timer getTimer(MetricName metricName) {
+    public Timer getTimer(String metricName) {
         return metricRegistry.timer(metricName);
     }
 
@@ -113,7 +111,7 @@ public class Metrics {
         return getTimer(name(idPathFirst,idPathRemainder));
     }
 
-    public Histogram getHistogram(MetricName metricName) {
+    public Histogram getHistogram(String metricName) {
         return metricRegistry.histogram(metricName);
     }
 
@@ -121,8 +119,8 @@ public class Metrics {
         return getHistogram(name(idPathFirst,idPathRemainder));
     }
 
-    public Gauge getGauge(MetricName metricName) {
-        Optional<Map.Entry<MetricName, Gauge>> gaugeEntry = metricRegistry
+    public Gauge getGauge(String metricName) {
+        Optional<Map.Entry<String, Gauge>> gaugeEntry = metricRegistry
                 .getGauges()
                 .entrySet()
                 .stream()
@@ -140,11 +138,11 @@ public class Metrics {
         return getGauge(name(idPathFirst, idPathRemainder));
     }
 
-    public Map<MetricName, Metric> getMetrics() {
+    public Map<String, Metric> getMetrics() {
         return metricRegistry.getMetrics();
     }
 
-    public static MetricName name(String idPathFirst, String... idPathRemainder) {
+    public static String name(String idPathFirst, String... idPathRemainder) {
         return MetricRegistry.name(idPathFirst, idPathRemainder);
     }
 

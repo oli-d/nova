@@ -1,3 +1,14 @@
+/*
+ * Copyright (c) 2020 Squaredesk GmbH and Oliver Dotzauer.
+ *
+ * This program is distributed under the squaredesk open source license. See the LICENSE file
+ * distributed with this work for additional information regarding copyright ownership. You may also
+ * obtain a copy of the license at
+ *
+ *   https://squaredesk.ch/license/oss/LICENSE
+ *
+ */
+
 package ch.squaredesk.nova.comm.http;
 
 import com.ning.http.client.AsyncHttpClient;
@@ -21,12 +32,7 @@ import java.util.Optional;
 public class AsyncHttpClientFactory {
     private static final Logger logger = LoggerFactory.getLogger(AsyncHttpClientFactory.class);
 
-    public static AsyncHttpClient clientFor(AsyncHttpClientConfig.Builder builder) {
-        Objects.requireNonNull(builder, "Builder must not be null");
-        return new AsyncHttpClient(builder.build());
-    }
-
-    public static AsyncHttpClientConfig.Builder builderFor(HttpClientSettings settings) {
+    public static AsyncHttpClientConfig.Builder builderFor (HttpClientSettings settings) {
         Objects.requireNonNull(settings, "HttpClientSettings must not be null");
 
         AsyncHttpClientConfig.Builder builder = new AsyncHttpClientConfig.Builder()
@@ -36,11 +42,15 @@ public class AsyncHttpClientFactory {
                 .setWebSocketTimeout(settings.webSocketTimeoutInSeconds * 1000)
                 .setAcceptAnyCertificate(settings.acceptAnyCertificate);
 
-        Optional.ofNullable(settings.userAgent).ifPresent(userAgent -> builder.setUserAgent(userAgent));
+        Optional.ofNullable(settings.userAgent).ifPresent(builder::setUserAgent);
 
-        createSslContextFor(settings).ifPresent(sslContext -> builder.setSSLContext(sslContext));
+        createSslContextFor(settings).ifPresent(builder::setSSLContext);
 
         return builder;
+    }
+
+    public static AsyncHttpClient clientFor(AsyncHttpClientConfig config) {
+        return new AsyncHttpClient(Objects.requireNonNull(config, "AsyncHttpClientConfig must not be null"));
     }
 
     private static Optional<SSLContext> createSslContextFor (HttpClientSettings settings) {

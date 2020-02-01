@@ -1,22 +1,25 @@
 /*
- * Copyright (c) Squaredesk GmbH and Oliver Dotzauer.
+ * Copyright (c) 2020 Squaredesk GmbH and Oliver Dotzauer.
  *
  * This program is distributed under the squaredesk open source license. See the LICENSE file
  * distributed with this work for additional information regarding copyright ownership. You may also
  * obtain a copy of the license at
  *
  *   https://squaredesk.ch/license/oss/LICENSE
+ *
  */
 
 package ch.squaredesk.nova;
 
 import ch.squaredesk.nova.events.EventBus;
 import ch.squaredesk.nova.events.EventDispatchConfig;
+import ch.squaredesk.nova.events.EventDispatchMode;
 import ch.squaredesk.nova.filesystem.Filesystem;
 import ch.squaredesk.nova.metrics.CpuMeter;
 import ch.squaredesk.nova.metrics.GarbageCollectionMeter;
 import ch.squaredesk.nova.metrics.MemoryMeter;
 import ch.squaredesk.nova.metrics.Metrics;
+import io.reactivex.BackpressureStrategy;
 
 public class Nova {
 
@@ -27,9 +30,15 @@ public class Nova {
 
     private Nova(Builder builder) {
         this.identifier = builder.identifier;
-        this.eventBus = new EventBus(identifier, builder.eventDispatchConfig, builder.metrics);
         this.filesystem = new Filesystem();
         this.metrics = builder.metrics;
+        EventDispatchConfig dispatchConfig = new EventDispatchConfig(
+                builder.defaultBackpressureStrategy,
+                builder.warnOnUnhandledEvents,
+                builder.eventDispatchMode,
+                builder.parallelism
+        );
+        this.eventBus = new EventBus(identifier, dispatchConfig, builder.metrics);
     }
 
     public static Builder builder() {
@@ -40,7 +49,10 @@ public class Nova {
         private String identifier = "";
         private Metrics metrics;
         private boolean captureJvmMetrics = true;
-        private EventDispatchConfig eventDispatchConfig;
+        private boolean warnOnUnhandledEvents = false;
+        private BackpressureStrategy defaultBackpressureStrategy = BackpressureStrategy.BUFFER;
+        private EventDispatchMode eventDispatchMode = EventDispatchMode.BLOCKING;
+        private int parallelism = 0;
 
         private Builder() {
         }
@@ -50,8 +62,23 @@ public class Nova {
             return this;
         }
 
-        public Builder setEventDispatchConfig(EventDispatchConfig eventDispatchConfig) {
-            this.eventDispatchConfig = eventDispatchConfig;
+        public Builder setParallelism(int parallelism) {
+            this.parallelism = parallelism;
+            return this;
+        }
+
+        public Builder setEventDispatchMode(EventDispatchMode eventDispatchMode) {
+            this.eventDispatchMode = eventDispatchMode;
+            return this;
+        }
+
+        public Builder setDefaultBackpressureStrategy(BackpressureStrategy defaultBackpressureStrategy) {
+            this.defaultBackpressureStrategy = defaultBackpressureStrategy;
+            return this;
+        }
+
+        public Builder setWarnOnUnhandledEvents(boolean warnOnUnhandledEvents) {
+            this.warnOnUnhandledEvents = warnOnUnhandledEvents;
             return this;
         }
 
