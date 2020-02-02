@@ -15,7 +15,7 @@ import javax.jms.Destination;
 import javax.jms.Message;
 
 public class OutgoingMessageMetaData extends ch.squaredesk.nova.comm.sending.OutgoingMessageMetaData<Destination, SendInfo> {
-    public Message jmsMessage;
+    private Message jmsMessage;
 
     public OutgoingMessageMetaData(Destination destination) {
         this(destination, null);
@@ -28,5 +28,9 @@ public class OutgoingMessageMetaData extends ch.squaredesk.nova.comm.sending.Out
     OutgoingMessageMetaData setJmsMessage(Message jmsMessage) {
         this.jmsMessage = jmsMessage;
         return this;
+    }
+
+    public Message getJmsMessage() {
+        return jmsMessage;
     }
 }

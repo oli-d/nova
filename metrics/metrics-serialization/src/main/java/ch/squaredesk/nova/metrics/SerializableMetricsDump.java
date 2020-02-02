@@ -15,8 +15,17 @@ import java.util.Map;
 import java.util.Objects;
 
 public class SerializableMetricsDump {
-    public long timestamp;
-    public Map<String, Map<String, Object>> metrics;
+    private long timestamp;
+
+    public long getTimestamp() {
+        return timestamp;
+    }
+
+    public Map<String, Map<String, Object>> getMetrics() {
+        return metrics;
+    }
+
+    private Map<String, Map<String, Object>> metrics;
 
     public SerializableMetricsDump() {
     }

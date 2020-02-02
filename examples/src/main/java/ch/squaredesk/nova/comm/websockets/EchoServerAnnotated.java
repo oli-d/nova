@@ -52,7 +52,8 @@ public class EchoServerAnnotated implements CommandLineRunner {
         try {
             TimeUnit.SECONDS.sleep(5);
         } catch (InterruptedException e) {
-            e.printStackTrace();
+            // Restore interrupted state...
+            Thread.currentThread().interrupt();
         }
 
         webSocketAdapter.shutdown().get();

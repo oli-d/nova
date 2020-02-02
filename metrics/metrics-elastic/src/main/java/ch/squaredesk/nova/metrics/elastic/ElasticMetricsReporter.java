@@ -184,9 +184,9 @@ public class ElasticMetricsReporter implements Consumer<MetricsDump> {
     }
 
     Single<BulkRequest> requestFor(SerializableMetricsDump metricsDump) {
-        String timestampInUtc = timestampInUtc(metricsDump.timestamp);
+        String timestampInUtc = timestampInUtc(metricsDump.getTimestamp());
 
-        Observable<Map<String, Object>> enrichedMetrics = Observable.fromIterable(metricsDump.metrics.entrySet())
+        Observable<Map<String, Object>> enrichedMetrics = Observable.fromIterable(metricsDump.getMetrics().entrySet())
                 .map(entry -> {
                     Map<String, Object> map = entry.getValue();
                     map.put("name", entry.getKey());

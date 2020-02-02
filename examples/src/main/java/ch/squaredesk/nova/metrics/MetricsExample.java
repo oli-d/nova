@@ -28,6 +28,8 @@ import java.util.Random;
  */
 @SpringBootApplication
 public class MetricsExample implements CommandLineRunner {
+    private static Random rand = new Random();
+
     @Autowired
     Nova nova;
 
@@ -37,12 +39,13 @@ public class MetricsExample implements CommandLineRunner {
 
     private static void startEventCreation(final EventBus eventBus) {
         Thread t = new Thread(() -> {
-            Random rand = new Random();
             for (;;) {
                 long sleepTimeMillis = (long) (rand.nextDouble() * 1000);
                 try {
                     Thread.sleep(sleepTimeMillis);
                 } catch (InterruptedException e) {
+                    // Restore interrupted state...
+                    Thread.currentThread().interrupt();
                 }
                 eventBus.emit("Event");
                 eventBus.emit("Event2");
@@ -78,7 +81,7 @@ public class MetricsExample implements CommandLineRunner {
         nova.eventBus.on("Event2").subscribe();
         startEventCreation(nova.eventBus);
 
-        new BufferedReader(new InputStreamReader(System.in)).readLine();
+        String s = new BufferedReader(new InputStreamReader(System.in)).readLine();
     }
 
 }

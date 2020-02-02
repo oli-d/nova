@@ -14,8 +14,8 @@ package ch.squaredesk.nova.comm;
 import ch.squaredesk.nova.metrics.Metrics;
 
 public abstract class CommAdapterBuilder<TransportMessageType, CommAdapterType extends CommAdapter<TransportMessageType>> {
-    public MessageTranscriber<TransportMessageType> messageTranscriber;
-    public Metrics metrics;
+    protected MessageTranscriber<TransportMessageType> messageTranscriber;
+    protected Metrics metrics;
 
     protected CommAdapterBuilder() {
     }
@@ -48,5 +48,13 @@ public abstract class CommAdapterBuilder<TransportMessageType, CommAdapterType e
         baseValidate();
         validate();
         return createInstance();
+    }
+
+    public MessageTranscriber<TransportMessageType> getMessageTranscriber() {
+        return messageTranscriber;
+    }
+
+    public Metrics getMetrics() {
+        return metrics;
     }
 }

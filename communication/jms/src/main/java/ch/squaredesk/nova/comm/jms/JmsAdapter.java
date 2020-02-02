@@ -47,7 +47,7 @@ public class JmsAdapter extends CommAdapter<String> {
 
 
     JmsAdapter(Builder builder) {
-        super(builder.messageTranscriber, builder.metrics);
+        super(builder.getMessageTranscriber(), builder.getMetrics());
         this.messageReceiver = builder.messageReceiver;
         this.messageSender = builder.messageSender;
         this.rpcServer = builder.rpcServer;

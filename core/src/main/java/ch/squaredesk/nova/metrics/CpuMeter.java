@@ -11,6 +11,9 @@
 
 package ch.squaredesk.nova.metrics;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.lang.management.ManagementFactory;
 import java.lang.management.OperatingSystemMXBean;
 import java.lang.reflect.Method;
@@ -19,6 +22,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class CpuMeter implements CompoundMetric {
+    private static final Logger logger = LoggerFactory.getLogger(CpuMeter.class);
+
     private final OperatingSystemMXBean operatingSystemMXBean = ManagementFactory.getOperatingSystemMXBean();
     private final Method systemCpuLoadRetrievalMethod;
     private final Method processCpuLoadRetrievalMethod;
@@ -71,7 +76,7 @@ public class CpuMeter implements CompoundMetric {
         try {
             return (double) m.invoke(operatingSystemMXBean);
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("Failed to invoke method {}", m.getName(), e);
             return -1;
         }
     }

@@ -39,7 +39,7 @@ public class HttpAdapter extends CommAdapter<String> implements HttpServerInstan
 
 
     private HttpAdapter(Builder builder) {
-        super(builder.messageTranscriber, builder.metrics);
+        super(builder.getMessageTranscriber(), builder.getMetrics());
         this.rpcClient = builder.rpcClient;
         this.rpcServer = builder.rpcServer;
         this.defaultRequestTimeout = builder.defaultRequestTimeout;

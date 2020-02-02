@@ -39,7 +39,8 @@ public class EchoHandler {
             try {
                 Thread.sleep(1500);
             } catch (InterruptedException e) {
-                e.printStackTrace();
+                // Restore interrupted state...
+                Thread.currentThread().interrupt();
             }
             Response res = Response.status(555).header("myHeader", "myHeaderValue").entity(textFromCallerToEcho).build();
             response.resume(res);

@@ -33,7 +33,7 @@ public class ReflectionHelper {
         Type genericInterfaceType = Arrays.stream(instanceToExamine.getClass().getGenericInterfaces())
                 .filter(t -> t.getTypeName().contains(implementedInterfaceClass.getName()))
                 .findFirst()
-                .get();
+                .orElse(null);
 
         if (genericInterfaceType instanceof ParameterizedType) {
             Type[] actualTypes = ((ParameterizedType) genericInterfaceType).getActualTypeArguments();

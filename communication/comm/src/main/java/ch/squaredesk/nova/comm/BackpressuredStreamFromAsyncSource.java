@@ -66,8 +66,8 @@ public class BackpressuredStreamFromAsyncSource<MessageType> {
         try {
             queue.put(element);
         } catch (InterruptedException e) {
-            // noop, someone interrupted us
-        }
+            // Restore interrupted state...
+            Thread.currentThread().interrupt();        }
     }
 
     public void onComplete() {
@@ -84,6 +84,7 @@ public class BackpressuredStreamFromAsyncSource<MessageType> {
                             element = queueShutdownPair._1.poll(100, TimeUnit.MILLISECONDS);
                         } catch (InterruptedException e) {
                             emitter.onComplete();
+                            Thread.currentThread().interrupt();
                             return;
                         }
                     }

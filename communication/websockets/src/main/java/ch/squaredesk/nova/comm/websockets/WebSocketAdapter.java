@@ -43,12 +43,12 @@ public class WebSocketAdapter extends CommAdapter<String> implements HttpServerI
     private final ConcurrentHashMap<String, BehaviorSubject<WebSocket>> connectingWebSocketsByDestination = new ConcurrentHashMap<>();
 
     private WebSocketAdapter(Builder builder) {
-        super(builder.messageTranscriber, builder.metrics);
-        this.metricsCollector = new MetricsCollector(builder.identifier, builder.metrics);
+        super(builder.getMessageTranscriber(), builder.getMetrics());
+        this.metricsCollector = new MetricsCollector(builder.identifier, builder.getMetrics());
         setHttpServer(builder.httpServer);
         this.httpClient = builder.httpClient;
         this.serverEndpointFactory = new ServerEndpointFactory();
-        this.clientEndpointFactory = new WebSocketFactory(builder.messageTranscriber);
+        this.clientEndpointFactory = new WebSocketFactory(builder.getMessageTranscriber());
     }
 
     private void setHttpServer(HttpServer httpServer) {
@@ -129,7 +129,7 @@ public class WebSocketAdapter extends CommAdapter<String> implements HttpServerI
     }
 
     public static class Builder extends CommAdapterBuilder<String, WebSocketAdapter>{
-        public String identifier;
+        private String identifier;
         private HttpServer httpServer;
         private AsyncHttpClient httpClient;
 
@@ -156,7 +156,7 @@ public class WebSocketAdapter extends CommAdapter<String> implements HttpServerI
             if (httpClient == null) {
                 httpClient = new AsyncHttpClient();
             }
-            if (messageTranscriber == null) {
+            if (getMessageTranscriber() == null) {
                 messageTranscriber = new DefaultMessageTranscriberForStringAsTransportType();
             }
             return new WebSocketAdapter(this);

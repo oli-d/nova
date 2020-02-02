@@ -58,6 +58,14 @@
         </repository>
     </distributionManagement>
 
+    <properties>
+        <sonar.projectKey>oli-d_nova</sonar.projectKey>
+        <sonar.organization>squaredesk</sonar.organization>
+        <sonar.host.url>https://sonarcloud.io</sonar.host.url>
+        <sonar.login>49a98d07120953f1bbac3f245c6fc3893d0ca56d</sonar.login>
+        <sonar.java.source>1.8</sonar.java.source>
+    </properties>
+
     <dependencyManagement>
         <dependencies>
             <dependency>

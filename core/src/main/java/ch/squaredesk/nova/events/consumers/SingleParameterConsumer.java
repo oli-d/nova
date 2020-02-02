@@ -17,6 +17,8 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Arrays;
 
+import static ch.squaredesk.nova.events.consumers.ParamHelper.elementAtIndex;
+
 @FunctionalInterface
 public interface SingleParameterConsumer<P1>  extends Consumer<Object[]> {
 
@@ -24,16 +26,8 @@ public interface SingleParameterConsumer<P1>  extends Consumer<Object[]> {
 
     @SuppressWarnings("unchecked")
     default void accept(Object... data) {
-        P1 p1 = null;
-        if (data != null && data.length > 0) {
-            switch (data.length) {
-                default:
-                case 1: p1 = (P1)data[0];
-            }
-        }
-
         try {
-            consume(p1);
+            consume((P1) elementAtIndex(0, data));
         } catch (Exception e) {
             LoggerFactory
                     .getLogger("ch.squaredesk.nova.event.consumers")

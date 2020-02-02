@@ -67,11 +67,12 @@ public class MessageReceiver
             try {
                 Thread.currentThread().sleep(pollTimeout.toMillis());
             } catch (InterruptedException e) {
-                // ignored
+                // Restore interrupted state...
+                Thread.currentThread().interrupt();
             }
         };
 
-        BiFunction<Set<String>, Pair<KafkaConsumer<String, String>, HashSet<String>>, Boolean> subscriptionMaintainer =
+    BiFunction<Set<String>, Pair<KafkaConsumer<String, String>, HashSet<String>>, Boolean> subscriptionMaintainer =
                 (subscribedTopics, consumerTopicsPair) -> {
                     if (!consumerTopicsPair._2.equals(subscribedTopics)) {
                         logger.debug("Changing topic subscriptions to " + subscribedTopics);

@@ -154,7 +154,8 @@ public abstract class NovaService {
             try {
                 shutdownLatch.await();
             } catch (InterruptedException e) {
-                // noop
+                // Restore interrupted state...
+                Thread.currentThread().interrupt();
             }
         }
 

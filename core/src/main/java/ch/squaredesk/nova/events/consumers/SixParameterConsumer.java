@@ -17,6 +17,8 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Arrays;
 
+import static ch.squaredesk.nova.events.consumers.ParamHelper.elementAtIndex;
+
 @FunctionalInterface
 public interface SixParameterConsumer<
         P1,
@@ -31,26 +33,15 @@ public interface SixParameterConsumer<
 
     @SuppressWarnings("unchecked")
     default void accept(Object... data) {
-        P1 p1 = null;
-        P2 p2 = null;
-        P3 p3 = null;
-        P4 p4 = null;
-        P5 p5 = null;
-        P6 p6 = null;
-        if (data != null && data.length > 0) {
-            switch (data.length) {
-                default:
-                case 6: p6 = (P6)data[5];
-                case 5: p5 = (P5)data[4];
-                case 4: p4 = (P4)data[3];
-                case 3: p3 = (P3)data[2];
-                case 2: p2 = (P2)data[1];
-                case 1: p1 = (P1)data[0];
-            }
-        }
-
         try {
-            accept(p1, p2, p3, p4, p5, p6);
+            accept(
+                    (P1) elementAtIndex(0, data),
+                    (P2) elementAtIndex(1, data),
+                    (P3) elementAtIndex(2, data),
+                    (P4) elementAtIndex(3, data),
+                    (P5) elementAtIndex(4, data),
+                    (P6) elementAtIndex(5, data)
+            );
         } catch (Exception e) {
             LoggerFactory
                     .getLogger("ch.squaredesk.nova.event.consumers")
