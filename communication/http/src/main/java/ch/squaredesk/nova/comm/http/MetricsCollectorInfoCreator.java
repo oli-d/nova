@@ -15,11 +15,13 @@ import java.net.URL;
 import java.util.Optional;
 
 public class MetricsCollectorInfoCreator {
+    private MetricsCollectorInfoCreator() {
+    }
 
     public static String createInfoFor(URL url) {
         return Optional.ofNullable(url)
                 .map(u -> {
-                    String path = u.getPath().replaceAll("/", ".");
+                    String path = u.getPath().replace("/", ".");
                     if (path.startsWith(".")) {
                         return path.substring(1);
                     } else {

@@ -15,15 +15,12 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 public class DefaultMessageTranscriberForStringAsTransportType extends MessageTranscriber<String> {
-    private final ObjectMapper objectMapper;
-
     public DefaultMessageTranscriberForStringAsTransportType() {
         this(instantiateObjectMapper());
     }
 
     public DefaultMessageTranscriberForStringAsTransportType(ObjectMapper objectMapper) {
         super(objectMapper::writeValueAsString, objectMapper::readValue);
-        this.objectMapper = objectMapper;
         registerClassSpecificTranscribers(String.class, s->s, s->s);
     }
 

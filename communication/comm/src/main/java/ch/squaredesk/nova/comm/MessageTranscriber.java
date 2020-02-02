@@ -18,35 +18,35 @@ import io.reactivex.functions.Function;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class MessageTranscriber<TransportMessageType>  {
-    private Map<Class<?>, Function<?, TransportMessageType>> specificOutgoingTranscribers = new ConcurrentHashMap<>();
-    private Map<Class<?>, Function<TransportMessageType, ?>> specificIncomingTranscribers = new ConcurrentHashMap<>();
-    private OutgoingMessageTranscriber<TransportMessageType> defaultOutgoingMessageTranscriber;
-    private IncomingMessageTranscriber<TransportMessageType> defaultIncomingMessageTranscriber;
+public class MessageTranscriber<T>  {
+    private Map<Class<?>, Function<?, T>> specificOutgoingTranscribers = new ConcurrentHashMap<>();
+    private Map<Class<?>, Function<T, ?>> specificIncomingTranscribers = new ConcurrentHashMap<>();
+    private OutgoingMessageTranscriber<T> defaultOutgoingMessageTranscriber;
+    private IncomingMessageTranscriber<T> defaultIncomingMessageTranscriber;
 
-    public MessageTranscriber(OutgoingMessageTranscriber<TransportMessageType> defaultOutgoingMessageTranscriber,
-                              IncomingMessageTranscriber<TransportMessageType> defaultIncomingMessageTranscriber) {
+    public MessageTranscriber(OutgoingMessageTranscriber<T> defaultOutgoingMessageTranscriber,
+                              IncomingMessageTranscriber<T> defaultIncomingMessageTranscriber) {
         this.defaultIncomingMessageTranscriber = defaultIncomingMessageTranscriber;
         this.defaultOutgoingMessageTranscriber = defaultOutgoingMessageTranscriber;
     }
 
-    public <T> Function<T, TransportMessageType> getOutgoingMessageTranscriber(T anObject) {
+    public <U> Function<U, T> getOutgoingMessageTranscriber(U anObject) {
         if (anObject == null) {
             return null;
         }
-        Class<T> specificType = (Class<T>) anObject.getClass();
+        Class<U> specificType = (Class<U>) anObject.getClass();
         return getOutgoingMessageTranscriber(specificType);
     }
 
-    public <T> Function<T, TransportMessageType> getOutgoingMessageTranscriber(Class<T> typeToMarshal) {
+    public <U> Function<U, T> getOutgoingMessageTranscriber(Class<U> typeToMarshal) {
         return getSpecificOutgoingTranscriber(typeToMarshal);
     }
 
-    public <T> Function<TransportMessageType, T> getIncomingMessageTranscriber(Class<T> typeToUnmarshalTo) {
+    public <U> Function<T, U> getIncomingMessageTranscriber(Class<U> typeToUnmarshalTo) {
         return getSpecificIncomingTranscriber(typeToUnmarshalTo);
     }
 
-    protected <T> Function<T, TransportMessageType> createDefaultOutgoingMessageTranscriberFor(Class<T> typeToMarshal) {
+    protected <U> Function<U, T> createDefaultOutgoingMessageTranscriberFor(Class<U> typeToMarshal) {
         if (defaultOutgoingMessageTranscriber != null) {
             return defaultOutgoingMessageTranscriber.castToFunction(typeToMarshal);
         } else {
@@ -54,7 +54,7 @@ public class MessageTranscriber<TransportMessageType>  {
         }
     }
 
-    protected <T> Function<TransportMessageType, T> createDefaultIncomingMessageTranscriberFor(Class<T> typeToUnmarshalTo) {
+    protected <U> Function<T, U> createDefaultIncomingMessageTranscriberFor(Class<U> typeToUnmarshalTo) {
         if (defaultIncomingMessageTranscriber != null) {
             return defaultIncomingMessageTranscriber.castToFunction(typeToUnmarshalTo);
         } else {
@@ -62,23 +62,23 @@ public class MessageTranscriber<TransportMessageType>  {
         }
     }
 
-    private <T> Function<T, TransportMessageType> getSpecificOutgoingTranscriber (Class<T> targetClass) {
-        return (Function<T, TransportMessageType>) specificOutgoingTranscribers.computeIfAbsent(
+    private <U> Function<U, T> getSpecificOutgoingTranscriber (Class<U> targetClass) {
+        return (Function<U, T>) specificOutgoingTranscribers.computeIfAbsent(
                 targetClass,
-                theClass -> createDefaultOutgoingMessageTranscriberFor(theClass)
+                this::createDefaultOutgoingMessageTranscriberFor
         );
     }
 
-    private <T> Function<TransportMessageType, T> getSpecificIncomingTranscriber (Class<T> targetClass) {
-        return (Function<TransportMessageType, T>) specificIncomingTranscribers.computeIfAbsent(
+    private <U> Function<T, U> getSpecificIncomingTranscriber (Class<U> targetClass) {
+        return (Function<T, U>) specificIncomingTranscribers.computeIfAbsent(
                 targetClass,
-                theClass -> createDefaultIncomingMessageTranscriberFor(theClass)
+                this::createDefaultIncomingMessageTranscriberFor
         );
     }
 
-    public <T> void registerClassSpecificTranscribers (Class<T> targetClass,
-                                                   Function<T, TransportMessageType> outgoingMessageTranscriber,
-                                                   Function<TransportMessageType, T> incomingMessageTranscriber) {
+    public <U> void registerClassSpecificTranscribers (Class<U> targetClass,
+                                                       Function<U, T> outgoingMessageTranscriber,
+                                                       Function<T, U> incomingMessageTranscriber) {
         if (targetClass.equals(Object.class)) {
             // Does not work, since the call objectMapper.readValue(string, Object.class) will always return a String.
             throw new IllegalArgumentException("unmarshaller for class java.lang.Object is not supported");

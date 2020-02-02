@@ -24,6 +24,7 @@ public class RpcInvocation<IncomingMessageType>
     private final MessageTranscriber<String> transcriber;
 
     public RpcInvocation(IncomingMessage<IncomingMessageType, RequestMessageMetaData> request,
+                         // TODO: make this a BiConsumer instead of a Consumer<Pair>
                          Consumer<Pair<String, ReplyInfo>> replyConsumer,
                          Consumer<Throwable> errorConsumer,
                          MessageTranscriber<String> transcriber) {

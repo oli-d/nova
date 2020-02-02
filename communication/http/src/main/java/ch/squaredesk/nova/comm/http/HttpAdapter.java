@@ -784,6 +784,7 @@ public class HttpAdapter extends CommAdapter<String> implements HttpServerInstan
             return this;
         }
 
+        @Override
         public Builder setMessageTranscriber(MessageTranscriber<String> val) {
             super.setMessageTranscriber(val);
             return this;
@@ -804,7 +805,9 @@ public class HttpAdapter extends CommAdapter<String> implements HttpServerInstan
             return this;
         }
 
+        @Override
         protected void validate() {
+            // nothing to validate
         }
 
         protected HttpAdapter createInstance() {

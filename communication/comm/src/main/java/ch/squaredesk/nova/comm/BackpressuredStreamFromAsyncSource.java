@@ -38,10 +38,10 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * we think that the performance is tolerable since request processing will anyway be orders of magnitude slower than the
  * pure dispatching.
  */
-public class BackpressuredStreamFromAsyncSource<MessageType> {
+public class BackpressuredStreamFromAsyncSource<T> {
     private static final int DEFAULT_MESSAGE_BUFFER_SIZE = 1;
 
-    private final BlockingQueue<MessageType> queue;
+    private final BlockingQueue<T> queue;
     private final Runnable closeAction;
     private final AtomicBoolean shutdown = new AtomicBoolean(false);
 
@@ -58,7 +58,7 @@ public class BackpressuredStreamFromAsyncSource<MessageType> {
         this.closeAction = closeAction;
     }
 
-    public void onNext(MessageType element) {
+    public void onNext(T element) {
         if (shutdown.get()) {
             throw new IllegalStateException("Stream closed");
         }
@@ -74,11 +74,11 @@ public class BackpressuredStreamFromAsyncSource<MessageType> {
         shutdown.set(true);
     }
 
-    public Flowable<MessageType> toFlowable() {
-        Flowable<MessageType> theFlowable = Flowable.generate(
+    public Flowable<T> toFlowable() {
+        Flowable<T> theFlowable = Flowable.generate(
                 () -> new Pair<>(queue, shutdown),
                 (queueShutdownPair, emitter) -> {
-                    MessageType element = null;
+                    T element = null;
                     while (!queueShutdownPair._2.get() && element == null) {
                         try {
                             element = queueShutdownPair._1.poll(100, TimeUnit.MILLISECONDS);
