@@ -1,6 +1,15 @@
+/*
+ * Copyright (c) 2020 Squaredesk GmbH and Oliver Dotzauer.
+ *
+ * This program is distributed under the squaredesk open source license. See the LICENSE file
+ * distributed with this work for additional information regarding copyright ownership. You may also
+ * obtain a copy of the license at
+ *
+ *   https://squaredesk.ch/license/oss/LICENSE
+ *
+ */
 package ch.squaredesk.nova.comm.http;
 
-import io.reactivex.Single;
 import org.glassfish.grizzly.http.Method;
 import org.glassfish.grizzly.http.server.Request;
 import org.glassfish.grizzly.http.server.Response;
@@ -14,7 +23,7 @@ public class RequestResponseInfoHolder<T> {
     public final Request request;
     public final Response response;
     public final RequestMessageMetaData metaData;
-    public final Single<T> responseObject;
+    public final T requestObject;
 
     public RequestResponseInfoHolder(URL destination, Request request, Response response) {
         this.request = request;
@@ -22,17 +31,17 @@ public class RequestResponseInfoHolder<T> {
 
         RequestInfo requestInfo = Optional.ofNullable(request).map(RequestResponseInfoHolder::httpSpecificInfoFrom).orElse(null);
         metaData = new RequestMessageMetaData(destination, requestInfo);
-        this.responseObject = null;
+        this.requestObject = null;
     }
 
-    private RequestResponseInfoHolder(Request request, Response response, RequestMessageMetaData metaData, Single<T> responseAsString) {
+    private RequestResponseInfoHolder(Request request, Response response, RequestMessageMetaData metaData, T requestObject) {
         this.request = request;
         this.response = response;
-        this.responseObject = responseAsString;
+        this.requestObject = requestObject;
         this.metaData = metaData;
     }
 
-    public <U> RequestResponseInfoHolder<U> addRequestObject(Single<U> responseObject) {
+    public <U> RequestResponseInfoHolder<U> addRequestObject(U responseObject) {
         return new RequestResponseInfoHolder<U>(this.request, this.response, this.metaData, responseObject);
     }
 

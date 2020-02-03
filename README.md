@@ -1,8 +1,20 @@
 # Nova
 
 [![Maven Central](https://maven-badges.herokuapp.com/maven-central/ch.squaredesk.nova/bom/badge.svg?style=plastic)](https://maven-badges.herokuapp.com/maven-central/ch.squaredesk.nova/bom)
-[![Codeship Build Status](https://app.codeship.com/projects/2283d970-1edb-0135-0041-4ec1c01dd1d7/status?branch=master)](https://app.codeship.com/projects/220890)
+[![Codeship Status for oli-d/nova](https://app.codeship.com/projects/2283d970-1edb-0135-0041-4ec1c01dd1d7/status?branch=master)](https://app.codeship.com/projects/220890)
 [![Codacy Badge](https://api.codacy.com/project/badge/Grade/46d98c14e90b472b8bc550deb0869c72)](https://www.codacy.com/app/oli-d/nova?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=oli-d/nova&amp;utm_campaign=Badge_Grade)
+
+[![Quality gate](https://sonarcloud.io/api/project_badges/quality_gate?project=oli-d_nova)](https://sonarcloud.io/dashboard?id=oli-d_nova)
+
+[![Security Rating](https://sonarcloud.io/api/project_badges/measure?project=oli-d_nova&metric=security_rating)](https://sonarcloud.io/dashboard?id=oli-d_nova)
+[![Reliability Rating](https://sonarcloud.io/api/project_badges/measure?project=oli-d_nova&metric=reliability_rating)](https://sonarcloud.io/dashboard?id=oli-d_nova)
+[![Maintainability Rating](https://sonarcloud.io/api/project_badges/measure?project=oli-d_nova&metric=sqale_rating)](https://sonarcloud.io/dashboard?id=oli-d_nova)
+
+[![Lines of Code](https://sonarcloud.io/api/project_badges/measure?project=oli-d_nova&metric=ncloc)](https://sonarcloud.io/dashboard?id=oli-d_nova)
+[![Vulnerabilities](https://sonarcloud.io/api/project_badges/measure?project=oli-d_nova&metric=vulnerabilities)](https://sonarcloud.io/dashboard?id=oli-d_nova)
+[![SonarCloud Bugs](https://sonarcloud.io/api/project_badges/measure?project=oli-d_nova&metric=bugs)](https://sonarcloud.io/component_measures/metric/reliability_rating/list?id=oli-d_nova)
+[![Code Smells](https://sonarcloud.io/api/project_badges/measure?project=oli-d_nova&metric=code_smells)](https://sonarcloud.io/dashboard?id=oli-d_nova)
+[![Technical Debt](https://sonarcloud.io/api/project_badges/measure?project=oli-d_nova&metric=sqale_index)](https://sonarcloud.io/dashboard?id=oli-d_nova)
 
 ### 1. Why?
 The goal of this project is to provide a small and easy-to-use 

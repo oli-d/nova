@@ -28,12 +28,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import static org.awaitility.Awaitility.await;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.containsString;
-import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 @Tag("medium")
@@ -79,6 +79,11 @@ class RpcServerTest {
         });
 
         await().atMost(20, TimeUnit.SECONDS).until(responses::size, is(numRequests));
+        List<String> expectedResults = IntStream.range(0, numRequests)
+                .mapToObj(i -> "description " + i)
+                .collect(Collectors.toList());
+        assertThat(responses.containsAll(expectedResults), is(true));
+
     }
 
     private String createStringOfLength(int length) {

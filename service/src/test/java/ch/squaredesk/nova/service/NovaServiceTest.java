@@ -18,10 +18,10 @@ import org.junit.jupiter.api.Test;
 
 import java.net.InetAddress;
 import java.time.Duration;
+import java.util.HashMap;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.containsString;
-import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 @Tag("medium")
@@ -130,15 +130,11 @@ class NovaServiceTest {
     @Test
     void calculatedServiceNameUsedForMetricDumpsIfNotSpecified() {
         MyService sut = new MyService();
+        sut.start();
 
-        /*
-        assertThat(additionalInfoForMetricsDump.stream().anyMatch(p -> "hostName".equals(p._1)), is(true));
-        assertThat(additionalInfoForMetricsDump.stream().anyMatch(p -> "hostAddress".equals(p._1)), is(true));
-        assertThat(additionalInfoForMetricsDump.stream().anyMatch(p -> "serviceName".equals(p._1) && "MyService".equals(p._2)), is(true));
-        assertThat(additionalInfoForMetricsDump.stream().anyMatch(p -> "serviceInstanceId".equals(p._1) && p._2 != null), is(true));
-        assertThat(additionalInfoForMetricsDump.stream().anyMatch(p -> "serviceInstanceName".equals(p._1) && p._2 != null), is(true));
+        MetricsDump metricsDump = sut.dumpMetricsContinuously(Duration.ofMillis(5)).first(new MetricsDump(new HashMap<>())).blockingGet();
 
-         */
+        assertThat(metricsDump.additionalInfo.stream().anyMatch(p -> "serviceName".equals(p._1) && "MyService".equals(p._2)), is(true));
     }
 
     public static class MyBrokenInitService extends MyService {

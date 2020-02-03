@@ -119,11 +119,10 @@ public class RestServerStarter implements ApplicationListener<ContextRefreshedEv
             }
             resourceConfig.register(SpecificRestObjectMapperProvider.class);
             resourceConfig.registerInstances(restBeanPostprocessor.handlerBeans);
-            // resourceConfig.packages(true, restPackagesToScanForHandlers);
 
             if (captureRestMetrics && nova != null) {
                 RequestEventListener requestEventListener = event -> {
-                    String eventId = event.getContainerRequest().getPath(true).replaceAll("/", ".");
+                    String eventId = event.getContainerRequest().getPath(true).replace("/", ".");
                     if (event.getType() == RequestEvent.Type.RESOURCE_METHOD_START) {
                         Timer timer = nova.metrics.getTimer("rest", eventId);
                         event.getContainerRequest().setProperty("metricsContext", timer.time());
@@ -140,6 +139,7 @@ public class RestServerStarter implements ApplicationListener<ContextRefreshedEv
                 resourceConfig.register(new ApplicationEventListener() {
                     @Override
                     public void onEvent(ApplicationEvent event) {
+                        // nothing to do
                     }
 
                     @Override
@@ -179,7 +179,7 @@ public class RestServerStarter implements ApplicationListener<ContextRefreshedEv
             Map <String, ErrorPageGenerator> defaultErrorPageGenerators =
                     contextRefreshedEvent.getApplicationContext().getBeansOfType(ErrorPageGenerator.class);
             if (defaultErrorPageGenerators.size() > 1) {
-                throw new RuntimeException("Unable to create and start REST server, since more than one DefaultErrorPageGenerator beans were found: " +
+                throw new BeanInitializationException("Unable to create and start REST server, since more than one DefaultErrorPageGenerator beans were found: " +
                         defaultErrorPageGenerators.values().stream().map(bean -> bean.getClass().getSimpleName()).collect(Collectors.joining(",")));
             }
             URI serverAddress = UriBuilder.fromPath(

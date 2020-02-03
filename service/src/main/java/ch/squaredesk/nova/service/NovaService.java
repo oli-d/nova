@@ -127,7 +127,7 @@ public abstract class NovaService {
         }
 
         String serviceNameForMetrics = this.serviceName;
-        if (serviceNameForMetrics == null) {
+        if (serviceNameForMetrics == null || serviceNameForMetrics.trim().isEmpty()) {
             serviceNameForMetrics = getClass().getSimpleName();
             logger.info("The service name was not provided, so for the metric dumps we derived it from the class name: {} ", serviceNameForMetrics);
         }

@@ -18,8 +18,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.sameInstance;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class MessageTranscriberTest {
     private MessageTranscriber<String> sut;
@@ -47,7 +46,9 @@ public class MessageTranscriberTest {
 
     @Test
     void typeSpecificHandlersCanBeNull() throws Exception {
-        sut.registerClassSpecificTranscribers(String.class, null, null);
+        assertDoesNotThrow(
+                () -> sut.registerClassSpecificTranscribers(String.class, null, null)
+        );
     }
 
     @Test

@@ -34,8 +34,7 @@ import java.util.Map;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 class ElasticMetricsReporterTest {
     private ElasticMetricsReporter sut;
@@ -47,7 +46,7 @@ class ElasticMetricsReporterTest {
 
     @Test
     void nothingHappensOnShutdownIfNotConnected() {
-        sut.shutdown();
+        assertDoesNotThrow(sut::shutdown);
     }
 
     @Test

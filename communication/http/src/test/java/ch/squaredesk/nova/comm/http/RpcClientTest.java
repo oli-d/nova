@@ -20,6 +20,7 @@ import com.sun.net.httpserver.HttpExchange;
 import io.reactivex.Single;
 import io.reactivex.observers.TestObserver;
 import io.reactivex.schedulers.Schedulers;
+import org.awaitility.Awaitility;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
@@ -162,7 +163,6 @@ class RpcClientTest {
         }
     }
 
-    @Test
     private Single<Pair<Integer, SimpleHttpServer>> createHttpServer(Consumer<HttpExchange> httpExchangeConsumer) {
         return Single.fromCallable(() -> {
             int[] ports = new int[1];
