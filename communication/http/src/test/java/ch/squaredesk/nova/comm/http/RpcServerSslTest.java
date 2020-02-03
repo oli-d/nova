@@ -31,10 +31,6 @@ import java.security.KeyStore;
 import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
 import java.time.Duration;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.TimeUnit;
-import java.util.stream.IntStream;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.awaitility.Awaitility.await;
@@ -116,21 +112,16 @@ class RpcServerSslTest {
         int numRequests = 5;
         String path = "/bla";
         TestSubscriber<String> subscriber = sut.requests(path, String.class)
-                .map(rpcInvocation -> {
-                    String p = rpcInvocation.request.metaData.details.headers.get("p");
-                    System.out.println("Handling " + p + " on " + Thread.currentThread().getName());
-                    rpcInvocation.complete(p);
-                    return p;
-                })
+                .subscribeOn(Schedulers.io())
+                .map(rpcInvocation -> rpcInvocation.request.metaData.details.headers.get("p"))
                 .test();
-
 
         Observable.range(0, numRequests)
             .subscribe(i -> sendRestRequestInNewThread(path, i));
 
-//        Thread.sleep(100000);
         await().atMost(20, SECONDS).until(subscriber::valueCount, is(numRequests));
     }
+
 
     private void sendRestRequestInNewThread(String path, int i) {
         new Thread(() -> {

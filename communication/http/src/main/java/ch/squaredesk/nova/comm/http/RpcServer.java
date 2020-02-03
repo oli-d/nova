@@ -15,10 +15,13 @@ import ch.squaredesk.nova.comm.DefaultMessageTranscriberForStringAsTransportType
 import ch.squaredesk.nova.comm.MessageTranscriber;
 import ch.squaredesk.nova.comm.retrieving.IncomingMessage;
 import ch.squaredesk.nova.metrics.Metrics;
-import ch.squaredesk.nova.tuples.Pair;
 import com.codahale.metrics.Timer;
-import io.reactivex.*;
+import io.reactivex.BackpressureStrategy;
+import io.reactivex.Flowable;
+import io.reactivex.subjects.PublishSubject;
+import io.reactivex.subjects.Subject;
 import org.glassfish.grizzly.ReadHandler;
+import org.glassfish.grizzly.http.Method;
 import org.glassfish.grizzly.http.io.NIOReader;
 import org.glassfish.grizzly.http.io.NIOWriter;
 import org.glassfish.grizzly.http.server.HttpHandler;
@@ -36,7 +39,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Consumer;
 
 import static ch.squaredesk.nova.comm.http.MetricsCollectorInfoCreator.createInfoFor;
 
@@ -63,6 +65,7 @@ public class RpcServer extends ch.squaredesk.nova.comm.rpc.RpcServer<String, Str
         this.httpServer = httpServer;
     }
 
+
     @Override
     public <T> Flowable<RpcInvocation<T>> requests(String destination, Class<T> targetType) {
         URL destinationAsLocalUrl;
@@ -73,138 +76,93 @@ public class RpcServer extends ch.squaredesk.nova.comm.rpc.RpcServer<String, Str
         }
         Flowable retVal = mapDestinationToIncomingMessages
                 .computeIfAbsent(destination, key -> {
-                    logger.info("Listening to requests on {}", destination);
+                    logger.info("Listening to requests on " + destination);
 
-                    Flowable<RequestResponseInfoHolder> httpInvocations = Flowable.create(
-                        s -> {
-                            HttpHandler httpHandler = new HttpHandler() {
-                                @Override
-                                public void service(Request request, Response response) {
-                                    s.onNext(new RequestResponseInfoHolder(destinationAsLocalUrl, request, response));
-                                }
-                            };
-                            httpServer.getServerConfiguration().addHttpHandler(httpHandler, destination);
-                        },
-                        BackpressureStrategy.BUFFER
-                    );
+                    Subject<RpcInvocation> stream = PublishSubject.create();
+                    stream = stream.toSerialized();
+                    NonBlockingHttpHandler httpHandler = new NonBlockingHttpHandler(destinationAsLocalUrl, messageTranscriber, targetType, stream);
 
-                    return httpInvocations
-                            .map(requestResponseInfoHolder -> {
-                                Single<T> requestObject =
-                                        requestString(requestResponseInfoHolder.request.getNIOReader())
-                                        .map(requestAsString -> requestAsString.trim().isEmpty() ? null : messageTranscriber.getIncomingMessageTranscriber(targetType).apply(requestAsString);
-);
-                                return requestResponseInfoHolder.addRequestObject(requestObject);
+                    httpServer.getServerConfiguration().addHttpHandler(httpHandler, destination);
+
+                    return stream.toFlowable(BackpressureStrategy.BUFFER)
+                            .doFinally(() -> {
+                                mapDestinationToIncomingMessages.remove(destination);
+                                httpServer.getServerConfiguration().removeHttpHandler(httpHandler);
+                                logger.info("Stopped listening to requests on " + destination);
                             })
-                            .map(requestResponseInfoHolder -> {
-                                return new RpcInvocation<>(
-                                        new IncomingMessage<>(incomingMessage, metaData),
-                                        responseWriter,
-                                        error -> {
-                                            logger.error("An error occurred trying to process HTTP request {}", incomingMessage, error);
-                                            try {
-                                                processingErrorConsumer.accept(error);
-                                            } catch (Exception any) {
-                                                logger.error("Failed to send error 500 back to client", any);
-                                            }
-                                        },
-                                        messageTranscriber
-                                );
-                            })
-
-
-                    return Flowable.<RpcInvocation>create(
-                        s -> {
-                            NonBlockingHttpHandler httpHandler = new NonBlockingHttpHandler(destinationAsLocalUrl, messageTranscriber, targetType, s);
-                            httpServer.getServerConfiguration().addHttpHandler(httpHandler, destination);
-                        },
-                        BackpressureStrategy.BUFFER
-                    )
-                    .doFinally(() -> {
-                        mapDestinationToIncomingMessages.remove(destination);
-                        // FIXME: httpServer.getServerConfiguration().removeHttpHandler(httpHandler);
-                        logger.info("Stopped listening to requests on {} ", destination);
-                    })
-                    .share();
+                            .share();
                 });
-        return (Flowable<RpcInvocation<T>>)retVal;
+        return retVal;
     }
 
-    private static Single<String> requestString(NIOReader inputReader) {
-        return Observable.<String>create(
-                s -> inputReader.notifyAvailable(createRequestPartEmittingReadHandler(inputReader, s))
-        )
-        .collect(StringBuffer::new, StringBuffer::append)
-        .map(StringBuffer::toString)
-        ;
+    private static RequestInfo httpSpecificInfoFrom(Request request) throws Exception {
+        Map<String, String> parameters = new HashMap<>();
+        for (Map.Entry<String, String[]> entry : request.getParameterMap().entrySet()) {
+            String[] valueList = entry.getValue();
+            String valueToPass = null;
+            if (valueList != null && valueList.length > 0) {
+                valueToPass = valueList[0];
+            }
+            parameters.put(entry.getKey(), valueToPass);
+        }
+
+        return new RequestInfo(
+                convert(request.getMethod()), parameters);
     }
 
-    private static ReadHandler createRequestPartEmittingReadHandler(NIOReader inputReader, ObservableEmitter<String> observableEmitter) {
-        return new ReadHandler() {
-            @Override
-            public void onDataAvailable() throws Exception {
-                // we are not synchronizing here, since we assume that onDataAvailable() is called sequentially
-                char[] readBuffer = new char[inputReader.readyData()];
-                int numRead = inputReader.read(readBuffer);
-                if (numRead <= 0) {
-                    observableEmitter.onComplete();
-                } else {
-                    observableEmitter.onNext(new String(readBuffer));  // TODO: we do not supply character encoding anywhere
-                }
-
-                inputReader.notifyAvailable(this);
-            }
-
-            @Override
-            public void onError(Throwable t) {
-                observableEmitter.onError(t);
-            }
-
-            @Override
-            public void onAllDataRead() throws Exception {
-                observableEmitter.onComplete();
-            }
-        };
+    private static HttpRequestMethod convert(Method method) {
+        if (method == Method.CONNECT) {
+            return HttpRequestMethod.CONNECT;
+        } else if (method == Method.DELETE) {
+            return HttpRequestMethod.DELETE;
+        } else if (method == Method.GET) {
+            return HttpRequestMethod.GET;
+        } else if (method == Method.HEAD) {
+            return HttpRequestMethod.HEAD;
+        } else if (method == Method.OPTIONS) {
+            return HttpRequestMethod.OPTIONS;
+        } else if (method == Method.PATCH) {
+            return HttpRequestMethod.PATCH;
+        } else if (method == Method.PRI) {
+            return HttpRequestMethod.PRI;
+        } else if (method == Method.POST) {
+            return HttpRequestMethod.POST;
+        } else if (method == Method.PUT) {
+            return HttpRequestMethod.PUT;
+        } else if (method == Method.TRACE) {
+            return HttpRequestMethod.TRACE;
+        } else {
+            throw new IllegalArgumentException("Unsupported HTTP method " + method);
+        }
     }
 
-    private static Consumer<Pair<String, ReplyInfo>> createResponseWriter(Response response, Timer.Context timerContext) {
-        return replyInfoPair -> {
-            response.setCharacterEncoding("utf-8");
-            try (NIOWriter out = response.getNIOWriter()) {
-                response.setContentType("application/json");
-                response.setContentLength(replyInfoPair._1.length());
-                int statusCode;
-                if (replyInfoPair._2 == null) {
-                    statusCode = 200;
-                } else {
-                    replyInfoPair._2.headerParams.forEach(response::setHeader);
-                    statusCode = replyInfoPair._2.statusCode;
-                }
-                response.setStatus(statusCode);
-
-                // write response
-                try (BufferedWriter writer = new BufferedWriter(out)) {
-                    System.out.println("Sending back " + replyInfoPair + " to " + response + " on " + Thread.currentThread().getName());
-                    writer.write(replyInfoPair._1);
-                    System.out.println("            Write complete " + response);
-                }
-
-                metricsCollector.requestCompleted(timerContext, replyInfoPair._1);
-            } catch (Exception e) {
-                metricsCollector.requestCompletedExceptionally(timerContext, createInfoFor(destination), e);
-                logger.error("An error occurred trying to send HTTP response {}", replyInfoPair._2, e);
-                try {
-                    response.sendError(500, "Internal server error");
-                } catch (Exception any) {
-                    logger.error("Failed to send error 500 back to client", any);
-                }
-            } finally {
-                // TODO - this is from the example. Do we want to do something here?
-                response.resume();
-            }
-        };
+    /**
+     * writes reply Object to response body. Assumes that the marshaller creates a String that is a JSON
+     * representation of the reply object
+     */
+    private static void writeResponse(String reply, NIOWriter out) throws Exception {
+        try (BufferedWriter writer = new BufferedWriter(out)) {
+            writer.write(reply);
+        }
     }
 
+    /**
+     * Non-blockingly reads all (non blockingly) available characters of the passed InputReader and
+     * concats those characters to the passed <currentBuffer>, returning a new character array
+     */
+    private static char[] appendAvailableDataToBuffer(NIOReader in, char currentBuffer[]) throws IOException {
+        // we are not synchronizing here, since we assume that onDataAvailable() is called sequentially
+        char[] readBuffer = new char[in.readyData()];
+        int numRead = in.read(readBuffer);
+        if (numRead <= 0) {
+            return currentBuffer;
+        } else {
+            char[] retVal = new char[currentBuffer.length + numRead];
+            System.arraycopy(currentBuffer, 0, retVal, 0, currentBuffer.length);
+            System.arraycopy(readBuffer, 0, retVal, currentBuffer.length, numRead);
+            return retVal;
+        }
+    }
 
     boolean isStarted() {
         return httpServer !=null && httpServer.isStarted();
@@ -232,169 +190,107 @@ public class RpcServer extends ch.squaredesk.nova.comm.rpc.RpcServer<String, Str
         this.httpServer = httpServer;
     }
 
-    private class NonBlockingHttpHandler<T> extends HttpHandler {
+    private class NonBlockingHttpHandler<IncomingMessageType> extends HttpHandler {
         private final URL destination;
         private final MessageTranscriber<String> messageTranscriber;
-        private final Class<T> targetType;
-        private final FlowableEmitter<Pair<Request, Response>> flowableEmitter;
+        private final Class<IncomingMessageType> targetType;
+        private final Subject<RpcInvocation> stream;
 
         private NonBlockingHttpHandler(
                 URL destination,
                 MessageTranscriber<String> messageTranscriber,
-                Class<T> targetType,
-                FlowableEmitter<RpcInvocation<T>> flowableEmitter) {
+                Class<IncomingMessageType> targetType,
+                Subject<RpcInvocation> stream) {
             this.destination = destination;
             this.messageTranscriber = messageTranscriber;
             this.targetType = targetType;
-            this.flowableEmitter = flowableEmitter;
+            this.stream = stream;
         }
 
-        @Override
-        public void service(Request request, Response response) {
-            flowableEmitter.onNext(Pair.create(request, response));
-        }
-
-        public void serviceDeleteMe(Request request, Response response) {
+        public void service(Request request, Response response) throws Exception {
             response.suspend();
-            NIOReader requestReader = request.getNIOReader();
-            requestString(requestReader)
-                .map(s -> {
-                    try {
-                        requestReader.close();
-                    } catch (Exception ignored) {
-                        // TODO - this is from the example. Do we want to do something here?
-                    }
-                    return s.trim();
-                })
-                .map(requestAsString -> {
-                    T requestObject = requestAsString.trim().isEmpty() ? null : messageTranscriber.getIncomingMessageTranscriber(targetType).apply(requestAsString);
-                    RequestInfo requestInfo = httpSpecificInfoFrom(request);
-                    RequestMessageMetaData metaData = new RequestMessageMetaData(destination, requestInfo);
-                    Timer.Context timerContext = metricsCollector.requestReceived(createInfoFor(destination));
-                    return createRpcInvocationObjectForReply(requestObject, metaData,
-                            createResponseWriter(response, timerContext),
-                            error -> response.sendError(500, "Internal server error")
-                    );
-                })
-                .subscribe(
-                        invocation -> {
-                            // System.out.println("On next()ing");
-                            flowableEmitter.onNext(invocation);
-                            System.out.println("            On next()ing done " + invocation + " on " + Thread.currentThread().getName());
-                        },
-                        error -> flowableEmitter.onError(error)
-                )
-            ;
-        }
 
-        private Consumer<Pair<String, ReplyInfo>> createResponseWriter(Response response, Timer.Context timerContext) {
-            return replyInfoPair -> {
-                response.setCharacterEncoding("utf-8");
-                try (NIOWriter out = response.getNIOWriter()) {
-                    response.setContentType("application/json");
-                    response.setContentLength(replyInfoPair._1.length());
-                    int statusCode;
-                    if (replyInfoPair._2 == null) {
-                        statusCode = 200;
-                    } else {
-                        replyInfoPair._2.headerParams.forEach(response::setHeader);
-                        statusCode = replyInfoPair._2.statusCode;
-                    }
-                    response.setStatus(statusCode);
+            NIOReader in = request.getNIOReader();
+            in.notifyAvailable(new ReadHandler() {
+                private char[] inputBuffer = new char[0];
 
-                    // write response
-                    try (BufferedWriter writer = new BufferedWriter(out)) {
-                        System.out.println("Sending back " + replyInfoPair + " to " + response + " on " + Thread.currentThread().getName());
-                        writer.write(replyInfoPair._1);
-                        System.out.println("            Write complete " + response);
-                    }
-
-                    metricsCollector.requestCompleted(timerContext, replyInfoPair._1);
-                } catch (Exception e) {
-                    metricsCollector.requestCompletedExceptionally(timerContext, createInfoFor(destination), e);
-                    logger.error("An error occurred trying to send HTTP response {}", replyInfoPair._2, e);
-                    try {
-                        response.sendError(500, "Internal server error");
-                    } catch (Exception any) {
-                        logger.error("Failed to send error 500 back to client", any);
-                    }
-                } finally {
-                    // TODO - this is from the example. Do we want to do something here?
-                    response.resume();
-                }
-            };
-        }
-
-        private Single<String> requestString(NIOReader inputReader) {
-            return Observable.<char[]>create(
-                        s -> inputReader.notifyAvailable(createReadHandlerEmittingResponsePart(inputReader, s))
-                    )
-                    .map(String::new) // we do not supply character encoding anywhere
-                    .collect(StringBuffer::new, StringBuffer::append)
-                    .map(StringBuffer::toString)
-                    ;
-        }
-
-        private ReadHandler createReadHandlerEmittingResponsePart(NIOReader inputReader, ObservableEmitter<char[]> observableEmitter) {
-            return new ReadHandler() {
                 @Override
                 public void onDataAvailable() throws Exception {
-                    // we are not synchronizing here, since we assume that onDataAvailable() is called sequentially
-                    char[] readBuffer = new char[inputReader.readyData()];
-                    int numRead = inputReader.read(readBuffer);
-                    if (numRead <= 0) {
-                        observableEmitter.onComplete();
-                    } else {
-                        observableEmitter.onNext(readBuffer);
-                    }
-
-                    inputReader.notifyAvailable(this);
+                    inputBuffer = appendAvailableDataToBuffer(in, inputBuffer);
+                    in.notifyAvailable(this);
                 }
 
                 @Override
                 public void onError(Throwable t) {
-                    observableEmitter.onError(t);
+                    logger.error("Error parsing request data", t);
+                    response.setStatus(400, "Bad request");
+                    response.resume();
                 }
 
                 @Override
                 public void onAllDataRead() throws Exception {
-                    observableEmitter.onComplete();
+                    inputBuffer = appendAvailableDataToBuffer(in, inputBuffer);
+                    String incomingMessageAsString = new String(inputBuffer);
+                    try {
+                        in.close();
+                    } catch (Exception ignored) {
+                        // TODO - this is from the example. Do we want to do something here?
+                    }
+
+                    IncomingMessageType incomingMessage = incomingMessageAsString.trim().isEmpty() ?
+                            null :
+                            messageTranscriber.getIncomingMessageTranscriber(targetType).apply(incomingMessageAsString);
+                    RequestInfo requestInfo = httpSpecificInfoFrom(request);
+                    RequestMessageMetaData metaData = new RequestMessageMetaData(destination, requestInfo);
+                    Timer.Context timerContext = metricsCollector.requestReceived(createInfoFor(destination));
+
+                    RpcInvocation<IncomingMessageType> rpci =
+                            new RpcInvocation<>(
+                                    new IncomingMessage<>(incomingMessage, metaData),
+                                    replyInfo -> {
+                                        response.setCharacterEncoding("utf-8");
+                                        try (NIOWriter out = response.getNIOWriter()) {
+                                            response.setContentType("application/json");
+                                            response.setContentLength(replyInfo._1.length());
+                                            int statusCode;
+                                            if (replyInfo._2 == null) {
+                                                statusCode = 200;
+                                            } else {
+                                                replyInfo._2.headerParams.entrySet().forEach(
+                                                        entry -> response.setHeader(entry.getKey(), entry.getValue())
+                                                );
+                                                statusCode = replyInfo._2.statusCode;
+                                            }
+                                            response.setStatus(statusCode);
+                                            writeResponse(replyInfo._1, out);
+                                            metricsCollector.requestCompleted(timerContext, replyInfo._1);
+                                        } catch (Exception e) {
+                                            metricsCollector.requestCompletedExceptionally(timerContext, createInfoFor(destination), e);
+                                            logger.error("An error occurred trying to send HTTP response " + replyInfo, e);
+                                            try {
+                                                response.sendError(500, "Internal server error");
+                                            } catch (Exception any) {
+                                                logger.error("Failed to send error 500 back to client", any);
+                                            }
+                                        } finally {
+                                            // TODO - this is from the example. Do we want to do something here?
+                                            response.resume();
+                                        }
+                                    },
+                                    error -> {
+                                        logger.error("An error occurred trying to process HTTP request " + incomingMessageAsString, error);
+                                        try {
+                                            response.sendError(500, "Internal server error");
+                                        } catch (Exception any) {
+                                            logger.error("Failed to send error 500 back to client", any);
+                                        }
+                                    },
+                                    messageTranscriber
+                            );
+
+                    stream.onNext(rpci);
                 }
-            };
-        }
-
-        private RequestInfo httpSpecificInfoFrom(Request request) {
-            Map<String, String> parameters = new HashMap<>();
-            for (Map.Entry<String, String[]> entry : request.getParameterMap().entrySet()) {
-                String[] valueList = entry.getValue();
-                String valueToPass = null;
-                if (valueList != null && valueList.length > 0) {
-                    valueToPass = valueList[0];
-                }
-                parameters.put(entry.getKey(), valueToPass);
-            }
-
-            return new RequestInfo(
-                    convert(request.getMethod()), parameters);
-        }
-
-        private RpcInvocation<T> createRpcInvocationObjectForReply(T incomingMessage,
-                                                                   RequestMessageMetaData metaData,
-                                                                   Consumer<Pair<String, ReplyInfo>> responseWriter,
-                                                                   io.reactivex.functions.Consumer<Throwable> processingErrorConsumer) {
-            return new RpcInvocation<>(
-                    new IncomingMessage<>(incomingMessage, metaData),
-                    responseWriter,
-                    error -> {
-                        logger.error("An error occurred trying to process HTTP request {}", incomingMessage, error);
-                        try {
-                            processingErrorConsumer.accept(error);
-                        } catch (Exception any) {
-                            logger.error("Failed to send error 500 back to client", any);
-                        }
-                    },
-                    messageTranscriber
-            );
+            });
         }
     }
 }
