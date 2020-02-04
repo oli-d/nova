@@ -148,8 +148,6 @@ class ElasticMetricsReporterTest {
         for (DocWriteRequest request: requests) {
             assertTrue(request instanceof IndexRequest);
             IndexRequest ir = (IndexRequest) request;
-            assertNotNull(ir.type());
-            assertThat(ir.type(), is("doc"));
             Map<String, Object> sourceAsMap = getMapFrom(ir.source());
             assertNotNull(sourceAsMap.get("@timestamp"));
             assertNotNull(sourceAsMap.get("someAttribute"));
