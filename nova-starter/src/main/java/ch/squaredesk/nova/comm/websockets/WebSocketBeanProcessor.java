@@ -16,6 +16,7 @@ import ch.squaredesk.nova.comm.http.HttpServerInstanceListener;
 import ch.squaredesk.nova.metrics.Metrics;
 import org.glassfish.grizzly.http.server.HttpServer;
 import org.springframework.beans.BeansException;
+import org.springframework.beans.factory.DisposableBean;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.ApplicationListener;
@@ -24,7 +25,10 @@ import org.springframework.context.event.ContextRefreshedEvent;
 import java.util.Arrays;
 
 
-public class WebSocketBeanProcessor implements ApplicationContextAware, HttpServerInstanceListener, ApplicationListener<ContextRefreshedEvent> {
+public class WebSocketBeanProcessor implements ApplicationContextAware,
+        HttpServerInstanceListener,
+        ApplicationListener<ContextRefreshedEvent>,
+        DisposableBean {
     private final WebSocketAdapter webSocketAdapter;
     private final String adapterIdentifier;
     private final BeanExaminer beanExaminer;
@@ -93,5 +97,14 @@ public class WebSocketBeanProcessor implements ApplicationContextAware, HttpServ
     @Override
     public void httpServerInstanceCreated(HttpServer httpServer) {
         wireUpWebSocketHandlers();
+    }
+
+    @Override
+    public void destroy() throws Exception {
+        try {
+            webSocketAdapter.shutdown();
+        } catch (Exception e) {
+            // noop; shutdown anyway...
+        }
     }
 }

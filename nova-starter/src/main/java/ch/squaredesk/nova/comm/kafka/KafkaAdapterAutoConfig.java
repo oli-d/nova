@@ -71,4 +71,10 @@ public class KafkaAdapterAutoConfig {
                 .setMetrics(nova.metrics)
                 .build();
     }
+
+    @Bean
+    @ConditionalOnBean
+    KafkaAdapterStarter kafkaAdapterStarter(KafkaAdapter kafkaAdapter) {
+        return new KafkaAdapterStarter(kafkaAdapter);
+    }
 }
