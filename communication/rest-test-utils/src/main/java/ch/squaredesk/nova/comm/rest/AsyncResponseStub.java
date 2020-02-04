@@ -9,7 +9,7 @@
  *
  */
 
-package ch.squaredesk.nova.comm.rest.autoconfig.rest;
+package ch.squaredesk.nova.comm.rest;
 
 import javax.ws.rs.container.AsyncResponse;
 import javax.ws.rs.container.TimeoutHandler;
