@@ -142,6 +142,11 @@
                 <artifactId>metrics-kafka</artifactId>
                 <version>9.0.0</version>
             </dependency>
+            <dependency>
+                <groupId>ch.squaredesk.nova</groupId>
+                <artifactId>nova-starter</artifactId>
+                <version>9.0.0</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
@@ -223,32 +228,5 @@
                 </plugins>
             </build>
         </profile>
-        <!--
-        <profile>
-            <id>backend</id>
-            <modules>
-                <module>something-lib</module>
-                <module>something-domain</module>
-            </modules>
-        </profile>
-        <profile>
-            <id>frontend</id>
-            <modules>
-                <module>something-web</module>
-            </modules>
-        </profile>
-        <profile>
-            <id>all</id>
-            <activation>
-                <activeByDefault>true</activeByDefault>
-            </activation>
-            <modules>
-                <module>something-pom</module>
-                <module>something-lib</module>
-                <module>something-domain</module>
-                <module>something-web</module>
-            </modules>
-        </profile>
-        -->
     </profiles>
 </project>
