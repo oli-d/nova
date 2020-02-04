@@ -12,9 +12,7 @@
 package ch.squaredesk.nova.comm.rest;
 
 import ch.squaredesk.net.PortFinder;
-import ch.squaredesk.nova.NovaAutoConfiguration;
 import ch.squaredesk.nova.comm.http.HttpAdapter;
-import ch.squaredesk.nova.comm.http.HttpAdapterAutoConfig;
 import ch.squaredesk.nova.comm.http.HttpServerConfigurationProperties;
 import com.ning.http.client.filter.FilterContext;
 import com.ning.http.client.filter.FilterException;

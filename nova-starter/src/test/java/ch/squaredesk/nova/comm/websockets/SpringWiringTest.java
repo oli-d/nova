@@ -12,10 +12,6 @@ package ch.squaredesk.nova.comm.websockets;
 
 import ch.squaredesk.net.PortFinder;
 import ch.squaredesk.nova.Nova;
-import ch.squaredesk.nova.NovaAutoConfiguration;
-import ch.squaredesk.nova.comm.http.HttpAdapterAutoConfig;
-import ch.squaredesk.nova.comm.http.HttpClientAutoConfig;
-import ch.squaredesk.nova.comm.http.HttpServerAutoConfig;
 import ch.squaredesk.nova.comm.http.HttpServerConfigurationProperties;
 import ch.squaredesk.nova.comm.websockets.annotation.OnClose;
 import ch.squaredesk.nova.comm.websockets.annotation.OnConnect;

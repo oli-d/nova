@@ -12,7 +12,6 @@
 package ch.squaredesk.nova.comm.http;
 
 import ch.squaredesk.nova.comm.rest.RestBeanPostprocessor;
-import ch.squaredesk.nova.comm.rest.RestClientStarter;
 import ch.squaredesk.nova.comm.rest.RestServerStarter;
 import org.glassfish.grizzly.http.server.HttpServer;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;

@@ -13,8 +13,6 @@ package ch.squaredesk.nova.comm.rest;
 
 import ch.squaredesk.net.PortFinder;
 import ch.squaredesk.nova.Nova;
-import ch.squaredesk.nova.NovaAutoConfiguration;
-import ch.squaredesk.nova.comm.http.HttpAdapterAutoConfig;
 import ch.squaredesk.nova.comm.http.HttpRequestSender;
 import ch.squaredesk.nova.comm.http.HttpServerConfigurationProperties;
 import ch.squaredesk.nova.metrics.Metrics;

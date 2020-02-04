@@ -12,8 +12,10 @@
 package ch.squaredesk.nova.comm.rest;
 
 import ch.squaredesk.net.PortFinder;
-import ch.squaredesk.nova.NovaAutoConfiguration;
-import ch.squaredesk.nova.comm.http.*;
+import ch.squaredesk.nova.comm.http.HttpAdapter;
+import ch.squaredesk.nova.comm.http.HttpRequestSender;
+import ch.squaredesk.nova.comm.http.HttpServerConfigurationProperties;
+import ch.squaredesk.nova.comm.http.RpcReply;
 import io.reactivex.observers.TestObserver;
 import org.awaitility.Awaitility;
 import org.awaitility.Duration;
