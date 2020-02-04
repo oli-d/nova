@@ -43,7 +43,7 @@ public class GarbageCollectionMeter implements CompoundMetric {
      * @param garbageCollectors    the garbage collectors
      */
     public GarbageCollectionMeter(Collection<GarbageCollectorMXBean> garbageCollectors) {
-        this.garbageCollectors = new ArrayList<GarbageCollectorMXBean>(garbageCollectors);
+        this.garbageCollectors = new ArrayList<>(garbageCollectors);
     }
 
     @Override

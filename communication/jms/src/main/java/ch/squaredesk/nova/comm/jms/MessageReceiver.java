@@ -39,7 +39,7 @@ class MessageReceiver
     MessageReceiver(String identifier,
                     JmsObjectRepository jmsObjectRepository,
                     Metrics metrics) {
-        super(Metrics.name("jms", identifier).toString(), metrics);
+        super(Metrics.name("jms", identifier), metrics);
         this.jmsObjectRepository = jmsObjectRepository;
     }
 
@@ -51,7 +51,7 @@ class MessageReceiver
         return mapDestinationIdToMessageStream.computeIfAbsent(destinationId, key -> {
             Flowable<IncomingMessage<String, IncomingMessageMetaData>> f = Flowable.generate(
                     () -> {
-                        logger.info("Opening connection to destination " + destinationId);
+                        logger.info("Opening connection to destination {}", destinationId);
                         metricsCollector.subscriptionCreated(destinationId);
                         return jmsObjectRepository.createMessageConsumer(destination);
                     },
@@ -67,13 +67,13 @@ class MessageReceiver
                             }
 
                             if (m == null) {
-                                logger.info("Unable to receive message from consumer for destination " + destinationId + ". Closing the connection...");
+                                logger.info("Unable to receive message from consumer for destination {}. Closing the connection...", destinationId);
                                 emitter.onComplete();
                                 return;
                             }
 
                             if (!(m instanceof TextMessage)) {
-                                logger.error("Unsupported type of incoming message " + m);
+                                logger.error("Unsupported type of incoming message {}", m);
                                 metricsCollector.unparsableMessageReceived(destinationId);
                                 continue;
                             }
@@ -97,7 +97,7 @@ class MessageReceiver
                         metricsCollector.subscriptionDestroyed(destinationId);
                         jmsObjectRepository.destroyConsumer(consumer);
                         mapDestinationIdToMessageStream.remove(destinationId);
-                        logger.info("Closed connection to destination " + destinationId);
+                        logger.info("Closed connection to destination {}", destinationId);
                     }
             );
             return f.subscribeOn(Schedulers.io())

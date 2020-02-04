@@ -13,8 +13,6 @@ package ch.squaredesk.nova.comm.http;
 
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.AsyncHttpClientConfig;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManagerFactory;
@@ -30,7 +28,9 @@ import java.util.Objects;
 import java.util.Optional;
 
 public class AsyncHttpClientFactory {
-    private static final Logger logger = LoggerFactory.getLogger(AsyncHttpClientFactory.class);
+
+    private AsyncHttpClientFactory() {
+    }
 
     public static AsyncHttpClientConfig.Builder builderFor (HttpClientSettings settings) {
         Objects.requireNonNull(settings, "HttpClientSettings must not be null");
@@ -83,7 +83,6 @@ public class AsyncHttpClientFactory {
             keyStore.setCertificateEntry("ca", certificate);
             return createSslContextFor(keyStore);
         } catch (Exception sslFailure) {
-            logger.error("Failed to create client with certificate: {}", sslFailure.getMessage());
             throw new RuntimeException(sslFailure);
         }
     }
@@ -98,7 +97,6 @@ public class AsyncHttpClientFactory {
             keyStore.load(new FileInputStream(sslKeyStorePath), keypass);
             return createSslContextFor(keyStore);
         } catch (Exception sslFailure) {
-            logger.error("Failed to create client with keystore: {}", sslFailure.getMessage());
             throw new RuntimeException(sslFailure);
         }
     }

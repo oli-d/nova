@@ -22,7 +22,7 @@ public class RpcClientMetricsCollector {
 
     RpcClientMetricsCollector(String identifier, Metrics metrics) {
         this.metrics = metrics;
-        this.identifierPrefix = Metrics.name(identifier, "rpcClient").toString();
+        this.identifierPrefix = Metrics.name(identifier, "rpcClient");
         totalNumberOfCompletedRequests = metrics.getMeter(this.identifierPrefix,"completed","total");
         totalNumberOfTimedOutRequests = metrics.getMeter(this.identifierPrefix,"timeout","total");
     }

@@ -19,7 +19,10 @@ import org.slf4j.LoggerFactory;
 
 
 class ConnectEventHandlerMethodInvoker {
-    private final static Logger LOGGER = LoggerFactory.getLogger(ConnectEventHandlerMethodInvoker.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(ConnectEventHandlerMethodInvoker.class);
+
+    private ConnectEventHandlerMethodInvoker() {
+    }
 
     static Consumer<WebSocket> createFor(EventHandlerEndpointDescriptor endpointDescriptor,
                                                             String adapterIdentifier,

@@ -28,7 +28,7 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.BiFunction;
+import java.util.function.BiPredicate;
 import java.util.function.Function;
 
 public class MessageReceiver
@@ -43,7 +43,7 @@ public class MessageReceiver
                               Properties consumerProperties,
                               Duration pollTimeout,
                               Metrics metrics) {
-        super(Metrics.name("kafka", identifier).toString(), metrics);
+        super(Metrics.name("kafka", identifier), metrics);
 
         AtomicBoolean shutdown = new AtomicBoolean(false);
 
@@ -72,10 +72,10 @@ public class MessageReceiver
             }
         };
 
-    BiFunction<Set<String>, Pair<KafkaConsumer<String, String>, HashSet<String>>, Boolean> subscriptionMaintainer =
+    BiPredicate<Set<String>, Pair<KafkaConsumer<String, String>, HashSet<String>>> subscriptionMaintainer =
                 (subscribedTopics, consumerTopicsPair) -> {
                     if (!consumerTopicsPair._2.equals(subscribedTopics)) {
-                        logger.debug("Changing topic subscriptions to " + subscribedTopics);
+                        logger.debug("Changing topic subscriptions to {}", subscribedTopics);
                         consumerTopicsPair._2.clear();
                         consumerTopicsPair._2.addAll(subscribedTopics);
                         consumerTopicsPair._1.subscribe(subscribedTopics);
@@ -90,7 +90,7 @@ public class MessageReceiver
                             new HashSet<String>());
                 },
                 (consumerTopicsPair, emitter) -> {
-                    while (!subscriptionMaintainer.apply(topicToSubscriptionCount.keySet(), consumerTopicsPair)) {
+                    while (!subscriptionMaintainer.test(topicToSubscriptionCount.keySet(), consumerTopicsPair)) {
                         // nothing subscribed
                         sleeper.run();
                     }
@@ -165,7 +165,7 @@ public class MessageReceiver
                             int count = subsCounter.decrementAndGet();
                             if (count == 0) {
                                 topicToSubscriptionCount.remove(destination);
-                                logger.info("Unsubscribed last subscription to topic " + destination);
+                                logger.info("Unsubscribed last subscription to topic {}", destination);
                             } else {
                                 logger.info("Unsubscribed from topic {}, current subscription count is  {}", destination, count);
                             }
@@ -175,7 +175,7 @@ public class MessageReceiver
     }
 
     public void shutdown() {
-        logger.info("Shutting down, currently subscribed to " + topicToSubscriptionCount.keySet());
+        logger.info("Shutting down, currently subscribed to {}", topicToSubscriptionCount.keySet());
         topicToSubscriptionCount.clear();
 //        allMessageStreamSubscription.dispose();
     }

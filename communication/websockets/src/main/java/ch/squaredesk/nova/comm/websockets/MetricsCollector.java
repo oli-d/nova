@@ -28,7 +28,7 @@ public class MetricsCollector {
     public MetricsCollector(String identifier, Metrics metrics) {
         requireNonNull(metrics, "metrics must not be null");
         this.metrics = metrics;
-        this.identifierPrefix = Metrics.name("websocket", identifier).toString();
+        this.identifierPrefix = Metrics.name("websocket", identifier);
         totalNumberOfReceivedMessages = metrics.getMeter(this.identifierPrefix,"received","total");
         totalNumberOfUnparsabledMessagesReceived = metrics.getMeter(this.identifierPrefix,"received","unparsable","total");
         totalNumberOfSentMessages = metrics.getMeter(this.identifierPrefix,"sent","total");

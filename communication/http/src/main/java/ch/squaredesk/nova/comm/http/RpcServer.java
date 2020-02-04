@@ -61,7 +61,7 @@ public class RpcServer extends ch.squaredesk.nova.comm.rpc.RpcServer<String, Str
         this(identifier, httpServer, new DefaultMessageTranscriberForStringAsTransportType(), metrics);
     }
     public RpcServer(String identifier, HttpServer httpServer, MessageTranscriber<String> messageTranscriber, Metrics metrics) {
-        super(Metrics.name("http", identifier).toString(), messageTranscriber, metrics);
+        super(Metrics.name("http", identifier), messageTranscriber, metrics);
         this.httpServer = httpServer;
     }
 
@@ -76,7 +76,7 @@ public class RpcServer extends ch.squaredesk.nova.comm.rpc.RpcServer<String, Str
         }
         Flowable retVal = mapDestinationToIncomingMessages
                 .computeIfAbsent(destination, key -> {
-                    logger.info("Listening to requests on " + destination);
+                    logger.info("Listening to requests on {}", destination);
 
                     Subject<RpcInvocation> stream = PublishSubject.create();
                     stream = stream.toSerialized();
@@ -88,14 +88,14 @@ public class RpcServer extends ch.squaredesk.nova.comm.rpc.RpcServer<String, Str
                             .doFinally(() -> {
                                 mapDestinationToIncomingMessages.remove(destination);
                                 httpServer.getServerConfiguration().removeHttpHandler(httpHandler);
-                                logger.info("Stopped listening to requests on " + destination);
+                                logger.info("Stopped listening to requests on {}", destination);
                             })
                             .share();
                 });
         return retVal;
     }
 
-    private static RequestInfo httpSpecificInfoFrom(Request request) throws Exception {
+    private static RequestInfo httpSpecificInfoFrom(Request request) {
         Map<String, String> parameters = new HashMap<>();
         for (Map.Entry<String, String[]> entry : request.getParameterMap().entrySet()) {
             String[] valueList = entry.getValue();

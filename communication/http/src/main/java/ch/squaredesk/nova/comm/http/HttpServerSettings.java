@@ -118,11 +118,7 @@ public class HttpServerSettings {
             return this;
         }
 
-        private void validate() {
-        }
-
         public HttpServerSettings build() {
-            validate();
             return new HttpServerSettings(this);
         }
 

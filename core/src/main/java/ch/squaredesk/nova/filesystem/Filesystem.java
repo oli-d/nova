@@ -15,7 +15,10 @@ import io.reactivex.Completable;
 import io.reactivex.Flowable;
 import io.reactivex.Single;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.InputStreamReader;
 import java.net.URL;
 import java.nio.ByteBuffer;
 import java.nio.channels.AsynchronousFileChannel;
@@ -42,7 +45,7 @@ public class Filesystem {
                         emitter.onComplete();
                     }
                 },
-                reader -> reader.close());
+                BufferedReader::close);
     }
 
     public Flowable<String> readTextFileFromClasspath(String resourcePath) {
@@ -127,11 +130,11 @@ public class Filesystem {
         });
     }
 
-    public Completable writeFileSync(String content, String filePath, boolean append) throws IOException {
+    public Completable writeFileSync(String content, String filePath, boolean append) {
         return writeFileSync(content, StandardCharsets.UTF_8, filePath, append);
     }
 
-    public Completable writeFileSync(String content, Charset encoding, String filePath, boolean append) throws IOException {
+    public Completable writeFileSync(String content, Charset encoding, String filePath, boolean append) {
         return Completable.create(s -> {
             Set<OpenOption> openOptions = new HashSet<>();
             openOptions.add(StandardOpenOption.WRITE);

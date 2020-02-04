@@ -11,5 +11,5 @@
 package ch.squaredesk.nova.comm.websockets;
 
 
-public class SendInfo {
+public interface SendInfo {
 }

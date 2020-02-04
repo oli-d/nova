@@ -20,7 +20,10 @@ import org.slf4j.LoggerFactory;
 
 
 class ErrorEventHandlerMethodInvoker  {
-    private final static Logger LOGGER = LoggerFactory.getLogger(ErrorEventHandlerMethodInvoker.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(ErrorEventHandlerMethodInvoker.class);
+
+    private ErrorEventHandlerMethodInvoker() {
+    }
 
     static Consumer<Pair<WebSocket, Throwable>> createFor(EventHandlerEndpointDescriptor endpointDescriptor,
                                                             String adapterIdentifier,

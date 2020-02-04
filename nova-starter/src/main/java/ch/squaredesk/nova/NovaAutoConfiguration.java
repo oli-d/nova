@@ -13,12 +13,9 @@ package ch.squaredesk.nova;
 
 
 import ch.squaredesk.nova.annotation.EventHandlingBeanPostprocessor;
-import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
-import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -38,17 +35,6 @@ public class NovaAutoConfiguration {
                 .setEventDispatchMode(eventDispatchConfigurationProperties.getEventDispatchMode())
                 .setParallelism(eventDispatchConfigurationProperties.getParallelism())
                 .build();
-    }
-
-    @Bean("novaServiceEnhancementsFlag")
-    @ConditionalOnBean(name = "NOVA.INSTANCE")
-    public Boolean novaServiceEnhancementsFlag(
-            ApplicationContext applicationContext,
-            NovaServiceConfigurationProperties novaServiceConfigurationProperties) {
-
-        Object springBootApplication = applicationContext.getBeansWithAnnotation(SpringBootApplication.class);
-
-        return true;
     }
 
     @Bean

@@ -26,6 +26,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.function.Consumer;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 
 import static java.util.Objects.requireNonNull;
@@ -65,7 +66,7 @@ public class JmsAdapter extends CommAdapter<String> {
     // simple send related methods //
     //                             //
     /////////////////////////////////
-    public <T> Single<OutgoingMessageMetaData> sendMessage(Destination destination, T message) throws Exception {
+    public <T> Single<OutgoingMessageMetaData> sendMessage(Destination destination, T message) {
         return sendMessage(destination, message, null, null, null, null);
     }
 
@@ -78,7 +79,7 @@ public class JmsAdapter extends CommAdapter<String> {
         return doSendMessage(destination, message, transcriber, customHeaders, deliveryMode, priority, timeToLive);
     }
 
-    public <T> Single<OutgoingMessageMetaData> sendMessage(Destination destination, T message, Function<T, String> transcriber) throws Exception {
+    public <T> Single<OutgoingMessageMetaData> sendMessage(Destination destination, T message, Function<T, String> transcriber) {
         return doSendMessage(destination, message, transcriber, null, null, null, null);
     }
 
@@ -330,15 +331,15 @@ public class JmsAdapter extends CommAdapter<String> {
 
     private static boolean exceptionSignalsDestinationDown(Throwable errorToExamine) {
         // TODO: is there a proper way to determine this???!?!?!?! Works for ActiveMQ, but how do other brokers behave?
-        java.util.function.Function<Throwable, Boolean> testFunc = ex ->
+        Predicate<Throwable> testFunc = ex ->
                 (ex instanceof InvalidDestinationException) ||
                         (String.valueOf(ex).contains("does not exist"));
 
         Throwable error = errorToExamine;
-        boolean down = testFunc.apply(error);
+        boolean down = testFunc.test(error);
         while (!down && error != null && error.getCause() != null && error.getCause() != error) {
             error = error.getCause();
-            down = testFunc.apply(error);
+            down = testFunc.test(error);
         }
 
         return down;
@@ -475,6 +476,7 @@ public class JmsAdapter extends CommAdapter<String> {
             return this;
         }
 
+        @Override
         protected void validate() {
             requireNonNull(metrics,"metrics must be provided");
 

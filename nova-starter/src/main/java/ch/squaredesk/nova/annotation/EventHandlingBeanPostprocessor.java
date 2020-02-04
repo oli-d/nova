@@ -17,7 +17,6 @@ import com.codahale.metrics.Timer;
 import io.reactivex.functions.Consumer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.event.ContextRefreshedEvent;
@@ -34,12 +33,12 @@ public class EventHandlingBeanPostprocessor implements BeanPostProcessor, Applic
     final CopyOnWriteArrayList<EventHandlerDescription> handlerDescriptions = new CopyOnWriteArrayList<>();
 
     @Override
-    public Object postProcessBeforeInitialization(Object bean, String beanName) throws BeansException {
+    public Object postProcessBeforeInitialization(Object bean, String beanName) {
         return bean;
     }
 
     @Override
-    public Object postProcessAfterInitialization(Object bean, String beanName) throws BeansException {
+    public Object postProcessAfterInitialization(Object bean, String beanName) {
         handlerDescriptions.addAll(Arrays.asList(beanExaminer.examine(bean)));
         return bean;
     }

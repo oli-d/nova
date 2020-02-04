@@ -11,7 +11,6 @@
 
 package ch.squaredesk.nova.comm.rest;
 
-import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.config.BeanPostProcessor;
 
 import java.util.HashSet;
@@ -26,7 +25,7 @@ public class RestBeanPostprocessor implements BeanPostProcessor {
 
 
     @Override
-    public Object postProcessBeforeInitialization(Object bean, String beanName) throws BeansException {
+    public Object postProcessBeforeInitialization(Object bean, String beanName) {
         if (BeanExaminer.isRestHandler(bean)) {
             handlerBeans.add(bean);
         }
@@ -34,7 +33,7 @@ public class RestBeanPostprocessor implements BeanPostProcessor {
     }
 
     @Override
-    public Object postProcessAfterInitialization(Object bean, String beanName) throws BeansException {
+    public Object postProcessAfterInitialization(Object bean, String beanName) {
         return bean;
     }
 

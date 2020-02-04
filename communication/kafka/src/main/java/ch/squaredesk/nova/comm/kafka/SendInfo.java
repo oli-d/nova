@@ -11,6 +11,6 @@
 
 package ch.squaredesk.nova.comm.kafka;
 
-public class SendInfo {
+public interface SendInfo {
 
 }

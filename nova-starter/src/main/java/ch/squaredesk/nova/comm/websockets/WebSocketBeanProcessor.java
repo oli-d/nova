@@ -15,7 +15,6 @@ import ch.squaredesk.nova.comm.MessageTranscriber;
 import ch.squaredesk.nova.comm.http.HttpServerInstanceListener;
 import ch.squaredesk.nova.metrics.Metrics;
 import org.glassfish.grizzly.http.server.HttpServer;
-import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
@@ -54,10 +53,10 @@ public class WebSocketBeanProcessor implements ApplicationContextAware,
         wiredUp = true;
 
         Arrays.stream(applicationContext.getBeanDefinitionNames())
-                .forEach(beanName -> processBean(applicationContext.getBean(beanName), beanName));
+                .forEach(beanName -> processBean(applicationContext.getBean(beanName)));
     }
 
-    public Object processBean(Object bean, String beanName) throws BeansException {
+    public Object processBean(Object bean) {
         beanExaminer.onConnectHandlersIn(bean).forEach(handlerDescriptor ->
             webSocketAdapter
                 .acceptConnections(handlerDescriptor.destination)
@@ -83,7 +82,7 @@ public class WebSocketBeanProcessor implements ApplicationContextAware,
     }
 
     @Override
-    public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
+    public void setApplicationContext(ApplicationContext applicationContext) {
         this.applicationContext = applicationContext;
     }
 

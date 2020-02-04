@@ -19,7 +19,7 @@ import java.lang.reflect.Method;
 import java.util.Arrays;
 
 public class EventHandlingMethodInvoker implements Consumer<Object[]> {
-    private final static Logger LOGGER = LoggerFactory.getLogger(EventHandlingMethodInvoker.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(EventHandlingMethodInvoker.class);
     private final Object objectToInvokeMethodOn;
     private final Method methodToInvoke;
     private final EventContext eventContext;
@@ -37,7 +37,7 @@ public class EventHandlingMethodInvoker implements Consumer<Object[]> {
     public void accept(Object... data) {
         Object[] parameterArray = createParameterArrayFromEventEmitterData(methodToInvoke.getParameterCount(),data);
         try {
-            if (parameterArray==null) {
+            if (parameterArray.length == 0) {
                 methodToInvoke.invoke(objectToInvokeMethodOn);
             } else {
                 methodToInvoke.invoke(objectToInvokeMethodOn, parameterArray);
@@ -46,7 +46,7 @@ public class EventHandlingMethodInvoker implements Consumer<Object[]> {
             LOGGER.error("Unable to invoke event Handler");
             LOGGER.error("\tParameters: ");
             if (data!=null) {
-                Arrays.stream(data).forEach(param -> LOGGER.error("\t\t" + param));
+                Arrays.stream(data).forEach(param -> LOGGER.error("\t\t{}", param));
                 LOGGER.error("\t\tnull");
             } else {
                 LOGGER.error("\t\tnull");
@@ -57,7 +57,7 @@ public class EventHandlingMethodInvoker implements Consumer<Object[]> {
 
     private Object[] createParameterArrayFromEventEmitterData(int numParametersForMethodCall, Object...dataArray) {
         if (numParametersForMethodCall == 0) {
-            return null;
+            return new Object[0];
         }
 
         Object[] retVal = new Object[numParametersForMethodCall];

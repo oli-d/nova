@@ -42,7 +42,7 @@ public class RequestResponseInfoHolder<T> {
     }
 
     public <U> RequestResponseInfoHolder<U> addRequestObject(U responseObject) {
-        return new RequestResponseInfoHolder<U>(this.request, this.response, this.metaData, responseObject);
+        return new RequestResponseInfoHolder<>(this.request, this.response, this.metaData, responseObject);
     }
 
     private static RequestInfo httpSpecificInfoFrom(Request request) {

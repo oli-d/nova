@@ -12,6 +12,8 @@
 package ch.squaredesk.nova.events.consumers;
 
 class ParamHelper {
+        private ParamHelper () {}
+
         static Object elementAtIndex(int idx, Object... data) {
             return data == null || data.length <= idx ?
                     null :

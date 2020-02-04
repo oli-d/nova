@@ -61,8 +61,8 @@ public class LifecycleEventHandlers {
         for (Runnable handler: handlers) {
             try {
                 handler.run();
-            } catch (Throwable t) {
-                exceptionHandler.accept(t);
+            } catch (Exception e) {
+                exceptionHandler.accept(e);
             }
         }
     }

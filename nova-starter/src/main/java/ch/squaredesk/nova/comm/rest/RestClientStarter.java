@@ -31,7 +31,7 @@ import javax.ws.rs.ext.Provider;
 import java.util.Map;
 
 public class RestClientStarter implements ApplicationListener<ContextRefreshedEvent> {
-    private static final Logger logger = LoggerFactory.getLogger(RestServerStarter.class);
+    private static final Logger logger = LoggerFactory.getLogger(RestClientStarter.class);
 
     private AsyncHttpClient httpClient;
     private final HttpClientSettings httpClientSettings;

@@ -39,7 +39,7 @@ public class RpcServer extends ch.squaredesk.nova.comm.rpc.RpcServer<Destination
               MessageSender messageSender,
               MessageTranscriber<String> messageTranscriber,
               Metrics metrics) {
-        super(Metrics.name("jms", identifier).toString(), messageTranscriber, metrics);
+        super(Metrics.name("jms", identifier), messageTranscriber, metrics);
 
         requireNonNull(messageSender, "messageSender must not be null");
         requireNonNull(messageReceiver, "messageReceiver must not be null");
@@ -67,10 +67,8 @@ public class RpcServer extends ch.squaredesk.nova.comm.rpc.RpcServer<Destination
                                 messageSender.send(reply._1, meta).subscribe();
                                 metricsCollector.requestCompleted(timerContext, reply);
                             },
-                            error -> {
                                 // TODO: Is there a sensible default action we could perform?
-                                metricsCollector.requestCompletedExceptionally(timerContext, incomingRequest.metaData.destination, error);
-                            });
+                            error -> metricsCollector.requestCompletedExceptionally(timerContext, incomingRequest.metaData.destination, error));
                 });
     }
 

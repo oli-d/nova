@@ -32,12 +32,12 @@ public class HttpServerBeanNotifier implements ApplicationListener<ContextRefres
 
     public static void notifyHttpServerAvailableInContext(HttpServer httpServer, ApplicationContext context) {
         Map<String, HttpServerInstanceListener> beans = context.getBeansOfType(HttpServerInstanceListener.class);
-        if (beans != null && ! beans.isEmpty()) {
-            beans.entrySet().forEach(entry -> {
+        if (!beans.isEmpty()) {
+            beans.forEach((key, value) -> {
                 try {
-                    entry.getValue().httpServerInstanceCreated(httpServer);
+                    value.httpServerInstanceCreated(httpServer);
                 } catch (Exception e) {
-                    logger.error("An error occurred trying to notify bean {} about HttpServer instance", entry.getKey(), e);
+                    logger.error("An error occurred trying to notify bean {} about HttpServer instance", key, e);
                 }
             });
         }

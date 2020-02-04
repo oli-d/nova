@@ -104,7 +104,7 @@ class BeanExaminer {
     }
 
 
-    private <AnnoType extends Annotation> Collection<EventHandlerEndpointDescriptor> eventHandlerEndpointsIn(Object bean, Class<AnnoType> annotationType, Predicate<Method> methodSignatureValidator) {
+    private <T extends Annotation> Collection<EventHandlerEndpointDescriptor> eventHandlerEndpointsIn(Object bean, Class<T> annotationType, Predicate<Method> methodSignatureValidator) {
         requireNonNull(bean, "bean to examine must not be null");
 
         return methodsWithAnnotation(bean, annotationType)
@@ -113,7 +113,7 @@ class BeanExaminer {
                         method -> "Method " + prettyPrint(bean, method) + ", annotated with @" + annotationType.getSimpleName() + " has an invalid signature")
                 )
                 .map(method -> {
-                    AnnoType annotation = Observable.fromArray(method.getDeclaredAnnotations())
+                    T annotation = Observable.fromArray(method.getDeclaredAnnotations())
                             .filter(anno -> annotationType.isAssignableFrom(anno.getClass()))
                             .cast(annotationType)
                             .firstElement()
@@ -248,7 +248,7 @@ class BeanExaminer {
                 .append(method.getName())
                 .append('(')
                 .append(stream(method.getParameterTypes())
-                        .map(paramterClass -> paramterClass.getSimpleName())
+                        .map(Class::getSimpleName)
                         .collect(Collectors.joining(", ")))
                 .append(')');
         return sb.toString();

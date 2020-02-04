@@ -53,7 +53,7 @@ public class ElasticMetricsReporter implements Consumer<MetricsDump> {
     public ElasticMetricsReporter(String indexName, HttpHost ... elasticServers) {
         this.elasticServers = elasticServers;
         this.indexName = indexName;
-        defaultExceptionHandler = exception -> logger.error("Unable to upload metrics to index " + indexName, exception);
+        defaultExceptionHandler = exception -> logger.error("Unable to upload metrics to index {}", indexName, exception);
     }
 
 
@@ -114,7 +114,7 @@ public class ElasticMetricsReporter implements Consumer<MetricsDump> {
                 bulkRequest -> {
                     BulkResponse response = client.bulk(bulkRequest, RequestOptions.DEFAULT);
                     if (response.hasFailures()) {
-                        logger.warn("Error uploading metrics: " + response.buildFailureMessage());
+                        logger.warn("Error uploading metrics: {}", response.buildFailureMessage());
                     } else {
                         logger.trace("Successfully uploaded {} metric(s)", response.getItems().length);
                     }
@@ -159,7 +159,6 @@ public class ElasticMetricsReporter implements Consumer<MetricsDump> {
                 })
                 .map(metricAsMap -> new IndexRequest()
                             .index(indexName)
-                            .type("doc")
                             .source(metricAsMap)
                 )
                 .reduce(Requests.bulkRequest(),

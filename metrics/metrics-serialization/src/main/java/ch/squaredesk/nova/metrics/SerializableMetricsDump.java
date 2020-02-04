@@ -27,9 +27,6 @@ public class SerializableMetricsDump {
 
     private Map<String, Map<String, Object>> metrics;
 
-    public SerializableMetricsDump() {
-    }
-
     public static SerializableMetricsDump createFor (MetricsDump metricsDump) {
         SerializableMetricsDump dump = new SerializableMetricsDump();
         dump.timestamp = metricsDump.timestamp;

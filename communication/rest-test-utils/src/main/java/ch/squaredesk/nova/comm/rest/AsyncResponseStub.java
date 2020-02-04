@@ -14,17 +14,18 @@ package ch.squaredesk.nova.comm.rest;
 import javax.ws.rs.container.AsyncResponse;
 import javax.ws.rs.container.TimeoutHandler;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 public class AsyncResponseStub implements AsyncResponse {
     private boolean suspended;
-    public Object entity;
-    public boolean cancelled;
+    private Object entity;
+    private boolean cancelled;
     public long timeout;
-    public TimeUnit timeUnit;
-    public TimeoutHandler timeoutHandler;
+    private TimeUnit timeUnit;
+    private TimeoutHandler timeoutHandler;
 
     public <T> T castEntity (Class<T> classToCastTo) {
         return (T) entity;
@@ -94,7 +95,7 @@ public class AsyncResponseStub implements AsyncResponse {
 
     @Override
     public Collection<Class<?>> register(Class<?> callback) {
-        return null;
+        return Collections.emptyList();
     }
 
     @Override
@@ -104,7 +105,7 @@ public class AsyncResponseStub implements AsyncResponse {
 
     @Override
     public Collection<Class<?>> register(Object callback) {
-        return null;
+        return Collections.emptyList();
     }
 
     @Override

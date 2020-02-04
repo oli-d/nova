@@ -43,6 +43,7 @@ public class RpcInvocation<
         replyConsumer.accept(new Pair<>(transcriber.apply(reply), replySpecificInfo));
     }
 
+    @Override
     public <T> void complete(T reply, Function<T, TransportMessageType> transcriber) throws Exception {
         replyConsumer.accept(new Pair<>(transcriber.apply(reply), null));
     }
@@ -50,11 +51,7 @@ public class RpcInvocation<
     public void complete(TransportMessageType reply, TransportSpecificReplyInfo replySpecificInfo) {
         replyConsumer.accept(new Pair<>(reply, replySpecificInfo));
     }
-/*
-    public void complete(TransportMessageType reply) {
-        replyConsumer.accept(new Pair<>(reply, null));
-    }
-*/
+
     public void completeExceptionally(Throwable error) {
         errorConsumer.accept(error);
     }

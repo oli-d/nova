@@ -56,7 +56,7 @@ public class MetricsConverter {
                     return new Pair<>(tupleTypeAndNameAndMetric._2, map);
                 })
                 // and add it to the return value
-                .forEach(metricNameMapPair -> returnValue.put(metricNameMapPair._1.toString(), metricNameMapPair._2));
+                .forEach(metricNameMapPair -> returnValue.put(metricNameMapPair._1, metricNameMapPair._2));
 
         return returnValue;
     }
@@ -66,7 +66,7 @@ public class MetricsConverter {
         Map<String, Object> values = compoundMetric.getValues();
 
         if (!values.isEmpty()) {
-            values.forEach((key, value) -> returnValue.put(key.toString(), value));
+            values.forEach(returnValue::put);
         }
         returnValue.put("type", compoundMetric.getClass().getSimpleName());
 

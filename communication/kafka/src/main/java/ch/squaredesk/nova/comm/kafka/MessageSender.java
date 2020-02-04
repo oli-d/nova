@@ -27,7 +27,7 @@ public class MessageSender extends ch.squaredesk.nova.comm.sending.MessageSender
     protected MessageSender(String identifier,
                             Properties producerProperties,
                             Metrics metrics) {
-        super(Metrics.name("kafka", identifier).toString(), metrics);
+        super(Metrics.name("kafka", identifier), metrics);
         this.producer = new KafkaProducer<>(producerProperties);
     }
 

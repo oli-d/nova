@@ -11,7 +11,7 @@
 package ch.squaredesk.net;
 
 import java.net.ServerSocket;
-import java.util.function.Consumer;
+import java.util.function.IntConsumer;
 
 public class PortFinder {
     private static final Object portLock = new Object();
@@ -19,7 +19,7 @@ public class PortFinder {
     private PortFinder() {
     }
 
-    public static void withNextFreePort (Consumer<Integer> consumer) {
+    public static void withNextFreePort (IntConsumer consumer) {
         synchronized (portLock) {
             int port = findFreePort();
             consumer.accept(port);

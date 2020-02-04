@@ -20,7 +20,10 @@ import org.slf4j.LoggerFactory;
 
 
 class CloseEventHandlerMethodInvoker {
-    private final static Logger LOGGER = LoggerFactory.getLogger(CloseEventHandlerMethodInvoker.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(CloseEventHandlerMethodInvoker.class);
+
+    private CloseEventHandlerMethodInvoker() {
+    }
 
     static Consumer<Pair<WebSocket, CloseReason>> createFor(EventHandlerEndpointDescriptor endpointDescriptor,
                                                     String adapterIdentifier,

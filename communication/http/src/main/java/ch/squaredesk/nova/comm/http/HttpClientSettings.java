@@ -65,9 +65,6 @@ public class HttpClientSettings {
         private String sslKeyStorePass;
         private String sslCertificateContent;
 
-        public Builder() {
-        }
-
         public Builder defaultRequestTimeoutInSeconds(int defaultRequestTimeoutInSeconds) {
             this.defaultRequestTimeoutInSeconds = defaultRequestTimeoutInSeconds;
             return this;
@@ -113,11 +110,7 @@ public class HttpClientSettings {
             return this;
         }
 
-        private void validate() {
-        }
-
         public HttpClientSettings build() {
-            validate();
             return new HttpClientSettings(this);
         }
 

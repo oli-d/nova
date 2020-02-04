@@ -29,7 +29,7 @@ public class RpcClient extends ch.squaredesk.nova.comm.rpc.RpcClient<String, Out
                      MessageSender messageSender,
                      MessageReceiver messageReceiver,
                      Metrics metrics) {
-        super(Metrics.name("jms", identifier).toString(), metrics);
+        super(Metrics.name("jms", identifier), metrics);
         this.messageSender = messageSender;
         this.messageReceiver = messageReceiver;
     }
@@ -50,7 +50,7 @@ public class RpcClient extends ch.squaredesk.nova.comm.rpc.RpcClient<String, Out
 
         // listen to RPC reply. This must be done BEFORE sending the request, otherwise we could miss a very fast response
         // if the Observable is hot
-        String metricsInfo = String.valueOf(requestMetaData.destination) + "." + String.valueOf(request);
+        String metricsInfo = requestMetaData.destination + "." + request;
         Single<RpcReply<ReplyType>> replySingle =
                 messageReceiver.messages(requestMetaData.details.replyDestination, replyTranscriber)
                 .filter(incomingMessage ->

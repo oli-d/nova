@@ -61,7 +61,7 @@ public class MemoryMeter implements CompoundMetric {
                 ((double)heapUsage.getMax() + (double)nonHeapUsage.getMax()) * 100.0);
 
         for (MemoryPoolMXBean pool : memoryPools) {
-            String poolName = name("pools", WHITESPACE.matcher(pool.getName()).replaceAll("-")).toString();
+            String poolName = name("pools", WHITESPACE.matcher(pool.getName()).replaceAll("-"));
             MemoryUsage usage = pool.getUsage();
 
             values.put(name(poolName, "usageInPercent"),

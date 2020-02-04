@@ -26,7 +26,7 @@ public class MessageSender extends ch.squaredesk.nova.comm.sending.MessageSender
     MessageSender(String identifier,
                             JmsObjectRepository jmsObjectRepository,
                             Metrics metrics) {
-        super(Metrics.name("jms", identifier).toString(), metrics);
+        super(Metrics.name("jms", identifier), metrics);
         this.jmsObjectRepository = jmsObjectRepository;
     }
 

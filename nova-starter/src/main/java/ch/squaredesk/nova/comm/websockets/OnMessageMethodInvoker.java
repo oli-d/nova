@@ -22,6 +22,9 @@ import org.slf4j.LoggerFactory;
 class OnMessageMethodInvoker {
     private static final Logger LOGGER = LoggerFactory.getLogger(OnMessageMethodInvoker.class);
 
+    private OnMessageMethodInvoker() {
+    }
+
     static <MessageType> Consumer<IncomingMessage<MessageType, IncomingMessageMetaData>> createFor(OnMessageHandlerEndpointDescriptor endpointDescriptor,
                                                                        String adapterIdentifier,
                                                                        Metrics metrics) {

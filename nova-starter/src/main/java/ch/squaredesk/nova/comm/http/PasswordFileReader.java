@@ -14,6 +14,7 @@ package ch.squaredesk.nova.comm.http;
 import ch.squaredesk.nova.Nova;
 
 class PasswordFileReader {
+    private PasswordFileReader() {}
     static String readPasswordFromFile (Nova nova, String passwordFile) {
         if (nova == null) {
             nova = Nova.builder().build();

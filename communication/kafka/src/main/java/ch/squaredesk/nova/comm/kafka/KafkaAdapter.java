@@ -96,8 +96,8 @@ public class KafkaAdapter extends CommAdapter<String> {
     //                     //
     /////////////////////////
     public void shutdown() {
-        if (messageReceiver instanceof MessageReceiver) {
-            ((MessageReceiver)messageReceiver).shutdown();
+        if (messageReceiver != null) {
+            messageReceiver.shutdown();
         }
         logger.info("KafkaAdapter shut down");
     }
@@ -119,7 +119,6 @@ public class KafkaAdapter extends CommAdapter<String> {
         private String identifier;
         private MessageSender messageSender;
         private MessageReceiver messageReceiver;
-//        private Scheduler subscriptionScheduler;
         private Properties consumerProperties = new Properties();
         private Properties producerProperties = new Properties();
         private Duration pollTimeout = Duration.ofSeconds(1);
@@ -176,11 +175,6 @@ public class KafkaAdapter extends CommAdapter<String> {
             return this;
         }
 
-//        public Builder setSubscriptionScheduler(Scheduler scheduler) {
-//            this.subscriptionScheduler = scheduler;
-//            return this;
-//        }
-
         public Builder setIdentifier(String identifier) {
             this.identifier = identifier;
             return this;
@@ -196,16 +190,10 @@ public class KafkaAdapter extends CommAdapter<String> {
             return this;
         }
 
+        @Override
         public void validate() {
             requireNonNull(serverAddress,"serverAddress must be provided");
             requireNonNull(metrics,"metrics must be provided");
-//            if (subscriptionScheduler==null) {
-//                subscriptionScheduler = Schedulers.from(Executors.newSingleThreadExecutor(r -> {
-//                    Thread t = new Thread(r, "KafkaSubscription");
-//                    t.setDaemon(true);
-//                    return t;
-//                }));
-//            }
             if (consumerProperties==null) consumerProperties = new Properties();
             if (producerProperties==null) producerProperties = new Properties();
         }

@@ -16,7 +16,6 @@ import io.reactivex.functions.Consumer;
 import org.slf4j.LoggerFactory;
 
 import java.util.Arrays;
-import java.util.Optional;
 
 import static ch.squaredesk.nova.events.consumers.ParamHelper.elementAtIndex;
 
