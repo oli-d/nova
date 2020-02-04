@@ -41,10 +41,7 @@ import java.io.IOException;
 
 class HandlersAndInterceptorsTest {
     private ApplicationContextRunner applicationContextRunner = new ApplicationContextRunner()
-            .withConfiguration(AutoConfigurations.of(
-                    NovaAutoConfiguration.class,
-                    HttpAdapterAutoConfig.class,
-                    RestAutoConfig.class))
+            .withConfiguration(AutoConfigurations.of(RestAutoConfig.class))
             .withUserConfiguration(MyMixedConfig.class);
 
 

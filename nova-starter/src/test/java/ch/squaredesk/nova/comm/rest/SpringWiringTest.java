@@ -31,10 +31,7 @@ import javax.ws.rs.Path;
 
 class SpringWiringTest {
     private ApplicationContextRunner applicationContextRunner = new ApplicationContextRunner()
-            .withConfiguration(AutoConfigurations.of(
-                    NovaAutoConfiguration.class,
-                    HttpAdapterAutoConfig.class,
-                    RestAutoConfig.class))
+            .withConfiguration(AutoConfigurations.of(RestAutoConfig.class))
             .withUserConfiguration(MyConfig.class)
             .withPropertyValues("nova.http.server.port=" + PortFinder.findFreePort());
 

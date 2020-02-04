@@ -45,8 +45,6 @@ import java.util.Objects;
 public class JacksonTest {
     private ApplicationContextRunner applicationContextRunner = new ApplicationContextRunner()
             .withConfiguration(AutoConfigurations.of(
-                    NovaAutoConfiguration.class,
-                    HttpAdapterAutoConfig.class,
                     RestAutoConfig.class));
 
     @Test

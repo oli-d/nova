@@ -41,12 +41,7 @@ import static org.hamcrest.Matchers.is;
 @Tag("medium")
 public class SpringWiringTest {
     private ApplicationContextRunner applicationContextRunner = new ApplicationContextRunner()
-                .withConfiguration(AutoConfigurations.of(
-                        WebSocketAdapterAutoConfig.class,
-                        HttpAdapterAutoConfig.class,
-                        HttpClientAutoConfig.class,
-                        HttpServerAutoConfig.class,
-                        NovaAutoConfiguration.class))
+                .withConfiguration(AutoConfigurations.of(WebSocketAdapterAutoConfig.class))
                 .withPropertyValues("nova.http.server.port=" + PortFinder.findFreePort());
 
     @Test

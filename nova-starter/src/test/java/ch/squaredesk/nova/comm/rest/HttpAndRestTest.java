@@ -32,10 +32,7 @@ import static org.hamcrest.Matchers.is;
 
 class HttpAndRestTest {
     private ApplicationContextRunner applicationContextRunner = new ApplicationContextRunner()
-            .withConfiguration(AutoConfigurations.of(
-                    NovaAutoConfiguration.class,
-                    HttpAdapterAutoConfig.class,
-                    RestAutoConfig.class));
+            .withConfiguration(AutoConfigurations.of(RestAutoConfig.class));
 
 
     @Test

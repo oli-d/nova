@@ -13,9 +13,12 @@ package ch.squaredesk.nova.comm.rest;
 
 import ch.squaredesk.net.PortFinder;
 import ch.squaredesk.nova.NovaAutoConfiguration;
+import ch.squaredesk.nova.comm.http.HttpAdapter;
 import ch.squaredesk.nova.comm.http.HttpAdapterAutoConfig;
 import ch.squaredesk.nova.comm.http.HttpRequestSender;
 import ch.squaredesk.nova.comm.http.HttpServerConfigurationProperties;
+import org.awaitility.Awaitility;
+import org.awaitility.Duration;
 import org.glassfish.grizzly.http.server.ErrorPageGenerator;
 import org.glassfish.grizzly.http.server.Request;
 import org.junit.jupiter.api.Test;
@@ -33,10 +36,7 @@ import static org.hamcrest.Matchers.is;
 
 class CustomErrorPageCreatorTest {
     private ApplicationContextRunner applicationContextRunner = new ApplicationContextRunner()
-            .withConfiguration(AutoConfigurations.of(
-                    NovaAutoConfiguration.class,
-                    HttpAdapterAutoConfig.class,
-                    RestAutoConfig.class))
+            .withConfiguration(AutoConfigurations.of(RestAutoConfig.class))
             .withUserConfiguration(CustomErrorPageCreatorTest.MyConfig.class)
             .withPropertyValues("nova.http.server.port=" + PortFinder.findFreePort());
 
@@ -44,9 +44,11 @@ class CustomErrorPageCreatorTest {
     void uncaughtErrorInRestEndpointInvokesErrorPageGenerator() throws Exception {
         applicationContextRunner
                 .run(appContext -> {
+                    HttpAdapter httpAdapter = appContext.getBean(HttpAdapter.class);
                     HttpServerConfigurationProperties httpServerSettings = appContext.getBean(HttpServerConfigurationProperties.class);
                     MyErrorPageGenerator myErrorPageGenerator = appContext.getBean(MyErrorPageGenerator.class);;
 
+                    Awaitility.await().atMost(Duration.FIVE_SECONDS).until(httpAdapter::isServerStarted);
                     String serverUrl = "http://127.0.0.1:" + httpServerSettings.getPort();
 
                     HttpRequestSender.HttpResponse reply = HttpRequestSender.sendGetRequest(serverUrl + "/foo?query=x'WHERE%20full_name%20like'%BOB%");

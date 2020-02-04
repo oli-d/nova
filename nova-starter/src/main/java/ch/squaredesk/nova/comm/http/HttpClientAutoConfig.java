@@ -11,6 +11,7 @@
 
 package ch.squaredesk.nova.comm.http;
 
+import ch.squaredesk.nova.comm.rest.RestClientStarter;
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.AsyncHttpClientConfig;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
@@ -26,6 +27,7 @@ import java.nio.file.Files;
 import java.util.Optional;
 
 @Configuration
+@ConditionalOnMissingBean(RestClientStarter.class)
 @ConditionalOnClass(AsyncHttpClient.class)
 @ConditionalOnProperty(name = "nova.http.client.enable", havingValue = "true", matchIfMissing = true)
 @EnableConfigurationProperties(HttpClientConfigurationProperties.class)
