@@ -23,7 +23,7 @@ public class AsyncResponseStub implements AsyncResponse {
     private boolean suspended;
     private Object entity;
     private boolean cancelled;
-    public long timeout;
+    private long timeout;
     private TimeUnit timeUnit;
     private TimeoutHandler timeoutHandler;
 
@@ -111,5 +111,21 @@ public class AsyncResponseStub implements AsyncResponse {
     @Override
     public Map<Class<?>, Collection<Class<?>>> register(Object callback, Object... callbacks) {
         return null;
+    }
+
+    public Object getEntity() {
+        return entity;
+    }
+
+    public long getTimeout() {
+        return timeout;
+    }
+
+    public TimeUnit getTimeUnit() {
+        return timeUnit;
+    }
+
+    public TimeoutHandler getTimeoutHandler() {
+        return timeoutHandler;
     }
 }
