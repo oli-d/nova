@@ -28,6 +28,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -125,7 +126,11 @@ public class WebSocketAdapter extends CommAdapter<String> implements HttpServerI
     }
 
     public Future<HttpServer> shutdown(Duration timeout) {
-        return httpServer.shutdown(timeout.toMillis(), TimeUnit.MILLISECONDS);
+        if (httpServer != null) {
+            return httpServer.shutdown(timeout.toMillis(), TimeUnit.MILLISECONDS);
+        } else {
+            return CompletableFuture.completedFuture(null);
+        }
     }
 
     public static class Builder extends CommAdapterBuilder<String, WebSocketAdapter>{
