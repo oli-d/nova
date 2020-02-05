@@ -41,7 +41,7 @@ public class SpringWiringTest {
                 .withPropertyValues("nova.http.server.port=" + PortFinder.findFreePort());
 
     @Test
-    public void webSocketEndpointCanProperlyBeInvoked() throws Exception {
+    public void webSocketEndpointCanProperlyBeInvoked() {
         applicationContextRunner
                 .withUserConfiguration(MyConfig.class)
                 .run(appContext -> {

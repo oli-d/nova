@@ -42,8 +42,7 @@ import java.util.Objects;
 
 public class JacksonTest {
     private ApplicationContextRunner applicationContextRunner = new ApplicationContextRunner()
-            .withConfiguration(AutoConfigurations.of(
-                    RestAutoConfig.class));
+            .withConfiguration(AutoConfigurations.of(RestAutoConfig.class));
 
     @Test
     void jacksonIsEnabledOutOfTheBoxWithAnObjectMapperThatFindsAndRegistersAllModules() {

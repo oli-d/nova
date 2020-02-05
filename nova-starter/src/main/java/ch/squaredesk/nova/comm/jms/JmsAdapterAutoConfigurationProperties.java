@@ -31,7 +31,7 @@ public class JmsAdapterAutoConfigurationProperties {
     /** Is the consumer session transacted? */
     private boolean consumerSessionTransacted = false;
     /** The default producer session ACK mode */
-    private int producerSessionAckMode;
+    private int producerSessionAckMode = Session.AUTO_ACKNOWLEDGE;
     /** Is the producer session transacted? */
     private boolean producerSessionTransacted = false;
     /** The (optional) adapter identifier */
