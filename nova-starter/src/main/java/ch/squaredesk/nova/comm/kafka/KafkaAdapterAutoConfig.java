@@ -12,11 +12,13 @@
 package ch.squaredesk.nova.comm.kafka;
 
 import ch.squaredesk.nova.Nova;
+import ch.squaredesk.nova.NovaAutoConfiguration;
 import ch.squaredesk.nova.comm.DefaultMessageTranscriberForStringAsTransportType;
 import ch.squaredesk.nova.comm.MessageTranscriber;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.boot.autoconfigure.ImportAutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -28,6 +30,7 @@ import java.time.Duration;
 
 @Configuration
 @EnableConfigurationProperties(KafkaAdapterConfigurationProperties.class)
+@ImportAutoConfiguration(NovaAutoConfiguration.class)
 @ConditionalOnClass(KafkaAdapter.class)
 public class KafkaAdapterAutoConfig {
 
