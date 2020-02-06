@@ -7,7 +7,9 @@
  *      https://squaredesk.ch/license/oss/LICENSE
  */
 
-package ch.squaredesk.nova.comm.websockets.annotation;
+package ch.squaredesk.nova.events;
+
+import io.reactivex.BackpressureStrategy;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -16,8 +18,8 @@ import java.lang.annotation.Target;
 
 @Target(ElementType.METHOD)
 @Retention(RetentionPolicy.RUNTIME)
-public @interface OnError {
-    String value();
-    boolean captureTimings() default true;
-    boolean logInvocations() default true;
+public @interface OnEvent {
+    String[] value() default {};
+    boolean enableInvocationTimeMetrics() default true;
+    BackpressureStrategy backpressureStrategy() default BackpressureStrategy.BUFFER;
 }
