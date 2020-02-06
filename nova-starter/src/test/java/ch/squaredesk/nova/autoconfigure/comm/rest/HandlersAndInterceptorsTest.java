@@ -10,7 +10,7 @@
 package ch.squaredesk.nova.autoconfigure.comm.rest;
 
 import ch.squaredesk.net.PortFinder;
-import ch.squaredesk.nova.autoconfigure.comm.http.HttpAdapterAutoConfig;
+import ch.squaredesk.nova.autoconfigure.comm.http.HttpAdapterAutoConfiguration;
 import ch.squaredesk.nova.autoconfigure.core.NovaAutoConfiguration;
 import ch.squaredesk.nova.comm.http.HttpAdapter;
 import ch.squaredesk.nova.autoconfigure.comm.http.HttpServerConfigurationProperties;
@@ -39,7 +39,7 @@ import java.io.IOException;
 
 class HandlersAndInterceptorsTest {
     private ApplicationContextRunner applicationContextRunner = new ApplicationContextRunner()
-            .withConfiguration(AutoConfigurations.of(RestAutoConfig.class, HttpAdapterAutoConfig.class, NovaAutoConfiguration.class))
+            .withConfiguration(AutoConfigurations.of(RestAutoConfiguration.class, HttpAdapterAutoConfiguration.class, NovaAutoConfiguration.class))
             .withUserConfiguration(MyMixedConfig.class);
 
 

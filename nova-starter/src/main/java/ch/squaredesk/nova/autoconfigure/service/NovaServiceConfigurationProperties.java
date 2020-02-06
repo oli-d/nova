@@ -7,7 +7,7 @@
  *      https://squaredesk.ch/license/oss/LICENSE
  */
 
-package ch.squaredesk.nova.autoconfigure.core;
+package ch.squaredesk.nova.autoconfigure.service;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 

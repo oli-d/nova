@@ -11,7 +11,6 @@ package ch.squaredesk.nova.autoconfigure.comm.rest;
 
 import ch.squaredesk.net.PortFinder;
 import ch.squaredesk.nova.autoconfigure.comm.http.*;
-import ch.squaredesk.nova.autoconfigure.comm.rest.RestAutoConfig;
 import ch.squaredesk.nova.autoconfigure.core.NovaAutoConfiguration;
 import ch.squaredesk.nova.comm.http.HttpRequestSender;
 import ch.squaredesk.nova.comm.http.HttpRequestSender.RequestHeaders;
@@ -41,7 +40,7 @@ import java.util.Objects;
 
 public class JacksonTest {
     private ApplicationContextRunner applicationContextRunner = new ApplicationContextRunner()
-            .withConfiguration(AutoConfigurations.of(RestAutoConfig.class, HttpAdapterAutoConfig.class, HttpServerAutoConfig.class, HttpClientAutoConfig.class, NovaAutoConfiguration.class));
+            .withConfiguration(AutoConfigurations.of(RestAutoConfiguration.class, HttpAdapterAutoConfiguration.class, HttpServerAutoConfiguration.class, HttpClientAutoConfiguration.class, NovaAutoConfiguration.class));
 
     @Test
     void jacksonIsEnabledOutOfTheBoxWithAnObjectMapperThatFindsAndRegistersAllModules() {

@@ -10,9 +10,9 @@
 package ch.squaredesk.nova.autoconfigure.comm.rest;
 
 import ch.squaredesk.net.PortFinder;
-import ch.squaredesk.nova.autoconfigure.comm.http.HttpAdapterAutoConfig;
-import ch.squaredesk.nova.autoconfigure.comm.http.HttpClientAutoConfig;
-import ch.squaredesk.nova.autoconfigure.comm.http.HttpServerAutoConfig;
+import ch.squaredesk.nova.autoconfigure.comm.http.HttpAdapterAutoConfiguration;
+import ch.squaredesk.nova.autoconfigure.comm.http.HttpClientAutoConfiguration;
+import ch.squaredesk.nova.autoconfigure.comm.http.HttpServerAutoConfiguration;
 import ch.squaredesk.nova.autoconfigure.core.NovaAutoConfiguration;
 import ch.squaredesk.nova.comm.http.HttpAdapter;
 import ch.squaredesk.nova.comm.http.HttpRequestSender;
@@ -36,7 +36,7 @@ import static org.hamcrest.Matchers.is;
 
 class CustomErrorPageCreatorTest {
     private ApplicationContextRunner applicationContextRunner = new ApplicationContextRunner()
-            .withConfiguration(AutoConfigurations.of(RestAutoConfig.class, HttpAdapterAutoConfig.class, HttpServerAutoConfig.class, HttpClientAutoConfig.class, NovaAutoConfiguration.class))
+            .withConfiguration(AutoConfigurations.of(RestAutoConfiguration.class, HttpAdapterAutoConfiguration.class, HttpServerAutoConfiguration.class, HttpClientAutoConfiguration.class, NovaAutoConfiguration.class))
             .withUserConfiguration(CustomErrorPageCreatorTest.MyConfig.class)
             .withPropertyValues("nova.http.server.port=" + PortFinder.findFreePort());
 

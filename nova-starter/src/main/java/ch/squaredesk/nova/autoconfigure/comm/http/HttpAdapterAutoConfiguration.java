@@ -7,15 +7,18 @@
  *      https://squaredesk.ch/license/oss/LICENSE
  */
 
-package ch.squaredesk.nova.autoconfigure.comm.kafka;
+package ch.squaredesk.nova.autoconfigure.comm.http;
 
 import ch.squaredesk.nova.Nova;
 import ch.squaredesk.nova.autoconfigure.core.NovaAutoConfiguration;
 import ch.squaredesk.nova.comm.DefaultMessageTranscriberForStringAsTransportType;
 import ch.squaredesk.nova.comm.MessageTranscriber;
-import ch.squaredesk.nova.comm.kafka.KafkaAdapter;
+import ch.squaredesk.nova.comm.http.HttpAdapter;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ning.http.client.AsyncHttpClient;
+import org.glassfish.grizzly.http.server.HttpServer;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
@@ -28,15 +31,13 @@ import org.springframework.context.annotation.Configuration;
 import java.time.Duration;
 
 @Configuration
-@EnableConfigurationProperties(KafkaAdapterConfigurationProperties.class)
-@AutoConfigureAfter(NovaAutoConfiguration.class)
-@ConditionalOnClass(KafkaAdapter.class)
-public class KafkaAdapterAutoConfig {
-
+@AutoConfigureAfter({NovaAutoConfiguration.class, HttpClientAutoConfiguration.class, HttpServerAutoConfiguration.class})
+@EnableConfigurationProperties(HttpAdapterConfigurationProperties.class)
+public class HttpAdapterAutoConfiguration {
     @Bean(BeanIdentifiers.OBJECT_MAPPER)
     @ConditionalOnMissingBean(name = BeanIdentifiers.OBJECT_MAPPER)
     @ConditionalOnClass(ObjectMapper.class)
-    ObjectMapper kafkaObjectMapper() {
+    ObjectMapper httpObjectMapper() {
         return new ObjectMapper()
                 .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
                 .findAndRegisterModules()
@@ -46,37 +47,32 @@ public class KafkaAdapterAutoConfig {
     @Bean(BeanIdentifiers.MESSAGE_TRANSCRIBER)
     @ConditionalOnMissingBean(MessageTranscriber.class)
     @ConditionalOnBean(name = BeanIdentifiers.OBJECT_MAPPER)
-    MessageTranscriber<String> kafkaMessageTranscriberWithMapper(ObjectMapper jmsObjectMapper) {
+    MessageTranscriber<String> httpMessageTranscriberWithJackson(@Qualifier(BeanIdentifiers.OBJECT_MAPPER) ObjectMapper jmsObjectMapper) {
         return new DefaultMessageTranscriberForStringAsTransportType(jmsObjectMapper);
     }
 
     @Bean(BeanIdentifiers.MESSAGE_TRANSCRIBER)
     @ConditionalOnMissingBean(name = {BeanIdentifiers.MESSAGE_TRANSCRIBER, BeanIdentifiers.OBJECT_MAPPER})
-    MessageTranscriber<String> kafkaMessageTranscriberWithoutMapper() {
+    MessageTranscriber<String> httpMessageTranscriberWithoutJackson() {
         return new DefaultMessageTranscriberForStringAsTransportType();
     }
 
     @Bean
-    @ConditionalOnMissingBean(KafkaAdapter.class)
-    KafkaAdapter kafkaAdapter(KafkaAdapterConfigurationProperties kafkaAdapterConfigurationProperties,
-                              @Qualifier(BeanIdentifiers.MESSAGE_TRANSCRIBER) MessageTranscriber<String> kafkaMessageTranscriber,
-                              Nova nova) {
-        return KafkaAdapter.builder()
-                .setServerAddress(kafkaAdapterConfigurationProperties.getServerAddress())
-                .setBrokerClientId(kafkaAdapterConfigurationProperties.getBrokerClientId())
-                .setConsumerProperties(kafkaAdapterConfigurationProperties.getConsumerProperties())
-                .setConsumerGroupId(kafkaAdapterConfigurationProperties.getConsumerGroupId())
-                .setMessagePollingTimeout(Duration.ofMillis(kafkaAdapterConfigurationProperties.getPollTimeoutInMs()))
-                .setProducerProperties(kafkaAdapterConfigurationProperties.getProducerProperties())
-                .setIdentifier(kafkaAdapterConfigurationProperties.getAdapterIdentifier())
-                .setMessageTranscriber(kafkaMessageTranscriber)
+    @ConditionalOnMissingBean(HttpAdapter.class)
+    public HttpAdapter httpAdapter(
+            HttpAdapterConfigurationProperties adapterSettings,
+            HttpClientConfigurationProperties clientSettings,
+            @Qualifier(BeanIdentifiers.CLIENT) @Autowired(required = false) AsyncHttpClient httpClient,
+            @Qualifier(BeanIdentifiers.SERVER) @Autowired(required = false) HttpServer httpServer,
+            @Qualifier(BeanIdentifiers.MESSAGE_TRANSCRIBER) MessageTranscriber<String> httpMessageTranscriber,
+            Nova nova) {
+        return HttpAdapter.builder()
+                .setDefaultRequestTimeout(Duration.ofSeconds(clientSettings.getDefaultRequestTimeoutInSeconds()))
+                .setHttpClient(httpClient)
+                .setHttpServer(httpServer)
+                .setIdentifier(adapterSettings.getAdapterIdentifier())
+                .setMessageTranscriber(httpMessageTranscriber)
                 .setMetrics(nova.metrics)
                 .build();
-    }
-
-    @Bean
-    @ConditionalOnBean
-    KafkaAdapterStarter kafkaAdapterStarter(KafkaAdapter kafkaAdapter) {
-        return new KafkaAdapterStarter(kafkaAdapter);
     }
 }

@@ -11,7 +11,7 @@ package ch.squaredesk.nova.autoconfigure.comm.websockets;
 
 import ch.squaredesk.nova.Nova;
 import ch.squaredesk.nova.autoconfigure.comm.http.BeanIdentifiers;
-import ch.squaredesk.nova.autoconfigure.comm.http.HttpAdapterAutoConfig;
+import ch.squaredesk.nova.autoconfigure.comm.http.HttpAdapterAutoConfiguration;
 import ch.squaredesk.nova.autoconfigure.core.NovaAutoConfiguration;
 import ch.squaredesk.nova.comm.MessageTranscriber;
 import ch.squaredesk.nova.comm.websockets.WebSocketAdapter;
@@ -27,10 +27,10 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
-@AutoConfigureAfter({NovaAutoConfiguration.class, HttpAdapterAutoConfig.class})
+@AutoConfigureAfter({NovaAutoConfiguration.class, HttpAdapterAutoConfiguration.class})
 @EnableConfigurationProperties(WebSocketAdapterConfigurationProperties.class)
 @ConditionalOnClass(WebSocketAdapter.class)
-public class WebSocketAdapterAutoConfig {
+public class WebSocketAdapterAutoConfigurations {
     @Bean
     @ConditionalOnMissingBean(WebSocketAdapter.class)
     WebSocketAdapter webSocketAdapter(

@@ -25,7 +25,7 @@ import org.springframework.context.annotation.Configuration;
 @ConditionalOnClass(HttpServer.class)
 @ConditionalOnMissingBean({RestBeanPostprocessor.class, RestServerStarter.class })
 @EnableConfigurationProperties(HttpServerConfigurationProperties.class)
-public class HttpServerAutoConfig {
+public class HttpServerAutoConfiguration {
     @Bean(BeanIdentifiers.SERVER)
     HttpServer httpServer(HttpServerConfigurationProperties httpServerConfigurationProperties) {
         ch.squaredesk.nova.comm.http.HttpServerSettings serverSettings =

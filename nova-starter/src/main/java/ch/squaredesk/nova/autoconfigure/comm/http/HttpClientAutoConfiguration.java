@@ -30,7 +30,7 @@ import java.util.Optional;
 @ConditionalOnClass(AsyncHttpClient.class)
 @ConditionalOnProperty(name = "nova.http.client.enable", havingValue = "true", matchIfMissing = true)
 @EnableConfigurationProperties(HttpClientConfigurationProperties.class)
-public class HttpClientAutoConfig {
+public class HttpClientAutoConfiguration {
 
     @Bean(BeanIdentifiers.CLIENT)
     @ConditionalOnMissingBean(name = BeanIdentifiers.CLIENT)

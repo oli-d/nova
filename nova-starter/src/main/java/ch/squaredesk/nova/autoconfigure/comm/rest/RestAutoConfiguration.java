@@ -33,8 +33,8 @@ import org.springframework.context.annotation.Configuration;
         HttpClientConfigurationProperties.class,
         RestConfigurationProperties.class})
 @ConditionalOnClass({HttpAdapter.class, AsyncHttpClient.class})
-@AutoConfigureBefore({HttpServerAutoConfig.class, HttpClientAutoConfig.class})
-public class RestAutoConfig {
+@AutoConfigureBefore({HttpServerAutoConfiguration.class, HttpClientAutoConfiguration.class})
+public class RestAutoConfiguration {
 
     @Bean
     @ConditionalOnProperty(name = "nova.http.rest.log-invocations", havingValue = "true", matchIfMissing = true)
