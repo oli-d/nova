@@ -44,9 +44,9 @@ public class KafkaAdapterAutoConfiguration {
     }
 
     @Bean(BeanIdentifiers.MESSAGE_TRANSCRIBER)
-    @ConditionalOnMissingBean(MessageTranscriber.class)
+    @ConditionalOnMissingBean(name = BeanIdentifiers.MESSAGE_TRANSCRIBER)
     @ConditionalOnBean(name = BeanIdentifiers.OBJECT_MAPPER)
-    MessageTranscriber<String> kafkaMessageTranscriberWithMapper(ObjectMapper jmsObjectMapper) {
+    MessageTranscriber<String> kafkaMessageTranscriberWithMapper(@Qualifier(BeanIdentifiers.OBJECT_MAPPER) ObjectMapper jmsObjectMapper) {
         return new DefaultMessageTranscriberForStringAsTransportType(jmsObjectMapper);
     }
 

@@ -45,7 +45,7 @@ public class HttpAdapterAutoConfiguration {
     }
 
     @Bean(BeanIdentifiers.MESSAGE_TRANSCRIBER)
-    @ConditionalOnMissingBean(MessageTranscriber.class)
+    @ConditionalOnMissingBean(name = BeanIdentifiers.MESSAGE_TRANSCRIBER)
     @ConditionalOnBean(name = BeanIdentifiers.OBJECT_MAPPER)
     MessageTranscriber<String> httpMessageTranscriberWithJackson(@Qualifier(BeanIdentifiers.OBJECT_MAPPER) ObjectMapper jmsObjectMapper) {
         return new DefaultMessageTranscriberForStringAsTransportType(jmsObjectMapper);
