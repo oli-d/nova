@@ -27,33 +27,48 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.Objects;
+import java.util.function.Supplier;
 
 public class ElasticMetricsReporter implements Consumer<MetricsDump> {
     private static final Logger logger = LoggerFactory.getLogger(ElasticMetricsReporter.class);
 
     private final Consumer<Throwable> defaultExceptionHandler;
     private final HttpHost[] elasticServers;
-    private final String indexName;
+    private final Supplier<String> indexNameSupplier;
     private final ZoneId zoneForTimestamps = ZoneId.of("UTC");
     private RestClient restClient;
     private RestHighLevelClient client;
 
     public ElasticMetricsReporter(String indexName, String ... elasticServers) {
+        this(indexName, true, elasticServers);
+    }
+    public ElasticMetricsReporter(String indexName, boolean createDailyIndices, String ... elasticServers) {
         this(indexName,
+                createDailyIndices,
                 Arrays.stream(elasticServers)
                         .map(HttpHost::new)
                         .toArray(HttpHost[]::new));
     }
 
     public ElasticMetricsReporter(String indexName, HttpHost ... elasticServers) {
+        this(indexName, true, elasticServers);
+    }
+
+    public ElasticMetricsReporter(String indexName, boolean createDailyIndices, HttpHost ... elasticServers) {
         this.elasticServers = elasticServers;
-        this.indexName = indexName;
-        defaultExceptionHandler = exception -> logger.error("Unable to upload metrics to index {}", indexName, exception);
+        if (createDailyIndices) {
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy.MM.dd");
+            this.indexNameSupplier = () -> indexName + "-" + formatter.format(LocalDate.now());
+        } else {
+            this.indexNameSupplier = () -> indexName;
+        }
+        defaultExceptionHandler = exception -> logger.error("Unable to upload metrics to index {}", indexNameSupplier.get(), exception);
     }
 
 
@@ -132,7 +147,7 @@ public class ElasticMetricsReporter implements Consumer<MetricsDump> {
     private Single<BulkRequest> requestFor (Observable<Map<String, Object>> metricsAsMaps) {
         return metricsAsMaps
                 .map(map -> new IndexRequest()
-                                .index(indexName)
+                                .index(indexNameSupplier.get())
                                 .source(map)
                 )
                 .reduce(Requests.bulkRequest(),
@@ -158,7 +173,7 @@ public class ElasticMetricsReporter implements Consumer<MetricsDump> {
                     return retVal;
                 })
                 .map(metricAsMap -> new IndexRequest()
-                            .index(indexName)
+                            .index(indexNameSupplier.get())
                             .source(metricAsMap)
                 )
                 .reduce(Requests.bulkRequest(),
