@@ -33,6 +33,7 @@ import java.time.Duration;
 @Configuration
 @AutoConfigureAfter({NovaAutoConfiguration.class, HttpClientAutoConfiguration.class, HttpServerAutoConfiguration.class})
 @EnableConfigurationProperties(HttpAdapterConfigurationProperties.class)
+@ConditionalOnClass({AsyncHttpClient.class, HttpAdapter.class})
 public class HttpAdapterAutoConfiguration {
     @Bean(BeanIdentifiers.OBJECT_MAPPER)
     @ConditionalOnMissingBean(name = BeanIdentifiers.OBJECT_MAPPER)
