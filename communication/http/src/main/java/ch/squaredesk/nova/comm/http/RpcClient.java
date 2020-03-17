@@ -89,14 +89,22 @@ public class RpcClient extends ch.squaredesk.nova.comm.rpc.RpcClient<String, Req
 
         AsyncHttpClient.BoundRequestBuilder requestBuilder = createRequestBuilder(requestAsString, requestMessageMetaData, timeout);
 
-        return Single.fromCallable(() -> requestBuilder.execute().get())
+        return Single.<Response>create(
+                s -> {
+                    try {
+                        Response r = requestBuilder.execute().get(timeout.toMillis(), TimeUnit.MILLISECONDS);
+                        s.onSuccess(r);
+                    } catch (Exception e) {
+                        s.onError(e);
+                    }
+                })
                 .map(response -> {
                     ReplyMessageMetaData metaData = createMetaDataFromReply(requestMessageMetaData, response);
                     U result = responseMapper.apply(response);
                     metricsCollector.rpcCompleted(MetricsCollectorInfoCreator.createInfoFor(requestMessageMetaData.destination), result);
                     return new RpcReply<>(result, metaData);
                 })
-                .timeout(timeout.toMillis(), TimeUnit.MILLISECONDS);
+                ;
     }
 
     private AsyncHttpClient.BoundRequestBuilder createRequestBuilder(String requestAsString, RequestMessageMetaData requestMessageMetaData, Duration timeout) {
