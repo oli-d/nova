@@ -17,11 +17,14 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
 public class HttpRequestSender {
+    public static Duration defaultTimeout = Duration.ofSeconds(30);
+
     private HttpRequestSender() {
     }
 
@@ -90,6 +93,10 @@ public class HttpRequestSender {
     }
 
     public static HttpResponse sendRequest (String method, URL url, String request, RequestHeaders requestHeaders) throws IOException {
+        return sendRequest(method, url, request, requestHeaders, defaultTimeout);
+    }
+
+    public static HttpResponse sendRequest (String method, URL url, String request, RequestHeaders requestHeaders, Duration timeout) throws IOException {
         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
 
         if ("POST".equals(method) || "PUT".equals(method)) {
@@ -107,6 +114,8 @@ public class HttpRequestSender {
                 output.write(request.getBytes(charset));
             }
         }
+
+        connection.setReadTimeout((int)timeout.toMillis());
         connection.connect();
 
         StringBuilder sb = new StringBuilder();
