@@ -30,10 +30,7 @@ class NovaServiceTest {
     void metricsDumpContainsAdditionalInformation() throws Exception {
         InetAddress inetAddress = InetAddress.getLocalHost();
 
-        MyService sut = new MyService(
-                new NovaServiceConfig("Name", "ID", true)
-        );
-        sut.start();
+        MyService sut = new MyService(new ServiceDescriptor("Name", "ID"));
 
         MetricsDump dump = sut
                 .dumpMetricsContinuously(Duration.ofSeconds(1))
@@ -50,6 +47,15 @@ class NovaServiceTest {
         assertThat(dump.additionalInfo.get(3)._2, is("ID"));
         assertThat(dump.additionalInfo.get(4)._1, is("serviceInstanceName"));
         assertThat(dump.additionalInfo.get(4)._2, is("Name.ID"));
+    }
+
+    @Test
+    void defaultValuesAreCreatedIfNotPassed() {
+        MyService sut = new MyService();
+
+        assertTrue(sut.serviceDescriptor.lifecycleEnabled);
+        assertThat(sut.serviceDescriptor.serviceName, is("MyService"));
+        assertNotNull(sut.serviceDescriptor.instanceId);
     }
 
     @Test
@@ -160,8 +166,8 @@ class NovaServiceTest {
             this(null);
         }
 
-        protected MyService(NovaServiceConfig novaServiceConfig) {
-            super(Nova.builder().build(), novaServiceConfig);
+        protected MyService(ServiceDescriptor serviceDescriptor) {
+            super(Nova.builder().build(), serviceDescriptor);
             registerInitHandler(this::onInit);
             registerStartupHandler(this::onStart);
             registerShutdownHandler(this::onShutdown);

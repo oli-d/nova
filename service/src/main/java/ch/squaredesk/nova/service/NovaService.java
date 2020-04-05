@@ -12,6 +12,7 @@
 package ch.squaredesk.nova.service;
 
 import ch.squaredesk.nova.Nova;
+import ch.squaredesk.nova.metrics.Metrics;
 import ch.squaredesk.nova.metrics.MetricsDump;
 import io.reactivex.Flowable;
 import org.slf4j.Logger;
@@ -29,13 +30,10 @@ public abstract class NovaService {
 
     private boolean started = false;
 
-    protected final Logger logger;
-
-    final boolean registerShutdownHook;
+    protected static final Logger logger = LoggerFactory.getLogger(NovaService.class);;
 
     private final LifecycleEventHandlers lifecycleEventHandlers = new LifecycleEventHandlers();
-    protected final String instanceId;
-    protected final String serviceName;
+    protected final ServiceDescriptor serviceDescriptor;
 
     public final Nova nova;
 
@@ -44,18 +42,15 @@ public abstract class NovaService {
         this(nova, null);
     }
 
-    protected NovaService(Nova nova, NovaServiceConfig novaServiceConfig) {
+    protected NovaService(Nova nova, ServiceDescriptor serviceDescriptor) {
         this.nova = Objects.requireNonNull(nova);
-        this.logger = LoggerFactory.getLogger(getClass());
-        this.serviceName = Optional.ofNullable(novaServiceConfig)
-                                    .flatMap(cfg -> Optional.ofNullable(cfg.serviceName))
-                                    .orElse("");
-        this.instanceId = Optional.ofNullable(novaServiceConfig)
-                                    .flatMap(cfg -> Optional.ofNullable(cfg.instanceId))
-                                    .orElse(UUID.randomUUID().toString());
-        this.registerShutdownHook = Optional.ofNullable(novaServiceConfig)
-                                    .flatMap(cfg -> Optional.ofNullable(cfg.registerShutdownHook))
-                                    .orElse(true);
+        this.serviceDescriptor = Optional.ofNullable(serviceDescriptor)
+                                    .orElse(new ServiceDescriptor(
+                                            getClass().getSimpleName(),
+                                            UUID.randomUUID().toString()
+                                    ));
+
+        setAdditionalMetricsInfoIn(nova.metrics, this.serviceDescriptor);
     }
 
     public void registerInitHandler(Runnable initHandler) {
@@ -71,43 +66,48 @@ public abstract class NovaService {
     }
 
     private void doInit() {
-        if (registerShutdownHook) {
-            Runtime.getRuntime().addShutdownHook(new Thread(this::shutdown));
-        }
-
-        calculateAdditionalInfoForMetricsDump();
-
+        Runtime.getRuntime().addShutdownHook(new Thread(this::shutdown));
         lifecycleEventHandlers.invokeInitHandlers();
     }
 
     public void start() {
+        if (!serviceDescriptor.lifecycleEnabled) {
+            logger.warn("Service lifecycle disabled, the invocation of start() has no effect");
+            return;
+        }
+
         doInit();
 
         if (started) {
-            throw new IllegalStateException("service " + serviceName + "/" + instanceId + " already started");
+            throw new IllegalStateException("service " + serviceDescriptor + " already started");
         }
 
         lifecycleEventHandlers.invokeStartupHandlers();
 
         lifeline.start();
         started = true;
-        logger.info("Service {}, instance {} up and running.", serviceName, instanceId);
+        logger.info("Service {} up and running.", serviceDescriptor);
     }
 
     public void shutdown() {
+        if (!serviceDescriptor.lifecycleEnabled) {
+            logger.warn("Service lifecycle disabled, the invocation of shutdown() has no effect");
+            return;
+        }
+
         if (started) {
-            logger.info("Service {}, instance {} is shutting down...", serviceName, instanceId);
+            logger.info("Service {} is shutting down...", serviceDescriptor);
             try {
                 lifecycleEventHandlers.invokeShutdownHandlers();
             } catch (Exception e) {
-                logger.warn("Error in shutdown procedure of instance " + instanceId,e);
+                logger.warn("Error in shutdown procedure of service {}.", serviceDescriptor,e);
             }
 
             lifeline.cut();
             lifeline = new Lifeline();
             started = false;
 
-            logger.info("Shutdown procedure completed for service {}, instance {}.", serviceName, instanceId);
+            logger.info("Shutdown procedure completed for service {}.", serviceDescriptor);
         }
     }
 
@@ -115,27 +115,23 @@ public abstract class NovaService {
         return started;
     }
 
-    private void calculateAdditionalInfoForMetricsDump() {
+    private static void setAdditionalMetricsInfoIn(Metrics metrics, ServiceDescriptor serviceDescriptor) {
         try {
             InetAddress myInetAddress = InetAddress.getLocalHost();
-            nova.metrics.addAdditionalInfoForDumps("hostName", myInetAddress.getHostName());
-            nova.metrics.addAdditionalInfoForDumps("hostAddress", myInetAddress.getHostAddress());
+            metrics.addAdditionalInfoForDumps("hostName", myInetAddress.getHostName());
+            metrics.addAdditionalInfoForDumps("hostAddress", myInetAddress.getHostAddress());
         } catch (Exception ex) {
             logger.warn("Unable to determine my IP address. MetricDumps will be lacking this information.");
-            nova.metrics.addAdditionalInfoForDumps("hostName", "n/a");
-            nova.metrics.addAdditionalInfoForDumps("hostAddress", "n/a");
+            metrics.addAdditionalInfoForDumps("hostName", "n/a");
+            metrics.addAdditionalInfoForDumps("hostAddress", "n/a");
         }
 
-        String serviceNameForMetrics = this.serviceName;
-        if (serviceNameForMetrics == null || serviceNameForMetrics.trim().isEmpty()) {
-            serviceNameForMetrics = getClass().getSimpleName();
-            logger.info("The service name was not provided, so for the metric dumps we derived it from the class name: {} ", serviceNameForMetrics);
-        }
-        nova.metrics.addAdditionalInfoForDumps("serviceName", serviceNameForMetrics);
-        if (instanceId != null) {
-            nova.metrics.addAdditionalInfoForDumps("serviceInstanceId", instanceId);
-            String serviceInstanceName = serviceName + "." + instanceId;
-            nova.metrics.addAdditionalInfoForDumps("serviceInstanceName", serviceInstanceName);
+        metrics.addAdditionalInfoForDumps("serviceName", serviceDescriptor.serviceName);
+
+        if (serviceDescriptor.instanceId != null) {
+            metrics.addAdditionalInfoForDumps("serviceInstanceId", serviceDescriptor.instanceId);
+            String serviceInstanceName = serviceDescriptor.serviceName + "." + serviceDescriptor.instanceId;
+            metrics.addAdditionalInfoForDumps("serviceInstanceName", serviceInstanceName);
         }
     }
 
