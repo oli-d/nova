@@ -68,7 +68,7 @@ class FilesystemTest {
                 .test();
 
         await().atMost(2, SECONDS).until(observer::isTerminated);
-        observer.assertValue("This is some content in some file.\n\nThis is more content.");
+        observer.assertValue("This is some content in some file." + System.lineSeparator() + System.lineSeparator() + "This is more content.");
     }
 
     @Test
@@ -122,7 +122,7 @@ class FilesystemTest {
     @Test
     void testReadTextFileFullyFromClasspath() {
         assertThat(filesystem.readTextFileFullyFromClasspath("/someFile.txt").blockingGet(),
-                is("This is some content in some file.\n\nThis is more content."));
+                is("This is some content in some file." + System.lineSeparator() + System.lineSeparator() + "This is more content."));
     }
 
     @Test

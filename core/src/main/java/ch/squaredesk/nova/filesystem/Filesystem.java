@@ -31,6 +31,7 @@ import java.nio.file.OpenOption;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.util.HashSet;
+import java.util.Optional;
 import java.util.Set;
 
 public class Filesystem {
@@ -97,18 +98,9 @@ public class Filesystem {
      * what this method does.
      */
     private String getWindowsPathUsableForNio(String path) {
-        if (path == null) {
-            return null;
-        }
-        char[] pathAsChars = path.toCharArray();
-        if (pathAsChars.length > 2 //
-                && (pathAsChars[0] == File.pathSeparatorChar || pathAsChars[0] == '/') //
-                && Character.isAlphabetic(pathAsChars[1]) //
-                && pathAsChars[2] == ':') {
-            return path.substring(1);
-        } else {
-            return path;
-        }
+        return Optional.ofNullable(path)
+            .map(x -> x.replaceFirst("^/(.:/)", "$1"))
+            .orElse(null);
     }
 
     public Completable writeFile(final String content, String filePath) {
