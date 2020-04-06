@@ -26,13 +26,11 @@ import java.nio.channels.CompletionHandler;
 import java.nio.channels.FileChannel;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.NoSuchFileException;
-import java.nio.file.OpenOption;
-import java.nio.file.Paths;
-import java.nio.file.StandardOpenOption;
+import java.nio.file.*;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 public class Filesystem {
 
@@ -60,28 +58,7 @@ public class Filesystem {
 
     public Single<String> readTextFileFully(String pathToFile) {
         String filePath = getWindowsPathUsableForNio(pathToFile);
-        return Single.create(s -> {
-            AsynchronousFileChannel channel = AsynchronousFileChannel.open(Paths.get(filePath), StandardOpenOption.READ);
-            long capacity = channel.size();
-            // TODO: hack for simplicity. do this properly
-            if (capacity > Integer.MAX_VALUE) {
-                throw new IllegalArgumentException("File is too big. Max size is " + Integer.MAX_VALUE + " bytes.");
-            }
-
-
-            ByteBuffer buffer = ByteBuffer.allocate((int) channel.size());
-            channel.read(buffer, 0, buffer, new CompletionHandler<Integer, ByteBuffer>() {
-                @Override
-                public void completed(Integer result, final ByteBuffer attachment) {
-                    s.onSuccess(new String(attachment.array()));
-                }
-
-                @Override
-                public void failed(final Throwable exc, final ByteBuffer attachment) {
-                    s.onError(exc);
-                }
-            });
-        });
+        return Single.fromCallable(() -> new String(Files.readAllBytes(Paths.get(filePath))));
     }
 
     public Single<String> readTextFileFullyFromClasspath(String resourcePath) {
