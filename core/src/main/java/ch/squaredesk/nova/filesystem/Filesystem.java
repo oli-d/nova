@@ -15,10 +15,7 @@ import io.reactivex.Completable;
 import io.reactivex.Flowable;
 import io.reactivex.Single;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.net.URL;
 import java.nio.ByteBuffer;
 import java.nio.channels.AsynchronousFileChannel;
@@ -29,6 +26,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
 import java.util.HashSet;
 import java.util.Optional;
+import java.util.Scanner;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -58,7 +56,16 @@ public class Filesystem {
 
     public Single<String> readTextFileFully(String pathToFile) {
         String filePath = getWindowsPathUsableForNio(pathToFile);
-        return Single.fromCallable(() -> new String(Files.readAllBytes(Paths.get(filePath))));
+        return Single.fromCallable(() -> {
+            try(BufferedReader bufferedReader = Files.newBufferedReader(Paths.get(filePath))) {
+                StringBuffer buffer = new StringBuffer();
+                int c = 0;
+                while ((c = bufferedReader.read()) != -1) {
+                    buffer.append((char) c);
+                }
+                return buffer.toString();
+            }
+        });
     }
 
     public Single<String> readTextFileFullyFromClasspath(String resourcePath) {
