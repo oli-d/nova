@@ -44,11 +44,15 @@ public abstract class NovaService {
 
     protected NovaService(Nova nova, ServiceDescriptor serviceDescriptor) {
         this.nova = Objects.requireNonNull(nova);
-        this.serviceDescriptor = Optional.ofNullable(serviceDescriptor)
-                                    .orElse(new ServiceDescriptor(
-                                            getClass().getSimpleName(),
-                                            UUID.randomUUID().toString()
-                                    ));
+
+        serviceDescriptor = Optional.ofNullable(serviceDescriptor).orElse(new ServiceDescriptor());
+        String serviceName = Optional.ofNullable(serviceDescriptor.serviceName)
+                                    .orElse(getClass().getSimpleName());
+        String instanceId = Optional.ofNullable(serviceDescriptor.instanceId)
+                                    .orElse(UUID.randomUUID().toString());
+        boolean enableLifecycle = Optional.ofNullable(serviceDescriptor.lifecycleEnabled)
+                .orElse(true);
+        this.serviceDescriptor = new ServiceDescriptor(serviceName, instanceId, enableLifecycle);
 
         setAdditionalMetricsInfoIn(nova.metrics, this.serviceDescriptor);
     }

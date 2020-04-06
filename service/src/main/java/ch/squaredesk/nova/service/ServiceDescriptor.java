@@ -18,6 +18,10 @@ public class ServiceDescriptor {
     public final String instanceId;
     public final boolean lifecycleEnabled;
 
+    public ServiceDescriptor() {
+        this(null, null);
+    }
+
     public ServiceDescriptor(String serviceName, String instanceId) {
         this(serviceName, instanceId, true);
     }

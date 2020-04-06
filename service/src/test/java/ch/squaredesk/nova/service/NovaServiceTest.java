@@ -59,6 +59,15 @@ class NovaServiceTest {
     }
 
     @Test
+    void serviceNameIsCalculatedIfNullWasPassedInDescriptor() {
+        MyService sut = new MyService(new ServiceDescriptor(null, "1"));
+
+        assertTrue(sut.serviceDescriptor.lifecycleEnabled);
+        assertThat(sut.serviceDescriptor.serviceName, is("MyService"));
+        assertThat(sut.serviceDescriptor.instanceId, is("1"));
+    }
+
+    @Test
     void startedServiceCannotBeRestartedWithoutShutdown() {
         MyService sut = new MyService();
         sut.start();
