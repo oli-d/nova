@@ -30,7 +30,7 @@ public abstract class NovaService {
 
     private boolean started = false;
 
-    protected static final Logger logger = LoggerFactory.getLogger(NovaService.class);;
+    protected static final Logger logger = LoggerFactory.getLogger(NovaService.class);
 
     private final LifecycleEventHandlers lifecycleEventHandlers = new LifecycleEventHandlers();
     protected final ServiceDescriptor serviceDescriptor;
@@ -47,14 +47,23 @@ public abstract class NovaService {
 
         serviceDescriptor = Optional.ofNullable(serviceDescriptor).orElse(new ServiceDescriptor());
         String serviceName = Optional.ofNullable(serviceDescriptor.serviceName)
-                                    .orElse(getClass().getSimpleName());
+                                    .orElse(calculateDefaultServiceName());
         String instanceId = Optional.ofNullable(serviceDescriptor.instanceId)
                                     .orElse(UUID.randomUUID().toString());
-        boolean enableLifecycle = Optional.ofNullable(serviceDescriptor.lifecycleEnabled)
-                .orElse(true);
+        boolean enableLifecycle = serviceDescriptor.lifecycleEnabled;
         this.serviceDescriptor = new ServiceDescriptor(serviceName, instanceId, enableLifecycle);
 
         setAdditionalMetricsInfoIn(nova.metrics, this.serviceDescriptor);
+    }
+
+    String calculateDefaultServiceName() {
+        String simpleClassName = getClass().getSimpleName();
+        int indexOfDollor = simpleClassName.indexOf('$');
+        if (indexOfDollor > 0) {
+            return simpleClassName.substring(0, indexOfDollor);
+        } else {
+            return simpleClassName;
+        }
     }
 
     public void registerInitHandler(Runnable initHandler) {
