@@ -56,15 +56,27 @@ public class Filesystem {
 
     public Single<String> readTextFileFully(String pathToFile) {
         String filePath = getWindowsPathUsableForNio(pathToFile);
-        return Single.fromCallable(() -> {
-            try(BufferedReader bufferedReader = Files.newBufferedReader(Paths.get(filePath))) {
-                StringBuffer buffer = new StringBuffer();
-                int c = 0;
-                while ((c = bufferedReader.read()) != -1) {
-                    buffer.append((char) c);
-                }
-                return buffer.toString();
+        return Single.create(s -> {
+            AsynchronousFileChannel channel = AsynchronousFileChannel.open(Paths.get(filePath), StandardOpenOption.READ);
+            long capacity = channel.size();
+            // TODO: hack for simplicity. do this properly
+            if (capacity > Integer.MAX_VALUE) {
+                throw new IllegalArgumentException("File is too big. Max size is " + Integer.MAX_VALUE + " bytes.");
             }
+
+
+            ByteBuffer buffer = ByteBuffer.allocate((int) channel.size());
+            channel.read(buffer, 0, buffer, new CompletionHandler<Integer, ByteBuffer>() {
+                @Override
+                public void completed(Integer result, final ByteBuffer attachment) {
+                    s.onSuccess(new String(attachment.array()));
+                }
+
+                @Override
+                public void failed(final Throwable exc, final ByteBuffer attachment) {
+                    s.onError(exc);
+                }
+            });
         });
     }
 
