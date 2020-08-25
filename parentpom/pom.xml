@@ -65,8 +65,6 @@
         <java.version.source>1.8</java.version.source>
         <java.version.target>1.8</java.version.target>
 
-        <jackson.version>2.10.3</jackson.version>
-
         <junit.jupiter.version>5.5.2</junit.jupiter.version>
         <junit.platform.version>1.2.0</junit.platform.version>
         <sonar.java.source>1.8</sonar.java.source>
@@ -87,6 +85,17 @@
                 <version>${junit.jupiter.version}</version>
                 <scope>import</scope>
                 <type>pom</type>
+            </dependency>
+
+            <dependency>
+                <groupId>com.fasterxml.jackson.core</groupId>
+                <artifactId>jackson-databind</artifactId>
+                <version>2.10.3</version>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.datatype</groupId>
+                <artifactId>jackson-datatype-jsr310</artifactId>
+                <version>2.10.3</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
