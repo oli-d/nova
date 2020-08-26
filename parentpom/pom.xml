@@ -152,6 +152,12 @@
                     <include>LICENSE</include>
                 </includes>
             </resource>
+            <resource>
+                <directory>src/main/resources</directory>
+            </resource>
+            <resource>
+                <directory>src/test/resources</directory>
+            </resource>
         </resources>
 
         <plugins>
