@@ -39,10 +39,7 @@ import org.springframework.context.support.GenericApplicationContext;
 import javax.ws.rs.container.ContainerRequestFilter;
 import javax.ws.rs.container.ContainerResponseFilter;
 import javax.ws.rs.core.UriBuilder;
-import javax.ws.rs.ext.ContextResolver;
-import javax.ws.rs.ext.Provider;
-import javax.ws.rs.ext.ReaderInterceptor;
-import javax.ws.rs.ext.WriterInterceptor;
+import javax.ws.rs.ext.*;
 import java.io.IOException;
 import java.net.URI;
 import java.util.Map;
@@ -173,6 +170,14 @@ public class RestServerStarter implements ApplicationListener<ContextRefreshedEv
                 resourceConfig.register(filter);
             });
 
+            // register Jersey ExceptionMappers
+            Map<String, ExceptionMapper> exceptionMappers =
+                    contextRefreshedEvent.getApplicationContext().getBeansOfType(ExceptionMapper.class);
+            exceptionMappers.forEach((name, mapper) -> {
+                logger.debug("Registering custom exception mapper {} of class {}", name, mapper.getClass().getName());
+                resourceConfig.register(mapper);
+            });
+
             // register default error page generator
             Map <String, ErrorPageGenerator> defaultErrorPageGenerators =
                     contextRefreshedEvent.getApplicationContext().getBeansOfType(ErrorPageGenerator.class);
@@ -190,8 +195,8 @@ public class RestServerStarter implements ApplicationListener<ContextRefreshedEv
                     sslEngineConfigurator,
                     false);
 
-            defaultErrorPageGenerators.values().forEach(errorPageGenerator -> {
-                logger.debug("Registering default error page generator {}", errorPageGenerator.getClass().getName());
+            defaultErrorPageGenerators.forEach((name, errorPageGenerator) -> {
+                logger.debug("Registering default error page generator {} of class {}", name, errorPageGenerator.getClass().getName());
                 httpServer.getServerConfiguration().setDefaultErrorPageGenerator(errorPageGenerator);
             });
 
