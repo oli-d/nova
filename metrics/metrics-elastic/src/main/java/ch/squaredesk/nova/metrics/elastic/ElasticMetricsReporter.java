@@ -18,6 +18,10 @@ import io.reactivex.Observable;
 import io.reactivex.Single;
 import io.reactivex.functions.Consumer;
 import org.apache.http.HttpHost;
+import org.apache.http.auth.AuthScope;
+import org.apache.http.auth.UsernamePasswordCredentials;
+import org.apache.http.client.CredentialsProvider;
+import org.apache.http.impl.client.BasicCredentialsProvider;
 import org.elasticsearch.action.bulk.BulkRequest;
 import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.index.IndexRequest;
@@ -36,37 +40,25 @@ import java.util.Objects;
 import java.util.function.Supplier;
 
 public class ElasticMetricsReporter implements Consumer<MetricsDump> {
+    
     private static final Logger logger = LoggerFactory.getLogger(ElasticMetricsReporter.class);
 
+    private final ElasticConfig config;
+    
     private final Consumer<Throwable> defaultExceptionHandler;
-    private final HttpHost[] elasticServers;
     private final Supplier<String> indexNameSupplier;
     private final ZoneId zoneForTimestamps = ZoneId.of("UTC");
+    
     private RestClient restClient;
     private RestHighLevelClient client;
 
-    public ElasticMetricsReporter(String indexName, String ... elasticServers) {
-        this(indexName, true, elasticServers);
-    }
-    public ElasticMetricsReporter(String indexName, boolean createDailyIndices, String ... elasticServers) {
-        this(indexName,
-                createDailyIndices,
-                Arrays.stream(elasticServers)
-                        .map(HttpHost::new)
-                        .toArray(HttpHost[]::new));
-    }
-
-    public ElasticMetricsReporter(String indexName, HttpHost ... elasticServers) {
-        this(indexName, true, elasticServers);
-    }
-
-    public ElasticMetricsReporter(String indexName, boolean createDailyIndices, HttpHost ... elasticServers) {
-        this.elasticServers = elasticServers;
-        if (createDailyIndices) {
+    public ElasticMetricsReporter(ElasticConfig config) {
+        this.config = Objects.requireNonNull(config);
+        if (this.config.createDailyIndices) {
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy.MM.dd");
-            this.indexNameSupplier = () -> indexName + "-" + formatter.format(LocalDate.now());
+            this.indexNameSupplier = () -> this.config.indexName + "-" + formatter.format(LocalDate.now());
         } else {
-            this.indexNameSupplier = () -> indexName;
+            this.indexNameSupplier = () -> this.config.indexName;
         }
         defaultExceptionHandler = exception -> logger.error("Unable to upload metrics to index {}", indexNameSupplier.get(), exception);
     }
@@ -84,7 +76,6 @@ public class ElasticMetricsReporter implements Consumer<MetricsDump> {
         fireRequest(requestFor(metricsDump), exceptionHandler);
     }
 
-
     public void accept(SerializableMetricsDump metricsDump){
         accept(metricsDump, defaultExceptionHandler);
     }
@@ -97,18 +88,46 @@ public class ElasticMetricsReporter implements Consumer<MetricsDump> {
     }
 
     public void startup() {
-        logger.info("Connecting to Elasticsearch @ {}", Arrays.toString(elasticServers));
+        HttpHost[] httpHosts = config.httpHosts();
         try {
-            HttpHost[] httpHosts = Arrays.stream(elasticServers).map(HttpHost::new).toArray(HttpHost[]::new);
-            RestClientBuilder restClientBuilder = RestClient.builder(httpHosts);
+            logger.info("Connecting to Elasticsearch @ {}", Arrays.toString(httpHosts));
+            
+            CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
+            if (config.user != null) {
+                credentialsProvider.setCredentials(AuthScope.ANY, new UsernamePasswordCredentials(config.user, config.password));
+            }
+            
+            RestClientBuilder restClientBuilder = RestClient.builder(httpHosts)
+                    .setHttpClientConfigCallback(httpConfig -> httpConfig
+                            .setDefaultCredentialsProvider(credentialsProvider)
+                            .setMaxConnPerRoute(config.maxConnectionsPerRoute)
+                            .setMaxConnTotal(config.maxConnectionsTotal))
+                    .setRequestConfigCallback(requestConfig -> requestConfig
+                            .setConnectTimeout(toMillis(config.connectTimeout))
+                            .setConnectionRequestTimeout(toMillis(config.requestTimeout))
+                            .setSocketTimeout(toMillis(config.socketTimeout)));
+            if (config.pathPrefix != null) {
+                restClientBuilder = restClientBuilder.setPathPrefix(config.pathPrefix);
+            }
+            
             restClient = restClientBuilder.build();
             client = new RestHighLevelClient(restClientBuilder);
-        } catch (Exception e) {
-            logger.error("Unable to connect to Elastic @ {}", Arrays.toString(elasticServers), e);
+            logger.info("\t Elasticsearch setup completed @ {}", Arrays.toString(httpHosts));
+            boolean pingSucceeded = client.ping(RequestOptions.DEFAULT);
+            if (pingSucceeded) {
+                logger.info("\t Connection ping to Elasticsearch succeeded.");
+            } else {
+                logger.error("\t Connection ping to Elasticsearch failed.");
+            }
+        } catch (Exception failure) {
+            logger.error("Unable to connect to Elastic @ {}", Arrays.toString(httpHosts), failure);
         }
-        logger.info("\tsuccessfully established connection to Elastic @ {} :-)", Arrays.toString(elasticServers));
     }
 
+    private static int toMillis(int seconds) {
+        return seconds * 1000;
+    }
+    
     public void shutdown() {
         if (client != null) {
             logger.info("Shutting down connection to Elasticsearch");

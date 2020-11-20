@@ -41,7 +41,12 @@ class ElasticMetricsReporterTest {
 
     @BeforeEach
     void setup() {
-        sut = new ElasticMetricsReporter("index","127.0.0.1:9300");
+        sut = new ElasticMetricsReporter(
+                ElasticConfig.builder()
+                    .indexName("index")
+                    .hosts("127.0.0.1:9300")
+                    .build()
+              );
     }
 
     @Test
