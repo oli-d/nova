@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 2020 Squaredesk GmbH and Oliver Dotzauer.
+ * Copyright (c) 2018-2021 Squaredesk GmbH and Oliver Dotzauer.
  *
- * This program is distributed under the squaredesk open source license. See the LICENSE file
- * distributed with this work for additional information regarding copyright ownership. You may also
- * obtain a copy of the license at
+ * This program is distributed under the squaredesk open source license. See the LICENSE file distributed with this
+ * work for additional information regarding copyright ownership. You may also obtain a copy of the license at
  *
- *   https://squaredesk.ch/license/oss/LICENSE
- *
+ *      https://squaredesk.ch/license/oss/LICENSE
  */
 
 package ch.squaredesk.nova.comm.rpc;
@@ -14,7 +12,7 @@ package ch.squaredesk.nova.comm.rpc;
 import ch.squaredesk.nova.comm.retrieving.IncomingMessage;
 import ch.squaredesk.nova.comm.retrieving.IncomingMessageMetaData;
 import ch.squaredesk.nova.tuples.Pair;
-import io.reactivex.functions.Function;
+import io.reactivex.rxjava3.functions.Function;
 
 import java.util.function.Consumer;
 
@@ -39,12 +37,12 @@ public class RpcInvocation<
     }
 
     @Override
-    public <T> void complete(T reply, TransportSpecificReplyInfo replySpecificInfo, Function<T, TransportMessageType> transcriber) throws Exception {
+    public <T> void complete(T reply, TransportSpecificReplyInfo replySpecificInfo, Function<T, TransportMessageType> transcriber) throws Throwable {
         replyConsumer.accept(new Pair<>(transcriber.apply(reply), replySpecificInfo));
     }
 
     @Override
-    public <T> void complete(T reply, Function<T, TransportMessageType> transcriber) throws Exception {
+    public <T> void complete(T reply, Function<T, TransportMessageType> transcriber) throws Throwable {
         replyConsumer.accept(new Pair<>(transcriber.apply(reply), null));
     }
 

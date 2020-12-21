@@ -1,19 +1,17 @@
 /*
- * Copyright (c) 2020 Squaredesk GmbH and Oliver Dotzauer.
+ * Copyright (c) 2018-2021 Squaredesk GmbH and Oliver Dotzauer.
  *
- * This program is distributed under the squaredesk open source license. See the LICENSE file
- * distributed with this work for additional information regarding copyright ownership. You may also
- * obtain a copy of the license at
+ * This program is distributed under the squaredesk open source license. See the LICENSE file distributed with this
+ * work for additional information regarding copyright ownership. You may also obtain a copy of the license at
  *
- *   https://squaredesk.ch/license/oss/LICENSE
- *
+ *      https://squaredesk.ch/license/oss/LICENSE
  */
 
 package ch.squaredesk.nova.comm.jms;
 
 import ch.squaredesk.nova.metrics.Metrics;
-import io.reactivex.Single;
-import io.reactivex.subscribers.TestSubscriber;
+import io.reactivex.rxjava3.core.Single;
+import io.reactivex.rxjava3.subscribers.TestSubscriber;
 import org.apache.activemq.ActiveMQConnectionFactory;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -82,20 +80,20 @@ class RpcServerTest {
         jmsHelper.sendMessage(queue,"Five");
 
         int maxLoops = 10;
-        for (int i = 0; i < maxLoops && testSubscriber.valueCount() == 0; i++) {
+        for (int i = 0; i < maxLoops && testSubscriber.values().size() == 0; i++) {
             TimeUnit.MILLISECONDS.sleep(1000);
         }
         testSubscriber.assertValueCount(2);
     }
 
     @Test
-    void completingRpcInvocationProperlyTriggersReplySending() throws Exception {
+    void completingRpcInvocationProperlyTriggersReplySending() throws Throwable {
         Destination queue = jmsHelper.createQueue("completeRpc");
         TestSubscriber<RpcInvocation<String>> testSubscriber = sut.requests(queue, String.class).test();
         Message requestMessage = jmsHelper.sendRequest(queue, "Two");
 
         int maxLoops = 10;
-        for (int i = 0; i < maxLoops && testSubscriber.valueCount()==0; i++) {
+        for (int i = 0; i < maxLoops && testSubscriber.values().size()==0; i++) {
             TimeUnit.MILLISECONDS.sleep(1000);
         }
         testSubscriber.values().iterator().next().complete("reply", s->s);

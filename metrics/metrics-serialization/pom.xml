@@ -1,12 +1,10 @@
 <!--
-  ~ Copyright (c) 2020 Squaredesk GmbH and Oliver Dotzauer.
+  ~ Copyright (c) 2018-2021 Squaredesk GmbH and Oliver Dotzauer.
   ~
-  ~ This program is distributed under the squaredesk open source license. See the LICENSE file
-  ~ distributed with this work for additional information regarding copyright ownership. You may also
-  ~ obtain a copy of the license at
+  ~ This program is distributed under the squaredesk open source license. See the LICENSE file distributed with this
+  ~ work for additional information regarding copyright ownership. You may also obtain a copy of the license at
   ~
-  ~   https://squaredesk.ch/license/oss/LICENSE
-  ~
+  ~      https://squaredesk.ch/license/oss/LICENSE
   -->
 
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
@@ -16,17 +14,17 @@
 	<parent>
 		<groupId>ch.squaredesk.nova</groupId>
 		<artifactId>parentpom</artifactId>
-		<version>9.0.0</version>
+		<version>10.0.0</version>
 		<relativePath>../../parentpom</relativePath>
 	</parent>
 
 	<artifactId>metrics-serialization</artifactId>
-	<version>9.0.0</version>
+	<version>10.0.0</version>
 	<dependencies>
 		<dependency>
 			<groupId>ch.squaredesk.nova</groupId>
 			<artifactId>core</artifactId>
-			<version>9.0.0</version>
+			<version>10.0.0</version>
 		</dependency>
 		<dependency>
 			<groupId>com.fasterxml.jackson.core</groupId>

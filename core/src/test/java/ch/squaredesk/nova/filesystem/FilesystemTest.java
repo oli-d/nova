@@ -1,19 +1,17 @@
 /*
- * Copyright (c) 2020 Squaredesk GmbH and Oliver Dotzauer.
+ * Copyright (c) 2018-2021 Squaredesk GmbH and Oliver Dotzauer.
  *
- * This program is distributed under the squaredesk open source license. See the LICENSE file
- * distributed with this work for additional information regarding copyright ownership. You may also
- * obtain a copy of the license at
+ * This program is distributed under the squaredesk open source license. See the LICENSE file distributed with this
+ * work for additional information regarding copyright ownership. You may also obtain a copy of the license at
  *
- *   https://squaredesk.ch/license/oss/LICENSE
- *
+ *      https://squaredesk.ch/license/oss/LICENSE
  */
 
 package ch.squaredesk.nova.filesystem;
 
 import ch.squaredesk.nova.Nova;
-import io.reactivex.observers.TestObserver;
-import io.reactivex.subscribers.TestSubscriber;
+import io.reactivex.rxjava3.observers.TestObserver;
+import io.reactivex.rxjava3.subscribers.TestSubscriber;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -67,7 +65,7 @@ class FilesystemTest {
         TestObserver<String> observer = filesystem.readTextFileFully("src/test/resources/someFile.txt")
                 .test();
 
-        await().atMost(2, SECONDS).until(observer::isTerminated);
+        observer.awaitDone(2, SECONDS);
         observer.assertValue("This is some content in some file." + System.lineSeparator() + System.lineSeparator() + "This is more content.");
     }
 
@@ -76,7 +74,7 @@ class FilesystemTest {
         TestObserver<String> observer = filesystem.readTextFileFully("doesntExist.txt")
                 .test();
 
-        await().atMost(2, SECONDS).until(observer::isTerminated);
+        observer.awaitDone(2, SECONDS);
         observer.assertError(NoSuchFileException.class);
     }
 
@@ -91,7 +89,7 @@ class FilesystemTest {
         try {
             TestObserver<Void> observer = filesystem.writeFile("content", "isntThere.txt").test();
 
-            await().atMost(2, SECONDS).until(observer::isTerminated);
+            observer.awaitDone(2, SECONDS);
             assertTrue(new File("isntThere.txt").exists());
         } finally {
             File file = new File("isntThere.txt");

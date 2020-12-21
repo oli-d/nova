@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 2020 Squaredesk GmbH and Oliver Dotzauer.
+ * Copyright (c) 2018-2021 Squaredesk GmbH and Oliver Dotzauer.
  *
- * This program is distributed under the squaredesk open source license. See the LICENSE file
- * distributed with this work for additional information regarding copyright ownership. You may also
- * obtain a copy of the license at
+ * This program is distributed under the squaredesk open source license. See the LICENSE file distributed with this
+ * work for additional information regarding copyright ownership. You may also obtain a copy of the license at
  *
- *   https://squaredesk.ch/license/oss/LICENSE
- *
+ *      https://squaredesk.ch/license/oss/LICENSE
  */
 
 package ch.squaredesk.nova.comm.http;
@@ -16,8 +14,8 @@ import ch.squaredesk.nova.tuples.Pair;
 import com.ning.http.client.AsyncHttpClient;
 import com.sun.net.httpserver.Headers;
 import com.sun.net.httpserver.HttpExchange;
-import io.reactivex.functions.Function;
-import io.reactivex.observers.TestObserver;
+import io.reactivex.rxjava3.functions.Function;
+import io.reactivex.rxjava3.observers.TestObserver;
 import org.glassfish.grizzly.http.server.HttpServer;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
@@ -71,13 +69,13 @@ class HttpAdapterTest {
         TestObserver<RpcReply<Double>> doubleObserver = sut.sendGetRequest(url, Double.class).test();
         TestObserver<RpcReply<BigDecimal>> bigDecimalObserver = sut.sendGetRequest(url, BigDecimal.class).test();
 
-        await().atMost(10, SECONDS).until(stringObserver::isTerminated, is(true));
+        stringObserver.awaitDone(10, SECONDS);
         stringObserver.assertValue(reply -> "1".equals(reply.result));
-        await().atMost(10, SECONDS).until(integerObserver::isTerminated, is(true));
+        integerObserver.awaitDone(10, SECONDS);
         integerObserver.assertValue(reply -> 1 == reply.result);
-        await().atMost(10, SECONDS).until(doubleObserver::isTerminated, is(true));
+        doubleObserver.awaitDone(10, SECONDS);
         doubleObserver.assertValue(reply -> 1.0 == reply.result);
-        await().atMost(10, SECONDS).until(bigDecimalObserver::isTerminated, is(true));
+        bigDecimalObserver.awaitDone(10, SECONDS);
         bigDecimalObserver.assertValue(reply -> BigDecimal.ONE.equals(reply.result));
     }
 
@@ -115,7 +113,7 @@ class HttpAdapterTest {
         sut.setStandardHeadersForAllRequests(standardHeaders);
         TestObserver<RpcReply<String>> stringObserver = sut.sendGetRequest(url, String.class).test();
 
-        await().atMost(10, SECONDS).until(stringObserver::isTerminated, is(true));
+        stringObserver.awaitDone(10, SECONDS);
         stringObserver.assertValue(reply -> "OK".equals(reply.result));
         MatcherAssert.assertThat(consumer.headerValue, Matchers.is("val1"));
     }
@@ -142,7 +140,7 @@ class HttpAdapterTest {
         sut.setStandardHeadersForAllRequests(standardHeaders);
         TestObserver<RpcReply<String>> stringObserver = sut.sendGetRequest(url, specificHeaders, String.class).test();
 
-        await().atMost(10, SECONDS).until(stringObserver::isTerminated, is(true));
+        stringObserver.awaitDone(10, SECONDS);
         stringObserver.assertValue(reply -> "OK".equals(reply.result));
         MatcherAssert.assertThat(consumer.headerValue, Matchers.is("val2"));
     }

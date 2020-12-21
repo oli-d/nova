@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 2020 Squaredesk GmbH and Oliver Dotzauer.
+ * Copyright (c) 2018-2021 Squaredesk GmbH and Oliver Dotzauer.
  *
- * This program is distributed under the squaredesk open source license. See the LICENSE file
- * distributed with this work for additional information regarding copyright ownership. You may also
- * obtain a copy of the license at
+ * This program is distributed under the squaredesk open source license. See the LICENSE file distributed with this
+ * work for additional information regarding copyright ownership. You may also obtain a copy of the license at
  *
- *   https://squaredesk.ch/license/oss/LICENSE
- *
+ *      https://squaredesk.ch/license/oss/LICENSE
  */
 package ch.squaredesk.nova.comm.websockets;
 
@@ -16,9 +14,9 @@ import com.codahale.metrics.Counter;
 import com.codahale.metrics.Meter;
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.AsyncHttpClientConfig;
-import io.reactivex.Observable;
-import io.reactivex.functions.Consumer;
-import io.reactivex.observers.TestObserver;
+import io.reactivex.rxjava3.core.Observable;
+import io.reactivex.rxjava3.functions.Consumer;
+import io.reactivex.rxjava3.observers.TestObserver;
 import org.awaitility.Awaitility;
 import org.glassfish.grizzly.http.server.HttpServer;
 import org.junit.jupiter.api.AfterEach;
@@ -250,7 +248,7 @@ class WebsocketAdapterTest {
         assertThat(specificSent.getCount(), is(3l));
 
         long maxWaitTime = System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(20);
-        while (testSubscriber.valueCount() < 3 && System.currentTimeMillis() < maxWaitTime) {
+        while (testSubscriber.values().size() < 3 && System.currentTimeMillis() < maxWaitTime) {
             TimeUnit.MILLISECONDS.sleep(500);
         }
         testSubscriber.assertValueCount(3);
@@ -281,7 +279,7 @@ class WebsocketAdapterTest {
         sendSocket.send("Two");
         sendSocket.send("33");
 
-        Awaitility.await().atMost(20, TimeUnit.SECONDS).until(testSubscriber::valueCount, is(1));
+        Awaitility.await().atMost(20, TimeUnit.SECONDS).until(() -> testSubscriber.values().size(), is(1));
         testSubscriber.assertValueCount(1);
         assertThat(testSubscriber.values().get(0).message, is(33));
         assertThat(totalUnparsable.getCount(), is(2l));
@@ -298,8 +296,8 @@ class WebsocketAdapterTest {
         CountDownLatch countDownLatch = new CountDownLatch(1);
         sut.acceptConnections(serverDestination).subscribe(
             webSocket -> {
-                assertThat(webSocket.close(CloseReason.CLOSED_ABNORMALLY).blockingGet(), instanceOf(IllegalArgumentException.class));
-                assertThat(webSocket.close(CloseReason.NO_STATUS_CODE).blockingGet(), instanceOf(IllegalArgumentException.class));
+                assertThrows(IllegalArgumentException.class, () -> webSocket.close(CloseReason.CLOSED_ABNORMALLY).blockingAwait());
+                assertThrows(IllegalArgumentException.class, () -> webSocket.close(CloseReason.NO_STATUS_CODE).blockingAwait());
                 webSocket.close();
                 countDownLatch.countDown();
             }
@@ -317,8 +315,8 @@ class WebsocketAdapterTest {
 
         sut.acceptConnections(serverDestination);
         WebSocket clientEndpoint = sut.connectTo(clientDestination);
-        assertThat(clientEndpoint.close(CloseReason.CLOSED_ABNORMALLY).blockingGet(), instanceOf(IllegalArgumentException.class));
-        assertThat(clientEndpoint.close(CloseReason.NO_STATUS_CODE).blockingGet(), instanceOf(IllegalArgumentException.class));
+        assertThrows(IllegalArgumentException.class, () -> clientEndpoint.close(CloseReason.CLOSED_ABNORMALLY).blockingAwait());
+        assertThrows(IllegalArgumentException.class, () -> clientEndpoint.close(CloseReason.NO_STATUS_CODE).blockingAwait());
         clientEndpoint.close();
     }
 

@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 2020 Squaredesk GmbH and Oliver Dotzauer.
+ * Copyright (c) 2018-2021 Squaredesk GmbH and Oliver Dotzauer.
  *
- * This program is distributed under the squaredesk open source license. See the LICENSE file
- * distributed with this work for additional information regarding copyright ownership. You may also
- * obtain a copy of the license at
+ * This program is distributed under the squaredesk open source license. See the LICENSE file distributed with this
+ * work for additional information regarding copyright ownership. You may also obtain a copy of the license at
  *
- *   https://squaredesk.ch/license/oss/LICENSE
- *
+ *      https://squaredesk.ch/license/oss/LICENSE
  */
 
 package ch.squaredesk.nova.comm.http;
@@ -32,20 +30,20 @@ public class RpcInvocation<IncomingMessageType>
         this.transcriber = transcriber;
     }
 
-    public <T> void complete(T reply) throws Exception {
+    public <T> void complete(T reply) throws Throwable {
         complete(reply, 200, null);
     }
 
-    public <T> void complete(T reply, int statusCode) throws Exception {
+    public <T> void complete(T reply, int statusCode) throws Throwable {
         complete(reply, statusCode, null);
     }
 
 
-    public <T> void complete(T reply, Map<String, String> replyHeaders) throws Exception {
+    public <T> void complete(T reply, Map<String, String> replyHeaders) throws Throwable {
         complete(reply, 200, replyHeaders);
     }
 
-    public <T> void complete(T reply, int statusCode, Map<String, String> replyHeaders) throws Exception {
+    public <T> void complete(T reply, int statusCode, Map<String, String> replyHeaders) throws Throwable {
         ReplyInfo replyInfo = new ReplyInfo(statusCode, replyHeaders);
         complete(reply, replyInfo, transcriber.getOutgoingMessageTranscriber(reply));
     }

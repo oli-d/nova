@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Squaredesk GmbH and Oliver Dotzauer.
+ * Copyright (c) 2018-2021 Squaredesk GmbH and Oliver Dotzauer.
  *
  * This program is distributed under the squaredesk open source license. See the LICENSE file distributed with this
  * work for additional information regarding copyright ownership. You may also obtain a copy of the license at
@@ -71,12 +71,18 @@ public class JacksonTest {
                 .withUserConfiguration(MyConfigForTest.class)
                 .run(context -> {
                     HttpServerConfigurationProperties httpServerConfigurationProperties = context.getBean(HttpServerConfigurationProperties.class);
-                    ObjectMapper om = new ObjectMapper();
-                    Person sentPerson = new Person("Lea", "Dotzauer", LocalDate.of(2005,9,16));
+                    String sentPerson = """
+                            {
+                                    "firstName" : "Lea",
+                                    "lastName" : "Dotzauer",
+                                    "birthDate" : "xxx"
+                                                
+                            }
+                            """;
 
                     // send entity as JSON
                     HttpRequestSender.HttpResponse httpResponse = HttpRequestSender.sendPutRequest("http://localhost:" + httpServerConfigurationProperties.getPort() + "/echo",
-                            om.writeValueAsString(sentPerson), RequestHeaders.createForContentType("application/json"));
+                            sentPerson, RequestHeaders.createForContentType("application/json"));
 
                     // expect that the handler retrieved a properly unmarshalled entity
                     MatcherAssert.assertThat(httpResponse.returnCode, Matchers.is(400));

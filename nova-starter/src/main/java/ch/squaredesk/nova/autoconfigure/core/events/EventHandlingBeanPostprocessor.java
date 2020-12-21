@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Squaredesk GmbH and Oliver Dotzauer.
+ * Copyright (c) 2018-2021 Squaredesk GmbH and Oliver Dotzauer.
  *
  * This program is distributed under the squaredesk open source license. See the LICENSE file distributed with this
  * work for additional information regarding copyright ownership. You may also obtain a copy of the license at
@@ -13,7 +13,7 @@ import ch.squaredesk.nova.Nova;
 import ch.squaredesk.nova.events.EventContext;
 import ch.squaredesk.nova.metrics.Metrics;
 import com.codahale.metrics.Timer;
-import io.reactivex.functions.Consumer;
+import io.reactivex.rxjava3.functions.Consumer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.config.BeanPostProcessor;

@@ -1,13 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright (c) 2020 Squaredesk GmbH and Oliver Dotzauer.
+  ~ Copyright (c) 2018-2021 Squaredesk GmbH and Oliver Dotzauer.
   ~
-  ~ This program is distributed under the squaredesk open source license. See the LICENSE file
-  ~ distributed with this work for additional information regarding copyright ownership. You may also
-  ~ obtain a copy of the license at
+  ~ This program is distributed under the squaredesk open source license. See the LICENSE file distributed with this
+  ~ work for additional information regarding copyright ownership. You may also obtain a copy of the license at
   ~
-  ~   https://squaredesk.ch/license/oss/LICENSE
-  ~
+  ~      https://squaredesk.ch/license/oss/LICENSE
   -->
 
 <project xmlns="http://maven.apache.org/POM/4.0.0"
@@ -16,7 +14,7 @@
     <parent>
         <artifactId>parentpom</artifactId>
         <groupId>ch.squaredesk.nova</groupId>
-        <version>9.0.0</version>
+        <version>10.0.0</version>
         <relativePath>../parentpom</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
@@ -25,38 +23,38 @@
 
     <properties>
         <jersey.version>2.29.1</jersey.version>
-        <spring.boot.version>2.2.4.RELEASE</spring.boot.version>
+        <spring.boot.version>2.4.0</spring.boot.version>
     </properties>
 
     <dependencies>
         <dependency>
             <groupId>ch.squaredesk.nova</groupId>
             <artifactId>jms</artifactId>
-            <version>9.0.0</version>
+            <version>10.0.0</version>
             <optional>true</optional>
         </dependency>
         <dependency>
             <groupId>ch.squaredesk.nova</groupId>
             <artifactId>websockets</artifactId>
-            <version>9.0.0</version>
+            <version>10.0.0</version>
             <optional>true</optional>
         </dependency>
         <dependency>
             <groupId>ch.squaredesk.nova</groupId>
             <artifactId>kafka</artifactId>
-            <version>9.0.0</version>
+            <version>10.0.0</version>
             <optional>true</optional>
         </dependency>
         <dependency>
             <groupId>ch.squaredesk.nova</groupId>
             <artifactId>service</artifactId>
-            <version>9.0.0</version>
+            <version>10.0.0</version>
             <optional>true</optional>
         </dependency>
         <dependency>
             <groupId>ch.squaredesk.nova</groupId>
             <artifactId>websockets</artifactId>
-            <version>9.0.0</version>
+            <version>10.0.0</version>
             <optional>true</optional>
         </dependency>
 
@@ -137,7 +135,7 @@
         <dependency>
             <groupId>ch.squaredesk.nova</groupId>
             <artifactId>http-test-utils</artifactId>
-            <version>9.0.0</version>
+            <version>10.0.0</version>
             <scope>test</scope>
         </dependency>
         <dependency>

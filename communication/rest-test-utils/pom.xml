@@ -1,13 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright (c) 2020 Squaredesk GmbH and Oliver Dotzauer.
+  ~ Copyright (c) 2018-2021 Squaredesk GmbH and Oliver Dotzauer.
   ~
-  ~ This program is distributed under the squaredesk open source license. See the LICENSE file
-  ~ distributed with this work for additional information regarding copyright ownership. You may also
-  ~ obtain a copy of the license at
+  ~ This program is distributed under the squaredesk open source license. See the LICENSE file distributed with this
+  ~ work for additional information regarding copyright ownership. You may also obtain a copy of the license at
   ~
-  ~   https://squaredesk.ch/license/oss/LICENSE
-  ~
+  ~      https://squaredesk.ch/license/oss/LICENSE
   -->
 
 <project xmlns="http://maven.apache.org/POM/4.0.0"
@@ -16,13 +14,13 @@
     <parent>
         <artifactId>parentpom</artifactId>
         <groupId>ch.squaredesk.nova</groupId>
-        <version>9.0.0</version>
+        <version>10.0.0</version>
         <relativePath>../../parentpom</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>rest-test-utils</artifactId>
-    <version>9.0.0</version>
+    <version>10.0.0</version>
 
     <properties>
         <jersey.version>2.29.1</jersey.version>
@@ -32,7 +30,7 @@
         <dependency>
             <groupId>ch.squaredesk.nova</groupId>
             <artifactId>http-test-utils</artifactId>
-            <version>9.0.0</version>
+            <version>10.0.0</version>
         </dependency>
         <dependency>
             <groupId>javax.ws.rs</groupId>

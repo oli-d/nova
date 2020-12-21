@@ -1,13 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright (c) 2020 Squaredesk GmbH and Oliver Dotzauer.
+  ~ Copyright (c) 2018-2021 Squaredesk GmbH and Oliver Dotzauer.
   ~
-  ~ This program is distributed under the squaredesk open source license. See the LICENSE file
-  ~ distributed with this work for additional information regarding copyright ownership. You may also
-  ~ obtain a copy of the license at
+  ~ This program is distributed under the squaredesk open source license. See the LICENSE file distributed with this
+  ~ work for additional information regarding copyright ownership. You may also obtain a copy of the license at
   ~
-  ~   https://squaredesk.ch/license/oss/LICENSE
-  ~
+  ~      https://squaredesk.ch/license/oss/LICENSE
   -->
 
 <project xmlns="http://maven.apache.org/POM/4.0.0"
@@ -17,7 +15,7 @@
 
     <groupId>ch.squaredesk.nova</groupId>
     <artifactId>parentpom</artifactId>
-    <version>9.0.0</version>
+    <version>10.0.0</version>
     <packaging>pom</packaging>
 
     <name>Nova parent</name>
@@ -62,12 +60,11 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 
-        <java.version.source>1.8</java.version.source>
-        <java.version.target>1.8</java.version.target>
+        <java.version>15</java.version>
 
         <junit.jupiter.version>5.5.2</junit.jupiter.version>
         <junit.platform.version>1.2.0</junit.platform.version>
-        <sonar.java.source>1.8</sonar.java.source>
+        <sonar.java.source>15</sonar.java.source>
     </properties>
 
     <dependencyManagement>
@@ -90,12 +87,12 @@
             <dependency>
                 <groupId>com.fasterxml.jackson.core</groupId>
                 <artifactId>jackson-databind</artifactId>
-                <version>2.10.3</version>
+                <version>2.12.0</version>
             </dependency>
             <dependency>
                 <groupId>com.fasterxml.jackson.datatype</groupId>
                 <artifactId>jackson-datatype-jsr310</artifactId>
-                <version>2.10.3</version>
+                <version>2.12.0</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
@@ -127,7 +124,7 @@
         <dependency>
             <groupId>org.awaitility</groupId>
             <artifactId>awaitility</artifactId>
-            <version>3.1.6</version>
+            <version>4.0.3</version>
             <scope>test</scope>
         </dependency>
 
@@ -135,7 +132,7 @@
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
-            <version>1.7.26</version>
+            <version>1.7.30</version>
         </dependency>
         <dependency>
             <groupId>ch.qos.logback</groupId>
@@ -161,10 +158,12 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.6.0</version>
+                <version>3.8.1</version>
                 <configuration>
-                    <source>${java.version.source}</source>
-                    <target>${java.version.target}</target>
+                    <release>${java.version}</release>
+                    <compilerArgs>
+                        <compilerArgs>--enable-preview</compilerArgs>
+                    </compilerArgs>
                 </configuration>
             </plugin>
             <plugin>
@@ -182,8 +181,9 @@
             </plugin>
             <plugin>
                 <artifactId>maven-surefire-plugin</artifactId>
-                <version>2.22.0</version>
+                <version>2.22.2</version>
                 <configuration>
+                    <argLine>--enable-preview</argLine>
                     <includes>
                         <include>**/Test*.java</include>
                         <include>**/*Test.java</include>

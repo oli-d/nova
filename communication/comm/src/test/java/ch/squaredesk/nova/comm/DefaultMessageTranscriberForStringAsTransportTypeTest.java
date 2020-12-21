@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 2020 Squaredesk GmbH and Oliver Dotzauer.
+ * Copyright (c) 2018-2021 Squaredesk GmbH and Oliver Dotzauer.
  *
- * This program is distributed under the squaredesk open source license. See the LICENSE file
- * distributed with this work for additional information regarding copyright ownership. You may also
- * obtain a copy of the license at
+ * This program is distributed under the squaredesk open source license. See the LICENSE file distributed with this
+ * work for additional information regarding copyright ownership. You may also obtain a copy of the license at
  *
- *   https://squaredesk.ch/license/oss/LICENSE
- *
+ *      https://squaredesk.ch/license/oss/LICENSE
  */
 
 package ch.squaredesk.nova.comm;
@@ -32,7 +30,7 @@ class DefaultMessageTranscriberForStringAsTransportTypeTest {
     }
 
     @Test
-    void specificObjectMapperCanBeUsed() throws Exception {
+    void specificObjectMapperCanBeUsed() throws Throwable {
         ObjectMapper objectMapper = new ObjectMapper();
         objectMapper.configOverride(BigDecimal.class).setFormat(JsonFormat.Value.forShape(JsonFormat.Shape.STRING));
         DefaultMessageTranscriberForStringAsTransportType sut = new DefaultMessageTranscriberForStringAsTransportType(objectMapper);
@@ -42,7 +40,7 @@ class DefaultMessageTranscriberForStringAsTransportTypeTest {
     }
 
     @Test
-    void defaultTranscribersAreSet() throws Exception {
+    void defaultTranscribersAreSet() throws Throwable {
         assertThat(sut.getOutgoingMessageTranscriber(String.class).apply("a String"), is("a String"));
         assertThat(sut.getOutgoingMessageTranscriber(Integer.class).apply(1), is("1"));
         assertThat(sut.getOutgoingMessageTranscriber(Double.class).apply(1.0), is("1.0"));

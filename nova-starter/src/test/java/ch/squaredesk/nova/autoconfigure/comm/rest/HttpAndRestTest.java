@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Squaredesk GmbH and Oliver Dotzauer.
+ * Copyright (c) 2018-2021 Squaredesk GmbH and Oliver Dotzauer.
  *
  * This program is distributed under the squaredesk open source license. See the LICENSE file distributed with this
  * work for additional information regarding copyright ownership. You may also obtain a copy of the license at
@@ -11,14 +11,14 @@ package ch.squaredesk.nova.autoconfigure.comm.rest;
 
 import ch.squaredesk.net.PortFinder;
 import ch.squaredesk.nova.autoconfigure.comm.http.HttpAdapterAutoConfiguration;
+import ch.squaredesk.nova.autoconfigure.comm.http.HttpServerConfigurationProperties;
 import ch.squaredesk.nova.autoconfigure.core.NovaAutoConfiguration;
 import ch.squaredesk.nova.comm.http.HttpAdapter;
 import ch.squaredesk.nova.comm.http.HttpRequestSender;
-import ch.squaredesk.nova.autoconfigure.comm.http.HttpServerConfigurationProperties;
 import ch.squaredesk.nova.comm.http.RpcReply;
-import io.reactivex.observers.TestObserver;
+import io.reactivex.rxjava3.observers.TestObserver;
 import org.awaitility.Awaitility;
-import org.awaitility.Duration;
+import org.awaitility.Durations;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Test;
@@ -50,8 +50,7 @@ class HttpAndRestTest {
                     String serverUrl = "http://127.0.0.1:" + port;
                     TestObserver<RpcReply<String>> test = httpAdapter.sendGetRequest(serverUrl + "/foo2", String.class).test();
 
-                    Awaitility.await().atMost(Duration.FIVE_SECONDS).until(test::valueCount, is(1));
-                    MatcherAssert.assertThat(test.valueCount(), Matchers.is(1));
+                    Awaitility.await().atMost(Durations.FIVE_SECONDS).until(() -> test.values().size(), is(1));
                     MatcherAssert.assertThat(test.values().get(0).result, Matchers.is("MyBean"));
                 });
     }
@@ -64,7 +63,7 @@ class HttpAndRestTest {
                     HttpServerConfigurationProperties serverSettings = appContext.getBean(HttpServerConfigurationProperties.class);
                     int port = serverSettings.getPort();
                     HttpAdapter httpAdapter = appContext.getBean(HttpAdapter.class);
-                    Awaitility.await().atMost(Duration.FIVE_SECONDS).until(httpAdapter::isServerStarted);
+                    Awaitility.await().atMost(Durations.FIVE_SECONDS).until(httpAdapter::isServerStarted);
 
                     String serverUrl = "http://127.0.0.1:" + port;
                     httpAdapter.requests("/foo1", String.class).subscribe(

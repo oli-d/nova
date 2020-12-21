@@ -1,24 +1,23 @@
 /*
- * Copyright (c) 2020 Squaredesk GmbH and Oliver Dotzauer.
+ * Copyright (c) 2018-2021 Squaredesk GmbH and Oliver Dotzauer.
  *
- * This program is distributed under the squaredesk open source license. See the LICENSE file
- * distributed with this work for additional information regarding copyright ownership. You may also
- * obtain a copy of the license at
+ * This program is distributed under the squaredesk open source license. See the LICENSE file distributed with this
+ * work for additional information regarding copyright ownership. You may also obtain a copy of the license at
  *
- *   https://squaredesk.ch/license/oss/LICENSE
- *
+ *      https://squaredesk.ch/license/oss/LICENSE
  */
 package ch.squaredesk.nova.comm.websockets;
 
 import ch.squaredesk.nova.comm.MessageTranscriber;
 import ch.squaredesk.nova.comm.retrieving.IncomingMessage;
 import ch.squaredesk.nova.tuples.Pair;
-import io.reactivex.Completable;
-import io.reactivex.Observable;
-import io.reactivex.functions.Consumer;
-import io.reactivex.functions.Function;
-import io.reactivex.subjects.PublishSubject;
-import io.reactivex.subjects.Subject;
+import io.reactivex.rxjava3.core.Completable;
+import io.reactivex.rxjava3.core.Observable;
+import io.reactivex.rxjava3.functions.Consumer;
+import io.reactivex.rxjava3.functions.Function;
+import io.reactivex.rxjava3.subjects.PublishSubject;
+import io.reactivex.rxjava3.subjects.Subject;
+import io.reactivex.rxjava3.subjects.Subject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -120,7 +119,7 @@ public abstract class WebSocket {
             doSend(messageAsString);
             metricsCollector.messageSent(destinationForMetrics);
             return Completable.complete();
-        } catch (Exception e) {
+        } catch (Throwable e) {
             return Completable.error(e);
         }
     }
@@ -142,7 +141,7 @@ public abstract class WebSocket {
         closeHandlers.forEach(handler -> {
             try {
                 handler.accept(new Pair<>(this, closeReason));
-            } catch (Exception e) {
+            } catch (Throwable e) {
                 logger.error("An error occurred, trying to inform handler about close event", e);
             }
         });
@@ -152,7 +151,7 @@ public abstract class WebSocket {
         errorHandlers.forEach(handler -> {
             try {
                 handler.accept(new Pair<>(this, error));
-            } catch (Exception e) {
+            } catch (Throwable e) {
                 logger.error("An error occurred, trying to inform handler about error event", e);
             }
         });

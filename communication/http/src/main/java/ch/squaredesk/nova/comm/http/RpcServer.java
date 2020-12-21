@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 2020 Squaredesk GmbH and Oliver Dotzauer.
+ * Copyright (c) 2018-2021 Squaredesk GmbH and Oliver Dotzauer.
  *
- * This program is distributed under the squaredesk open source license. See the LICENSE file
- * distributed with this work for additional information regarding copyright ownership. You may also
- * obtain a copy of the license at
+ * This program is distributed under the squaredesk open source license. See the LICENSE file distributed with this
+ * work for additional information regarding copyright ownership. You may also obtain a copy of the license at
  *
- *   https://squaredesk.ch/license/oss/LICENSE
- *
+ *      https://squaredesk.ch/license/oss/LICENSE
  */
 
 package ch.squaredesk.nova.comm.http;
@@ -16,10 +14,11 @@ import ch.squaredesk.nova.comm.MessageTranscriber;
 import ch.squaredesk.nova.comm.retrieving.IncomingMessage;
 import ch.squaredesk.nova.metrics.Metrics;
 import com.codahale.metrics.Timer;
-import io.reactivex.BackpressureStrategy;
-import io.reactivex.Flowable;
-import io.reactivex.subjects.PublishSubject;
-import io.reactivex.subjects.Subject;
+import io.reactivex.rxjava3.core.BackpressureStrategy;
+import io.reactivex.rxjava3.core.Flowable;
+import io.reactivex.rxjava3.subjects.PublishSubject;
+import io.reactivex.rxjava3.subjects.Subject;
+import io.reactivex.rxjava3.subjects.Subject;
 import org.glassfish.grizzly.ReadHandler;
 import org.glassfish.grizzly.http.Method;
 import org.glassfish.grizzly.http.io.NIOReader;
@@ -237,9 +236,14 @@ public class RpcServer extends ch.squaredesk.nova.comm.rpc.RpcServer<String, Str
                         // TODO - this is from the example. Do we want to do something here?
                     }
 
-                    IncomingMessageType incomingMessage = incomingMessageAsString.trim().isEmpty() ?
-                            null :
-                            messageTranscriber.getIncomingMessageTranscriber(targetType).apply(incomingMessageAsString);
+                    IncomingMessageType incomingMessage = null;
+                    if (!incomingMessageAsString.trim().isEmpty()) {
+                        try {
+                            incomingMessage = messageTranscriber.getIncomingMessageTranscriber(targetType).apply(incomingMessageAsString);
+                        } catch (Throwable t) {
+                            logger.error("unable to parse incoming message ", t);
+                        }
+                    }
                     RequestInfo requestInfo = httpSpecificInfoFrom(request);
                     RequestMessageMetaData metaData = new RequestMessageMetaData(destination, requestInfo);
                     Timer.Context timerContext = metricsCollector.requestReceived(createInfoFor(destination));

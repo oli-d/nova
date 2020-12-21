@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 2020 Squaredesk GmbH and Oliver Dotzauer.
+ * Copyright (c) 2018-2021 Squaredesk GmbH and Oliver Dotzauer.
  *
- * This program is distributed under the squaredesk open source license. See the LICENSE file
- * distributed with this work for additional information regarding copyright ownership. You may also
- * obtain a copy of the license at
+ * This program is distributed under the squaredesk open source license. See the LICENSE file distributed with this
+ * work for additional information regarding copyright ownership. You may also obtain a copy of the license at
  *
- *   https://squaredesk.ch/license/oss/LICENSE
- *
+ *      https://squaredesk.ch/license/oss/LICENSE
  */
 
 package ch.squaredesk.nova.comm.http;
@@ -17,9 +15,9 @@ import ch.squaredesk.nova.tuples.Pair;
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.AsyncHttpClientConfig;
 import com.sun.net.httpserver.HttpExchange;
-import io.reactivex.Single;
-import io.reactivex.observers.TestObserver;
-import io.reactivex.schedulers.Schedulers;
+import io.reactivex.rxjava3.core.Single;
+import io.reactivex.rxjava3.observers.TestObserver;
+import io.reactivex.rxjava3.schedulers.Schedulers;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -79,7 +77,7 @@ class RpcClientTest {
             Single<RpcReply<String>> replySingle = sut.sendRequest("", meta, s -> s, s -> s, Duration.ofSeconds(5));
 
             TestObserver<RpcReply<String>> observer = replySingle.test();
-            await().atMost(3, SECONDS).until(observer::valueCount, is(1));
+            await().atMost(3, SECONDS).until(() -> observer.values().size(), is(1));
             observer.assertComplete();
 
             RpcReply<String> rpcReply = observer.values().get(0);
@@ -116,7 +114,7 @@ class RpcClientTest {
             Single<RpcReply<String>> replySingle = sut.sendRequest("", meta, s -> s, s -> s, Duration.ofSeconds(5));
 
             TestObserver<RpcReply<String>> observer = replySingle.test();
-            await().atMost(3, SECONDS).until(observer::valueCount, is(1));
+            await().atMost(3, SECONDS).until(() -> observer.values().size(), is(1));
             observer.assertComplete();
 
             RpcReply<String> rpcReply = observer.values().get(0);
@@ -152,7 +150,7 @@ class RpcClientTest {
             Single<RpcReply<InputStream>> replySingle = sut.sendRequestAndRetrieveResponseAsStream("", meta, s -> s, Duration.ofSeconds(5));
 
             TestObserver<RpcReply<InputStream>> observer = replySingle.test();
-            await().atMost(3, SECONDS).until(observer::valueCount, is(1));
+            await().atMost(3, SECONDS).until(() -> observer.values().size(), is(1));
             observer.assertComplete();
 
             RpcReply<InputStream> rpcReply = observer.values().get(0);

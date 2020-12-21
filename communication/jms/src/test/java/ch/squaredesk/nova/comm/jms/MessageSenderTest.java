@@ -1,18 +1,16 @@
 /*
- * Copyright (c) 2020 Squaredesk GmbH and Oliver Dotzauer.
+ * Copyright (c) 2018-2021 Squaredesk GmbH and Oliver Dotzauer.
  *
- * This program is distributed under the squaredesk open source license. See the LICENSE file
- * distributed with this work for additional information regarding copyright ownership. You may also
- * obtain a copy of the license at
+ * This program is distributed under the squaredesk open source license. See the LICENSE file distributed with this
+ * work for additional information regarding copyright ownership. You may also obtain a copy of the license at
  *
- *   https://squaredesk.ch/license/oss/LICENSE
- *
+ *      https://squaredesk.ch/license/oss/LICENSE
  */
 
 package ch.squaredesk.nova.comm.jms;
 
 import ch.squaredesk.nova.metrics.Metrics;
-import io.reactivex.observers.TestObserver;
+import io.reactivex.rxjava3.observers.TestObserver;
 import org.apache.activemq.ActiveMQConnectionFactory;
 import org.hamcrest.MatcherAssert;
 import org.junit.jupiter.api.AfterEach;
@@ -101,7 +99,6 @@ class MessageSenderTest {
             throw new RuntimeException("4 test");
         }).test();
         observer.await(1, SECONDS);
-        observer.assertError(RuntimeException.class);
-        observer.assertErrorMessage("4 test");
+        observer.assertError(t-> t instanceof RuntimeException && t.getMessage().equals("4 test"));
     }
 }

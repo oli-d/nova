@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 2020 Squaredesk GmbH and Oliver Dotzauer.
+ * Copyright (c) 2018-2021 Squaredesk GmbH and Oliver Dotzauer.
  *
- * This program is distributed under the squaredesk open source license. See the LICENSE file
- * distributed with this work for additional information regarding copyright ownership. You may also
- * obtain a copy of the license at
+ * This program is distributed under the squaredesk open source license. See the LICENSE file distributed with this
+ * work for additional information regarding copyright ownership. You may also obtain a copy of the license at
  *
- *   https://squaredesk.ch/license/oss/LICENSE
- *
+ *      https://squaredesk.ch/license/oss/LICENSE
  */
 
 package ch.squaredesk.nova.comm.kafka;
@@ -15,10 +13,10 @@ import com.github.charithe.kafka.KafkaHelper;
 import com.github.charithe.kafka.KafkaJunitExtension;
 import com.github.charithe.kafka.KafkaJunitExtensionConfig;
 import com.github.charithe.kafka.StartupMode;
-import io.reactivex.Single;
-import io.reactivex.disposables.Disposable;
-import io.reactivex.functions.Consumer;
-import io.reactivex.observers.TestObserver;
+import io.reactivex.rxjava3.core.Single;
+import io.reactivex.rxjava3.disposables.Disposable;
+import io.reactivex.rxjava3.functions.Consumer;
+import io.reactivex.rxjava3.observers.TestObserver;
 import org.apache.kafka.clients.CommonClientConfigs;
 import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.admin.CreateTopicsResult;
@@ -285,8 +283,7 @@ class KafkaAdapterTest {
         });
         TestObserver<OutgoingMessageMetaData> observer = completable.test();
         observer.await();
-        observer.assertError(RuntimeException.class);
-        observer.assertErrorMessage("for test");
+        observer.assertError(t -> t instanceof RuntimeException && t.getMessage().equals("for test"));
     }
 
     @Test

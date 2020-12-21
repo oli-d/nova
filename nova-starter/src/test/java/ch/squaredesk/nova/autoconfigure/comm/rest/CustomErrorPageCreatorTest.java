@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Squaredesk GmbH and Oliver Dotzauer.
+ * Copyright (c) 2018-2021 Squaredesk GmbH and Oliver Dotzauer.
  *
  * This program is distributed under the squaredesk open source license. See the LICENSE file distributed with this
  * work for additional information regarding copyright ownership. You may also obtain a copy of the license at
@@ -18,7 +18,7 @@ import ch.squaredesk.nova.comm.http.HttpAdapter;
 import ch.squaredesk.nova.comm.http.HttpRequestSender;
 import ch.squaredesk.nova.autoconfigure.comm.http.HttpServerConfigurationProperties;
 import org.awaitility.Awaitility;
-import org.awaitility.Duration;
+import org.awaitility.Durations;
 import org.glassfish.grizzly.http.server.ErrorPageGenerator;
 import org.glassfish.grizzly.http.server.Request;
 import org.junit.jupiter.api.Test;
@@ -48,7 +48,7 @@ class CustomErrorPageCreatorTest {
                     HttpServerConfigurationProperties httpServerSettings = appContext.getBean(HttpServerConfigurationProperties.class);
                     MyErrorPageGenerator myErrorPageGenerator = appContext.getBean(MyErrorPageGenerator.class);;
 
-                    Awaitility.await().atMost(Duration.FIVE_SECONDS).until(httpAdapter::isServerStarted);
+                    Awaitility.await().atMost(Durations.FIVE_SECONDS).until(httpAdapter::isServerStarted);
                     String serverUrl = "http://127.0.0.1:" + httpServerSettings.getPort();
 
                     HttpRequestSender.HttpResponse reply = HttpRequestSender.sendGetRequest(serverUrl + "/foo?query=x'WHERE%20full_name%20like'%BOB%");
