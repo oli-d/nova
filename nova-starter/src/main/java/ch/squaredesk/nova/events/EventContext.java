@@ -9,15 +9,7 @@
 
 package ch.squaredesk.nova.events;
 
-import ch.squaredesk.nova.events.EventBus;
 import ch.squaredesk.nova.metrics.Metrics;
 
-public class EventContext {
-    public final Metrics metrics;
-    public final EventBus eventBus;
-
-    public EventContext(Metrics metrics, EventBus eventBus) {
-        this.metrics = metrics;
-        this.eventBus = eventBus;
-    }
+public record EventContext(Metrics metrics, EventBus eventBus) {
 }

@@ -35,16 +35,16 @@ class CloseEventHandlerMethodInvoker {
                 LOGGER.debug("Invoking close event handler {}.{} for socket {} and close reason {}",
                         endpointDescriptor.objectToInvokeMethodOn.getClass().getSimpleName(),
                         endpointDescriptor.methodToInvoke.getName(),
-                        webSocketCloseReasonPair._1,
-                        webSocketCloseReasonPair._2
+                        webSocketCloseReasonPair.item1(),
+                        webSocketCloseReasonPair.item2()
                 );
             }
 
             try {
                 endpointDescriptor.methodToInvoke.invoke(
                         endpointDescriptor.objectToInvokeMethodOn,
-                        webSocketCloseReasonPair._1,
-                        webSocketCloseReasonPair._2);
+                        webSocketCloseReasonPair.item1(),
+                        webSocketCloseReasonPair.item2());
             } catch (Exception e) {
                 LOGGER.error("Unable to invoke web socket event handler {} ", endpointDescriptor.methodToInvoke.getName(), e);
             }

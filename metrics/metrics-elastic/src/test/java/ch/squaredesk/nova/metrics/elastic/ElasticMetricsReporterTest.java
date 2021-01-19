@@ -90,7 +90,7 @@ class ElasticMetricsReporterTest {
             Map<String,Object> sourceAsMap = getMapFrom(ir.source());
             assertThat(sourceAsMap.get("@timestamp"), is(notNullValue()));
             dump.additionalInfo.forEach(entry -> {
-                assertThat(sourceAsMap.get(entry._1), is(entry._2));
+                assertThat(sourceAsMap.get(entry.item1()), is(entry.item2()));
             });
             assertThat(sourceAsMap.get("name"),Matchers.oneOf("test.counter1","test.meter1","test.myMetric1"));
         }
@@ -121,7 +121,7 @@ class ElasticMetricsReporterTest {
             Map<String,Object> sourceAsMap = getMapFrom(ir.source());
             assertThat(sourceAsMap.get("@timestamp"), is(notNullValue()));
             dump.additionalInfo.forEach(entry -> {
-                assertThat(sourceAsMap.get(entry._1), is(entry._2));
+                assertThat(sourceAsMap.get(entry.item1()), is(entry.item2()));
             });
             assertThat(sourceAsMap.get("name"), Matchers.oneOf("test.counter1", "test.meter1", "test.myMetric1"));
         }
@@ -135,9 +135,9 @@ class ElasticMetricsReporterTest {
                 new Pair<>("MyMetric", "myMetric1"))
                 .forEach(pair -> {
                     Map<String, Object> metricMap = new HashMap<>();
-                    metricMap.put("type", pair._1);
+                    metricMap.put("type", pair.item1());
                     metricMap.put("someAttribute", "someVal");
-                    dumpAsMap.put("test." + pair._2, metricMap);
+                    dumpAsMap.put("test." + pair.item2(), metricMap);
                 });
         dumpAsMap.put("hostName", "someVal");
 

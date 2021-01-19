@@ -11,14 +11,7 @@ package ch.squaredesk.nova.events;
 
 import java.util.Arrays;
 
-class DispatchContext {
-    public final Object event;
-    public final Object[] data;
-
-    DispatchContext(Object event, Object[] data) {
-        this.event = event;
-        this.data = data;
-    }
+record DispatchContext(Object event, Object[] data) {
 
 
     @Override

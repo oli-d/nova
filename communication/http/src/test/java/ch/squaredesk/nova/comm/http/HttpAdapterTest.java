@@ -62,7 +62,7 @@ class HttpAdapterTest {
     void sameAdapterCanBeUsedForDifferentMessageTypes() {
         String path = "/multiTypeTest";
         Pair<com.sun.net.httpserver.HttpServer, Integer> serverPortPair = httpServer(path, "1");
-        String url = "http://localhost:" + serverPortPair._2 + path;
+        String url = "http://localhost:" + serverPortPair.item2() + path;
 
         TestObserver<RpcReply<String>> stringObserver = sut.sendGetRequest(url, String.class).test();
         TestObserver<RpcReply<Integer>> integerObserver = sut.sendGetRequest(url, Integer.class).test();
@@ -83,7 +83,7 @@ class HttpAdapterTest {
     void oneOffTranscriberCanBeUsed() {
         String path = "/jacksonTest";
         Pair<com.sun.net.httpserver.HttpServer, Integer> serverPortPair = httpServer(path, "xxx");
-        String url = "http://localhost:" + serverPortPair._2 + path;
+        String url = "http://localhost:" + serverPortPair.item2() + path;
         Function<String, MyType1> replyTranscriber = string -> {
             throw new RuntimeException("Oli");
         };
@@ -108,7 +108,7 @@ class HttpAdapterTest {
         }
         MyConsumer consumer = new MyConsumer();
         Pair<com.sun.net.httpserver.HttpServer, Integer> serverPortPair = httpServer(path, "OK", consumer);
-        String url = "http://localhost:" + serverPortPair._2 + path;
+        String url = "http://localhost:" + serverPortPair.item2() + path;
 
         sut.setStandardHeadersForAllRequests(standardHeaders);
         TestObserver<RpcReply<String>> stringObserver = sut.sendGetRequest(url, String.class).test();
@@ -135,7 +135,7 @@ class HttpAdapterTest {
         }
         MyConsumer consumer = new MyConsumer();
         Pair<com.sun.net.httpserver.HttpServer, Integer> serverPortPair = httpServer(path, "OK", consumer);
-        String url = "http://localhost:" + serverPortPair._2 + path;
+        String url = "http://localhost:" + serverPortPair.item2() + path;
 
         sut.setStandardHeadersForAllRequests(standardHeaders);
         TestObserver<RpcReply<String>> stringObserver = sut.sendGetRequest(url, specificHeaders, String.class).test();
@@ -159,7 +159,7 @@ class HttpAdapterTest {
                 httpExchange -> {
                     headersContainer[0] = httpExchange.getRequestHeaders();
                 });
-        String url = "http://localhost:" + serverPortPair._2 + path;
+        String url = "http://localhost:" + serverPortPair.item2() + path;
 
         sut.sendGetRequest(url, headers, String.class).subscribe();
 

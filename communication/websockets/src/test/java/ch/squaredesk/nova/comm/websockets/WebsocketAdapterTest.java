@@ -338,13 +338,13 @@ class WebsocketAdapterTest {
 
         WebSocket clientEndpoint1 = sut.connectTo(clientDestination);
         clientEndpoint1.onClose(pair -> {
-            closeReasons.add(pair._2);
+            closeReasons.add(pair.item2());
             closeLatch.countDown();
         });
         registrationLatch.countDown();
         WebSocket clientEndpoint2 = sut.connectTo(clientDestination);
         clientEndpoint2.onClose(pair -> {
-            closeReasons.add(pair._2);
+            closeReasons.add(pair.item2());
             closeLatch.countDown();
         });
         registrationLatch.countDown();
@@ -368,7 +368,7 @@ class WebsocketAdapterTest {
 
         sut.acceptConnections(serverDestination).subscribe(
                 socket -> socket.onClose(pair -> {
-                    closeReasons.add(pair._2);
+                    closeReasons.add(pair.item2());
                     closeLatch.countDown();
                 })
         );

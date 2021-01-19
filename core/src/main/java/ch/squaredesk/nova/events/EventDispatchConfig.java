@@ -13,30 +13,10 @@ import io.reactivex.rxjava3.core.BackpressureStrategy;
 
 import java.util.Objects;
 
-public class EventDispatchConfig {
-    public final BackpressureStrategy defaultBackpressureStrategy;
-    public final boolean warnOnUnhandledEvents;
-    public final EventDispatchMode eventDispatchMode;
-    public final int parallelism;
+public record EventDispatchConfig (
+        BackpressureStrategy defaultBackpressureStrategy,
+        boolean warnOnUnhandledEvents,
+        EventDispatchMode eventDispatchMode,
+        int parallelism) {
 
-
-    public EventDispatchConfig(BackpressureStrategy defaultBackpressureStrategy,
-                               boolean warnOnUnhandledEvents,
-                               EventDispatchMode eventDispatchMode,
-                               int parallelism) {
-        this.defaultBackpressureStrategy = Objects.requireNonNull(defaultBackpressureStrategy);
-        this.warnOnUnhandledEvents = warnOnUnhandledEvents;
-        this.eventDispatchMode = Objects.requireNonNull(eventDispatchMode);
-        this.parallelism = parallelism;
-    }
-
-    @Override
-    public String toString() {
-        return "EventDispatchonfig{" +
-                "defaultBackpressureStrategy=" + defaultBackpressureStrategy +
-                ", eventDispatchMode=" + eventDispatchMode +
-                ", parallelism=" + parallelism +
-                ", warnOnUnhandledEvents=" + warnOnUnhandledEvents +
-                '}';
-    }
 }

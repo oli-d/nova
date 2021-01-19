@@ -72,13 +72,13 @@ public class MessageReceiver
 
     BiPredicate<Set<String>, Pair<KafkaConsumer<String, String>, HashSet<String>>> subscriptionMaintainer =
                 (subscribedTopics, consumerTopicsPair) -> {
-                    if (!consumerTopicsPair._2.equals(subscribedTopics)) {
+                    if (!consumerTopicsPair.item2().equals(subscribedTopics)) {
                         logger.debug("Changing topic subscriptions to {}", subscribedTopics);
-                        consumerTopicsPair._2.clear();
-                        consumerTopicsPair._2.addAll(subscribedTopics);
-                        consumerTopicsPair._1.subscribe(subscribedTopics);
+                        consumerTopicsPair.item2().clear();
+                        consumerTopicsPair.item2().addAll(subscribedTopics);
+                        consumerTopicsPair.item1().subscribe(subscribedTopics);
                     }
-                    return !consumerTopicsPair._2.isEmpty();
+                    return !consumerTopicsPair.item2().isEmpty();
                 };
 
         Flowable<ConsumerRecords<String, String>> consumerRecordsStream = Flowable.generate(
@@ -92,7 +92,7 @@ public class MessageReceiver
                         // nothing subscribed
                         sleeper.run();
                     }
-                    ConsumerRecords<String, String> consumerRecords = poller.apply(consumerTopicsPair._1);
+                    ConsumerRecords<String, String> consumerRecords = poller.apply(consumerTopicsPair.item1());
                     if (consumerRecords == null) {
                         // only happens, if shutdown was initiated
                         emitter.onComplete();
@@ -104,7 +104,7 @@ public class MessageReceiver
                 consumerTopicsPair -> {
                     logger.info("Shutting down connection to Kafka broker");
                     try {
-                        consumerTopicsPair._1.close();
+                        consumerTopicsPair.item1().close();
                     } catch (Exception e) {
                         logger.info("An error occurred trying to close KafkaConsumer", e.getCause());
                     }

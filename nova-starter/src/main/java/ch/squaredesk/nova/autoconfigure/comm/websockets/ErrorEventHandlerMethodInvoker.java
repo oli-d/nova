@@ -34,15 +34,15 @@ class ErrorEventHandlerMethodInvoker  {
                 LOGGER.debug("Invoking error event handler {}.{} for socket {} with error {}",
                         endpointDescriptor.objectToInvokeMethodOn.getClass().getSimpleName(),
                         endpointDescriptor.methodToInvoke.getName(),
-                        webSocketErrorPair._1,
-                        webSocketErrorPair._2
+                        webSocketErrorPair.item1(),
+                        webSocketErrorPair.item2()
                 );
             }
             try {
                 endpointDescriptor.methodToInvoke.invoke(
                         endpointDescriptor.objectToInvokeMethodOn,
-                        webSocketErrorPair._1,
-                        webSocketErrorPair._2);
+                        webSocketErrorPair.item1(),
+                        webSocketErrorPair.item2());
             } catch (Exception e) {
                 LOGGER.error("Unable to invoke web socket event handler {} ", endpointDescriptor.methodToInvoke.getName(), e);
             }

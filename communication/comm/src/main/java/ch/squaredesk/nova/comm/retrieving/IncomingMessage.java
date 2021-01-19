@@ -9,21 +9,7 @@
 
 package ch.squaredesk.nova.comm.retrieving;
 
-public class IncomingMessage<MessageType, MetaDataType extends IncomingMessageMetaData<?,?>> {
-    public final MessageType message;
-    public final MetaDataType metaData;
+public record IncomingMessage<MessageType, MetaDataType extends IncomingMessageMetaData<?, ?>>(MessageType message,
+                                                                                               MetaDataType metaData) {
 
-
-    public IncomingMessage(MessageType message, MetaDataType metaData) {
-        this.message = message;
-        this.metaData = metaData;
-    }
-
-    @Override
-    public String toString() {
-        return "IncomingMessage{" +
-                "message=" + message +
-                ", metaData=" + metaData +
-                '}';
-    }
 }

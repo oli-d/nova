@@ -255,19 +255,19 @@ public class RpcServer extends ch.squaredesk.nova.comm.rpc.RpcServer<String, Str
                                         response.setCharacterEncoding("utf-8");
                                         try (NIOWriter out = response.getNIOWriter()) {
                                             response.setContentType("application/json");
-                                            response.setContentLength(replyInfo._1.length());
+                                            response.setContentLength(replyInfo.item1().length());
                                             int statusCode;
-                                            if (replyInfo._2 == null) {
+                                            if (replyInfo.item2() == null) {
                                                 statusCode = 200;
                                             } else {
-                                                replyInfo._2.headerParams.entrySet().forEach(
+                                                replyInfo.item2().headerParams.entrySet().forEach(
                                                         entry -> response.setHeader(entry.getKey(), entry.getValue())
                                                 );
-                                                statusCode = replyInfo._2.statusCode;
+                                                statusCode = replyInfo.item2().statusCode;
                                             }
                                             response.setStatus(statusCode);
-                                            writeResponse(replyInfo._1, out);
-                                            metricsCollector.requestCompleted(timerContext, replyInfo._1);
+                                            writeResponse(replyInfo.item1(), out);
+                                            metricsCollector.requestCompleted(timerContext, replyInfo.item1());
                                         } catch (Exception e) {
                                             metricsCollector.requestCompletedExceptionally(timerContext, createInfoFor(destination), e);
                                             logger.error("An error occurred trying to send HTTP response " + replyInfo, e);

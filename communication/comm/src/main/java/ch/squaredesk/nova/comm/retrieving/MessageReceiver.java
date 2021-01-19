@@ -40,13 +40,13 @@ public abstract class MessageReceiver<
                 .map(rawMessage -> {
                     T message = null;
                     try {
-                        message = unmarshaller.apply(rawMessage.message);
+                        message = unmarshaller.apply(rawMessage.message());
                     } catch (Exception e) {
-                        metricsCollector.unparsableMessageReceived(rawMessage.metaData.destination);
+                        metricsCollector.unparsableMessageReceived(rawMessage.metaData().destination);
                     }
-                    return new IncomingMessage<>(message, rawMessage.metaData);
+                    return new IncomingMessage<>(message, rawMessage.metaData());
                 })
-                .filter(im -> im.message != null); // TODO: can we do this more elegantly / performant?
+                .filter(im -> im.message() != null); // TODO: can we do this more elegantly / performant?
 
     }
 }

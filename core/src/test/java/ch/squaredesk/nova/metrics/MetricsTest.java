@@ -58,10 +58,10 @@ class MetricsTest {
 
         metricsDumps.forEach(metricsDump -> {
             MatcherAssert.assertThat(metricsDump.additionalInfo.size(), Matchers.is(2));
-            MatcherAssert.assertThat(metricsDump.additionalInfo.get(0)._1, Matchers.is("key"));
-            MatcherAssert.assertThat(metricsDump.additionalInfo.get(0)._2, Matchers.is("value"));
-            MatcherAssert.assertThat(metricsDump.additionalInfo.get(1)._1, Matchers.is("oli"));
-            MatcherAssert.assertThat(metricsDump.additionalInfo.get(1)._2, Matchers.is("d"));
+            MatcherAssert.assertThat(metricsDump.additionalInfo.get(0).item1(), Matchers.is("key"));
+            MatcherAssert.assertThat(metricsDump.additionalInfo.get(0).item2(), Matchers.is("value"));
+            MatcherAssert.assertThat(metricsDump.additionalInfo.get(1).item1(), Matchers.is("oli"));
+            MatcherAssert.assertThat(metricsDump.additionalInfo.get(1).item2(), Matchers.is("d"));
         });
     }
 }

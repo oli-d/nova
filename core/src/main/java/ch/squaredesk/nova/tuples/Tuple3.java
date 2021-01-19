@@ -9,36 +9,9 @@
 
 package ch.squaredesk.nova.tuples;
 
-import java.util.Objects;
-
-public class Tuple3<T, U, V> {
-    public final T _1;
-    public final U _2;
-    public final V _3;
-
-    public Tuple3(T t, U u, V v) {
-        _1 = t;
-        _2 = u;
-        _3 = v;
-    }
+public record Tuple3<T, U, V> (T item1, U item2, V item3) {
 
     public <W> Tuple4<T, U, V, W> add(W w) {
-        return new Tuple4<>(_1, _2, _3, w);
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-
-        Tuple3<?, ?, ?> tuple3 = (Tuple3<?, ?, ?>) o;
-        return Objects.equals(_1, tuple3._1) &&
-                Objects.equals(_2, tuple3._2) &&
-                Objects.equals(_3, tuple3._3);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(_1, _2, _3);
+        return new Tuple4<>(item1, item2, item3, w);
     }
 }

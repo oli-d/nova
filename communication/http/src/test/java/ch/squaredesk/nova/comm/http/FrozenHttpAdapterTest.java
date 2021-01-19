@@ -90,7 +90,7 @@ class FrozenHttpAdapterTest {
                 });
 
         TestObserver<RpcReply<String>> observer = sut
-                .sendGetRequest("http://localhost:" + serverPortPair._2 + "/timeoutTest", Duration.ofMillis(10))
+                .sendGetRequest("http://localhost:" + serverPortPair.item2() + "/timeoutTest", Duration.ofMillis(10))
                 .test();
         observer.await(5, SECONDS);
         observer.assertError(TimeoutException.class);
@@ -103,7 +103,7 @@ class FrozenHttpAdapterTest {
                 httpServer("/postTest", "myPostResponse", httpExchange -> requestMethodHolder[0] = httpExchange.getRequestMethod());
 
         TestObserver<RpcReply<String>> observer = sut
-                .sendPostRequest("http://localhost:" + serverPortPair._2 + "/postTest", "{ myTest: \"value\"}")
+                .sendPostRequest("http://localhost:" + serverPortPair.item2() + "/postTest", "{ myTest: \"value\"}")
                 .test();
         await().atMost(40, SECONDS).until(() -> observer.values().size(), is(1));
         RpcReply<String> reply = observer.values().get(0);
@@ -120,7 +120,7 @@ class FrozenHttpAdapterTest {
                 httpServer("/getTest", "myGetResponse", httpExchange -> requestMethodHolder[0] = httpExchange.getRequestMethod());
 
         TestObserver<RpcReply<String>> observer = sut
-                .sendGetRequest("http://localhost:" + serverPortPair._2 + "/getTest")
+                .sendGetRequest("http://localhost:" + serverPortPair.item2() + "/getTest")
                 .test();
         await().atMost(40, SECONDS).until(() -> observer.values().size(), is(1));
         RpcReply<String> reply = observer.values().get(0);
@@ -135,7 +135,7 @@ class FrozenHttpAdapterTest {
         Pair<com.sun.net.httpserver.HttpServer, Integer> serverPortPair =
                 httpServer("/rpcTest", "rpcResponse");
         TestObserver<RpcReply<String>> observer = sut
-                .sendRequest("http://localhost:" + serverPortPair._2 + "/rpcTest", "1", HttpRequestMethod.GET)
+                .sendRequest("http://localhost:" + serverPortPair.item2() + "/rpcTest", "1", HttpRequestMethod.GET)
                 .test();
 
         await().atMost(40, SECONDS).until(() -> observer.values().size(), is(1));

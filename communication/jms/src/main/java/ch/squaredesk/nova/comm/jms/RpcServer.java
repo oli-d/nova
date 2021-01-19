@@ -62,7 +62,7 @@ public class RpcServer extends ch.squaredesk.nova.comm.rpc.RpcServer<Destination
                                         null,
                                         null);
                                 OutgoingMessageMetaData meta = new OutgoingMessageMetaData(incomingRequest.metaData.details.replyDestination, sendingInfo);
-                                messageSender.send(reply._1, meta).subscribe();
+                                messageSender.send(reply.item1(), meta).subscribe();
                                 metricsCollector.requestCompleted(timerContext, reply);
                             },
                                 // TODO: Is there a sensible default action we could perform?

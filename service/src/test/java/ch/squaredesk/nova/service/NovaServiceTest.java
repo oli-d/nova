@@ -35,16 +35,16 @@ class NovaServiceTest {
                 .blockingFirst();
 
         assertThat(dump.additionalInfo.size(), is(5));
-        assertThat(dump.additionalInfo.get(0)._1, is("hostName"));
-        assertThat(dump.additionalInfo.get(0)._2, is(inetAddress.getHostName()));
-        assertThat(dump.additionalInfo.get(1)._1, is("hostAddress"));
-        assertThat(dump.additionalInfo.get(1)._2, is(inetAddress.getHostAddress()));
-        assertThat(dump.additionalInfo.get(2)._1, is("serviceName"));
-        assertThat(dump.additionalInfo.get(2)._2, is("Name"));
-        assertThat(dump.additionalInfo.get(3)._1, is("serviceInstanceId"));
-        assertThat(dump.additionalInfo.get(3)._2, is("ID"));
-        assertThat(dump.additionalInfo.get(4)._1, is("serviceInstanceName"));
-        assertThat(dump.additionalInfo.get(4)._2, is("Name.ID"));
+        assertThat(dump.additionalInfo.get(0).item1(), is("hostName"));
+        assertThat(dump.additionalInfo.get(0).item2(), is(inetAddress.getHostName()));
+        assertThat(dump.additionalInfo.get(1).item1(), is("hostAddress"));
+        assertThat(dump.additionalInfo.get(1).item2(), is(inetAddress.getHostAddress()));
+        assertThat(dump.additionalInfo.get(2).item1(), is("serviceName"));
+        assertThat(dump.additionalInfo.get(2).item2(), is("Name"));
+        assertThat(dump.additionalInfo.get(3).item1(), is("serviceInstanceId"));
+        assertThat(dump.additionalInfo.get(3).item2(), is("ID"));
+        assertThat(dump.additionalInfo.get(4).item1(), is("serviceInstanceName"));
+        assertThat(dump.additionalInfo.get(4).item2(), is("Name.ID"));
     }
 
     @Test
@@ -147,7 +147,7 @@ class NovaServiceTest {
 
         MetricsDump metricsDump = sut.dumpMetricsContinuously(Duration.ofMillis(5)).first(new MetricsDump(new HashMap<>())).blockingGet();
 
-        assertThat(metricsDump.additionalInfo.stream().anyMatch(p -> "serviceName".equals(p._1) && "MyService".equals(p._2)), is(true));
+        assertThat(metricsDump.additionalInfo.stream().anyMatch(p -> "serviceName".equals(p.item1()) && "MyService".equals(p.item2())), is(true));
     }
 
     public static class MyBrokenInitService extends MyService {

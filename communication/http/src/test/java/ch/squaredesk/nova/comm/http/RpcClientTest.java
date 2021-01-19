@@ -72,7 +72,7 @@ class RpcClientTest {
 
         try {
             RequestInfo ri = new RequestInfo(HttpRequestMethod.GET);
-            RequestMessageMetaData meta = new RequestMessageMetaData(new URL("http://localhost:" + portServerPair._1 + "/"), ri);
+            RequestMessageMetaData meta = new RequestMessageMetaData(new URL("http://localhost:" + portServerPair.item1() + "/"), ri);
 
             Single<RpcReply<String>> replySingle = sut.sendRequest("", meta, s -> s, s -> s, Duration.ofSeconds(5));
 
@@ -83,7 +83,7 @@ class RpcClientTest {
             RpcReply<String> rpcReply = observer.values().get(0);
             assertThat(rpcReply.result, is("This is the response"));
         } finally {
-            portServerPair._2.close();
+            portServerPair.item2().close();
         }
     }
 
@@ -109,7 +109,7 @@ class RpcClientTest {
 
         try {
             RequestInfo ri = new RequestInfo(HttpRequestMethod.GET);
-            RequestMessageMetaData meta = new RequestMessageMetaData(new URL("http://localhost:" + portServerPair._1 + "/"), ri);
+            RequestMessageMetaData meta = new RequestMessageMetaData(new URL("http://localhost:" + portServerPair.item1() + "/"), ri);
 
             Single<RpcReply<String>> replySingle = sut.sendRequest("", meta, s -> s, s -> s, Duration.ofSeconds(5));
 
@@ -121,7 +121,7 @@ class RpcClientTest {
             assertThat(rpcReply.metaData.details.headerParams.get("header1"), is("value1"));
             assertThat(rpcReply.metaData.details.headerParams.get("header2"), is("value2"));
         } finally {
-            portServerPair._2.close();
+            portServerPair.item2().close();
         }
     }
 
@@ -145,7 +145,7 @@ class RpcClientTest {
 
         try {
             RequestInfo ri = new RequestInfo(HttpRequestMethod.GET);
-            RequestMessageMetaData meta = new RequestMessageMetaData(new URL("http://localhost:" + portServerPair._1 + "/"), ri);
+            RequestMessageMetaData meta = new RequestMessageMetaData(new URL("http://localhost:" + portServerPair.item1() + "/"), ri);
 
             Single<RpcReply<InputStream>> replySingle = sut.sendRequestAndRetrieveResponseAsStream("", meta, s -> s, Duration.ofSeconds(5));
 
@@ -157,7 +157,7 @@ class RpcClientTest {
             BufferedReader replyStreamReader = new BufferedReader(new InputStreamReader(rpcReply.result));
             assertThat(replyStreamReader.readLine(), is("This is the response"));
         } finally {
-            portServerPair._2.close();
+            portServerPair.item2().close();
         }
     }
 
@@ -190,7 +190,7 @@ class RpcClientTest {
 
         try {
             RequestInfo ri = new RequestInfo(HttpRequestMethod.GET);
-            RequestMessageMetaData meta = new RequestMessageMetaData(new URL("http://localhost:"+portServerPair._1+"/"), ri);
+            RequestMessageMetaData meta = new RequestMessageMetaData(new URL("http://localhost:"+portServerPair.item1()+"/"), ri);
 
             Single<RpcReply<String>> replySingle = sut.sendRequest("", meta, s -> s, s -> s, Duration.ofSeconds(5))
                     .subscribeOn(Schedulers.io())
@@ -213,7 +213,7 @@ class RpcClientTest {
             observer.assertValueCount(0);
             observer.assertError(error -> error instanceof TimeoutException);
         } finally {
-            portServerPair._2.close();
+            portServerPair.item2().close();
         }
     }
 

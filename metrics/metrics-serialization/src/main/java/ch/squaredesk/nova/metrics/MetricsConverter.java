@@ -47,14 +47,14 @@ public class MetricsConverter {
                 // (eventually) passed additionalAttributes
                 .map(tupleTypeAndNameAndMetric -> {
                     Map<String, Object> map = toMap(tupleTypeAndNameAndMetric._3);
-                    map.put("type", tupleTypeAndNameAndMetric._1);
+                    map.put("type", tupleTypeAndNameAndMetric.item1());
                     if (dump.additionalInfo != null) {
-                        dump.additionalInfo.forEach(pair -> map.put(pair._1, pair._2));
+                        dump.additionalInfo.forEach(pair -> map.put(pair.item1(), pair.item2()));
                     }
-                    return new Pair<>(tupleTypeAndNameAndMetric._2, map);
+                    return new Pair<>(tupleTypeAndNameAndMetric.item2(), map);
                 })
                 // and add it to the return value
-                .forEach(metricNameMapPair -> returnValue.put(metricNameMapPair._1, metricNameMapPair._2));
+                .forEach(metricNameMapPair -> returnValue.put(metricNameMapPair.item1(), metricNameMapPair.item2()));
 
         return returnValue;
     }

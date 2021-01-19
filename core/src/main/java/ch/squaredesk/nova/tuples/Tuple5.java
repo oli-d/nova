@@ -9,42 +9,10 @@
 
 package ch.squaredesk.nova.tuples;
 
-import java.util.Objects;
 
-public class Tuple5<T, U, V, W, X> {
-    public final T _1;
-    public final U _2;
-    public final V _3;
-    public final W _4;
-    public final X _5;
-
-    public Tuple5(T _1, U _2, V _3, W _4, X _5) {
-        this._1 = _1;
-        this._2 = _2;
-        this._3 = _3;
-        this._4 = _4;
-        this._5 = _5;
-    }
+public record Tuple5<T, U, V, W, X>(T item1, U item2, V item3, W item4, X item5) {
 
     public <Y> Tuple6<T, U, V, W, X, Y> add(Y y) {
-        return new Tuple6<>(_1, _2, _3, _4, _5, y);
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-
-        Tuple5<?, ?, ?, ?, ?> tuple5 = (Tuple5<?, ?, ?, ?, ?>) o;
-        return Objects.equals(_1, tuple5._1) &&
-                Objects.equals(_2, tuple5._2) &&
-                Objects.equals(_3, tuple5._3) &&
-                Objects.equals(_4, tuple5._4) &&
-                Objects.equals(_5, tuple5._5);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(_1, _2, _3, _4, _5);
+        return new Tuple6<>(item1, item2, item3, item4, item5, y);
     }
 }
