@@ -66,11 +66,11 @@ public class EventHandlingBeanPostprocessor implements BeanPostProcessor, Applic
             if (eventHandlerDescription.captureInvocationTimeMetrics) {
                 String timerName = Metrics.name(novaIdentifier, "invocationTime",
                         eventHandlerDescription.bean.getClass().getSimpleName(), event);
-                Timer timer = eventContext.metrics.getTimer(timerName);
+                Timer timer = eventContext.metrics().getTimer(timerName);
                 eventConsumer = new TimeMeasuringEventHandlingMethodInvoker(timer, invoker);
             }
             eventContext
-                    .eventBus.on(event, eventHandlerDescription.backpressureStrategy)
+                    .eventBus().on(event, eventHandlerDescription.backpressureStrategy)
                     .subscribe(eventConsumer);
         }
     }

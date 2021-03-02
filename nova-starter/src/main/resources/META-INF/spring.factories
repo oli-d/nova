@@ -1,10 +1,5 @@
 org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
 ch.squaredesk.nova.autoconfigure.core.NovaAutoConfiguration,\
 ch.squaredesk.nova.autoconfigure.service.NovaServiceAutoConfiguration,\
-ch.squaredesk.nova.autoconfigure.comm.http.HttpAdapterAutoConfiguration,\
-ch.squaredesk.nova.autoconfigure.comm.http.HttpClientAutoConfiguration,\
-ch.squaredesk.nova.autoconfigure.comm.http.HttpServerAutoConfiguration,\
 ch.squaredesk.nova.autoconfigure.comm.jms.JmsAdapterAutoConfiguration,\
-ch.squaredesk.nova.autoconfigure.comm.kafka.KafkaAdapterAutoConfiguration,\
-ch.squaredesk.nova.autoconfigure.comm.rest.RestAutoConfiguration,\
-ch.squaredesk.nova.autoconfigure.comm.websockets.WebSocketAdapterAutoConfigurations
+ch.squaredesk.nova.autoconfigure.comm.kafka.KafkaAdapterAutoConfiguration

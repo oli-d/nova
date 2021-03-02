@@ -8,45 +8,31 @@
  */
 package ch.squaredesk.nova.comm.rest;
 
-import javax.ws.rs.*;
-import javax.ws.rs.container.AsyncResponse;
-import javax.ws.rs.container.Suspended;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.Response;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+import reactor.core.publisher.Mono;
 
-@Path("/echo")
+import java.time.Duration;
+
+@RestController
 public class EchoHandler {
-    @GET
-    public String echoParameterValue(@QueryParam("p1") String textFromCallerToEcho) {
+    @GetMapping("/echo")
+    public String echoParameterValue(@RequestParam("p1") String textFromCallerToEcho) {
         return textFromCallerToEcho;
     }
 
-    @GET
-    @Path("/{text}")
-    public String echoPathValue(@PathParam("text") String textFromCallerToEcho) {
+    @GetMapping("/echo/{text}")
+    public String echoPathValue(@PathVariable("text") String textFromCallerToEcho) {
         return textFromCallerToEcho;
     }
 
-    @GET
-    @Path("/async/{text}")
-    public void echoPathValueAsync(@Context HttpHeaders headers, @PathParam("text") String textFromCallerToEcho, @Suspended AsyncResponse response) {
-        System.out.println("Headers: ");
-        headers.getRequestHeaders().forEach((key, val) -> System.out.println(key + "=>" + val));
-        new Thread(() -> {
-            try {
-                Thread.sleep(1500);
-            } catch (InterruptedException e) {
-                // Restore interrupted state...
-                Thread.currentThread().interrupt();
-            }
-            Response res = Response.status(555).header("myHeader", "myHeaderValue").entity(textFromCallerToEcho).build();
-            response.resume(res);
-        }).start();
+    @GetMapping("/echo/async/{text}")
+    public Mono<ResponseEntity<String>> echoPathValueAsync(@PathVariable("text") String textFromCallerToEcho) {
+        return Mono.just(ResponseEntity.ok(textFromCallerToEcho)).delayElement(Duration.ofSeconds(5));
     }
 
-    @POST
-    public String echoPostRequestBody(String textFromCallerToEcho) {
+    @PostMapping("/echo")
+    public String echoPostRequestBody(@RequestBody String textFromCallerToEcho) {
         return textFromCallerToEcho;
     }
 

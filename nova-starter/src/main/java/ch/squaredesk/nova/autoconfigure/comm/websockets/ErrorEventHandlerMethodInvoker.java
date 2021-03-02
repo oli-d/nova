@@ -9,7 +9,6 @@
 
 package ch.squaredesk.nova.autoconfigure.comm.websockets;
 
-import ch.squaredesk.nova.comm.websockets.WebSocket;
 import ch.squaredesk.nova.metrics.Metrics;
 import ch.squaredesk.nova.tuples.Pair;
 import com.codahale.metrics.Timer;
@@ -24,44 +23,44 @@ class ErrorEventHandlerMethodInvoker  {
     private ErrorEventHandlerMethodInvoker() {
     }
 
-    static Consumer<Pair<WebSocket, Throwable>> createFor(EventHandlerEndpointDescriptor endpointDescriptor,
-                                                          String adapterIdentifier,
-                                                          Metrics metrics) {
-
-
-        Consumer<Pair<WebSocket, Throwable>> consumer = webSocketErrorPair -> {
-            if (endpointDescriptor.logInvocations) {
-                LOGGER.debug("Invoking error event handler {}.{} for socket {} with error {}",
-                        endpointDescriptor.objectToInvokeMethodOn.getClass().getSimpleName(),
-                        endpointDescriptor.methodToInvoke.getName(),
-                        webSocketErrorPair.item1(),
-                        webSocketErrorPair.item2()
-                );
-            }
-            try {
-                endpointDescriptor.methodToInvoke.invoke(
-                        endpointDescriptor.objectToInvokeMethodOn,
-                        webSocketErrorPair.item1(),
-                        webSocketErrorPair.item2());
-            } catch (Exception e) {
-                LOGGER.error("Unable to invoke web socket event handler {} ", endpointDescriptor.methodToInvoke.getName(), e);
-            }
-        };
-
-        if (endpointDescriptor.captureTimings) {
-            Timer timer = metrics.getTimer(adapterIdentifier, "invocationTime",
-                    endpointDescriptor.objectToInvokeMethodOn.getClass().getSimpleName(),
-                    endpointDescriptor.methodToInvoke.getName());
-            return incoming -> {
-                Timer.Context context = timer.time();
-                try {
-                    consumer.accept(incoming);
-                } finally {
-                    context.stop();
-                }
-            };
-        } else {
-            return consumer;
-        }
-    }
+//    static Consumer<Pair<WebSocket, Throwable>> createFor(EventHandlerEndpointDescriptor endpointDescriptor,
+//                                                          String adapterIdentifier,
+//                                                          Metrics metrics) {
+//
+//
+//        Consumer<Pair<WebSocket, Throwable>> consumer = webSocketErrorPair -> {
+//            if (endpointDescriptor.logInvocations) {
+//                LOGGER.debug("Invoking error event handler {}.{} for socket {} with error {}",
+//                        endpointDescriptor.objectToInvokeMethodOn.getClass().getSimpleName(),
+//                        endpointDescriptor.methodToInvoke.getName(),
+//                        webSocketErrorPair.item1(),
+//                        webSocketErrorPair.item2()
+//                );
+//            }
+//            try {
+//                endpointDescriptor.methodToInvoke.invoke(
+//                        endpointDescriptor.objectToInvokeMethodOn,
+//                        webSocketErrorPair.item1(),
+//                        webSocketErrorPair.item2());
+//            } catch (Exception e) {
+//                LOGGER.error("Unable to invoke web socket event handler {} ", endpointDescriptor.methodToInvoke.getName(), e);
+//            }
+//        };
+//
+//        if (endpointDescriptor.captureTimings) {
+//            Timer timer = metrics.getTimer(adapterIdentifier, "invocationTime",
+//                    endpointDescriptor.objectToInvokeMethodOn.getClass().getSimpleName(),
+//                    endpointDescriptor.methodToInvoke.getName());
+//            return incoming -> {
+//                Timer.Context context = timer.time();
+//                try {
+//                    consumer.accept(incoming);
+//                } finally {
+//                    context.stop();
+//                }
+//            };
+//        } else {
+//            return consumer;
+//        }
+//    }
 }

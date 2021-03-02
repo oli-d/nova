@@ -10,10 +10,7 @@
 package ch.squaredesk.nova.autoconfigure.comm.websockets;
 
 import ch.squaredesk.nova.comm.MessageTranscriber;
-import ch.squaredesk.nova.comm.http.HttpServerInstanceListener;
-import ch.squaredesk.nova.comm.websockets.WebSocketAdapter;
 import ch.squaredesk.nova.metrics.Metrics;
-import org.glassfish.grizzly.http.server.HttpServer;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
@@ -23,7 +20,7 @@ import org.springframework.context.event.ContextRefreshedEvent;
 import java.util.Arrays;
 
 
-public class WebSocketBeanProcessor implements ApplicationContextAware,
+public class WebSocketBeanProcessor { /*implements ApplicationContextAware,
         HttpServerInstanceListener,
         ApplicationListener<ContextRefreshedEvent>,
         DisposableBean {
@@ -105,4 +102,5 @@ public class WebSocketBeanProcessor implements ApplicationContextAware,
             // noop; shutdown anyway...
         }
     }
+    */
 }

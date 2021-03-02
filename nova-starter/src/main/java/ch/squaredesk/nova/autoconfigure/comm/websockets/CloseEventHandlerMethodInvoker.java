@@ -9,8 +9,6 @@
 
 package ch.squaredesk.nova.autoconfigure.comm.websockets;
 
-import ch.squaredesk.nova.comm.websockets.CloseReason;
-import ch.squaredesk.nova.comm.websockets.WebSocket;
 import ch.squaredesk.nova.metrics.Metrics;
 import ch.squaredesk.nova.tuples.Pair;
 import com.codahale.metrics.Timer;
@@ -25,45 +23,45 @@ class CloseEventHandlerMethodInvoker {
     private CloseEventHandlerMethodInvoker() {
     }
 
-    static Consumer<Pair<WebSocket, CloseReason>> createFor(EventHandlerEndpointDescriptor endpointDescriptor,
-                                                            String adapterIdentifier,
-                                                            Metrics metrics) {
-
-
-        Consumer<Pair<WebSocket, CloseReason>> consumer = webSocketCloseReasonPair -> {
-            if (endpointDescriptor.logInvocations) {
-                LOGGER.debug("Invoking close event handler {}.{} for socket {} and close reason {}",
-                        endpointDescriptor.objectToInvokeMethodOn.getClass().getSimpleName(),
-                        endpointDescriptor.methodToInvoke.getName(),
-                        webSocketCloseReasonPair.item1(),
-                        webSocketCloseReasonPair.item2()
-                );
-            }
-
-            try {
-                endpointDescriptor.methodToInvoke.invoke(
-                        endpointDescriptor.objectToInvokeMethodOn,
-                        webSocketCloseReasonPair.item1(),
-                        webSocketCloseReasonPair.item2());
-            } catch (Exception e) {
-                LOGGER.error("Unable to invoke web socket event handler {} ", endpointDescriptor.methodToInvoke.getName(), e);
-            }
-        };
-
-        if (endpointDescriptor.captureTimings) {
-            Timer timer = metrics.getTimer(adapterIdentifier, "invocationTime",
-                    endpointDescriptor.objectToInvokeMethodOn.getClass().getSimpleName(),
-                    endpointDescriptor.methodToInvoke.getName());
-            return incoming -> {
-                Timer.Context context = timer.time();
-                try {
-                    consumer.accept(incoming);
-                } finally {
-                    context.stop();
-                }
-            };
-        } else {
-            return consumer;
-        }
-    }
+//    static Consumer<Pair<WebSocket, CloseReason>> createFor(EventHandlerEndpointDescriptor endpointDescriptor,
+//                                                            String adapterIdentifier,
+//                                                            Metrics metrics) {
+//
+//
+//        Consumer<Pair<WebSocket, CloseReason>> consumer = webSocketCloseReasonPair -> {
+//            if (endpointDescriptor.logInvocations) {
+//                LOGGER.debug("Invoking close event handler {}.{} for socket {} and close reason {}",
+//                        endpointDescriptor.objectToInvokeMethodOn.getClass().getSimpleName(),
+//                        endpointDescriptor.methodToInvoke.getName(),
+//                        webSocketCloseReasonPair.item1(),
+//                        webSocketCloseReasonPair.item2()
+//                );
+//            }
+//
+//            try {
+//                endpointDescriptor.methodToInvoke.invoke(
+//                        endpointDescriptor.objectToInvokeMethodOn,
+//                        webSocketCloseReasonPair.item1(),
+//                        webSocketCloseReasonPair.item2());
+//            } catch (Exception e) {
+//                LOGGER.error("Unable to invoke web socket event handler {} ", endpointDescriptor.methodToInvoke.getName(), e);
+//            }
+//        };
+//
+//        if (endpointDescriptor.captureTimings) {
+//            Timer timer = metrics.getTimer(adapterIdentifier, "invocationTime",
+//                    endpointDescriptor.objectToInvokeMethodOn.getClass().getSimpleName(),
+//                    endpointDescriptor.methodToInvoke.getName());
+//            return incoming -> {
+//                Timer.Context context = timer.time();
+//                try {
+//                    consumer.accept(incoming);
+//                } finally {
+//                    context.stop();
+//                }
+//            };
+//        } else {
+//            return consumer;
+//        }
+//    }
 }

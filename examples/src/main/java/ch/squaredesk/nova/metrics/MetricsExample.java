@@ -22,7 +22,7 @@ import java.time.Duration;
 import java.util.Random;
 
 /**
- * This simple example shows a very simple use case for the Nova metrics feature.
+ * This example shows a very simple use case for the Nova metrics feature.
  */
 @SpringBootApplication
 public class MetricsExample implements CommandLineRunner {
