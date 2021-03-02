@@ -9,6 +9,7 @@
 
 package ch.squaredesk.nova.comm.kafka;
 
+import ch.squaredesk.nova.comm.sending.OutgoingMessageMetaData;
 import io.reactivex.rxjava3.observers.TestObserver;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -64,7 +65,7 @@ class KafkaAdapterErrorTest {
 
     @Test
     void sendMessageWithException() throws Exception {
-        TestObserver<OutgoingMessageMetaData> observer = sut.sendMessage("someTopic","Hallo", message -> {
+        TestObserver<OutgoingMessageMetaData<String, SendInfo>> observer = sut.sendMessage("someTopic","Hallo", message -> {
             throw new MyException("4 test");
         }).test();
         observer.await(1, TimeUnit.SECONDS);

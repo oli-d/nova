@@ -11,18 +11,12 @@ package ch.squaredesk.nova.comm.retrieving;
 
 import static java.util.Objects.requireNonNull;
 
-public class IncomingMessageMetaData<DestinationType, TransportSpecificDetailsType> {
-    public final DestinationType destination;
-    public final TransportSpecificDetailsType details;
+public record IncomingMessageMetaData<DestinationType, TransportSpecificDetailsType> (
+    DestinationType destination,
+    TransportSpecificDetailsType details
+){
 
-    public IncomingMessageMetaData(DestinationType destination, TransportSpecificDetailsType details) {
+    public IncomingMessageMetaData {
         requireNonNull(destination, "destination must not be null");
-        this.destination = destination;
-        this.details = details;
-    }
-
-    @Override
-    public String toString() {
-        return "{destination=" + destination + ", details=" + details + '}';
     }
 }

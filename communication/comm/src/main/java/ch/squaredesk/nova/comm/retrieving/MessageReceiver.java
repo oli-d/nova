@@ -42,7 +42,7 @@ public abstract class MessageReceiver<
                     try {
                         message = unmarshaller.apply(rawMessage.message());
                     } catch (Exception e) {
-                        metricsCollector.unparsableMessageReceived(rawMessage.metaData().destination);
+                        metricsCollector.unparsableMessageReceived(rawMessage.metaData().destination());
                     }
                     return new IncomingMessage<>(message, rawMessage.metaData());
                 })

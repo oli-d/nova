@@ -9,6 +9,7 @@
 
 package ch.squaredesk.nova.comm.kafka;
 
+import ch.squaredesk.nova.comm.sending.OutgoingMessageMetaData;
 import ch.squaredesk.nova.metrics.Metrics;
 import io.reactivex.rxjava3.core.Single;
 import org.apache.kafka.clients.producer.KafkaProducer;
@@ -19,7 +20,7 @@ import java.util.Properties;
 
 import static java.util.Objects.requireNonNull;
 
-public class MessageSender extends ch.squaredesk.nova.comm.sending.MessageSender<String, String, OutgoingMessageMetaData> {
+public class MessageSender extends ch.squaredesk.nova.comm.sending.MessageSender<String, String, OutgoingMessageMetaData<String, SendInfo>> {
     private final Producer<String, String> producer;
 
     protected MessageSender(String identifier,
@@ -30,9 +31,9 @@ public class MessageSender extends ch.squaredesk.nova.comm.sending.MessageSender
     }
 
     @Override
-    public Single<OutgoingMessageMetaData> send(String message, OutgoingMessageMetaData sendingInfo) {
+    public Single<OutgoingMessageMetaData<String, SendInfo>> send(String message, OutgoingMessageMetaData<String, SendInfo> sendingInfo) {
         requireNonNull(message, "message must not be null");
-        return Single.fromFuture(producer.send(new ProducerRecord<>(sendingInfo.destination, message)))
+        return Single.fromFuture(producer.send(new ProducerRecord<>(sendingInfo.destination(), message)))
                 .map(producerRecord -> sendingInfo);
     }
 

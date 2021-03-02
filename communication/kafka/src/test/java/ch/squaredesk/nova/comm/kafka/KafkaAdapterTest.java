@@ -9,6 +9,7 @@
 
 package ch.squaredesk.nova.comm.kafka;
 
+import ch.squaredesk.nova.comm.sending.OutgoingMessageMetaData;
 import com.github.charithe.kafka.KafkaHelper;
 import com.github.charithe.kafka.KafkaJunitExtension;
 import com.github.charithe.kafka.KafkaJunitExtensionConfig;
@@ -278,10 +279,10 @@ class KafkaAdapterTest {
 
     @Test
     void messageMarshallingErrorOnSendForwardedToSubscriber(KafkaHelper kafkaHelper) throws Exception {
-        Single<OutgoingMessageMetaData> completable = sut.sendMessage("dest", "myMessage", s -> {
+        Single<OutgoingMessageMetaData<String, SendInfo>> completable = sut.sendMessage("dest", "myMessage", s -> {
             throw new RuntimeException("for test");
         });
-        TestObserver<OutgoingMessageMetaData> observer = completable.test();
+        TestObserver<OutgoingMessageMetaData<String, SendInfo>> observer = completable.test();
         observer.await();
         observer.assertError(t -> t instanceof RuntimeException && t.getMessage().equals("for test"));
     }

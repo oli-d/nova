@@ -9,6 +9,8 @@
 
 package ch.squaredesk.nova.comm.jms;
 
+import ch.squaredesk.nova.comm.retrieving.IncomingMessageMetaData;
+import ch.squaredesk.nova.comm.rpc.RpcReply;
 import ch.squaredesk.nova.metrics.Metrics;
 import io.reactivex.rxjava3.observers.TestObserver;
 import io.reactivex.rxjava3.subscribers.TestSubscriber;
@@ -75,9 +77,10 @@ class JmsAdapterIntegrationTest {
     void rpcWorks() throws Exception {
         Destination queue = jmsHelper.echoOnQueue("myQueue1");
 
-        TestObserver<RpcReply<String>> replyObserver = sut.sendRequest(queue, "aRequest", String.class, Duration.ofMillis(500)).test().await();
-        ch.squaredesk.nova.comm.rpc.RpcReply reply = replyObserver.values().get(0);
-        assertThat(reply.result, is("aRequest"));
+        TestObserver<RpcReply<String, IncomingMessageMetaData<Destination, RetrieveInfo>>> replyObserver =
+                sut.sendRequest(queue, "aRequest", String.class, Duration.ofMillis(500)).test().await();
+        RpcReply reply = replyObserver.values().get(0);
+        assertThat(reply.result(), is("aRequest"));
     }
 
     @Test
@@ -87,7 +90,8 @@ class JmsAdapterIntegrationTest {
         myCorrelationIdGenerator.delegate = () -> "correlationId";
 
         TestSubscriber<String> messageSubscriber = sut.messages(sharedQueue).test();
-        TestObserver<RpcReply<String>> replyObserver = sut.sendRequest(queue, sharedQueue, "aRequest", null, String.class, Duration.ofSeconds(20)).test();
+        TestObserver<RpcReply<String, IncomingMessageMetaData<Destination, RetrieveInfo>>> replyObserver =
+                sut.sendRequest(queue, sharedQueue, "aRequest", null, String.class, Duration.ofSeconds(20)).test();
         jmsHelper.sendReply(sharedQueue, "aReply1", null);
         jmsHelper.sendReply(sharedQueue, "aReply2", "correlationId");
         jmsHelper.sendReply(sharedQueue, "aReply3", null);
@@ -95,14 +99,14 @@ class JmsAdapterIntegrationTest {
         replyObserver.await(21, SECONDS);
         replyObserver.assertComplete();
         replyObserver.assertValueCount(1);
-        assertThat(replyObserver.values().get(0).result, is("aReply2"));
+        assertThat(replyObserver.values().get(0).result(), is("aReply2"));
 
         messageSubscriber.awaitCount(2);
         messageSubscriber.assertValueCount(2);
         assertThat(messageSubscriber.values(), contains("aReply1", "aReply3"));
     }
 
-    private class MyCorrelationIdGenerator implements Supplier<String> {
+    private static class MyCorrelationIdGenerator implements Supplier<String> {
         private Supplier<String> delegate;
 
         private MyCorrelationIdGenerator() {

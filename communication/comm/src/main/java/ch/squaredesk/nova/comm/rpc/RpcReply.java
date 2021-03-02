@@ -9,17 +9,8 @@
 
 package ch.squaredesk.nova.comm.rpc;
 
-public class RpcReply<ReplyType, MetaDataType> {
-    public final ReplyType result;
-    public final MetaDataType metaData;
-
-    public RpcReply(ReplyType result, MetaDataType metaData) {
-        this.result = result;
-        this.metaData = metaData;
-    }
-
-    @Override
-    public String toString() {
-        return "{ result=" + result + ", metaData=" + metaData + '}';
-    }
+public record RpcReply<ReplyType, MetaDataType> (
+    ReplyType result,
+    MetaDataType metaData
+){
 }

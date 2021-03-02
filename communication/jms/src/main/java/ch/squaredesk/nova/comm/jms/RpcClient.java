@@ -9,17 +9,22 @@
 
 package ch.squaredesk.nova.comm.jms;
 
+import ch.squaredesk.nova.comm.retrieving.IncomingMessageMetaData;
+import ch.squaredesk.nova.comm.rpc.RpcReply;
+import ch.squaredesk.nova.comm.sending.OutgoingMessageMetaData;
 import ch.squaredesk.nova.metrics.Metrics;
 import io.reactivex.rxjava3.core.Single;
 import io.reactivex.rxjava3.functions.Function;
 
+import javax.jms.Destination;
 import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import static java.util.Objects.requireNonNull;
 
-public class RpcClient extends ch.squaredesk.nova.comm.rpc.RpcClient<String, OutgoingMessageMetaData, IncomingMessageMetaData> {
+public class RpcClient extends ch.squaredesk.nova.comm.rpc.RpcClient<String,
+        OutgoingMessageMetaData<Destination, SendInfo>, IncomingMessageMetaData<Destination, RetrieveInfo>> {
     private final MessageSender messageSender;
     private final MessageReceiver messageReceiver;
 
@@ -33,30 +38,30 @@ public class RpcClient extends ch.squaredesk.nova.comm.rpc.RpcClient<String, Out
     }
 
     @Override
-    public <RequestType, ReplyType> Single<RpcReply<ReplyType>> sendRequest(
+    public <RequestType, ReplyType> Single<RpcReply<ReplyType, IncomingMessageMetaData<Destination, RetrieveInfo>>> sendRequest(
             RequestType request,
-            OutgoingMessageMetaData requestMetaData,
+            OutgoingMessageMetaData<Destination, SendInfo> requestMetaData,
             Function<RequestType, String> requestTranscriber,
             Function<String, ReplyType> replyTranscriber,
             Duration timeout) {
 
         requireNonNull(timeout, "timeout must not be null");
         requireNonNull(requestMetaData, "metaData must not be null");
-        requireNonNull(requestMetaData.details, "metaData.details must not be null");
-        requireNonNull(requestMetaData.details.correlationId, "correlationId must not be null");
-        requireNonNull(requestMetaData.details.replyDestination, "replyDestination must not be null");
+        requireNonNull(requestMetaData.details(), "metaData.details must not be null");
+        requireNonNull(requestMetaData.details().correlationId(), "correlationId must not be null");
+        requireNonNull(requestMetaData.details().replyDestination(), "replyDestination must not be null");
 
         // listen to RPC reply. This must be done BEFORE sending the request, otherwise we could miss a very fast response
         // if the Observable is hot
-        String metricsInfo = requestMetaData.destination + "." + request;
-        Single<RpcReply<ReplyType>> replySingle =
-                messageReceiver.messages(requestMetaData.details.replyDestination, replyTranscriber)
+        String metricsInfo = requestMetaData.destination() + "." + request;
+        Single<RpcReply<ReplyType, IncomingMessageMetaData<Destination, RetrieveInfo>>> replySingle =
+                messageReceiver.messages(requestMetaData.details().replyDestination(), replyTranscriber)
                 .filter(incomingMessage ->
-                        incomingMessage.metaData.details != null &&
-                                requestMetaData.details.correlationId.equals(incomingMessage.metaData.details.correlationId))
+                        incomingMessage.metaData().details() != null &&
+                                requestMetaData.details().correlationId().equals(incomingMessage.metaData().details().correlationId()))
                 .take(1)
                 .doOnNext(reply -> metricsCollector.rpcCompleted(metricsInfo, reply))
-                .map(incomingMessage -> new RpcReply<>(incomingMessage.message, incomingMessage.metaData))
+                .map(incomingMessage -> new RpcReply<>(incomingMessage.message(), incomingMessage.metaData()))
                 .singleOrError();
 
         // send message sync

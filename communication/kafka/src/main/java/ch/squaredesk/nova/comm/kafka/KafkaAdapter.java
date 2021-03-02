@@ -13,6 +13,7 @@ import ch.squaredesk.nova.comm.CommAdapter;
 import ch.squaredesk.nova.comm.CommAdapterBuilder;
 import ch.squaredesk.nova.comm.DefaultMessageTranscriberForStringAsTransportType;
 import ch.squaredesk.nova.comm.MessageTranscriber;
+import ch.squaredesk.nova.comm.sending.OutgoingMessageMetaData;
 import ch.squaredesk.nova.metrics.Metrics;
 import io.reactivex.rxjava3.core.Flowable;
 import io.reactivex.rxjava3.core.Single;
@@ -51,21 +52,21 @@ public class KafkaAdapter extends CommAdapter<String> {
     // simple send related methods //
     //                             //
     /////////////////////////////////
-    public Single<OutgoingMessageMetaData> sendMessage(String destination, String message) {
+    public Single<OutgoingMessageMetaData<String, SendInfo>> sendMessage(String destination, String message) {
         SendInfo sendInfo = new SendInfo();
-        OutgoingMessageMetaData meta = new OutgoingMessageMetaData(destination, sendInfo);
+        OutgoingMessageMetaData<String, SendInfo> meta = new OutgoingMessageMetaData<>(destination, sendInfo);
         return messageSender.send(message, meta);
     }
 
-    public <T> Single<OutgoingMessageMetaData> sendMessage(String destination, T message) {
+    public <T> Single<OutgoingMessageMetaData<String, SendInfo>> sendMessage(String destination, T message) {
         Function<T, String> transcriber = messageTranscriber.getOutgoingMessageTranscriber((Class<T>)message.getClass());
         return sendMessage(destination, message, transcriber);
     }
 
-    public <T> Single<OutgoingMessageMetaData> sendMessage(String destination, T message, Function<T, String> transcriber) {
+    public <T> Single<OutgoingMessageMetaData<String, SendInfo>> sendMessage(String destination, T message, Function<T, String> transcriber) {
         requireNonNull(message, "message must not be null");
         SendInfo sendInfo = new SendInfo();
-        OutgoingMessageMetaData meta = new OutgoingMessageMetaData(destination, sendInfo);
+        OutgoingMessageMetaData<String, SendInfo> meta = new OutgoingMessageMetaData<>(destination, sendInfo);
         return this.messageSender.send(message, meta, transcriber)
         /*.doOnError(t -> examineSendExceptionForDeadDestinationAndInformListener(t, destination))*/;
     }
@@ -76,7 +77,7 @@ public class KafkaAdapter extends CommAdapter<String> {
     //                              //
     //////////////////////////////////
     public Flowable<String> messages (String destination) {
-        return messageReceiver.messages(destination).map(incomingMessage -> incomingMessage.message);
+        return messageReceiver.messages(destination).map(incomingMessage -> incomingMessage.message());
     }
 
     public <T> Flowable<T> messages (String destination, Class<T> messageType) {
@@ -84,7 +85,7 @@ public class KafkaAdapter extends CommAdapter<String> {
     }
 
     public <T> Flowable<T> messages (String destination, Function<String,T> messageTranscriber) {
-        return messageReceiver.messages(destination, messageTranscriber).map(incomingMessage -> incomingMessage.message);
+        return messageReceiver.messages(destination, messageTranscriber).map(incomingMessage -> incomingMessage.message());
     }
 
 

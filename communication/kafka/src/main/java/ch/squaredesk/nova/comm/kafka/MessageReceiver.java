@@ -10,6 +10,7 @@
 package ch.squaredesk.nova.comm.kafka;
 
 import ch.squaredesk.nova.comm.retrieving.IncomingMessage;
+import ch.squaredesk.nova.comm.retrieving.IncomingMessageMetaData;
 import ch.squaredesk.nova.metrics.Metrics;
 import ch.squaredesk.nova.tuples.Pair;
 import io.reactivex.rxjava3.core.Flowable;
@@ -30,10 +31,10 @@ import java.util.function.BiPredicate;
 import java.util.function.Function;
 
 public class MessageReceiver
-        extends ch.squaredesk.nova.comm.retrieving.MessageReceiver<String, String, IncomingMessageMetaData> {
+        extends ch.squaredesk.nova.comm.retrieving.MessageReceiver<String, String, IncomingMessageMetaData<String, RetrieveInfo>> {
 
     private final Logger logger = LoggerFactory.getLogger(MessageReceiver.class);
-    private final Flowable<IncomingMessage<String, IncomingMessageMetaData>> allMessagesStream;
+    private final Flowable<IncomingMessage<String, IncomingMessageMetaData<String, RetrieveInfo>>> allMessagesStream;
     private final Scheduler scheduler = Schedulers.io();
     private final Map<String, AtomicInteger> topicToSubscriptionCount = new ConcurrentHashMap<>();
 
@@ -117,7 +118,7 @@ public class MessageReceiver
                 .map(record -> {
                     metricsCollector.messageReceived(record.topic());
                     RetrieveInfo kafkaSpecificInfo = new RetrieveInfo();
-                    IncomingMessageMetaData metaData = new IncomingMessageMetaData(record.topic(), kafkaSpecificInfo);
+                    IncomingMessageMetaData<String, RetrieveInfo> metaData = new IncomingMessageMetaData<>(record.topic(), kafkaSpecificInfo);
                     return new IncomingMessage<>(record.value(), metaData);
                 })
                 .share();
@@ -137,11 +138,11 @@ public class MessageReceiver
     }
 
     @Override
-    public Flowable<IncomingMessage<String, IncomingMessageMetaData>> messages(String destination) {
+    public Flowable<IncomingMessage<String, IncomingMessageMetaData<String, RetrieveInfo>>> messages(String destination) {
         Objects.requireNonNull(destination, "destination must not be null");
 
         return allMessagesStream
-                .filter(incomingMessage -> destination.equals(incomingMessage.metaData.destination))
+                .filter(incomingMessage -> destination.equals(incomingMessage.metaData().destination()))
                 .doOnSubscribe(s -> {
                     scheduler.scheduleDirect(() -> {
                         AtomicInteger subsCounter = topicToSubscriptionCount.computeIfAbsent(

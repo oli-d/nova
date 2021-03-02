@@ -12,6 +12,9 @@ package ch.squaredesk.nova.comm.jms;
 import ch.squaredesk.nova.comm.CommAdapter;
 import ch.squaredesk.nova.comm.CommAdapterBuilder;
 import ch.squaredesk.nova.comm.DefaultMessageTranscriberForStringAsTransportType;
+import ch.squaredesk.nova.comm.retrieving.IncomingMessageMetaData;
+import ch.squaredesk.nova.comm.rpc.RpcReply;
+import ch.squaredesk.nova.comm.sending.OutgoingMessageMetaData;
 import io.reactivex.rxjava3.core.Flowable;
 import io.reactivex.rxjava3.core.Single;
 import io.reactivex.rxjava3.functions.Function;
@@ -64,32 +67,32 @@ public class JmsAdapter extends CommAdapter<String> {
     // simple send related methods //
     //                             //
     /////////////////////////////////
-    public <T> Single<OutgoingMessageMetaData> sendMessage(Destination destination, T message) {
+    public <T> Single<OutgoingMessageMetaData<Destination, SendInfo>> sendMessage(Destination destination, T message) {
         return sendMessage(destination, message, null, null, null, null);
     }
 
-    public <T> Single<OutgoingMessageMetaData> sendMessage(Destination destination, T message, Map<String, Object> customHeaders) {
+    public <T> Single<OutgoingMessageMetaData<Destination, SendInfo>> sendMessage(Destination destination, T message, Map<String, Object> customHeaders) {
         return sendMessage(destination, message, customHeaders, null, null, null);
     }
 
-    public <T> Single<OutgoingMessageMetaData> sendMessage(Destination destination, T message, Map<String, Object> customHeaders, Integer deliveryMode, Integer priority, Long timeToLive) {
+    public <T> Single<OutgoingMessageMetaData<Destination, SendInfo>> sendMessage(Destination destination, T message, Map<String, Object> customHeaders, Integer deliveryMode, Integer priority, Long timeToLive) {
         Function<T, String> transcriber = messageTranscriber.getOutgoingMessageTranscriber((Class<T>) message.getClass());
         return doSendMessage(destination, message, transcriber, customHeaders, deliveryMode, priority, timeToLive);
     }
 
-    public <T> Single<OutgoingMessageMetaData> sendMessage(Destination destination, T message, Function<T, String> transcriber) {
+    public <T> Single<OutgoingMessageMetaData<Destination, SendInfo>> sendMessage(Destination destination, T message, Function<T, String> transcriber) {
         return doSendMessage(destination, message, transcriber, null, null, null, null);
     }
 
-    public <T> Single<OutgoingMessageMetaData> sendMessage(Destination destination, T message, Function<T, String> transcriber, Map<String, Object> customHeaders) {
+    public <T> Single<OutgoingMessageMetaData<Destination, SendInfo>> sendMessage(Destination destination, T message, Function<T, String> transcriber, Map<String, Object> customHeaders) {
         return doSendMessage(destination, message, transcriber, customHeaders, null, null, null);
     }
 
-    public <T> Single<OutgoingMessageMetaData> sendMessage(Destination destination, T message, Function<T, String> transcriber, Map<String, Object> customHeaders, Integer deliveryMode, Integer priority, Long timeToLive) {
+    public <T> Single<OutgoingMessageMetaData<Destination, SendInfo>> sendMessage(Destination destination, T message, Function<T, String> transcriber, Map<String, Object> customHeaders, Integer deliveryMode, Integer priority, Long timeToLive) {
         return doSendMessage(destination, message, transcriber, customHeaders, deliveryMode, priority, timeToLive);
     }
 
-    protected <T> Single<OutgoingMessageMetaData> doSendMessage(
+    protected <T> Single<OutgoingMessageMetaData<Destination, SendInfo>> doSendMessage(
             Destination destination,
             T message,
             Function<T,String> transcriber,
@@ -102,24 +105,24 @@ public class JmsAdapter extends CommAdapter<String> {
         SendInfo jmsSpecificSendingInfo = new SendInfo(
                 null,
                 null,
-                customHeaders,
                 deliveryMode == null ? defaultMessageDeliveryMode : deliveryMode,
                 priority == null ? defaultMessagePriority : priority,
-                timeToLive == null ? defaultMessageTimeToLive : timeToLive);
-        OutgoingMessageMetaData meta = new OutgoingMessageMetaData(destination, jmsSpecificSendingInfo);
+                timeToLive == null ? defaultMessageTimeToLive : timeToLive,
+                customHeaders);
+        OutgoingMessageMetaData<Destination, SendInfo> meta = new OutgoingMessageMetaData<>(destination, jmsSpecificSendingInfo);
         return this.messageSender.send(message, meta, transcriber)
                 .doOnError(t -> examineSendExceptionForDeadDestinationAndInformListener(t, destination));
     }
 
-    public Single<OutgoingMessageMetaData> sendMessage(Destination destination, String message) {
+    public Single<OutgoingMessageMetaData<Destination, SendInfo>> sendMessage(Destination destination, String message) {
         return doSendMessage(destination, message, null, null, null, null);
     }
 
-    public Single<OutgoingMessageMetaData> sendMessage(Destination destination, String message, Map<String, Object> customHeaders) {
+    public Single<OutgoingMessageMetaData<Destination, SendInfo>> sendMessage(Destination destination, String message, Map<String, Object> customHeaders) {
         return doSendMessage(destination, message, customHeaders, null, null, null);
     }
 
-    protected Single<OutgoingMessageMetaData> doSendMessage(
+    protected Single<OutgoingMessageMetaData<Destination, SendInfo>> doSendMessage(
             Destination destination,
             String message,
             Map<String, Object> customHeaders,
@@ -131,11 +134,11 @@ public class JmsAdapter extends CommAdapter<String> {
         SendInfo jmsSpecificSendingInfo = new SendInfo(
                 null,
                 null,
-                customHeaders,
                 deliveryMode == null ? defaultMessageDeliveryMode : deliveryMode,
                 priority == null ? defaultMessagePriority : priority,
-                timeToLive == null ? defaultMessageTimeToLive : timeToLive);
-        OutgoingMessageMetaData meta = new OutgoingMessageMetaData(destination, jmsSpecificSendingInfo);
+                timeToLive == null ? defaultMessageTimeToLive : timeToLive,
+                customHeaders);
+        OutgoingMessageMetaData<Destination, SendInfo> meta = new OutgoingMessageMetaData<>(destination, jmsSpecificSendingInfo);
         return this.messageSender.send(message, meta)
                 .doOnError(t -> examineSendExceptionForDeadDestinationAndInformListener(t, destination));
     }
@@ -147,8 +150,8 @@ public class JmsAdapter extends CommAdapter<String> {
     //////////////////////////////////
     public Flowable<String> messages (Destination destination) {
         return this.messageReceiver.messages(destination)
-                .filter(incomingMessage -> !incomingMessage.metaData.details.isRpcReply())
-                .map(incomingMessage -> incomingMessage.message);
+                .filter(incomingMessage -> !incomingMessage.metaData().details().isRpcReply())
+                .map(incomingMessage -> incomingMessage.message());
     }
 
     public <T> Flowable<T> messages(Destination destination, Class<T> messageType) {
@@ -157,7 +160,7 @@ public class JmsAdapter extends CommAdapter<String> {
 
     public <T> Flowable<T> messages(Destination destination, Function<String, T> messageTranscriber) {
         return messageReceiver.messages(destination, messageTranscriber)
-                .map(incomingMessage -> incomingMessage.message);
+                .map(incomingMessage -> incomingMessage.message());
     }
 
     ////////////////////////
@@ -175,7 +178,7 @@ public class JmsAdapter extends CommAdapter<String> {
     // RPC client methods //
     //                    //
     ////////////////////////
-    public <T,U> Single<RpcReply<U>> sendRequest(
+    public <T,U> Single<RpcReply<U, IncomingMessageMetaData<Destination, RetrieveInfo>>> sendRequest(
             Destination destination,
             Destination replyDestination,
             T request,
@@ -194,8 +197,8 @@ public class JmsAdapter extends CommAdapter<String> {
         timeToLiveToUse = Math.min(timeToLiveToUse, timeoutToUse.toMillis());
         String correlationId = correlationIdGenerator.get();
         SendInfo jmsSpecificInfo = new SendInfo(
-                correlationId, replyDestination, customHeaders, deliveryModeToUse, priorityToUse, timeToLiveToUse);
-        OutgoingMessageMetaData sendingInfo = new OutgoingMessageMetaData(destination, jmsSpecificInfo);
+                correlationId, replyDestination, deliveryModeToUse, priorityToUse, timeToLiveToUse, customHeaders);
+        OutgoingMessageMetaData<Destination, SendInfo> sendingInfo = new OutgoingMessageMetaData<>(destination, jmsSpecificInfo);
 
         return rpcClient.sendRequest(
                 request,
@@ -206,7 +209,7 @@ public class JmsAdapter extends CommAdapter<String> {
                 .doOnError(t -> examineSendExceptionForDeadDestinationAndInformListener(t, destination));
     }
 
-    public <T,U> Single<RpcReply<U>> sendRequest(
+    public <T,U> Single<RpcReply<U, IncomingMessageMetaData<Destination, RetrieveInfo>>> sendRequest(
             Destination destination,
             Destination replyDestination,
             T message,
@@ -216,7 +219,7 @@ public class JmsAdapter extends CommAdapter<String> {
         return sendRequest(destination, replyDestination, message, customHeaders, replyTranscriber, null, null, null, timeout);
     }
 
-    public <T,U> Single<RpcReply<U>> sendRequest(
+    public <T,U> Single<RpcReply<U, IncomingMessageMetaData<Destination, RetrieveInfo>>> sendRequest(
             Destination destination,
             T message,
             Map<String, Object> customHeaders,
@@ -225,7 +228,7 @@ public class JmsAdapter extends CommAdapter<String> {
         return sendRequest(destination, jmsObjectRepository.getPrivateTempQueue(), message, customHeaders, replyTranscriber, null, null, null, timeout);
     }
 
-    public <T,U> Single<RpcReply<U>> sendRequest(
+    public <T,U> Single<RpcReply<U, IncomingMessageMetaData<Destination, RetrieveInfo>>> sendRequest(
             Destination destination,
             T message,
             Map<String, Object> customHeaders,
@@ -233,21 +236,21 @@ public class JmsAdapter extends CommAdapter<String> {
         return sendRequest(destination, jmsObjectRepository.getPrivateTempQueue(), message, customHeaders, replyTranscriber, null, null, null, null);
     }
 
-    public <T,U> Single<RpcReply<U>> sendRequest(
+    public <T,U> Single<RpcReply<U, IncomingMessageMetaData<Destination, RetrieveInfo>>> sendRequest(
             Destination destination,
             T message,
             Function<String, U> replyTranscriber,
             Duration timeout) {
         return sendRequest(destination, jmsObjectRepository.getPrivateTempQueue(), message, null, replyTranscriber, null, null, null, timeout);
     }
-    public <T,U> Single<RpcReply<U>> sendRequest(
+    public <T,U> Single<RpcReply<U, IncomingMessageMetaData<Destination, RetrieveInfo>>> sendRequest(
             Destination destination,
             T message,
             Function<String, U> replyTranscriber) {
         return sendRequest(destination, jmsObjectRepository.getPrivateTempQueue(), message, null, replyTranscriber, null, null, null, null);
     }
 
-    public <T, U> Single<RpcReply<U>> sendRequest(
+    public <T, U> Single<RpcReply<U, IncomingMessageMetaData<Destination, RetrieveInfo>>> sendRequest(
             Destination destination,
             Destination replyDestination,
             T request,
@@ -257,7 +260,7 @@ public class JmsAdapter extends CommAdapter<String> {
             Duration timeout) {
         return sendRequest(destination, replyDestination, request, customHeaders, messageTranscriber.getIncomingMessageTranscriber(replyType), deliveryMode, priority, timeToLive, timeout);
     }
-        public <T,U> Single<RpcReply<U>> sendRequest(
+        public <T,U> Single<RpcReply<U, IncomingMessageMetaData<Destination, RetrieveInfo>>> sendRequest(
             Destination destination,
             Destination replyDestination,
             T message,
@@ -267,7 +270,7 @@ public class JmsAdapter extends CommAdapter<String> {
             return sendRequest(destination, replyDestination, message, customHeaders, messageTranscriber.getIncomingMessageTranscriber(replyType), null, null, null,timeout);
     }
 
-    public <T,U> Single<RpcReply<U>> sendRequest(
+    public <T,U> Single<RpcReply<U, IncomingMessageMetaData<Destination, RetrieveInfo>>> sendRequest(
             Destination destination,
             T message,
             Map<String, Object> customHeaders,
@@ -276,7 +279,7 @@ public class JmsAdapter extends CommAdapter<String> {
         return sendRequest(destination, jmsObjectRepository.getPrivateTempQueue(), message, customHeaders, messageTranscriber.getIncomingMessageTranscriber(replyType), null, null, null, timeout);
     }
 
-    public <T,U> Single<RpcReply<U>> sendRequest(
+    public <T,U> Single<RpcReply<U, IncomingMessageMetaData<Destination, RetrieveInfo>>> sendRequest(
             Destination destination,
             T message,
             Map<String, Object> customHeaders,
@@ -284,14 +287,14 @@ public class JmsAdapter extends CommAdapter<String> {
         return sendRequest(destination, jmsObjectRepository.getPrivateTempQueue(), message, customHeaders, messageTranscriber.getIncomingMessageTranscriber(replyType), null, null, null, null);
     }
 
-    public <T,U> Single<RpcReply<U>> sendRequest(
+    public <T,U> Single<RpcReply<U, IncomingMessageMetaData<Destination, RetrieveInfo>>> sendRequest(
             Destination destination,
             T message,
             Class<U> replyType,
             Duration timeout) {
         return sendRequest(destination, jmsObjectRepository.getPrivateTempQueue(), message, null, messageTranscriber.getIncomingMessageTranscriber(replyType), null, null, null, timeout);
     }
-    public <T,U> Single<RpcReply<U>> sendRequest(
+    public <T,U> Single<RpcReply<U, IncomingMessageMetaData<Destination, RetrieveInfo>>> sendRequest(
             Destination destination,
             T message,
             Class<U> replyType) {

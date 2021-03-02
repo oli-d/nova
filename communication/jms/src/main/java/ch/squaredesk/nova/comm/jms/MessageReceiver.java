@@ -10,6 +10,7 @@
 package ch.squaredesk.nova.comm.jms;
 
 import ch.squaredesk.nova.comm.retrieving.IncomingMessage;
+import ch.squaredesk.nova.comm.retrieving.IncomingMessageMetaData;
 import ch.squaredesk.nova.metrics.Metrics;
 import io.reactivex.rxjava3.core.Flowable;
 import io.reactivex.rxjava3.schedulers.Schedulers;
@@ -24,13 +25,13 @@ import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
 class MessageReceiver
-        extends ch.squaredesk.nova.comm.retrieving.MessageReceiver<Destination, String, IncomingMessageMetaData> {
+        extends ch.squaredesk.nova.comm.retrieving.MessageReceiver<Destination, String, IncomingMessageMetaData<Destination, RetrieveInfo>> {
 
     private static final Logger logger = LoggerFactory.getLogger(MessageReceiver.class);
 
     private final JmsObjectRepository jmsObjectRepository;
 
-    private final Map<String, Flowable<IncomingMessage<String, IncomingMessageMetaData>>>
+    private final Map<String, Flowable<IncomingMessage<String, IncomingMessageMetaData<Destination, RetrieveInfo>>>>
             mapDestinationIdToMessageStream = new ConcurrentHashMap<>();
     private final JmsMessageMetaDataCreator messageDetailsCreator = new JmsMessageMetaDataCreator();
 
@@ -42,19 +43,19 @@ class MessageReceiver
     }
 
     @Override
-    public Flowable<IncomingMessage<String, IncomingMessageMetaData>> messages(Destination destination) {
+    public Flowable<IncomingMessage<String, IncomingMessageMetaData<Destination, RetrieveInfo>>> messages(Destination destination) {
         Objects.requireNonNull(destination, "destination must not ne bull");
         Objects.requireNonNull(destination, "unmarshaller must not ne bull");
         String destinationId = jmsObjectRepository.idFor(destination);
         return mapDestinationIdToMessageStream.computeIfAbsent(destinationId, key -> {
-            Flowable<IncomingMessage<String, IncomingMessageMetaData>> f = Flowable.generate(
+            Flowable<IncomingMessage<String, IncomingMessageMetaData<Destination, RetrieveInfo>>> f = Flowable.generate(
                     () -> {
                         logger.info("Opening connection to destination {}", destinationId);
                         metricsCollector.subscriptionCreated(destinationId);
                         return jmsObjectRepository.createMessageConsumer(destination);
                     },
                     (consumer, emitter) -> {
-                        IncomingMessage<String, IncomingMessageMetaData> incomingMessage = null;
+                        IncomingMessage<String, IncomingMessageMetaData<Destination, RetrieveInfo>> incomingMessage = null;
                         while (incomingMessage == null) {
                             Message m = null;
                             try {
@@ -85,7 +86,7 @@ class MessageReceiver
                                 continue;
                             }
 
-                            IncomingMessageMetaData meta = messageDetailsCreator.createIncomingMessageMetaData(m);
+                            IncomingMessageMetaData<Destination, RetrieveInfo> meta = messageDetailsCreator.createIncomingMessageMetaData(m);
                             incomingMessage = new IncomingMessage<>(transportMessage, meta);
                             metricsCollector.messageReceived(destinationId);
                         }

@@ -9,6 +9,7 @@
 
 package ch.squaredesk.nova.comm.jms;
 
+import ch.squaredesk.nova.comm.sending.OutgoingMessageMetaData;
 import ch.squaredesk.nova.metrics.Metrics;
 import io.reactivex.rxjava3.observers.TestObserver;
 import org.apache.activemq.ActiveMQConnectionFactory;
@@ -69,7 +70,8 @@ class MessageSenderTest {
     @Test
     void sendNullMessageReturnsError() throws Exception {
         setup();
-        OutgoingMessageMetaData meta = new OutgoingMessageMetaData(jmsHelper.createQueue("not used"));
+        OutgoingMessageMetaData<Destination, SendInfo> meta = new OutgoingMessageMetaData<>(
+                jmsHelper.createQueue("not used"), null);
         assertThrows(NullPointerException.class, () -> sut.send(null, meta));
     }
 
@@ -77,10 +79,10 @@ class MessageSenderTest {
     void sendMessage() throws Exception {
         setup();
         Destination queue = jmsHelper.createQueue("sendTest");
-        OutgoingMessageMetaData meta = new OutgoingMessageMetaData(queue);
+        OutgoingMessageMetaData<Destination, SendInfo> meta = new OutgoingMessageMetaData<>(queue, null);
         MessageConsumer consumer = jmsHelper.createMessageConsumer(queue);
 
-        TestObserver<OutgoingMessageMetaData> observer = sut.send("Hallo", meta).test();
+        TestObserver<OutgoingMessageMetaData<Destination, SendInfo>> observer = sut.send("Hallo", meta).test();
         observer.await(10, SECONDS);
         observer.assertComplete();
 
@@ -94,8 +96,8 @@ class MessageSenderTest {
     void sendMessageWithException() throws Exception {
         Destination queue = jmsHelper.createQueue("sendTest");
 
-        OutgoingMessageMetaData meta = new OutgoingMessageMetaData(queue);
-        TestObserver<OutgoingMessageMetaData> observer = sut.send("Hallo", meta, message -> {
+        OutgoingMessageMetaData<Destination, SendInfo> meta = new OutgoingMessageMetaData<>(queue, null);
+        TestObserver<OutgoingMessageMetaData<Destination, SendInfo>> observer = sut.send("Hallo", meta, message -> {
             throw new RuntimeException("4 test");
         }).test();
         observer.await(1, SECONDS);

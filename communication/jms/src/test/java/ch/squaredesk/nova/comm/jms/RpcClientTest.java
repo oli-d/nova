@@ -9,6 +9,9 @@
 
 package ch.squaredesk.nova.comm.jms;
 
+import ch.squaredesk.nova.comm.retrieving.IncomingMessageMetaData;
+import ch.squaredesk.nova.comm.rpc.RpcReply;
+import ch.squaredesk.nova.comm.sending.OutgoingMessageMetaData;
 import ch.squaredesk.nova.metrics.Metrics;
 import io.reactivex.rxjava3.observers.TestObserver;
 import org.apache.activemq.ActiveMQConnectionFactory;
@@ -90,13 +93,13 @@ class RpcClientTest {
         Destination replyTo = jmsHelper.createQueue("replyTo1");
         SendInfo sendingDetails = new SendInfo("c1",
                 replyTo,
-                null,
                 Message.DEFAULT_DELIVERY_MODE,
                 Message.DEFAULT_PRIORITY,
                 Message.DEFAULT_TIME_TO_LIVE);
-        OutgoingMessageMetaData metaData = new OutgoingMessageMetaData(queue, sendingDetails);
+        OutgoingMessageMetaData<Destination, SendInfo> metaData = new OutgoingMessageMetaData<>(queue, sendingDetails);
 
-        TestObserver<RpcReply<String>> replyObserver = sut.sendRequest("aRequest", metaData, s -> s, s -> s, Duration.ofMillis(250)).test().await();
+        TestObserver<RpcReply<String, IncomingMessageMetaData<Destination, RetrieveInfo>>> replyObserver =
+                sut.sendRequest("aRequest", metaData, s -> s, s -> s, Duration.ofMillis(250)).test().await();
 
         replyObserver.assertError(TimeoutException.class);
     }
@@ -107,19 +110,19 @@ class RpcClientTest {
         Destination replyTo = jmsHelper.createQueue("replyTo2");
         SendInfo sendingDetails = new SendInfo("c2",
                 replyTo,
-                null,
                 Message.DEFAULT_DELIVERY_MODE,
                 Message.DEFAULT_PRIORITY,
                 Message.DEFAULT_TIME_TO_LIVE);
-        OutgoingMessageMetaData metaData = new OutgoingMessageMetaData(queue, sendingDetails);
+        OutgoingMessageMetaData<Destination, SendInfo> metaData = new OutgoingMessageMetaData<>(queue, sendingDetails);
 
-        TestObserver<RpcReply<String>> replyObserver = sut.sendRequest("aRequest", metaData, s -> s, s -> s, Duration.ofSeconds(20)).test();
+        TestObserver<RpcReply<String, IncomingMessageMetaData<Destination, RetrieveInfo>>> replyObserver =
+                sut.sendRequest("aRequest", metaData, s -> s, s -> s, Duration.ofSeconds(20)).test();
         jmsHelper.sendReply(replyTo, "aReply", "c2");
 
         replyObserver.await(21, SECONDS);
         replyObserver.assertComplete();
         replyObserver.assertValueCount(1);
-        assertThat(replyObserver.values().get(0).result, is("aReply"));
+        assertThat(replyObserver.values().get(0).result(), is("aReply"));
     }
 
     @Test
@@ -128,13 +131,13 @@ class RpcClientTest {
         Destination sharedQueue = jmsHelper.createQueue("someDest");
         SendInfo sendingDetails = new SendInfo("c3",
                 sharedQueue,
-                null,
                 Message.DEFAULT_DELIVERY_MODE,
                 Message.DEFAULT_PRIORITY,
                 Message.DEFAULT_TIME_TO_LIVE);
-        OutgoingMessageMetaData metaData = new OutgoingMessageMetaData(queue, sendingDetails);
+        OutgoingMessageMetaData<Destination, SendInfo> metaData = new OutgoingMessageMetaData<>(queue, sendingDetails);
 
-        TestObserver<RpcReply<String>> replyObserver = sut.sendRequest("aRequest", metaData, s -> s, s -> s, Duration.ofSeconds(20)).test();
+        TestObserver<RpcReply<String, IncomingMessageMetaData<Destination, RetrieveInfo>>> replyObserver =
+                sut.sendRequest("aRequest", metaData, s -> s, s -> s, Duration.ofSeconds(20)).test();
         jmsHelper.sendReply(sharedQueue, "aReply1", null);
         jmsHelper.sendReply(sharedQueue, "aReply2", "c3");
         jmsHelper.sendReply(sharedQueue, "aReply3", null);
@@ -142,6 +145,6 @@ class RpcClientTest {
         replyObserver.await(21, SECONDS);
         replyObserver.assertComplete();
         replyObserver.assertValueCount(1);
-        assertThat(replyObserver.values().get(0).result, is("aReply2"));
+        assertThat(replyObserver.values().get(0).result(), is("aReply2"));
     }
 }

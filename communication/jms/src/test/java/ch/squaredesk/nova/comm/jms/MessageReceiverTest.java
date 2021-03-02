@@ -84,7 +84,7 @@ class MessageReceiverTest {
         List<String> receivedMessages = new ArrayList<>();
         Destination destination = jmsHelper.createQueue("1");
         sut.messages(destination)
-                .map(im -> im.message)
+                .map(im -> im.message())
                 .subscribe(msg -> {
                     receivedMessages.add(msg);
                     cdl.countDown();
@@ -109,7 +109,7 @@ class MessageReceiverTest {
             int idx = i;
             receivedMessages[i] = new ArrayList<>();
             sut.messages(destination)
-                    .map(im -> im.message)
+                    .map(im -> im.message())
                     .subscribe(msg -> {
                         receivedMessages[idx].add(msg);
                         cdl.countDown();

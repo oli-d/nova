@@ -9,6 +9,7 @@
 
 package ch.squaredesk.nova.comm.jms;
 
+import ch.squaredesk.nova.comm.sending.OutgoingMessageMetaData;
 import ch.squaredesk.nova.metrics.Metrics;
 import io.reactivex.rxjava3.core.Single;
 import io.reactivex.rxjava3.subscribers.TestSubscriber;
@@ -100,15 +101,14 @@ class RpcServerTest {
 
         assertThat(mySender.message, is("reply"));
         assertNotNull(mySender.sendingInfo);
-        assertThat(mySender.sendingInfo.destination, sameInstance(requestMessage.getJMSReplyTo()));
-        assertThat(mySender.sendingInfo.details.correlationId, sameInstance(requestMessage.getJMSCorrelationID()));
-        assertNull(mySender.sendingInfo.details.replyDestination);
-        assertNotNull(mySender.sendingInfo.details.correlationId);
+        assertThat(mySender.sendingInfo.destination(), sameInstance(requestMessage.getJMSReplyTo()));
+        assertThat(mySender.sendingInfo.details().correlationId(), sameInstance(requestMessage.getJMSCorrelationID()));
+        assertNull(mySender.sendingInfo.details().replyDestination());
+        assertNotNull(mySender.sendingInfo.details().correlationId());
     }
 
     /** TODO: this was valid when we were returning an error message for server side errors. Keeping it in here
      * since we're are not sure, whether it should be re-introduced
-    @Test
     void completingRpcInvocationExceptionallyTriggersReplySending() throws Exception {
         Destination queue = jmsHelper.createQueue("completeRpcExceptionally");
         TestSubscriber<RpcInvocation<String>> testSubscriber = sut.requests(queue, String.class).test();
@@ -129,9 +129,9 @@ class RpcServerTest {
     }
     **/
 
-    private class MySender extends MessageSender {
+    private static class MySender extends MessageSender {
         private String message;
-        private OutgoingMessageMetaData sendingInfo;
+        private OutgoingMessageMetaData<Destination, SendInfo> sendingInfo;
 
         MySender(String identifier, JmsObjectRepository jmsObjectRepository, Metrics metrics) {
             super(identifier, jmsObjectRepository, metrics);
@@ -139,7 +139,7 @@ class RpcServerTest {
 
 
         @Override
-        public Single<OutgoingMessageMetaData> send(String message, OutgoingMessageMetaData meta) {
+        public Single<OutgoingMessageMetaData<Destination, SendInfo>> send(String message, OutgoingMessageMetaData<Destination, SendInfo> meta) {
             this.message = message;
             this.sendingInfo = meta;
             return super.send(message, meta);

@@ -9,19 +9,8 @@
 
 package ch.squaredesk.nova.comm.jms;
 
-public class JmsSessionDescriptor {
-    public final boolean transacted;
-    public final int acknowledgeMode;
-
-    public JmsSessionDescriptor(boolean transacted, int acknowledgeMode) {
-        this.transacted = transacted;
-        this.acknowledgeMode = acknowledgeMode;
-    }
-
-    @Override
-    public String toString() {
-        return "{transacted=" + transacted +
-                ", acknowledgeMode=" + acknowledgeMode +
-                '}';
-    }
+public record JmsSessionDescriptor (
+    boolean transacted,
+    int acknowledgeMode
+){
 }
