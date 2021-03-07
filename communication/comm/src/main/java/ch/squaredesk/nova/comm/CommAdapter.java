@@ -8,16 +8,13 @@
  */
 package ch.squaredesk.nova.comm;
 
-import ch.squaredesk.nova.metrics.Metrics;
 import io.reactivex.rxjava3.functions.Function;
 
 public abstract class CommAdapter<TransportMessageType> {
     protected MessageTranscriber<TransportMessageType> messageTranscriber;
-    protected Metrics metrics;
 
-    protected CommAdapter(MessageTranscriber<TransportMessageType> messageTranscriber, Metrics metrics) {
+    protected CommAdapter(MessageTranscriber<TransportMessageType> messageTranscriber) {
         this.messageTranscriber = messageTranscriber;
-        this.metrics = metrics;
     }
 
     public <T> void registerClassSpecificTranscribers (Class<T> targetClass,

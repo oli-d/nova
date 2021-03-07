@@ -9,13 +9,10 @@
 
 package ch.squaredesk.nova.comm.rpc;
 
-import ch.squaredesk.nova.metrics.Metrics;
 import io.reactivex.rxjava3.core.Single;
 import io.reactivex.rxjava3.functions.Function;
 
 import java.time.Duration;
-
-import static java.util.Objects.requireNonNull;
 
 public abstract class RpcClient<
         TransportMessageType,
@@ -24,13 +21,8 @@ public abstract class RpcClient<
 
     protected final RpcClientMetricsCollector metricsCollector;
 
-    protected RpcClient(Metrics metrics) {
-        this(null, metrics);
-    }
-
-    protected RpcClient(String identifier, Metrics metrics) {
-        requireNonNull(metrics, "metrics must not be null");
-        this.metricsCollector = new RpcClientMetricsCollector(identifier, metrics);
+    protected RpcClient(String identifier) {
+        this.metricsCollector = new RpcClientMetricsCollector(identifier);
     }
 
     public abstract <RequestType, ReplyType> Single<? extends RpcReply<ReplyType, ReplyMetaDataType>> sendRequest(

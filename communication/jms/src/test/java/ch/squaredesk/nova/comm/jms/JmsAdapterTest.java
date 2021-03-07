@@ -13,7 +13,6 @@ import ch.squaredesk.nova.comm.retrieving.IncomingMessage;
 import ch.squaredesk.nova.comm.retrieving.IncomingMessageMetaData;
 import ch.squaredesk.nova.comm.rpc.RpcReply;
 import ch.squaredesk.nova.comm.sending.OutgoingMessageMetaData;
-import ch.squaredesk.nova.metrics.Metrics;
 import io.reactivex.rxjava3.core.BackpressureStrategy;
 import io.reactivex.rxjava3.core.Flowable;
 import io.reactivex.rxjava3.core.Single;
@@ -197,7 +196,7 @@ class JmsAdapterTest {
         private Destination destination;
 
         MyMessageReceiver() {
-            super("", null, new Metrics());
+            super("", null);
         }
 
         @Override
@@ -212,7 +211,7 @@ class JmsAdapterTest {
         private OutgoingMessageMetaData<Destination, SendInfo> metaData;
 
         MyMessageSender() {
-            super("", null, new Metrics());
+            super("", null);
         }
 
         @Override
@@ -229,7 +228,7 @@ class JmsAdapterTest {
         private OutgoingMessageMetaData<Destination, SendInfo> outgoingMessageMetaData;
 
         private MyRpcClient() {
-            super("TestRpcClient", null, null, new Metrics());
+            super("TestRpcClient", null, null);
         }
 
         @Override

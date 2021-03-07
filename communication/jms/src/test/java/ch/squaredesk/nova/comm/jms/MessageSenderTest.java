@@ -10,7 +10,6 @@
 package ch.squaredesk.nova.comm.jms;
 
 import ch.squaredesk.nova.comm.sending.OutgoingMessageMetaData;
-import ch.squaredesk.nova.metrics.Metrics;
 import io.reactivex.rxjava3.observers.TestObserver;
 import org.apache.activemq.ActiveMQConnectionFactory;
 import org.hamcrest.MatcherAssert;
@@ -50,7 +49,7 @@ class MessageSenderTest {
         jmsHelper = new TestJmsHelper(connectionFactory);
         jmsHelper.start();
 
-        sut = new MessageSender("MessageSenderTest", objectRepository, new Metrics());
+        sut = new MessageSender("MessageSenderTest", objectRepository);
     }
 
     @AfterEach

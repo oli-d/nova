@@ -10,11 +10,8 @@
 package ch.squaredesk.nova.comm.sending;
 
 
-import ch.squaredesk.nova.metrics.Metrics;
 import io.reactivex.rxjava3.core.Single;
 import io.reactivex.rxjava3.functions.Function;
-
-import static java.util.Objects.requireNonNull;
 
 
 public abstract class MessageSender<
@@ -24,13 +21,8 @@ public abstract class MessageSender<
 
     protected final MetricsCollector metricsCollector;
 
-    protected MessageSender(Metrics metrics) {
-        this(null, metrics);
-    }
-
-    protected MessageSender(String identifier, Metrics metrics) {
-        requireNonNull(metrics, "metrics must not be null");
-        this.metricsCollector = new MetricsCollector(identifier, metrics);
+    protected MessageSender(String identifier) {
+        this.metricsCollector = new MetricsCollector(identifier);
     }
 
     public abstract Single<MetaDataType> send(TransportMessageType message, MetaDataType sendingInfo);

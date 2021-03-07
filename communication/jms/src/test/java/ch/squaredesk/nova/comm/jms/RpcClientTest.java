@@ -12,7 +12,6 @@ package ch.squaredesk.nova.comm.jms;
 import ch.squaredesk.nova.comm.retrieving.IncomingMessageMetaData;
 import ch.squaredesk.nova.comm.rpc.RpcReply;
 import ch.squaredesk.nova.comm.sending.OutgoingMessageMetaData;
-import ch.squaredesk.nova.metrics.Metrics;
 import io.reactivex.rxjava3.observers.TestObserver;
 import org.apache.activemq.ActiveMQConnectionFactory;
 import org.junit.jupiter.api.AfterEach;
@@ -55,14 +54,9 @@ class RpcClientTest {
         );
         objectRepository.start();
 
-        Metrics metrics = new Metrics();
-        MessageReceiver messageReceiver = new MessageReceiver("RpcClientTest",
-                objectRepository,
-                metrics);
-        MessageSender messageSender = new MessageSender("RpcClientTest",
-                objectRepository,
-                metrics);
-        sut = new RpcClient("id", messageSender, messageReceiver, metrics);
+        MessageReceiver messageReceiver = new MessageReceiver("RpcClientTest", objectRepository);
+        MessageSender messageSender = new MessageSender("RpcClientTest", objectRepository);
+        sut = new RpcClient("id", messageSender, messageReceiver);
 
         jmsHelper = new TestJmsHelper(connectionFactory);
         jmsHelper.start();

@@ -14,7 +14,6 @@ import ch.squaredesk.nova.comm.CommAdapterBuilder;
 import ch.squaredesk.nova.comm.DefaultMessageTranscriberForStringAsTransportType;
 import ch.squaredesk.nova.comm.MessageTranscriber;
 import ch.squaredesk.nova.comm.sending.OutgoingMessageMetaData;
-import ch.squaredesk.nova.metrics.Metrics;
 import io.reactivex.rxjava3.core.Flowable;
 import io.reactivex.rxjava3.core.Single;
 import io.reactivex.rxjava3.functions.Function;
@@ -40,9 +39,8 @@ public class KafkaAdapter extends CommAdapter<String> {
 
     KafkaAdapter(MessageSender messageSender,
                  MessageReceiver messageReceiver,
-                 MessageTranscriber<String> messageTranscriber,
-                 Metrics metrics) {
-        super(messageTranscriber, metrics);
+                 MessageTranscriber<String> messageTranscriber) {
+        super(messageTranscriber);
         this.messageReceiver = messageReceiver;
         this.messageSender = messageSender;
     }
@@ -192,7 +190,6 @@ public class KafkaAdapter extends CommAdapter<String> {
         @Override
         public void validate() {
             requireNonNull(serverAddress,"serverAddress must be provided");
-            requireNonNull(metrics,"metrics must be provided");
             if (consumerProperties==null) consumerProperties = new Properties();
             if (producerProperties==null) producerProperties = new Properties();
         }
@@ -214,15 +211,15 @@ public class KafkaAdapter extends CommAdapter<String> {
             setPropertyIfNotPresent(producerProperties, ProducerConfig.CLIENT_ID_CONFIG, clientId);
 
             if (messageReceiver == null) {
-                messageReceiver = new MessageReceiver(identifier, consumerProperties, pollTimeout, metrics);
+                messageReceiver = new MessageReceiver(identifier, consumerProperties, pollTimeout);
             }
             if (messageSender == null) {
-                messageSender = new MessageSender(identifier, producerProperties, metrics);
+                messageSender = new MessageSender(identifier, producerProperties);
             }
             if (messageTranscriber == null) {
                 messageTranscriber = new DefaultMessageTranscriberForStringAsTransportType();
             }
-            return new KafkaAdapter(this.messageSender, this.messageReceiver, messageTranscriber, metrics);
+            return new KafkaAdapter(this.messageSender, this.messageReceiver, messageTranscriber);
         }
 
         private static void setPropertyIfNotPresent (Properties props, String key, String value) {

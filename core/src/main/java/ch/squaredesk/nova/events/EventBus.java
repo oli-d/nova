@@ -9,7 +9,6 @@
 
 package ch.squaredesk.nova.events;
 
-import ch.squaredesk.nova.metrics.Metrics;
 import io.reactivex.rxjava3.core.BackpressureStrategy;
 import io.reactivex.rxjava3.core.Flowable;
 import io.reactivex.rxjava3.core.Scheduler;
@@ -37,15 +36,14 @@ public class EventBus {
     private final ConcurrentHashMap<Object, Subject<Object[]>> eventSpecificSubjects;
 
     public EventBus(String identifier,
-                    EventDispatchConfig eventDispatchConfig,
-                    Metrics metrics){
+                    EventDispatchConfig eventDispatchConfig){
         logger.debug(
                 "Instantiating event loop {} using {}",
                 identifier,
                 eventDispatchConfig);
         this.defaultBackpressureStrategy = eventDispatchConfig.defaultBackpressureStrategy();
         this.warnOnUnhandledEvents = eventDispatchConfig.warnOnUnhandledEvents();
-        this.metricsCollector = new EventMetricsCollector(identifier, metrics);
+        this.metricsCollector = new EventMetricsCollector(identifier);
         this.eventSpecificSubjects = new ConcurrentHashMap<>();
         this.defaultScheduler = EventBus.createDefaultSchedulerFrom(eventDispatchConfig);
     }

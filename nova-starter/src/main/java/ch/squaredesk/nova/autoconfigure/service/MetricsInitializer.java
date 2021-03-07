@@ -11,7 +11,7 @@
 
 package ch.squaredesk.nova.autoconfigure.service;
 
-import ch.squaredesk.nova.Nova;
+import io.micrometer.core.instrument.MeterRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.InitializingBean;
@@ -27,26 +27,26 @@ public class MetricsInitializer implements InitializingBean {
     ServiceDescriptor serviceDescriptor;
 
     @Autowired
-    Nova nova;
+    MeterRegistry meterRegistry;
 
     @Override
     public void afterPropertiesSet() {
         try {
             InetAddress myInetAddress = InetAddress.getLocalHost();
-            nova.metrics.addAdditionalInfoForDumps("hostName", myInetAddress.getHostName());
-            nova.metrics.addAdditionalInfoForDumps("hostAddress", myInetAddress.getHostAddress());
+            meterRegistry.config().commonTags(
+                    "hostName", myInetAddress.getHostName(),
+                    "hostAddress", myInetAddress.getHostAddress());
         } catch (Exception ex) {
             logger.warn("Unable to determine my IP address. MetricDumps will be lacking this information.");
-            nova.metrics.addAdditionalInfoForDumps("hostName", "n/a");
-            nova.metrics.addAdditionalInfoForDumps("hostAddress", "n/a");
         }
 
         Optional.ofNullable(serviceDescriptor)
                 .ifPresent(sd -> {
-                    nova.metrics.addAdditionalInfoForDumps("serviceName", sd.serviceName());
-                    nova.metrics.addAdditionalInfoForDumps("serviceInstanceId", serviceDescriptor.instanceId());
                     String serviceInstanceName = serviceDescriptor.serviceName() + "." + serviceDescriptor.instanceId();
-                    nova.metrics.addAdditionalInfoForDumps("serviceInstanceName", serviceInstanceName);
+                    meterRegistry.config().commonTags(
+                            "serviceName", sd.serviceName(),
+                            "serviceInstanceId", serviceDescriptor.instanceId(),
+                            "serviceInstanceName", serviceInstanceName);
 
                 });
     }

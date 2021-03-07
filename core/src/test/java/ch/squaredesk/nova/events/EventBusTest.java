@@ -11,7 +11,6 @@ package ch.squaredesk.nova.events;
 
 import ch.squaredesk.nova.events.consumers.NoParameterConsumer;
 import ch.squaredesk.nova.events.consumers.SingleParameterConsumer;
-import ch.squaredesk.nova.metrics.Metrics;
 import io.reactivex.rxjava3.core.BackpressureStrategy;
 import io.reactivex.rxjava3.core.Flowable;
 import io.reactivex.rxjava3.disposables.Disposable;
@@ -37,8 +36,8 @@ public class EventBusTest {
     void setup() {
         eventBus = new EventBus(
                 "test",
-                new EventDispatchConfig(BackpressureStrategy.BUFFER, false, EventDispatchMode.BLOCKING, 1),
-                new Metrics());
+                new EventDispatchConfig(BackpressureStrategy.BUFFER, false, EventDispatchMode.BLOCKING, 1)
+        );
     }
 
     @Test

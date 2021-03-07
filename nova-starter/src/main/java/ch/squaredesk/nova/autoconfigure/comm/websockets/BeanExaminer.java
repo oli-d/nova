@@ -9,24 +9,7 @@
 
 package ch.squaredesk.nova.autoconfigure.comm.websockets;
 
-import ch.squaredesk.nova.comm.websockets.annotation.OnClose;
-import ch.squaredesk.nova.comm.websockets.annotation.OnConnect;
-import ch.squaredesk.nova.comm.websockets.annotation.OnError;
-import ch.squaredesk.nova.comm.websockets.annotation.OnMessage;
 import ch.squaredesk.nova.comm.MessageTranscriber;
-import ch.squaredesk.nova.comm.ReflectionHelper;
-import io.reactivex.rxjava3.core.Observable;
-import io.reactivex.rxjava3.functions.Consumer;
-import io.reactivex.rxjava3.functions.Function;
-import io.reactivex.rxjava3.functions.Predicate;
-
-import java.lang.annotation.Annotation;
-import java.lang.reflect.Method;
-import java.util.Collection;
-import java.util.stream.Collectors;
-
-import static java.util.Arrays.stream;
-import static java.util.Objects.requireNonNull;
 
 class BeanExaminer {
     private final MessageTranscriber<String> defaultMessageTranscriber;

@@ -9,39 +9,46 @@
 
 package ch.squaredesk.nova.comm.sending;
 
-import ch.squaredesk.nova.metrics.Metrics;
+import io.micrometer.core.instrument.Metrics;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import static ch.squaredesk.nova.metrics.MetricsName.buildName;
+import static io.micrometer.core.instrument.Metrics.counter;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class MetricsCollectorTest {
-    private Metrics metrics = new Metrics();
-    private MetricsCollector sut = new MetricsCollector("test", metrics);
+    private MetricsCollector sut = new MetricsCollector("test");
+    private SimpleMeterRegistry meterRegistry = new SimpleMeterRegistry();
 
-    @Test
-    void instanceCannotBeCreatedWithoutMetrics() {
-        Throwable t = assertThrows(NullPointerException.class,
-                () ->new MetricsCollector("test", null));
-        assertThat(t.getMessage(), containsString("metrics"));
+    @BeforeEach
+    void setup() {
+        Metrics.globalRegistry.add(meterRegistry);
     }
+
+    @AfterEach
+    void destroy() {
+        Metrics.globalRegistry.remove(meterRegistry);
+    }
+
 
     @Test
     void messageSentCanBeInvokedWithNull() {
         sut.messageSent(null);
 
-        assertThat(metrics.getMeter("test", "messageSender", "sent", "total").getCount(), is(1L));
-        assertThat(metrics.getMeter("test", "messageSender", "sent", "null").getCount(), is(1L));
+        assertThat(counter(buildName("test", "messageSender", "sent", "total")).count(), is(1.0));
+        assertThat(counter(buildName("test", "messageSender", "sent", "null")).count(), is(1.0));
     }
 
     @Test
     void messageSending() {
         sut.messageSent("destination1");
 
-        assertThat(metrics.getMeter("test","messageSender", "sent", "total").getCount(), is(1L));
-        assertThat(metrics.getMeter("test", "messageSender", "sent", "destination1").getCount(), is(1L));
+        assertThat(counter(buildName("test","messageSender", "sent", "total")).count(), is(1.0));
+        assertThat(counter(buildName("test", "messageSender", "sent", "destination1")).count(), is(1.0));
     }
 
 }

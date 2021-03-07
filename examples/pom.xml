@@ -27,7 +27,7 @@
     <dependencies>
         <dependency>
             <groupId>ch.squaredesk.nova</groupId>
-            <artifactId>service</artifactId>
+            <artifactId>core</artifactId>
             <version>10.0.0</version>
         </dependency>
         <dependency>

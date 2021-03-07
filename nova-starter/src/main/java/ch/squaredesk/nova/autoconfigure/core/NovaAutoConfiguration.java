@@ -12,7 +12,6 @@ package ch.squaredesk.nova.autoconfigure.core;
 
 import ch.squaredesk.nova.Nova;
 import ch.squaredesk.nova.autoconfigure.core.events.EventHandlingBeanPostprocessor;
-import ch.squaredesk.nova.autoconfigure.service.NovaServiceConfigurationProperties;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -30,7 +29,6 @@ public class NovaAutoConfiguration {
                      EventDispatchConfigurationProperties eventDispatchConfigurationProperties) {
         return Nova.builder()
                 .setIdentifier(novaConfigurationProperties.getIdentifier())
-                .captureJvmMetrics(novaConfigurationProperties.isCaptureJvmMetrics())
                 .setWarnOnUnhandledEvents(eventDispatchConfigurationProperties.getWarnOnUnhandledEvent())
                 .setDefaultBackpressureStrategy(eventDispatchConfigurationProperties.getBackpressureStrategy())
                 .setEventDispatchMode(eventDispatchConfigurationProperties.getEventDispatchMode())

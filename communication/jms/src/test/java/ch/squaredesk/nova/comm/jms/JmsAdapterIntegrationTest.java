@@ -11,7 +11,6 @@ package ch.squaredesk.nova.comm.jms;
 
 import ch.squaredesk.nova.comm.retrieving.IncomingMessageMetaData;
 import ch.squaredesk.nova.comm.rpc.RpcReply;
-import ch.squaredesk.nova.metrics.Metrics;
 import io.reactivex.rxjava3.observers.TestObserver;
 import io.reactivex.rxjava3.subscribers.TestSubscriber;
 import org.apache.activemq.ActiveMQConnectionFactory;
@@ -47,11 +46,9 @@ class JmsAdapterIntegrationTest {
 
         ConnectionFactory connectionFactory = new ActiveMQConnectionFactory("vm://embedded-broker?create=false");
 
-        Metrics metrics = new Metrics();
         sut = JmsAdapter.builder()
                 .setConnectionFactory(connectionFactory)
                 .setCorrelationIdGenerator(myCorrelationIdGenerator)
-                .setMetrics(metrics)
                 .build();
         sut.start();
 

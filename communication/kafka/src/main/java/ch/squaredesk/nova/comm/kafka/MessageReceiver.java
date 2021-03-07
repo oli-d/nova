@@ -11,7 +11,7 @@ package ch.squaredesk.nova.comm.kafka;
 
 import ch.squaredesk.nova.comm.retrieving.IncomingMessage;
 import ch.squaredesk.nova.comm.retrieving.IncomingMessageMetaData;
-import ch.squaredesk.nova.metrics.Metrics;
+import ch.squaredesk.nova.metrics.MetricsName;
 import ch.squaredesk.nova.tuples.Pair;
 import io.reactivex.rxjava3.core.Flowable;
 import io.reactivex.rxjava3.core.Scheduler;
@@ -40,9 +40,8 @@ public class MessageReceiver
 
     protected MessageReceiver(String identifier,
                               Properties consumerProperties,
-                              Duration pollTimeout,
-                              Metrics metrics) {
-        super(Metrics.name("kafka", identifier), metrics);
+                              Duration pollTimeout) {
+        super(MetricsName.buildName("kafka", identifier));
 
         AtomicBoolean shutdown = new AtomicBoolean(false);
 

@@ -9,20 +9,6 @@
 
 package ch.squaredesk.nova.autoconfigure.comm.websockets;
 
-import ch.squaredesk.nova.comm.DefaultMessageTranscriberForStringAsTransportType;
-import ch.squaredesk.nova.comm.websockets.annotation.OnMessage;
-import io.reactivex.rxjava3.core.BackpressureStrategy;
-import io.reactivex.rxjava3.functions.Function;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-
-import java.util.Collection;
-
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.is;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
 public class BeanExaminerOnMessageHandlerTest {
     private BeanExaminer sut;
 /*

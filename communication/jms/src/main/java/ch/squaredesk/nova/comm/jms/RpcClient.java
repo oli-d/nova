@@ -12,7 +12,7 @@ package ch.squaredesk.nova.comm.jms;
 import ch.squaredesk.nova.comm.retrieving.IncomingMessageMetaData;
 import ch.squaredesk.nova.comm.rpc.RpcReply;
 import ch.squaredesk.nova.comm.sending.OutgoingMessageMetaData;
-import ch.squaredesk.nova.metrics.Metrics;
+import ch.squaredesk.nova.metrics.MetricsName;
 import io.reactivex.rxjava3.core.Single;
 import io.reactivex.rxjava3.functions.Function;
 
@@ -30,9 +30,8 @@ public class RpcClient extends ch.squaredesk.nova.comm.rpc.RpcClient<String,
 
     RpcClient(String identifier,
                      MessageSender messageSender,
-                     MessageReceiver messageReceiver,
-                     Metrics metrics) {
-        super(Metrics.name("jms", identifier), metrics);
+                     MessageReceiver messageReceiver) {
+        super(MetricsName.buildName("jms", identifier));
         this.messageSender = messageSender;
         this.messageReceiver = messageReceiver;
     }

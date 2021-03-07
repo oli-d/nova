@@ -88,7 +88,6 @@ public class JmsAdapterAutoConfiguration {
                 .setCorrelationIdGenerator(correlationIdGenerator)
                 .setDestinationIdGenerator(destinationIdGenerator)
                 .setMessageTranscriber(jmsMessageTranscriber)
-                .setMetrics(nova.metrics)
                 .build();
     }
 

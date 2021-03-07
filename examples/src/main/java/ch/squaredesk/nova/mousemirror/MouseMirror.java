@@ -18,7 +18,6 @@ import org.springframework.context.ConfigurableApplicationContext;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.MouseEvent;
-import java.time.Duration;
 
 /**
  * This simple example shows how to use the Nove event queue.
@@ -55,13 +54,12 @@ public class MouseMirror {
          * *********************************************************************** * 
          * ***                                                                 *** *
          * *** 1st step:                                                       *** *
-         * *** Initilize Nova by creating a new instance of Nova *** *
+         * *** Initialize Nova by creating a new instance of Nova *** *
          * ***                                                                 *** *
          * *********************************************************************** *
          * *********************************************************************** *
          */
         final Nova nova = Nova.builder().build();
-        nova.metrics.dumpContinuouslyToLog(Duration.ofSeconds(5));
 
         /**
          * <pre>

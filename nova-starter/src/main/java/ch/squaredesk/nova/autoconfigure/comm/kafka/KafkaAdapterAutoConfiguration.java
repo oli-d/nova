@@ -70,7 +70,6 @@ public class KafkaAdapterAutoConfiguration {
                 .setProducerProperties(kafkaAdapterConfigurationProperties.getProducerProperties())
                 .setIdentifier(kafkaAdapterConfigurationProperties.getAdapterIdentifier())
                 .setMessageTranscriber(kafkaMessageTranscriber)
-                .setMetrics(nova.metrics)
                 .build();
     }
 

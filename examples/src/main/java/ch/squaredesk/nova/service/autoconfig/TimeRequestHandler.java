@@ -23,7 +23,7 @@ public class TimeRequestHandler {
 
     public TimeRequestHandler(@Autowired(required = false) ServiceDescriptor serviceDescriptor) {
         this.messagePrefix = Optional.ofNullable(serviceDescriptor)
-                                    .map(sd -> sd.serviceName + "." + sd.instanceId + " says ")
+                                    .map(sd -> sd.serviceName() + "." + sd.instanceId() + " says ")
                                     .orElse("The unnamed says ");
     }
 

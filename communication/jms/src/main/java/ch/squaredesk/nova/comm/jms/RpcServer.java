@@ -14,8 +14,8 @@ import ch.squaredesk.nova.comm.MessageTranscriber;
 import ch.squaredesk.nova.comm.retrieving.IncomingMessage;
 import ch.squaredesk.nova.comm.retrieving.IncomingMessageMetaData;
 import ch.squaredesk.nova.comm.sending.OutgoingMessageMetaData;
-import ch.squaredesk.nova.metrics.Metrics;
-import com.codahale.metrics.Timer;
+import ch.squaredesk.nova.metrics.MetricsName;
+import io.micrometer.core.instrument.Timer;
 import io.reactivex.rxjava3.core.Flowable;
 
 import javax.jms.Destination;
@@ -29,17 +29,15 @@ public class RpcServer extends ch.squaredesk.nova.comm.rpc.RpcServer<Destination
 
     RpcServer(String identifier,
               MessageReceiver messageReceiver,
-              MessageSender messageSender,
-              Metrics metrics) {
-        this(identifier, messageReceiver, messageSender, new DefaultMessageTranscriberForStringAsTransportType(), metrics);
+              MessageSender messageSender) {
+        this(identifier, messageReceiver, messageSender, new DefaultMessageTranscriberForStringAsTransportType());
     }
 
     RpcServer(String identifier,
               MessageReceiver messageReceiver,
               MessageSender messageSender,
-              MessageTranscriber<String> messageTranscriber,
-              Metrics metrics) {
-        super(Metrics.name("jms", identifier), messageTranscriber, metrics);
+              MessageTranscriber<String> messageTranscriber) {
+        super(MetricsName.buildName("jms", identifier), messageTranscriber);
 
         requireNonNull(messageSender, "messageSender must not be null");
         requireNonNull(messageReceiver, "messageReceiver must not be null");
@@ -52,7 +50,8 @@ public class RpcServer extends ch.squaredesk.nova.comm.rpc.RpcServer<Destination
         return messageReceiver.messages(destination, messageTranscriber.getIncomingMessageTranscriber(requestType))
                 .filter(this::isRpcRequest)
                 .map(incomingRequest -> {
-                    Timer.Context timerContext = metricsCollector.requestReceived(incomingRequest.metaData().destination());
+                    metricsCollector.requestReceived(incomingRequest.metaData().destination());
+                    Timer.Sample timerContext = Timer.start();
                     return new RpcInvocation<>(
                             incomingRequest,
                             reply -> {
@@ -67,10 +66,10 @@ public class RpcServer extends ch.squaredesk.nova.comm.rpc.RpcServer<Destination
                                         incomingRequest.metaData().details().replyDestination(),
                                         sendingInfo);
                                 messageSender.send(reply.item1(), meta).subscribe();
-                                metricsCollector.requestCompleted(timerContext, reply);
+                                metricsCollector.requestCompleted(timerContext, destination, reply);
                             },
                                 // TODO: Is there a sensible default action we could perform?
-                            error -> metricsCollector.requestCompletedExceptionally(timerContext, incomingRequest.metaData().destination(), error));
+                            error -> metricsCollector.requestCompletedExceptionally(timerContext, destination, error));
                 });
     }
 

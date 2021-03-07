@@ -8,29 +8,7 @@
  */
 package ch.squaredesk.nova.autoconfigure.comm.websockets;
 
-import ch.squaredesk.net.PortFinder;
-import ch.squaredesk.nova.Nova;
-import ch.squaredesk.nova.autoconfigure.core.NovaAutoConfiguration;
-import ch.squaredesk.nova.comm.websockets.annotation.OnClose;
-import ch.squaredesk.nova.comm.websockets.annotation.OnConnect;
-import ch.squaredesk.nova.comm.websockets.annotation.OnMessage;
-import ch.squaredesk.nova.tuples.Pair;
-import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.Test;
-import org.springframework.boot.autoconfigure.AutoConfigurations;
-import org.springframework.boot.test.context.runner.ApplicationContextRunner;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Random;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
-
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.is;
 
 @Tag("medium")
 public class SpringWiringTest {

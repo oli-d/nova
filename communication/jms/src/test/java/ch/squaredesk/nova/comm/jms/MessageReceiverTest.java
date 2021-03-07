@@ -9,7 +9,6 @@
 
 package ch.squaredesk.nova.comm.jms;
 
-import ch.squaredesk.nova.metrics.Metrics;
 import org.apache.activemq.ActiveMQConnectionFactory;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -56,7 +55,7 @@ class MessageReceiverTest {
         jmsHelper = new TestJmsHelper(connectionFactory);
         jmsHelper.start();
 
-        sut = new MessageReceiver("MessageReceiverTest", objectRepository, new Metrics());
+        sut = new MessageReceiver("MessageReceiverTest", objectRepository);
     }
 
     @AfterEach

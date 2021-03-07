@@ -9,26 +9,24 @@
 
 package ch.squaredesk.nova.comm.sending;
 
-import ch.squaredesk.nova.metrics.Metrics;
-import com.codahale.metrics.Meter;
-
-import java.util.Objects;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.Metrics;
 
 public class MetricsCollector {
-    private final Metrics metrics;
     private final String identifierPrefix;
-    private final Meter totalNumberOfSentMessages;
+    private final Counter totalNumberOfSentMessages;
 
-    MetricsCollector(String identifier, Metrics metrics) {
-        this.metrics = Objects.requireNonNull(metrics, "metrics must not be null");
-        this.identifierPrefix = Metrics.name(identifier, "messageSender");
-        totalNumberOfSentMessages = metrics.getMeter(this.identifierPrefix,"sent","total");
+    MetricsCollector(String identifier) {
+        this.identifierPrefix =
+                (identifier == null || identifier.isBlank() ? "" : identifier.trim() + ".") +
+                        "messageSender.sent.";
+        totalNumberOfSentMessages = Metrics.counter(this.identifierPrefix + "total");
     }
 
 
     public void messageSent(Object destination) {
-        metrics.getMeter(identifierPrefix, "sent", String.valueOf(destination)).mark();
-        totalNumberOfSentMessages.mark();
+        Metrics.counter(identifierPrefix + String.valueOf(destination)).increment();
+        totalNumberOfSentMessages.increment();
     }
 
 }

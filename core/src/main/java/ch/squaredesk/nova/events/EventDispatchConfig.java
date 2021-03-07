@@ -11,8 +11,6 @@ package ch.squaredesk.nova.events;
 
 import io.reactivex.rxjava3.core.BackpressureStrategy;
 
-import java.util.Objects;
-
 public record EventDispatchConfig (
         BackpressureStrategy defaultBackpressureStrategy,
         boolean warnOnUnhandledEvents,

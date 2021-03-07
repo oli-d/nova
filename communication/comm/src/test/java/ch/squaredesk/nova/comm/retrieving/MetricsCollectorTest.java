@@ -9,72 +9,79 @@
 
 package ch.squaredesk.nova.comm.retrieving;
 
-import ch.squaredesk.nova.metrics.Metrics;
+import io.micrometer.core.instrument.Metrics;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import static ch.squaredesk.nova.metrics.MetricsName.buildName;
+import static io.micrometer.core.instrument.Metrics.counter;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class MetricsCollectorTest {
-    private Metrics metrics = new Metrics();
+    private MetricsCollector sut;
+    private SimpleMeterRegistry meterRegistry;
 
-    private MetricsCollector sut = new MetricsCollector("test", metrics);
+    @BeforeEach
+    void setup() {
+        sut = new MetricsCollector("test");
+        meterRegistry = new SimpleMeterRegistry();
+        Metrics.globalRegistry.add(meterRegistry);
+    }
 
-    @Test
-    void instanceCannotBeCreatedWithoutMetrics()  {
-        Throwable t = assertThrows(NullPointerException.class,
-                () -> new MetricsCollector("test", null));
-        assertThat(t.getMessage(), containsString("metrics"));
+    @AfterEach
+    void destroy() {
+        meterRegistry.clear();
+        Metrics.globalRegistry.remove(meterRegistry);
     }
 
     @Test
     void messageReceivedCanBeInvokedWithNull()  {
         sut.messageReceived(null);
 
-        assertThat(metrics.getMeter("test", "messageReceiver", "received","total").getCount(), is(1L));
-        assertThat(metrics.getMeter("test", "messageReceiver", "received","null").getCount(), is(1L));
+        assertThat(counter(buildName("test", "messageReceiver", "received","total")).count(), is(1.0));
+        assertThat(counter(buildName("test", "messageReceiver", "received","null")).count(), is(1.0));
     }
 
     @Test
     void messageReceived() {
         sut.messageReceived("destination1");
 
-        assertThat(metrics.getMeter("test", "messageReceiver", "received","total").getCount(), is(1L));
-        assertThat(metrics.getMeter("test", "messageReceiver", "received","destination1").getCount(), is(1L));
+        assertThat(counter(buildName("test", "messageReceiver", "received","total")).count(), is(1.0));
+        assertThat(counter(buildName("test", "messageReceiver", "received","destination1")).count(), is(1.0));
     }
 
     @Test
     void subscriptionCreated() {
+        sut = new MetricsCollector("test2");
         sut.subscriptionCreated("destination2");
 
-        assertThat(metrics.getCounter("test", "messageReceiver", "subscriptions", "total").getCount(), is(1L));
-        assertThat(metrics.getCounter("test", "messageReceiver", "subscriptions", "destination2").getCount(), is(1L));
+        assertThat(meterRegistry.get(buildName("test2", "messageReceiver", "subscriptions", "total")).gauge().value(), is(1.0));
+        assertThat(meterRegistry.get(buildName("test2", "messageReceiver", "subscriptions", "destination2")).gauge().value(), is(1.0));
     }
 
     @Test
     void subscriptionCreatedCanBeInvokedWithNull()  {
+        sut = new MetricsCollector("test3");
         sut.subscriptionCreated(null);
 
-        assertThat(metrics.getCounter("test", "messageReceiver", "subscriptions", "total").getCount(), is(1L));
-        assertThat(metrics.getCounter("test", "messageReceiver", "subscriptions", "null").getCount(), is(1L));
+        assertThat(meterRegistry.get(buildName("test3", "messageReceiver", "subscriptions", "total")).gauge().value(), is(1.0));
+        assertThat(meterRegistry.get(buildName("test3", "messageReceiver", "subscriptions", "null")).gauge().value(), is(1.0));
     }
 
     @Test
-    void subscriptionDestroyed()  {
+    void subscriptionDestroyedForNonExistentSubscription()  {
         sut.subscriptionDestroyed("destination3");
 
-        assertThat(metrics.getCounter("test", "messageReceiver", "subscriptions", "total").getCount(), is(-1L));
-        assertThat(metrics.getCounter("test", "messageReceiver", "subscriptions", "destination3").getCount(), is(-1L));
+        assertThat(meterRegistry.get(buildName("test", "messageReceiver", "subscriptions", "total")).gauge().value(), is(-1.0));
     }
 
     @Test
     void subscriptionDestroyedCanBeInvokedWithNull() {
         sut.subscriptionDestroyed(null);
-
-        assertThat(metrics.getCounter("test", "messageReceiver", "subscriptions", "total").getCount(), is(-1L));
-        assertThat(metrics.getCounter("test", "messageReceiver", "subscriptions", "null").getCount(), is(-1L));
+        assertThat(meterRegistry.get(buildName("test", "messageReceiver", "subscriptions", "total")).gauge().value(), is(-1.0));
     }
 
 }

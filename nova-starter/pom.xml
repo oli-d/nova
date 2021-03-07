@@ -39,12 +39,6 @@
             <version>10.0.0</version>
             <optional>true</optional>
         </dependency>
-        <dependency>
-            <groupId>ch.squaredesk.nova</groupId>
-            <artifactId>service</artifactId>
-            <version>10.0.0</version>
-            <optional>true</optional>
-        </dependency>
 
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>

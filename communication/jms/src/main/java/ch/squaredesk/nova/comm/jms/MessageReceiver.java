@@ -11,7 +11,7 @@ package ch.squaredesk.nova.comm.jms;
 
 import ch.squaredesk.nova.comm.retrieving.IncomingMessage;
 import ch.squaredesk.nova.comm.retrieving.IncomingMessageMetaData;
-import ch.squaredesk.nova.metrics.Metrics;
+import ch.squaredesk.nova.metrics.MetricsName;
 import io.reactivex.rxjava3.core.Flowable;
 import io.reactivex.rxjava3.schedulers.Schedulers;
 import org.slf4j.Logger;
@@ -36,9 +36,8 @@ class MessageReceiver
     private final JmsMessageMetaDataCreator messageDetailsCreator = new JmsMessageMetaDataCreator();
 
     MessageReceiver(String identifier,
-                    JmsObjectRepository jmsObjectRepository,
-                    Metrics metrics) {
-        super(Metrics.name("jms", identifier), metrics);
+                    JmsObjectRepository jmsObjectRepository) {
+        super(MetricsName.buildName("jms", identifier));
         this.jmsObjectRepository = jmsObjectRepository;
     }
 

@@ -49,7 +49,7 @@ public class JmsAdapter extends CommAdapter<String> {
 
 
     JmsAdapter(Builder builder) {
-        super(builder.getMessageTranscriber(), builder.getMetrics());
+        super(builder.getMessageTranscriber());
         this.messageReceiver = builder.messageReceiver;
         this.messageSender = builder.messageSender;
         this.rpcServer = builder.rpcServer;
@@ -479,8 +479,6 @@ public class JmsAdapter extends CommAdapter<String> {
 
         @Override
         protected void validate() {
-            requireNonNull(metrics,"metrics must be provided");
-
             if (messageTranscriber == null) {
                 messageTranscriber = new DefaultMessageTranscriberForStringAsTransportType();
             }
@@ -517,16 +515,16 @@ public class JmsAdapter extends CommAdapter<String> {
             }
 
             if (messageSender == null) {
-                messageSender = new MessageSender(identifier, jmsObjectRepository, metrics);
+                messageSender = new MessageSender(identifier, jmsObjectRepository);
             }
             if (messageReceiver == null) {
-                messageReceiver = new MessageReceiver(identifier, jmsObjectRepository, metrics);
+                messageReceiver = new MessageReceiver(identifier, jmsObjectRepository);
             }
             if (rpcServer == null) {
-                rpcServer = new RpcServer(identifier, messageReceiver, messageSender, metrics);
+                rpcServer = new RpcServer(identifier, messageReceiver, messageSender);
             }
             if (rpcClient==null) {
-                rpcClient = new RpcClient(identifier, messageSender, messageReceiver, metrics);
+                rpcClient = new RpcClient(identifier, messageSender, messageReceiver);
             }
             return new JmsAdapter(this);
         }

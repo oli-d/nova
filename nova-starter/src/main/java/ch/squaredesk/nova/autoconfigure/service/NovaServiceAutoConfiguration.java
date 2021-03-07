@@ -11,8 +11,6 @@ package ch.squaredesk.nova.autoconfigure.service;
 
 
 import ch.squaredesk.nova.Nova;
-import ch.squaredesk.nova.metrics.MetricsDump;
-import io.reactivex.rxjava3.core.Flowable;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -21,7 +19,6 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-import java.time.Duration;
 import java.util.Optional;
 import java.util.UUID;
 

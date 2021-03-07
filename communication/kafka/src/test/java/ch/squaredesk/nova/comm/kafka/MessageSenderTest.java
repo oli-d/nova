@@ -9,7 +9,6 @@
 
 package ch.squaredesk.nova.comm.kafka;
 
-import ch.squaredesk.nova.metrics.Metrics;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerConfig;
@@ -36,7 +35,7 @@ class MessageSenderTest {
         producerProps.put("value.serializer", StringSerializer.class.getName());
         producerProps.put("client.id", UUID.randomUUID().toString());
 
-        sut = new MessageSender("ID", producerProps, new Metrics());
+        sut = new MessageSender("ID", producerProps);
     }
 
     @Test

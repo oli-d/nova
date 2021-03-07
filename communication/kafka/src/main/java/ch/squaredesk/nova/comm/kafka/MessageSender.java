@@ -10,7 +10,7 @@
 package ch.squaredesk.nova.comm.kafka;
 
 import ch.squaredesk.nova.comm.sending.OutgoingMessageMetaData;
-import ch.squaredesk.nova.metrics.Metrics;
+import ch.squaredesk.nova.metrics.MetricsName;
 import io.reactivex.rxjava3.core.Single;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.Producer;
@@ -23,10 +23,8 @@ import static java.util.Objects.requireNonNull;
 public class MessageSender extends ch.squaredesk.nova.comm.sending.MessageSender<String, String, OutgoingMessageMetaData<String, SendInfo>> {
     private final Producer<String, String> producer;
 
-    protected MessageSender(String identifier,
-                            Properties producerProperties,
-                            Metrics metrics) {
-        super(Metrics.name("kafka", identifier), metrics);
+    protected MessageSender(String identifier, Properties producerProperties) {
+        super(MetricsName.buildName("kafka", identifier));
         this.producer = new KafkaProducer<>(producerProperties);
     }
 

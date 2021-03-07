@@ -9,10 +9,6 @@
 
 package ch.squaredesk.nova.autoconfigure.comm.websockets;
 
-import ch.squaredesk.nova.comm.retrieving.IncomingMessage;
-import ch.squaredesk.nova.metrics.Metrics;
-import com.codahale.metrics.Timer;
-import io.reactivex.rxjava3.functions.Consumer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

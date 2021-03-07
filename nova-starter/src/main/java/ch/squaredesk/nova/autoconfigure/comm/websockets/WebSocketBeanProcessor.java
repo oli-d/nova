@@ -9,17 +9,6 @@
 
 package ch.squaredesk.nova.autoconfigure.comm.websockets;
 
-import ch.squaredesk.nova.comm.MessageTranscriber;
-import ch.squaredesk.nova.metrics.Metrics;
-import org.springframework.beans.factory.DisposableBean;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.ApplicationContextAware;
-import org.springframework.context.ApplicationListener;
-import org.springframework.context.event.ContextRefreshedEvent;
-
-import java.util.Arrays;
-
-
 public class WebSocketBeanProcessor { /*implements ApplicationContextAware,
         HttpServerInstanceListener,
         ApplicationListener<ContextRefreshedEvent>,

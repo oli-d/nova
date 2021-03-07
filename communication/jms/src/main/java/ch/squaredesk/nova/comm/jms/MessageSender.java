@@ -10,7 +10,7 @@
 package ch.squaredesk.nova.comm.jms;
 
 import ch.squaredesk.nova.comm.sending.OutgoingMessageMetaData;
-import ch.squaredesk.nova.metrics.Metrics;
+import ch.squaredesk.nova.metrics.MetricsName;
 import io.reactivex.rxjava3.core.Single;
 
 import javax.jms.Destination;
@@ -22,10 +22,8 @@ import static java.util.Objects.requireNonNull;
 public class MessageSender extends ch.squaredesk.nova.comm.sending.MessageSender<Destination, String, OutgoingMessageMetaData<Destination, SendInfo>> {
     private final JmsObjectRepository jmsObjectRepository;
 
-    MessageSender(String identifier,
-                            JmsObjectRepository jmsObjectRepository,
-                            Metrics metrics) {
-        super(Metrics.name("jms", identifier), metrics);
+    MessageSender(String identifier, JmsObjectRepository jmsObjectRepository) {
+        super(MetricsName.buildName("jms", identifier));
         this.jmsObjectRepository = jmsObjectRepository;
     }
 

@@ -10,7 +10,6 @@
 package ch.squaredesk.nova.comm.jms;
 
 import ch.squaredesk.nova.comm.sending.OutgoingMessageMetaData;
-import ch.squaredesk.nova.metrics.Metrics;
 import io.reactivex.rxjava3.core.Single;
 import io.reactivex.rxjava3.subscribers.TestSubscriber;
 import org.apache.activemq.ActiveMQConnectionFactory;
@@ -42,7 +41,6 @@ class RpcServerTest {
         broker.start();
 
         String identifier = "RpcServerTest";
-        Metrics metrics = new Metrics();
         ConnectionFactory connectionFactory = new ActiveMQConnectionFactory("vm://embedded-broker?create=false");
         Connection connection = connectionFactory.createConnection();
         JmsSessionDescriptor producerSessionDescriptor = new JmsSessionDescriptor(false, Session.AUTO_ACKNOWLEDGE);
@@ -50,14 +48,12 @@ class RpcServerTest {
         JmsObjectRepository jmsObjectRepository = new JmsObjectRepository(connection, producerSessionDescriptor, consumerSessionDescriptor, String::valueOf);
         MessageReceiver messageReceiver = new MessageReceiver(
                 identifier,
-                jmsObjectRepository,
-                metrics);
+                jmsObjectRepository);
         mySender = new MySender(
                 identifier,
-                jmsObjectRepository,
-                metrics);
+                jmsObjectRepository);
 
-        sut = new RpcServer(identifier, messageReceiver, mySender, metrics);
+        sut = new RpcServer(identifier, messageReceiver, mySender);
         jmsObjectRepository.start();
 
         jmsHelper = new TestJmsHelper(connectionFactory);
@@ -133,8 +129,8 @@ class RpcServerTest {
         private String message;
         private OutgoingMessageMetaData<Destination, SendInfo> sendingInfo;
 
-        MySender(String identifier, JmsObjectRepository jmsObjectRepository, Metrics metrics) {
-            super(identifier, jmsObjectRepository, metrics);
+        MySender(String identifier, JmsObjectRepository jmsObjectRepository) {
+            super(identifier, jmsObjectRepository);
         }
 
 
