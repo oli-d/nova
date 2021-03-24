@@ -13,6 +13,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.context.annotation.Bean;
 
 @SpringBootApplication
 public class EchoStarter implements CommandLineRunner {
@@ -28,17 +29,5 @@ public class EchoStarter implements CommandLineRunner {
         System.in.read();
         LOGGER.info("Shutting down...");
     }
-
-    /* The default ObjectMapper used by spring webflux
-    @Bean(name = "jsonMapper")
-    @Primary
-    public ObjectMapper jsonMapper() {
-        return new ObjectMapper()
-            .findAndRegisterModules()
-            .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
-            .configure(SerializationFeature.INDENT_OUTPUT, true)
-                ;
-    }
-    */
 
 }

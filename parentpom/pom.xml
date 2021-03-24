@@ -60,7 +60,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 
-        <java.version>15</java.version>
+        <java.version>16</java.version>
 
         <junit.jupiter.version>5.5.2</junit.jupiter.version>
         <junit.platform.version>1.2.0</junit.platform.version>
@@ -69,13 +69,6 @@
 
     <dependencyManagement>
         <dependencies>
-            <dependency>
-                <groupId>io.dropwizard.metrics</groupId>
-                <artifactId>metrics-bom</artifactId>
-                <version>4.1.2</version>
-                <scope>import</scope>
-                <type>pom</type>
-            </dependency>
             <dependency>
                 <groupId>org.junit</groupId>
                 <artifactId>junit-bom</artifactId>
@@ -161,9 +154,6 @@
                 <version>3.8.1</version>
                 <configuration>
                     <release>${java.version}</release>
-                    <compilerArgs>
-                        <compilerArgs>--enable-preview</compilerArgs>
-                    </compilerArgs>
                 </configuration>
             </plugin>
             <plugin>

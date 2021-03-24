@@ -8,14 +8,31 @@
  */
 package ch.squaredesk.nova.comm.rest;
 
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
 import java.time.Duration;
+import java.util.Optional;
 
 @RestController
 public class EchoHandler {
+    public static record FormData(String xxx) {
+    }
+
+    @PostMapping(value = "/form", consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE)
+    public Mono<ResponseEntity<String>> echoFormParameterValue(Mono<FormData> formData) {
+        return formData
+            .map(fd -> new ResponseEntity<>(
+                Optional.ofNullable(fd).map(FormData::xxx).orElse("unknown"),
+                HttpStatus.OK
+        ));
+    }
+
     @GetMapping("/echo")
     public String echoParameterValue(@RequestParam("p1") String textFromCallerToEcho) {
         return textFromCallerToEcho;
@@ -23,6 +40,7 @@ public class EchoHandler {
 
     @GetMapping("/echo/{text}")
     public String echoPathValue(@PathVariable("text") String textFromCallerToEcho) {
+        System.out.println("Hallo");
         return textFromCallerToEcho;
     }
 
