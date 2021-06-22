@@ -1,21 +1,16 @@
 /*
- * Copyright (c) 2020 Squaredesk GmbH and Oliver Dotzauer.
+ * Copyright (c) 2018-2021 Squaredesk GmbH and Oliver Dotzauer.
  *
- * This program is distributed under the squaredesk open source license. See the LICENSE file
- * distributed with this work for additional information regarding copyright ownership. You may also
- * obtain a copy of the license at
+ * This program is distributed under the squaredesk open source license. See the LICENSE file distributed with this
+ * work for additional information regarding copyright ownership. You may also obtain a copy of the license at
  *
- *   https://squaredesk.ch/license/oss/LICENSE
- *
+ *      https://squaredesk.ch/license/oss/LICENSE
  */
 
 package ch.squaredesk.nova.comm.retrieving;
 
-import ch.squaredesk.nova.metrics.Metrics;
-import io.reactivex.Flowable;
-import io.reactivex.functions.Function;
-
-import static java.util.Objects.requireNonNull;
+import io.reactivex.rxjava3.core.Flowable;
+import io.reactivex.rxjava3.functions.Function;
 
 public abstract class MessageReceiver<
         DestinationType,
@@ -24,13 +19,8 @@ public abstract class MessageReceiver<
 
     protected final MetricsCollector metricsCollector;
 
-    protected MessageReceiver(Metrics metrics) {
-        this(null, metrics);
-    }
-
-    protected MessageReceiver(String identifier, Metrics metrics) {
-        requireNonNull(metrics, "metrics must not be null");
-        this.metricsCollector = new MetricsCollector(identifier, metrics);
+    protected MessageReceiver(String identifier) {
+        this.metricsCollector = new MetricsCollector(identifier);
     }
 
     public abstract Flowable<IncomingMessage<TransportMessageType, MetaDataType>> messages(DestinationType destination);
@@ -42,13 +32,13 @@ public abstract class MessageReceiver<
                 .map(rawMessage -> {
                     T message = null;
                     try {
-                        message = unmarshaller.apply(rawMessage.message);
+                        message = unmarshaller.apply(rawMessage.message());
                     } catch (Exception e) {
-                        metricsCollector.unparsableMessageReceived(rawMessage.metaData.destination);
+                        metricsCollector.unparsableMessageReceived(rawMessage.metaData().destination());
                     }
-                    return new IncomingMessage<>(message, rawMessage.metaData);
+                    return new IncomingMessage<>(message, rawMessage.metaData());
                 })
-                .filter(im -> im.message != null); // TODO: can we do this more elegantly / performant?
+                .filter(im -> im.message() != null); // TODO: can we do this more elegantly / performant?
 
     }
 }

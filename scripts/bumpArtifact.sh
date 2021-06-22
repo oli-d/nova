@@ -1,5 +1,14 @@
 #!/bin/bash
 
+#
+# Copyright (c) 2018-2021 Squaredesk GmbH and Oliver Dotzauer.
+#
+# This program is distributed under the squaredesk open source license. See the LICENSE file distributed with this
+# work for additional information regarding copyright ownership. You may also obtain a copy of the license at
+#
+#      https://squaredesk.ch/license/oss/LICENSE
+#
+
 # This script can be used to bump the version of a mvn artifact. It expects the following input:
 #
 #  $1: ID of the artifact of which the version should be bumped

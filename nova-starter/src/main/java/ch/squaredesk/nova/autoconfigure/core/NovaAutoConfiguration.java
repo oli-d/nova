@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Squaredesk GmbH and Oliver Dotzauer.
+ * Copyright (c) 2018-2021 Squaredesk GmbH and Oliver Dotzauer.
  *
  * This program is distributed under the squaredesk open source license. See the LICENSE file distributed with this
  * work for additional information regarding copyright ownership. You may also obtain a copy of the license at
@@ -12,7 +12,6 @@ package ch.squaredesk.nova.autoconfigure.core;
 
 import ch.squaredesk.nova.Nova;
 import ch.squaredesk.nova.autoconfigure.core.events.EventHandlingBeanPostprocessor;
-import ch.squaredesk.nova.autoconfigure.service.NovaServiceConfigurationProperties;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -30,7 +29,6 @@ public class NovaAutoConfiguration {
                      EventDispatchConfigurationProperties eventDispatchConfigurationProperties) {
         return Nova.builder()
                 .setIdentifier(novaConfigurationProperties.getIdentifier())
-                .captureJvmMetrics(novaConfigurationProperties.isCaptureJvmMetrics())
                 .setWarnOnUnhandledEvents(eventDispatchConfigurationProperties.getWarnOnUnhandledEvent())
                 .setDefaultBackpressureStrategy(eventDispatchConfigurationProperties.getBackpressureStrategy())
                 .setEventDispatchMode(eventDispatchConfigurationProperties.getEventDispatchMode())

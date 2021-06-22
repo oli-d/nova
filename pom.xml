@@ -1,13 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright (c) 2020 Squaredesk GmbH and Oliver Dotzauer.
+  ~ Copyright (c) 2018-2021 Squaredesk GmbH and Oliver Dotzauer.
   ~
-  ~ This program is distributed under the squaredesk open source license. See the LICENSE file
-  ~ distributed with this work for additional information regarding copyright ownership. You may also
-  ~ obtain a copy of the license at
+  ~ This program is distributed under the squaredesk open source license. See the LICENSE file distributed with this
+  ~ work for additional information regarding copyright ownership. You may also obtain a copy of the license at
   ~
-  ~   https://squaredesk.ch/license/oss/LICENSE
-  ~
+  ~      https://squaredesk.ch/license/oss/LICENSE
   -->
 
 <project xmlns="http://maven.apache.org/POM/4.0.0"
@@ -17,7 +15,7 @@
 
     <groupId>ch.squaredesk.nova</groupId>
     <artifactId>bom</artifactId>
-    <version>9.0.0</version>
+    <version>10.0.0</version>
     <packaging>pom</packaging>
 
     <name>Nova BOM</name>
@@ -71,81 +69,35 @@
             <dependency>
                 <groupId>ch.squaredesk.nova</groupId>
                 <artifactId>test-utils</artifactId>
-                <version>9.0.0</version>
+                <version>10.0.0</version>
             </dependency>
 
             <dependency>
                 <groupId>ch.squaredesk.nova</groupId>
                 <artifactId>core</artifactId>
-                <version>9.0.0</version>
-            </dependency>
-
-            <dependency>
-                <groupId>ch.squaredesk.nova</groupId>
-                <artifactId>service</artifactId>
-                <version>9.0.0</version>
+                <version>10.0.0</version>
             </dependency>
 
             <dependency>
                 <groupId>ch.squaredesk.nova</groupId>
                 <artifactId>comm</artifactId>
-                <version>9.0.0</version>
+                <version>10.0.0</version>
             </dependency>
             <dependency>
                 <groupId>ch.squaredesk.nova</groupId>
                 <artifactId>jms</artifactId>
-                <version>9.0.0</version>
-            </dependency>
-            <dependency>
-                <groupId>ch.squaredesk.nova</groupId>
-                <artifactId>http</artifactId>
-                <version>9.0.0</version>
+                <version>10.0.0</version>
             </dependency>
             <dependency>
                 <groupId>ch.squaredesk.nova</groupId>
                 <artifactId>http-test-utils</artifactId>
-                <version>9.0.0</version>
-            </dependency>
-            <dependency>
-                <groupId>ch.squaredesk.nova</groupId>
-                <artifactId>rest</artifactId>
-                <version>9.0.0</version>
-            </dependency>
-            <dependency>
-                <groupId>ch.squaredesk.nova</groupId>
-                <artifactId>rest-test-utils</artifactId>
-                <version>9.0.0</version>
-            </dependency>
-            <dependency>
-                <groupId>ch.squaredesk.nova</groupId>
-                <artifactId>websockets</artifactId>
-                <version>9.0.0</version>
-            </dependency>
-            <dependency>
-                <groupId>ch.squaredesk.nova</groupId>
-                <artifactId>kafka</artifactId>
-                <version>9.0.0</version>
+                <version>10.0.0</version>
             </dependency>
 
             <dependency>
                 <groupId>ch.squaredesk.nova</groupId>
-                <artifactId>metrics-serialization</artifactId>
-                <version>9.0.0</version>
-            </dependency>
-            <dependency>
-                <groupId>ch.squaredesk.nova</groupId>
-                <artifactId>metrics-elastic</artifactId>
-                <version>9.0.0</version>
-            </dependency>
-            <dependency>
-                <groupId>ch.squaredesk.nova</groupId>
-                <artifactId>metrics-kafka</artifactId>
-                <version>9.0.0</version>
-            </dependency>
-            <dependency>
-                <groupId>ch.squaredesk.nova</groupId>
                 <artifactId>nova-starter</artifactId>
-                <version>9.0.0</version>
+                <version>10.0.0</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
@@ -158,17 +110,7 @@
 
         <module>communication/comm</module>
         <module>communication/jms</module>
-        <module>communication/http</module>
         <module>communication/http-test-utils</module>
-        <module>communication/rest-test-utils</module>
-        <module>communication/websockets</module>
-        <module>communication/kafka</module>
-
-        <module>metrics/metrics-serialization</module>
-        <module>metrics/metrics-elastic</module>
-        <module>metrics/metrics-kafka</module>
-
-        <module>service</module>
 
         <module>test-utils</module>
         <module>examples</module>
@@ -182,7 +124,7 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-javadoc-plugin</artifactId>
-                        <version>2.9.1</version>
+                        <version>3.3.0</version>
                         <executions>
                             <execution>
                                 <id>attach-javadocs</id>
@@ -203,7 +145,7 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-gpg-plugin</artifactId>
-                        <version>1.5</version>
+                        <version>3.0.1</version>
                         <executions>
                             <execution>
                                 <id>sign-artifacts</id>
@@ -217,7 +159,7 @@
                     <plugin>
                         <groupId>org.sonatype.plugins</groupId>
                         <artifactId>nexus-staging-maven-plugin</artifactId>
-                        <version>1.6.7</version>
+                        <version>1.6.8</version>
                         <extensions>true</extensions>
                         <configuration>
                             <serverId>ossrh</serverId>

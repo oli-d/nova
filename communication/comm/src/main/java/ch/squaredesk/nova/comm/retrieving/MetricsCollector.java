@@ -1,60 +1,67 @@
 /*
- * Copyright (c) 2020 Squaredesk GmbH and Oliver Dotzauer.
+ * Copyright (c) 2018-2021 Squaredesk GmbH and Oliver Dotzauer.
  *
- * This program is distributed under the squaredesk open source license. See the LICENSE file
- * distributed with this work for additional information regarding copyright ownership. You may also
- * obtain a copy of the license at
+ * This program is distributed under the squaredesk open source license. See the LICENSE file distributed with this
+ * work for additional information regarding copyright ownership. You may also obtain a copy of the license at
  *
- *   https://squaredesk.ch/license/oss/LICENSE
- *
+ *      https://squaredesk.ch/license/oss/LICENSE
  */
 
 package ch.squaredesk.nova.comm.retrieving;
 
-import ch.squaredesk.nova.metrics.Metrics;
-import com.codahale.metrics.Counter;
-import com.codahale.metrics.Meter;
+import io.micrometer.core.instrument.Counter;
 
-import static java.util.Objects.requireNonNull;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
+
+import static ch.squaredesk.nova.metrics.MetricsName.buildName;
+import static io.micrometer.core.instrument.Metrics.counter;
+import static io.micrometer.core.instrument.Metrics.gauge;
 
 public class MetricsCollector {
-    private final Metrics metrics;
     private final String identifierPrefix;
-    private final Meter totalNumberOfReceivedMessages;
-    private final Counter totalNumberOfSubscriptions;
+    private final Counter totalNumberOfReceivedMessages;
+    private final Map<String, AtomicInteger> subscriptionsByDestination = new ConcurrentHashMap<>();
+    private final AtomicInteger totalNumberOfSubscriptions;
     private final Counter totalNumberOfUnparsableMessages;
 
-    MetricsCollector(Metrics metrics) {
-        this (null, metrics);
-    }
-
-    MetricsCollector(String identifier, Metrics metrics) {
-        requireNonNull(metrics, "metrics must not be null");
-        this.metrics = metrics;
-        this.identifierPrefix = Metrics.name(identifier, "messageReceiver");
-        totalNumberOfReceivedMessages = metrics.getMeter(this.identifierPrefix,"received","total");
-        totalNumberOfSubscriptions = metrics.getCounter(this.identifierPrefix,"subscriptions","total");
-        totalNumberOfUnparsableMessages = metrics.getCounter(this.identifierPrefix,"unparsable","total");
+    MetricsCollector(String identifier) {
+        this.identifierPrefix = buildName(identifier, "messageReceiver");
+        totalNumberOfReceivedMessages = counter(buildName(this.identifierPrefix,"received","total"));
+        totalNumberOfSubscriptions = gauge(buildName(this.identifierPrefix, "subscriptions", "total"), new AtomicInteger(0));
+        totalNumberOfUnparsableMessages = counter(buildName(this.identifierPrefix,"unparsable","total"));
     }
 
 
     public void unparsableMessageReceived(Object destination) {
-        metrics.getCounter(identifierPrefix, "unparsable", String.valueOf(destination)).inc();
-        totalNumberOfUnparsableMessages.inc();
+        counter(buildName(identifierPrefix, "unparsable", String.valueOf(destination))).increment();
+        totalNumberOfUnparsableMessages.increment();
     }
 
     public void messageReceived(Object destination) {
-        metrics.getMeter(identifierPrefix, "received", String.valueOf(destination)).mark();
-        totalNumberOfReceivedMessages.mark();
+        counter(buildName(identifierPrefix, "received", String.valueOf(destination))).increment();
+        totalNumberOfReceivedMessages.increment();
     }
 
     public void subscriptionCreated (Object destination) {
-        metrics.getCounter(identifierPrefix, "subscriptions", String.valueOf(destination)).inc();
-        totalNumberOfSubscriptions.inc();
+        String gaugeName = buildName(identifierPrefix, "subscriptions", String.valueOf(destination));
+        AtomicInteger specificCount = subscriptionsByDestination.computeIfAbsent(
+                gaugeName,
+                key -> gauge(gaugeName, new AtomicInteger(0))
+        );
+        specificCount.incrementAndGet();
+        totalNumberOfSubscriptions.incrementAndGet();
     }
 
     public void subscriptionDestroyed (Object destination) {
-        metrics.getCounter(identifierPrefix, "subscriptions", String.valueOf(destination)).dec();
-        totalNumberOfSubscriptions.dec();
+        totalNumberOfSubscriptions.decrementAndGet();
+        String gaugeName = buildName(identifierPrefix, "subscriptions", String.valueOf(destination));
+        AtomicInteger specificCount = subscriptionsByDestination.get(gaugeName);
+        if (specificCount == null) {
+            // WTF?!?!
+            return;
+        }
+        specificCount.decrementAndGet();
     }
 }

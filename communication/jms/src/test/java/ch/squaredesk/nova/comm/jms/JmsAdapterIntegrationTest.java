@@ -1,20 +1,18 @@
 /*
- * Copyright (c) 2020 Squaredesk GmbH and Oliver Dotzauer.
+ * Copyright (c) 2018-2021 Squaredesk GmbH and Oliver Dotzauer.
  *
- * This program is distributed under the squaredesk open source license. See the LICENSE file
- * distributed with this work for additional information regarding copyright ownership. You may also
- * obtain a copy of the license at
+ * This program is distributed under the squaredesk open source license. See the LICENSE file distributed with this
+ * work for additional information regarding copyright ownership. You may also obtain a copy of the license at
  *
- *   https://squaredesk.ch/license/oss/LICENSE
- *
+ *      https://squaredesk.ch/license/oss/LICENSE
  */
 
 package ch.squaredesk.nova.comm.jms;
 
-import ch.squaredesk.nova.metrics.Metrics;
-import io.reactivex.observers.BaseTestConsumer;
-import io.reactivex.observers.TestObserver;
-import io.reactivex.subscribers.TestSubscriber;
+import ch.squaredesk.nova.comm.retrieving.IncomingMessageMetaData;
+import ch.squaredesk.nova.comm.rpc.RpcReply;
+import io.reactivex.rxjava3.observers.TestObserver;
+import io.reactivex.rxjava3.subscribers.TestSubscriber;
 import org.apache.activemq.ActiveMQConnectionFactory;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -48,11 +46,9 @@ class JmsAdapterIntegrationTest {
 
         ConnectionFactory connectionFactory = new ActiveMQConnectionFactory("vm://embedded-broker?create=false");
 
-        Metrics metrics = new Metrics();
         sut = JmsAdapter.builder()
                 .setConnectionFactory(connectionFactory)
                 .setCorrelationIdGenerator(myCorrelationIdGenerator)
-                .setMetrics(metrics)
                 .build();
         sut.start();
 
@@ -78,9 +74,10 @@ class JmsAdapterIntegrationTest {
     void rpcWorks() throws Exception {
         Destination queue = jmsHelper.echoOnQueue("myQueue1");
 
-        TestObserver<RpcReply<String>> replyObserver = sut.sendRequest(queue, "aRequest", String.class, Duration.ofMillis(500)).test().await();
-        ch.squaredesk.nova.comm.rpc.RpcReply reply = replyObserver.values().get(0);
-        assertThat(reply.result, is("aRequest"));
+        TestObserver<RpcReply<String, IncomingMessageMetaData<Destination, RetrieveInfo>>> replyObserver =
+                sut.sendRequest(queue, "aRequest", String.class, Duration.ofMillis(500)).test().await();
+        RpcReply reply = replyObserver.values().get(0);
+        assertThat(reply.result(), is("aRequest"));
     }
 
     @Test
@@ -90,7 +87,8 @@ class JmsAdapterIntegrationTest {
         myCorrelationIdGenerator.delegate = () -> "correlationId";
 
         TestSubscriber<String> messageSubscriber = sut.messages(sharedQueue).test();
-        TestObserver<RpcReply<String>> replyObserver = sut.sendRequest(queue, sharedQueue, "aRequest", null, String.class, Duration.ofSeconds(20)).test();
+        TestObserver<RpcReply<String, IncomingMessageMetaData<Destination, RetrieveInfo>>> replyObserver =
+                sut.sendRequest(queue, sharedQueue, "aRequest", null, String.class, Duration.ofSeconds(20)).test();
         jmsHelper.sendReply(sharedQueue, "aReply1", null);
         jmsHelper.sendReply(sharedQueue, "aReply2", "correlationId");
         jmsHelper.sendReply(sharedQueue, "aReply3", null);
@@ -98,14 +96,14 @@ class JmsAdapterIntegrationTest {
         replyObserver.await(21, SECONDS);
         replyObserver.assertComplete();
         replyObserver.assertValueCount(1);
-        assertThat(replyObserver.values().get(0).result, is("aReply2"));
+        assertThat(replyObserver.values().get(0).result(), is("aReply2"));
 
-        messageSubscriber.awaitCount(2, BaseTestConsumer.TestWaitStrategy.SLEEP_100MS, 5000);
+        messageSubscriber.awaitCount(2);
         messageSubscriber.assertValueCount(2);
         assertThat(messageSubscriber.values(), contains("aReply1", "aReply3"));
     }
 
-    private class MyCorrelationIdGenerator implements Supplier<String> {
+    private static class MyCorrelationIdGenerator implements Supplier<String> {
         private Supplier<String> delegate;
 
         private MyCorrelationIdGenerator() {

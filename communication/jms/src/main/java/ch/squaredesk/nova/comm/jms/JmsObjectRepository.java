@@ -1,17 +1,15 @@
 /*
- * Copyright (c) 2020 Squaredesk GmbH and Oliver Dotzauer.
+ * Copyright (c) 2018-2021 Squaredesk GmbH and Oliver Dotzauer.
  *
- * This program is distributed under the squaredesk open source license. See the LICENSE file
- * distributed with this work for additional information regarding copyright ownership. You may also
- * obtain a copy of the license at
+ * This program is distributed under the squaredesk open source license. See the LICENSE file distributed with this
+ * work for additional information regarding copyright ownership. You may also obtain a copy of the license at
  *
- *   https://squaredesk.ch/license/oss/LICENSE
- *
+ *      https://squaredesk.ch/license/oss/LICENSE
  */
 
 package ch.squaredesk.nova.comm.jms;
 
-import io.reactivex.Observable;
+import io.reactivex.rxjava3.core.Observable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -109,9 +107,9 @@ class JmsObjectRepository {
         if (!started.getAndSet(true)) {
             connection.start();
             logger.debug("Creating producer session with the following settings: {}", producerSessionDescriptor);
-            this.producerSession = connection.createSession(producerSessionDescriptor.transacted, producerSessionDescriptor.acknowledgeMode);
+            this.producerSession = connection.createSession(producerSessionDescriptor.transacted(), producerSessionDescriptor.acknowledgeMode());
             logger.debug("Creating consumer session with the following settings: {}", consumerSessionDescriptor);
-            this.consumerSession = connection.createSession(consumerSessionDescriptor.transacted, consumerSessionDescriptor.acknowledgeMode);
+            this.consumerSession = connection.createSession(consumerSessionDescriptor.transacted(), consumerSessionDescriptor.acknowledgeMode());
         }
     }
 

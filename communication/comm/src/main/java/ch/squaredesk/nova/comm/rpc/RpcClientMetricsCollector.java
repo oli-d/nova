@@ -1,47 +1,37 @@
 /*
- * Copyright (c) 2020 Squaredesk GmbH and Oliver Dotzauer.
+ * Copyright (c) 2018-2021 Squaredesk GmbH and Oliver Dotzauer.
  *
- * This program is distributed under the squaredesk open source license. See the LICENSE file
- * distributed with this work for additional information regarding copyright ownership. You may also
- * obtain a copy of the license at
+ * This program is distributed under the squaredesk open source license. See the LICENSE file distributed with this
+ * work for additional information regarding copyright ownership. You may also obtain a copy of the license at
  *
- *   https://squaredesk.ch/license/oss/LICENSE
- *
+ *      https://squaredesk.ch/license/oss/LICENSE
  */
 
 package ch.squaredesk.nova.comm.rpc;
 
-import ch.squaredesk.nova.metrics.Metrics;
-import com.codahale.metrics.Meter;
+import ch.squaredesk.nova.metrics.MetricsName;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.Metrics;
 
 public class RpcClientMetricsCollector {
-    private final Metrics metrics;
     private final String identifierPrefix;
-    private final Meter totalNumberOfCompletedRequests;
-    private final Meter totalNumberOfTimedOutRequests;
+    private final Counter totalNumberOfCompletedRequests;
+    private final Counter totalNumberOfTimedOutRequests;
 
-    RpcClientMetricsCollector(String identifier, Metrics metrics) {
-        this.metrics = metrics;
-        this.identifierPrefix = Metrics.name(identifier, "rpcClient");
-        totalNumberOfCompletedRequests = metrics.getMeter(this.identifierPrefix,"completed","total");
-        totalNumberOfTimedOutRequests = metrics.getMeter(this.identifierPrefix,"timeout","total");
+    RpcClientMetricsCollector(String identifier) {
+        this.identifierPrefix = MetricsName.buildName(identifier, "rpcClient");
+        totalNumberOfCompletedRequests = Metrics.counter(MetricsName.buildName(this.identifierPrefix,"completed","total"));
+        totalNumberOfTimedOutRequests = Metrics.counter(MetricsName.buildName(this.identifierPrefix,"timeout","total"));
     }
 
 
     public void rpcCompleted(String destination, Object reply) {
-        Meter specificMeter = metrics.getMeter( identifierPrefix, "completed", destination);
-        mark(specificMeter, totalNumberOfCompletedRequests);
+        Metrics.counter(MetricsName.buildName( identifierPrefix, "completed", destination)).increment();
+        totalNumberOfCompletedRequests.increment();
     }
 
     public void rpcTimedOut(String destination) {
-        Meter specificMeter = metrics.getMeter(identifierPrefix, "timeout", destination);
-        mark(specificMeter, totalNumberOfTimedOutRequests);
+        Metrics.counter(MetricsName.buildName( identifierPrefix, "timeout", destination)).increment();
+        totalNumberOfTimedOutRequests.increment();
     }
-
-    private void mark(Meter... meters) {
-        for (Meter m : meters) {
-            m.mark();
-        }
-    }
-
 }

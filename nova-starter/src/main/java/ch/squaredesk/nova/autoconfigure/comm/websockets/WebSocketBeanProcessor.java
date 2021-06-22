@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Squaredesk GmbH and Oliver Dotzauer.
+ * Copyright (c) 2018-2021 Squaredesk GmbH and Oliver Dotzauer.
  *
  * This program is distributed under the squaredesk open source license. See the LICENSE file distributed with this
  * work for additional information regarding copyright ownership. You may also obtain a copy of the license at
@@ -9,21 +9,7 @@
 
 package ch.squaredesk.nova.autoconfigure.comm.websockets;
 
-import ch.squaredesk.nova.comm.MessageTranscriber;
-import ch.squaredesk.nova.comm.http.HttpServerInstanceListener;
-import ch.squaredesk.nova.comm.websockets.WebSocketAdapter;
-import ch.squaredesk.nova.metrics.Metrics;
-import org.glassfish.grizzly.http.server.HttpServer;
-import org.springframework.beans.factory.DisposableBean;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.ApplicationContextAware;
-import org.springframework.context.ApplicationListener;
-import org.springframework.context.event.ContextRefreshedEvent;
-
-import java.util.Arrays;
-
-
-public class WebSocketBeanProcessor implements ApplicationContextAware,
+public class WebSocketBeanProcessor { /*implements ApplicationContextAware,
         HttpServerInstanceListener,
         ApplicationListener<ContextRefreshedEvent>,
         DisposableBean {
@@ -105,4 +91,5 @@ public class WebSocketBeanProcessor implements ApplicationContextAware,
             // noop; shutdown anyway...
         }
     }
+    */
 }

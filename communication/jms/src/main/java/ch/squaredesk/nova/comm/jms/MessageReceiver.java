@@ -1,20 +1,19 @@
 /*
- * Copyright (c) 2020 Squaredesk GmbH and Oliver Dotzauer.
+ * Copyright (c) 2018-2021 Squaredesk GmbH and Oliver Dotzauer.
  *
- * This program is distributed under the squaredesk open source license. See the LICENSE file
- * distributed with this work for additional information regarding copyright ownership. You may also
- * obtain a copy of the license at
+ * This program is distributed under the squaredesk open source license. See the LICENSE file distributed with this
+ * work for additional information regarding copyright ownership. You may also obtain a copy of the license at
  *
- *   https://squaredesk.ch/license/oss/LICENSE
- *
+ *      https://squaredesk.ch/license/oss/LICENSE
  */
 
 package ch.squaredesk.nova.comm.jms;
 
 import ch.squaredesk.nova.comm.retrieving.IncomingMessage;
-import ch.squaredesk.nova.metrics.Metrics;
-import io.reactivex.Flowable;
-import io.reactivex.schedulers.Schedulers;
+import ch.squaredesk.nova.comm.retrieving.IncomingMessageMetaData;
+import ch.squaredesk.nova.metrics.MetricsName;
+import io.reactivex.rxjava3.core.Flowable;
+import io.reactivex.rxjava3.schedulers.Schedulers;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -26,37 +25,36 @@ import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
 class MessageReceiver
-        extends ch.squaredesk.nova.comm.retrieving.MessageReceiver<Destination, String, IncomingMessageMetaData> {
+        extends ch.squaredesk.nova.comm.retrieving.MessageReceiver<Destination, String, IncomingMessageMetaData<Destination, RetrieveInfo>> {
 
     private static final Logger logger = LoggerFactory.getLogger(MessageReceiver.class);
 
     private final JmsObjectRepository jmsObjectRepository;
 
-    private final Map<String, Flowable<IncomingMessage<String, IncomingMessageMetaData>>>
+    private final Map<String, Flowable<IncomingMessage<String, IncomingMessageMetaData<Destination, RetrieveInfo>>>>
             mapDestinationIdToMessageStream = new ConcurrentHashMap<>();
     private final JmsMessageMetaDataCreator messageDetailsCreator = new JmsMessageMetaDataCreator();
 
     MessageReceiver(String identifier,
-                    JmsObjectRepository jmsObjectRepository,
-                    Metrics metrics) {
-        super(Metrics.name("jms", identifier), metrics);
+                    JmsObjectRepository jmsObjectRepository) {
+        super(MetricsName.buildName("jms", identifier));
         this.jmsObjectRepository = jmsObjectRepository;
     }
 
     @Override
-    public Flowable<IncomingMessage<String, IncomingMessageMetaData>> messages(Destination destination) {
+    public Flowable<IncomingMessage<String, IncomingMessageMetaData<Destination, RetrieveInfo>>> messages(Destination destination) {
         Objects.requireNonNull(destination, "destination must not ne bull");
         Objects.requireNonNull(destination, "unmarshaller must not ne bull");
         String destinationId = jmsObjectRepository.idFor(destination);
         return mapDestinationIdToMessageStream.computeIfAbsent(destinationId, key -> {
-            Flowable<IncomingMessage<String, IncomingMessageMetaData>> f = Flowable.generate(
+            Flowable<IncomingMessage<String, IncomingMessageMetaData<Destination, RetrieveInfo>>> f = Flowable.generate(
                     () -> {
                         logger.info("Opening connection to destination {}", destinationId);
                         metricsCollector.subscriptionCreated(destinationId);
                         return jmsObjectRepository.createMessageConsumer(destination);
                     },
                     (consumer, emitter) -> {
-                        IncomingMessage<String, IncomingMessageMetaData> incomingMessage = null;
+                        IncomingMessage<String, IncomingMessageMetaData<Destination, RetrieveInfo>> incomingMessage = null;
                         while (incomingMessage == null) {
                             Message m = null;
                             try {
@@ -87,7 +85,7 @@ class MessageReceiver
                                 continue;
                             }
 
-                            IncomingMessageMetaData meta = messageDetailsCreator.createIncomingMessageMetaData(m);
+                            IncomingMessageMetaData<Destination, RetrieveInfo> meta = messageDetailsCreator.createIncomingMessageMetaData(m);
                             incomingMessage = new IncomingMessage<>(transportMessage, meta);
                             metricsCollector.messageReceived(destinationId);
                         }

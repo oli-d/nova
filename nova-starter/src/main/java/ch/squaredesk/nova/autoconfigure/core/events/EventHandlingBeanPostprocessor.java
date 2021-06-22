@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Squaredesk GmbH and Oliver Dotzauer.
+ * Copyright (c) 2018-2021 Squaredesk GmbH and Oliver Dotzauer.
  *
  * This program is distributed under the squaredesk open source license. See the LICENSE file distributed with this
  * work for additional information regarding copyright ownership. You may also obtain a copy of the license at
@@ -11,9 +11,10 @@ package ch.squaredesk.nova.autoconfigure.core.events;
 
 import ch.squaredesk.nova.Nova;
 import ch.squaredesk.nova.events.EventContext;
-import ch.squaredesk.nova.metrics.Metrics;
-import com.codahale.metrics.Timer;
-import io.reactivex.functions.Consumer;
+import ch.squaredesk.nova.metrics.MetricsName;
+import io.micrometer.core.instrument.Metrics;
+import io.micrometer.core.instrument.Timer;
+import io.reactivex.rxjava3.functions.Consumer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.config.BeanPostProcessor;
@@ -36,7 +37,7 @@ public class EventHandlingBeanPostprocessor implements BeanPostProcessor, Applic
     final CopyOnWriteArrayList<EventHandlerDescription> handlerDescriptions = new CopyOnWriteArrayList<>();
 
     public EventHandlingBeanPostprocessor(Nova nova) {
-        this.eventContext = new EventContext(nova.metrics, nova.eventBus);
+        this.eventContext = new EventContext(nova.eventBus);
         this.novaIdentifier = nova.identifier;
     }
 
@@ -64,13 +65,17 @@ public class EventHandlingBeanPostprocessor implements BeanPostProcessor, Applic
             logger.debug("Registering annotated event handler: {} -> {}",
                     event, prettyPrint(eventHandlerDescription.bean, eventHandlerDescription.methodToInvoke));
             if (eventHandlerDescription.captureInvocationTimeMetrics) {
-                String timerName = Metrics.name(novaIdentifier, "invocationTime",
-                        eventHandlerDescription.bean.getClass().getSimpleName(), event);
-                Timer timer = eventContext.metrics.getTimer(timerName);
+                String timerName = MetricsName.buildName(
+                        novaIdentifier,
+                        "invocationTime",
+                        eventHandlerDescription.bean.getClass().getSimpleName(),
+                        event);
+
+                Timer timer = Metrics.timer(timerName);
                 eventConsumer = new TimeMeasuringEventHandlingMethodInvoker(timer, invoker);
             }
             eventContext
-                    .eventBus.on(event, eventHandlerDescription.backpressureStrategy)
+                    .eventBus().on(event, eventHandlerDescription.backpressureStrategy)
                     .subscribe(eventConsumer);
         }
     }

@@ -1,19 +1,17 @@
 /*
- * Copyright (c) 2020 Squaredesk GmbH and Oliver Dotzauer.
+ * Copyright (c) 2018-2021 Squaredesk GmbH and Oliver Dotzauer.
  *
- * This program is distributed under the squaredesk open source license. See the LICENSE file
- * distributed with this work for additional information regarding copyright ownership. You may also
- * obtain a copy of the license at
+ * This program is distributed under the squaredesk open source license. See the LICENSE file distributed with this
+ * work for additional information regarding copyright ownership. You may also obtain a copy of the license at
  *
- *   https://squaredesk.ch/license/oss/LICENSE
- *
+ *      https://squaredesk.ch/license/oss/LICENSE
  */
 
 package ch.squaredesk.nova.comm.jms;
 
-import ch.squaredesk.nova.metrics.Metrics;
-import io.reactivex.Single;
-import io.reactivex.subscribers.TestSubscriber;
+import ch.squaredesk.nova.comm.sending.OutgoingMessageMetaData;
+import io.reactivex.rxjava3.core.Single;
+import io.reactivex.rxjava3.subscribers.TestSubscriber;
 import org.apache.activemq.ActiveMQConnectionFactory;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -43,7 +41,6 @@ class RpcServerTest {
         broker.start();
 
         String identifier = "RpcServerTest";
-        Metrics metrics = new Metrics();
         ConnectionFactory connectionFactory = new ActiveMQConnectionFactory("vm://embedded-broker?create=false");
         Connection connection = connectionFactory.createConnection();
         JmsSessionDescriptor producerSessionDescriptor = new JmsSessionDescriptor(false, Session.AUTO_ACKNOWLEDGE);
@@ -51,14 +48,12 @@ class RpcServerTest {
         JmsObjectRepository jmsObjectRepository = new JmsObjectRepository(connection, producerSessionDescriptor, consumerSessionDescriptor, String::valueOf);
         MessageReceiver messageReceiver = new MessageReceiver(
                 identifier,
-                jmsObjectRepository,
-                metrics);
+                jmsObjectRepository);
         mySender = new MySender(
                 identifier,
-                jmsObjectRepository,
-                metrics);
+                jmsObjectRepository);
 
-        sut = new RpcServer(identifier, messageReceiver, mySender, metrics);
+        sut = new RpcServer(identifier, messageReceiver, mySender);
         jmsObjectRepository.start();
 
         jmsHelper = new TestJmsHelper(connectionFactory);
@@ -82,35 +77,34 @@ class RpcServerTest {
         jmsHelper.sendMessage(queue,"Five");
 
         int maxLoops = 10;
-        for (int i = 0; i < maxLoops && testSubscriber.valueCount() == 0; i++) {
+        for (int i = 0; i < maxLoops && testSubscriber.values().size() == 0; i++) {
             TimeUnit.MILLISECONDS.sleep(1000);
         }
         testSubscriber.assertValueCount(2);
     }
 
     @Test
-    void completingRpcInvocationProperlyTriggersReplySending() throws Exception {
+    void completingRpcInvocationProperlyTriggersReplySending() throws Throwable {
         Destination queue = jmsHelper.createQueue("completeRpc");
         TestSubscriber<RpcInvocation<String>> testSubscriber = sut.requests(queue, String.class).test();
         Message requestMessage = jmsHelper.sendRequest(queue, "Two");
 
         int maxLoops = 10;
-        for (int i = 0; i < maxLoops && testSubscriber.valueCount()==0; i++) {
+        for (int i = 0; i < maxLoops && testSubscriber.values().size()==0; i++) {
             TimeUnit.MILLISECONDS.sleep(1000);
         }
         testSubscriber.values().iterator().next().complete("reply", s->s);
 
         assertThat(mySender.message, is("reply"));
         assertNotNull(mySender.sendingInfo);
-        assertThat(mySender.sendingInfo.destination, sameInstance(requestMessage.getJMSReplyTo()));
-        assertThat(mySender.sendingInfo.details.correlationId, sameInstance(requestMessage.getJMSCorrelationID()));
-        assertNull(mySender.sendingInfo.details.replyDestination);
-        assertNotNull(mySender.sendingInfo.details.correlationId);
+        assertThat(mySender.sendingInfo.destination(), sameInstance(requestMessage.getJMSReplyTo()));
+        assertThat(mySender.sendingInfo.details().correlationId(), sameInstance(requestMessage.getJMSCorrelationID()));
+        assertNull(mySender.sendingInfo.details().replyDestination());
+        assertNotNull(mySender.sendingInfo.details().correlationId());
     }
 
     /** TODO: this was valid when we were returning an error message for server side errors. Keeping it in here
      * since we're are not sure, whether it should be re-introduced
-    @Test
     void completingRpcInvocationExceptionallyTriggersReplySending() throws Exception {
         Destination queue = jmsHelper.createQueue("completeRpcExceptionally");
         TestSubscriber<RpcInvocation<String>> testSubscriber = sut.requests(queue, String.class).test();
@@ -131,17 +125,17 @@ class RpcServerTest {
     }
     **/
 
-    private class MySender extends MessageSender {
+    private static class MySender extends MessageSender {
         private String message;
-        private OutgoingMessageMetaData sendingInfo;
+        private OutgoingMessageMetaData<Destination, SendInfo> sendingInfo;
 
-        MySender(String identifier, JmsObjectRepository jmsObjectRepository, Metrics metrics) {
-            super(identifier, jmsObjectRepository, metrics);
+        MySender(String identifier, JmsObjectRepository jmsObjectRepository) {
+            super(identifier, jmsObjectRepository);
         }
 
 
         @Override
-        public Single<OutgoingMessageMetaData> send(String message, OutgoingMessageMetaData meta) {
+        public Single<OutgoingMessageMetaData<Destination, SendInfo>> send(String message, OutgoingMessageMetaData<Destination, SendInfo> meta) {
             this.message = message;
             this.sendingInfo = meta;
             return super.send(message, meta);

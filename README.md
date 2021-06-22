@@ -36,9 +36,9 @@ data sources,
 1. the need to split a long running execution into various parts
 and emit artificial "sub events", and 
 1. improper event processing can easily block your one and only
- thread, rendering the whole service unresponsive
+ thread, rendering the whole service unresponsive.
  
-Therefore we changed the philosophy (and implementation) of the 
+Therefore, we changed the philosophy (and implementation) of the 
 library and based it on RxJava (2.0) to promote a fully reactive
 way of programming.
  
@@ -66,16 +66,9 @@ Currently, the following libraries exist:
 - Communication
   * [comm](./comm/README.md): communication base library providing protocol agnostic, reactive message sending and retrieval
   * [jms](./jms/README.md): reactive JMS messaging
-  * [http](./http/README.md): reactive HTTP communication
-  * [rest](./rest/README.md): annotation based REST communication according to the JAX-RS spec
-  * [websockets](./websockets/README.md): reactive WebSocket communication
-  * [kafka](./kafka/README.md): reactive Kafka communication
 
-- Service related
-  * [service](./service/README.md): Small service skeleton with a defined lifecycle and easy access to Nova and its EventBus 
-  * [metrics-serialization](./metrics-serialization/README.md): Utility to easily serialize MetricDumps
-  * [metrics-elastic](./metrics-elastic/README.md): Utility to push Metrics to Elasticsearch
-  * [metrics-kafka](./metrics-kafka/README.md): Utility to push Metrics to Kafka
+- spring-boot related
+  * [nova-starter](./nova-starter/README.md): Module to conveniently use Nova functionality with spring-boot  
 
 ### 3. How do I integrate it in my projects?
 
@@ -89,7 +82,7 @@ you can be sure that all included modules properly work with each other:
         <dependency>
             <groupId>ch.squaredesk.nova</groupId>
             <artifactId>bom</artifactId>
-            <version>9.0.0</version>
+            <version>10.0.0</version>
             <scope>import</scope>
             <type>pom</type>
         </dependency>

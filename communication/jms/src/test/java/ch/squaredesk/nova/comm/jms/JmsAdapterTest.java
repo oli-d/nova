@@ -1,25 +1,25 @@
 /*
- * Copyright (c) 2020 Squaredesk GmbH and Oliver Dotzauer.
+ * Copyright (c) 2018-2021 Squaredesk GmbH and Oliver Dotzauer.
  *
- * This program is distributed under the squaredesk open source license. See the LICENSE file
- * distributed with this work for additional information regarding copyright ownership. You may also
- * obtain a copy of the license at
+ * This program is distributed under the squaredesk open source license. See the LICENSE file distributed with this
+ * work for additional information regarding copyright ownership. You may also obtain a copy of the license at
  *
- *   https://squaredesk.ch/license/oss/LICENSE
- *
+ *      https://squaredesk.ch/license/oss/LICENSE
  */
 
 package ch.squaredesk.nova.comm.jms;
 
 import ch.squaredesk.nova.comm.retrieving.IncomingMessage;
-import ch.squaredesk.nova.metrics.Metrics;
-import io.reactivex.BackpressureStrategy;
-import io.reactivex.Flowable;
-import io.reactivex.Single;
-import io.reactivex.functions.Function;
-import io.reactivex.subjects.PublishSubject;
-import io.reactivex.subjects.Subject;
-import io.reactivex.subscribers.TestSubscriber;
+import ch.squaredesk.nova.comm.retrieving.IncomingMessageMetaData;
+import ch.squaredesk.nova.comm.rpc.RpcReply;
+import ch.squaredesk.nova.comm.sending.OutgoingMessageMetaData;
+import io.reactivex.rxjava3.core.BackpressureStrategy;
+import io.reactivex.rxjava3.core.Flowable;
+import io.reactivex.rxjava3.core.Single;
+import io.reactivex.rxjava3.functions.Function;
+import io.reactivex.rxjava3.subjects.PublishSubject;
+import io.reactivex.rxjava3.subjects.Subject;
+import io.reactivex.rxjava3.subscribers.TestSubscriber;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -90,8 +90,8 @@ class JmsAdapterTest {
         sut.sendMessage(destination, "some message", sendHeaders);
 
         assertThat(myMessageSender.message, is("some message"));
-        assertThat(myMessageSender.metaData.destination, is(destination));
-        assertThat(myMessageSender.metaData.details.customHeaders, is(sendHeaders));
+        assertThat(myMessageSender.metaData.destination(), is(destination));
+        assertThat(myMessageSender.metaData.details().customHeaders(), is(sendHeaders));
     }
 
     @Test
@@ -100,9 +100,9 @@ class JmsAdapterTest {
 
         sut.sendMessage(destination, "some message");
 
-        assertThat(myMessageSender.metaData.details.deliveryMode, is(defaultDeliveryMode));
-        assertThat(myMessageSender.metaData.details.priority, is(defaultPriority));
-        assertThat(myMessageSender.metaData.details.timeToLive, is(defaultTtl));
+        assertThat(myMessageSender.metaData.details().deliveryMode(), is(defaultDeliveryMode));
+        assertThat(myMessageSender.metaData.details().priority(), is(defaultPriority));
+        assertThat(myMessageSender.metaData.details().timeToLive(), is(defaultTtl));
     }
 
     @Test
@@ -110,23 +110,23 @@ class JmsAdapterTest {
         MyDestination origin = new MyDestination();
         RetrieveInfo rpcInfo = new RetrieveInfo("c1", null, null);
         RetrieveInfo messageInfo = new RetrieveInfo(null, null, null);
-        IncomingMessage[] messages = new IncomingMessage[] {
-                new IncomingMessage<>("one", new IncomingMessageMetaData(origin, null, rpcInfo)),
-                new IncomingMessage<>("two", new IncomingMessageMetaData(origin, null, messageInfo)),
-                new IncomingMessage<>("three", new IncomingMessageMetaData(origin, null, messageInfo)),
-                new IncomingMessage<>("four", new IncomingMessageMetaData(origin, null, messageInfo)),
-                new IncomingMessage<>("five", new IncomingMessageMetaData(origin, null, rpcInfo))
+        IncomingMessage<String, IncomingMessageMetaData<Destination, RetrieveInfo>>[] messages = new IncomingMessage[] {
+                new IncomingMessage<String, IncomingMessageMetaData<Destination, RetrieveInfo>>("one", new IncomingMessageMetaData<>(origin, rpcInfo)),
+                new IncomingMessage<String, IncomingMessageMetaData<Destination, RetrieveInfo>>("two", new IncomingMessageMetaData<>(origin, messageInfo)),
+                new IncomingMessage<String, IncomingMessageMetaData<Destination, RetrieveInfo>>("three", new IncomingMessageMetaData<>(origin, messageInfo)),
+                new IncomingMessage<String, IncomingMessageMetaData<Destination, RetrieveInfo>>("four", new IncomingMessageMetaData<>(origin, messageInfo)),
+                new IncomingMessage<String, IncomingMessageMetaData<Destination, RetrieveInfo>>("five", new IncomingMessageMetaData<>(origin, rpcInfo))
         };
 
         TestSubscriber<String> subscriber = sut.messages(origin).test();
-        for (IncomingMessage msg: messages) {
+        for (IncomingMessage<String, IncomingMessageMetaData<Destination, RetrieveInfo>> msg: messages) {
             myMessageReceiver.publishSubject.onNext(msg);
         }
 
-        assertThat(subscriber.valueCount(), is(3));
-        assertThat(subscriber.values().get(0), is(messages[1].message));
-        assertThat(subscriber.values().get(1), is(messages[2].message));
-        assertThat(subscriber.values().get(2), is(messages[3].message));
+        assertThat(subscriber.values().size(), is(3));
+        assertThat(subscriber.values().get(0), is(messages[1].message()));
+        assertThat(subscriber.values().get(1), is(messages[2].message()));
+        assertThat(subscriber.values().get(2), is(messages[3].message()));
     }
 
     @Test
@@ -139,7 +139,7 @@ class JmsAdapterTest {
     void jmsReplyToAddedToRequestSendingInfo() {
         sut.sendRequest(new MyDestination(), "message", String.class);
 
-        assertNotNull(myRpcClient.outgoingMessageMetaData.details.replyDestination);
+        assertNotNull(myRpcClient.outgoingMessageMetaData.details().replyDestination());
     }
 
     @Test
@@ -148,7 +148,7 @@ class JmsAdapterTest {
         MyDestination replyToDestination = new MyDestination();
         sut.sendRequest(destination, replyToDestination, "message", null, String.class, Duration.ofSeconds(1));
 
-        assertThat(myRpcClient.outgoingMessageMetaData.details.replyDestination, is(replyToDestination));
+        assertThat(myRpcClient.outgoingMessageMetaData.details().replyDestination(), is(replyToDestination));
     }
 
     @Test
@@ -168,7 +168,7 @@ class JmsAdapterTest {
     void correlationIdGeneratedForRpcs() throws Exception {
         sut.sendRequest(new MyDestination(), "message", String.class);
 
-        assertNotNull(myRpcClient.outgoingMessageMetaData.details.correlationId);
+        assertNotNull(myRpcClient.outgoingMessageMetaData.details().correlationId());
     }
 
     @Test
@@ -178,7 +178,7 @@ class JmsAdapterTest {
         sut.sendMessage(destination, "some message");
 
         assertThat(myMessageSender.message, is("some message"));
-        assertThat(myMessageSender.metaData.destination, is(destination));
+        assertThat(myMessageSender.metaData.destination(), is(destination));
     }
 
     @Test
@@ -188,19 +188,19 @@ class JmsAdapterTest {
         sut.sendRequest(destination, "some message", String.class);
 
         assertThat(myRpcClient.request, is("some message"));
-        assertThat(myRpcClient.outgoingMessageMetaData.destination, is(destination));
+        assertThat(myRpcClient.outgoingMessageMetaData.destination(), is(destination));
     }
 
     private class MyMessageReceiver extends MessageReceiver {
-        private Subject<IncomingMessage<String, IncomingMessageMetaData>> publishSubject = PublishSubject.create();
+        private Subject<IncomingMessage<String, IncomingMessageMetaData<Destination, RetrieveInfo>>> publishSubject = PublishSubject.create();
         private Destination destination;
 
         MyMessageReceiver() {
-            super("", null, new Metrics());
+            super("", null);
         }
 
         @Override
-        public Flowable<IncomingMessage<String, IncomingMessageMetaData>> messages(Destination destination) {
+        public Flowable<IncomingMessage<String, IncomingMessageMetaData<Destination, RetrieveInfo>>> messages(Destination destination) {
             this.destination = destination;
             return publishSubject.toFlowable(BackpressureStrategy.BUFFER);
         }
@@ -208,14 +208,14 @@ class JmsAdapterTest {
 
     private class MyMessageSender extends MessageSender {
         private String message;
-        private OutgoingMessageMetaData metaData;
+        private OutgoingMessageMetaData<Destination, SendInfo> metaData;
 
         MyMessageSender() {
-            super("", null, new Metrics());
+            super("", null);
         }
 
         @Override
-        public Single<OutgoingMessageMetaData> send(String message, OutgoingMessageMetaData meta) {
+        public Single<OutgoingMessageMetaData<Destination, SendInfo>> send(String message, OutgoingMessageMetaData<Destination, SendInfo> meta) {
             this.message = message;
             this.metaData = meta;
             return Single.just(meta);
@@ -225,14 +225,14 @@ class JmsAdapterTest {
     private class MyRpcClient extends RpcClient {
         private Object request;
         private Duration timeout;
-        private OutgoingMessageMetaData outgoingMessageMetaData;
+        private OutgoingMessageMetaData<Destination, SendInfo> outgoingMessageMetaData;
 
         private MyRpcClient() {
-            super("TestRpcClient", null, null, new Metrics());
+            super("TestRpcClient", null, null);
         }
 
         @Override
-        public <RequestType, ReplyType> Single<RpcReply<ReplyType>> sendRequest(RequestType request, OutgoingMessageMetaData requestMetaData, Function<RequestType, String> requestTranscriber, Function<String, ReplyType> replyTranscriber, Duration timeout) {
+        public <RequestType, ReplyType> Single<RpcReply<ReplyType, IncomingMessageMetaData<Destination, RetrieveInfo>>> sendRequest(RequestType request, OutgoingMessageMetaData<Destination, SendInfo> requestMetaData, Function<RequestType, String> requestTranscriber, Function<String, ReplyType> replyTranscriber, Duration timeout) {
             this.request = request;
             this.timeout = timeout;
             this.outgoingMessageMetaData = requestMetaData;

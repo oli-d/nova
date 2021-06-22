@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 2020 Squaredesk GmbH and Oliver Dotzauer.
+ * Copyright (c) 2018-2021 Squaredesk GmbH and Oliver Dotzauer.
  *
- * This program is distributed under the squaredesk open source license. See the LICENSE file
- * distributed with this work for additional information regarding copyright ownership. You may also
- * obtain a copy of the license at
+ * This program is distributed under the squaredesk open source license. See the LICENSE file distributed with this
+ * work for additional information regarding copyright ownership. You may also obtain a copy of the license at
  *
- *   https://squaredesk.ch/license/oss/LICENSE
- *
+ *      https://squaredesk.ch/license/oss/LICENSE
  */
 
 package ch.squaredesk.nova.mousemirror;
@@ -20,7 +18,6 @@ import org.springframework.context.ConfigurableApplicationContext;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.MouseEvent;
-import java.time.Duration;
 
 /**
  * This simple example shows how to use the Nove event queue.
@@ -57,13 +54,12 @@ public class MouseMirror {
          * *********************************************************************** * 
          * ***                                                                 *** *
          * *** 1st step:                                                       *** *
-         * *** Initilize Nova by creating a new instance of Nova *** *
+         * *** Initialize Nova by creating a new instance of Nova *** *
          * ***                                                                 *** *
          * *********************************************************************** *
          * *********************************************************************** *
          */
         final Nova nova = Nova.builder().build();
-        nova.metrics.dumpContinuouslyToLog(Duration.ofSeconds(5));
 
         /**
          * <pre>

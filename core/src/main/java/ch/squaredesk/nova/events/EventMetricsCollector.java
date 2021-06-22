@@ -1,60 +1,55 @@
 /*
- * Copyright (c) 2020 Squaredesk GmbH and Oliver Dotzauer.
+ * Copyright (c) 2018-2021 Squaredesk GmbH and Oliver Dotzauer.
  *
- * This program is distributed under the squaredesk open source license. See the LICENSE file
- * distributed with this work for additional information regarding copyright ownership. You may also
- * obtain a copy of the license at
+ * This program is distributed under the squaredesk open source license. See the LICENSE file distributed with this
+ * work for additional information regarding copyright ownership. You may also obtain a copy of the license at
  *
- *   https://squaredesk.ch/license/oss/LICENSE
- *
+ *      https://squaredesk.ch/license/oss/LICENSE
  */
 
 package ch.squaredesk.nova.events;
 
-import ch.squaredesk.nova.metrics.Metrics;
-import com.codahale.metrics.Meter;
+import io.micrometer.core.instrument.Counter;
 
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
+
+import static ch.squaredesk.nova.metrics.MetricsName.buildName;
+import static io.micrometer.core.instrument.Metrics.counter;
+import static io.micrometer.core.instrument.Metrics.gauge;
 
 public class EventMetricsCollector {
-    private final Metrics metrics;
-    private final String identifierPrefix;
-    private final Meter allDispatchedEvents;
-    private final ConcurrentHashMap<Object,Meter> eventSpecificDispatchMeters;
+    private final String eventIdentifierPrefix;
+    private final String emitsWithNoListenerIdentifierPrefix;
 
-    public EventMetricsCollector(Metrics metrics) {
-        this (null, metrics);
-    }
+    private final Counter allDispatchedEvents;
+    private final AtomicInteger subjectCount;
+    private final Counter allEmitsWithoutListener;
 
-    public EventMetricsCollector(String identifier, Metrics metrics) {
-        this.metrics = metrics;
-        this.eventSpecificDispatchMeters = new ConcurrentHashMap<>();
-        this.identifierPrefix = Metrics.name("eventBus", identifier).toString();
-        allDispatchedEvents = new Meter();
-        metrics.register(allDispatchedEvents,this.identifierPrefix,"dispatchedEvents","total");
+    public EventMetricsCollector(String identifier) {
+        this.eventIdentifierPrefix = buildName("eventBus", identifier, "dispatchedEvents");
+        String eventSubjectsIdentifierPrefix = buildName("eventBus", identifier, "eventSubjects");
+        this.emitsWithNoListenerIdentifierPrefix = buildName("eventBus", identifier, "emitsWithNoListener");
+        allDispatchedEvents = counter(buildName(eventIdentifierPrefix, "total"));
+        subjectCount = gauge(buildName(eventSubjectsIdentifierPrefix, "total"), new AtomicInteger(0));
+        allEmitsWithoutListener = counter(buildName(emitsWithNoListenerIdentifierPrefix, "total"));
     }
 
 
     public void eventDispatched(Object event) {
-        eventSpecificDispatchMeters.computeIfAbsent(event, key -> {
-            Meter meter = new Meter();
-            metrics.register(meter,identifierPrefix,"dispatchedEvents",String.valueOf(key));
-            return meter;
-        }).mark();
-        allDispatchedEvents.mark();
+        counter(eventIdentifierPrefix + event).increment();
+        allDispatchedEvents.increment();
     }
 
     public void eventSubjectAdded (Object event) {
-        metrics.getCounter(identifierPrefix, "eventSubjects", "total").inc();
+        subjectCount.incrementAndGet();
     }
 
     public void eventSubjectRemoved(Object event) {
-        metrics.getCounter(identifierPrefix,"eventSubjects", "total").dec();
+        subjectCount.decrementAndGet();
     }
 
     public void eventEmittedButNoObservers(Object event) {
-        String eventString = String.valueOf(event);
-        metrics.getCounter(identifierPrefix,"emitsWithNoListener", eventString).inc();
-        metrics.getCounter(identifierPrefix,"emitsWithNoListener", "total").inc();
+        counter(emitsWithNoListenerIdentifierPrefix + event).increment();
+        allEmitsWithoutListener.increment();
     }
 }

@@ -1,20 +1,18 @@
 /*
- * Copyright (c) 2020 Squaredesk GmbH and Oliver Dotzauer.
+ * Copyright (c) 2018-2021 Squaredesk GmbH and Oliver Dotzauer.
  *
- * This program is distributed under the squaredesk open source license. See the LICENSE file
- * distributed with this work for additional information regarding copyright ownership. You may also
- * obtain a copy of the license at
+ * This program is distributed under the squaredesk open source license. See the LICENSE file distributed with this
+ * work for additional information regarding copyright ownership. You may also obtain a copy of the license at
  *
- *   https://squaredesk.ch/license/oss/LICENSE
- *
+ *      https://squaredesk.ch/license/oss/LICENSE
  */
 
 package ch.squaredesk.nova.comm;
 
 import ch.squaredesk.nova.tuples.Pair;
 import com.conversantmedia.util.concurrent.DisruptorBlockingQueue;
-import io.reactivex.Flowable;
-import io.reactivex.schedulers.Schedulers;
+import io.reactivex.rxjava3.core.Flowable;
+import io.reactivex.rxjava3.schedulers.Schedulers;
 
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
@@ -79,9 +77,9 @@ public class BackpressuredStreamFromAsyncSource<T> {
                 () -> new Pair<>(queue, shutdown),
                 (queueShutdownPair, emitter) -> {
                     T element = null;
-                    while (!queueShutdownPair._2.get() && element == null) {
+                    while (!queueShutdownPair.item2().get() && element == null) {
                         try {
-                            element = queueShutdownPair._1.poll(100, TimeUnit.MILLISECONDS);
+                            element = queueShutdownPair.item1().poll(100, TimeUnit.MILLISECONDS);
                         } catch (InterruptedException e) {
                             emitter.onComplete();
                             Thread.currentThread().interrupt();

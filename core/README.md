@@ -42,7 +42,7 @@ but no subscribers existed. Default value is ```false```.
 
 * ```defaultBackpressureStrategy``` - Defines the default behaviour (which can be overriden whenever you subscribe for 
 events) of the system, when an Event producer outperforms a consumer. The value must be one of the constants defined in 
-io.reactivex.BackpressureStrategy (default value is ```BUFFER```), which are:
+io.reactivex.rxjava3.core.BackpressureStrategy (default value is ```BUFFER```), which are:
 
 | Parameter name | Description |
 |----------------|-------------|

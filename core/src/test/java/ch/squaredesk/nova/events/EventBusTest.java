@@ -1,24 +1,21 @@
 /*
- * Copyright (c) 2020 Squaredesk GmbH and Oliver Dotzauer.
+ * Copyright (c) 2018-2021 Squaredesk GmbH and Oliver Dotzauer.
  *
- * This program is distributed under the squaredesk open source license. See the LICENSE file
- * distributed with this work for additional information regarding copyright ownership. You may also
- * obtain a copy of the license at
+ * This program is distributed under the squaredesk open source license. See the LICENSE file distributed with this
+ * work for additional information regarding copyright ownership. You may also obtain a copy of the license at
  *
- *   https://squaredesk.ch/license/oss/LICENSE
- *
+ *      https://squaredesk.ch/license/oss/LICENSE
  */
 
 package ch.squaredesk.nova.events;
 
 import ch.squaredesk.nova.events.consumers.NoParameterConsumer;
 import ch.squaredesk.nova.events.consumers.SingleParameterConsumer;
-import ch.squaredesk.nova.metrics.Metrics;
-import io.reactivex.BackpressureStrategy;
-import io.reactivex.Flowable;
-import io.reactivex.disposables.Disposable;
-import io.reactivex.functions.Consumer;
-import io.reactivex.subscribers.TestSubscriber;
+import io.reactivex.rxjava3.core.BackpressureStrategy;
+import io.reactivex.rxjava3.core.Flowable;
+import io.reactivex.rxjava3.disposables.Disposable;
+import io.reactivex.rxjava3.functions.Consumer;
+import io.reactivex.rxjava3.subscribers.TestSubscriber;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -39,8 +36,8 @@ public class EventBusTest {
     void setup() {
         eventBus = new EventBus(
                 "test",
-                new EventDispatchConfig(BackpressureStrategy.BUFFER, false, EventDispatchMode.BLOCKING, 1),
-                new Metrics());
+                new EventDispatchConfig(BackpressureStrategy.BUFFER, false, EventDispatchMode.BLOCKING, 1)
+        );
     }
 
     @Test
@@ -153,17 +150,20 @@ public class EventBusTest {
 
     @Test
     void testListenerCanBeRemovedSeparately() {
-        TestSubscriber<Object[]> observer1 = eventBus.on(String.class).test();
-        TestSubscriber<Object[]> observer2 = eventBus.on(String.class).test();
+        List<Object> eventStream1 = new ArrayList<>();
+        List<Object> eventStream2 = new ArrayList<>();
+        Disposable subscription1 = eventBus.on(String.class).subscribe(eventStream1::add);
+        Disposable subscription2 = eventBus.on(String.class).subscribe(eventStream2::add);
 
         // emit -> both observers should get it
         eventBus.emit(String.class, "MyEvent1");
-        observer1.dispose();
+        subscription1.dispose();
         // emit again -> observer 2 should still get this after observer 1 was disposed
         eventBus.emit(String.class, "MyEvent2");
+        subscription2.dispose();
 
-        observer1.assertValueCount(1);
-        observer2.assertValueCount(2);
+        assertThat(eventStream1.size(), is(1));
+        assertThat(eventStream2.size(), is(2));
     }
 
     @Test

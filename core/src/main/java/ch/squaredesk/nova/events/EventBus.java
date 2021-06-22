@@ -1,23 +1,20 @@
 /*
- * Copyright (c) 2020 Squaredesk GmbH and Oliver Dotzauer.
+ * Copyright (c) 2018-2021 Squaredesk GmbH and Oliver Dotzauer.
  *
- * This program is distributed under the squaredesk open source license. See the LICENSE file
- * distributed with this work for additional information regarding copyright ownership. You may also
- * obtain a copy of the license at
+ * This program is distributed under the squaredesk open source license. See the LICENSE file distributed with this
+ * work for additional information regarding copyright ownership. You may also obtain a copy of the license at
  *
- *   https://squaredesk.ch/license/oss/LICENSE
- *
+ *      https://squaredesk.ch/license/oss/LICENSE
  */
 
 package ch.squaredesk.nova.events;
 
-import ch.squaredesk.nova.metrics.Metrics;
-import io.reactivex.BackpressureStrategy;
-import io.reactivex.Flowable;
-import io.reactivex.Scheduler;
-import io.reactivex.schedulers.Schedulers;
-import io.reactivex.subjects.PublishSubject;
-import io.reactivex.subjects.Subject;
+import io.reactivex.rxjava3.core.BackpressureStrategy;
+import io.reactivex.rxjava3.core.Flowable;
+import io.reactivex.rxjava3.core.Scheduler;
+import io.reactivex.rxjava3.schedulers.Schedulers;
+import io.reactivex.rxjava3.subjects.PublishSubject;
+import io.reactivex.rxjava3.subjects.Subject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -36,24 +33,23 @@ public class EventBus {
     private final Scheduler defaultScheduler;
     private final BackpressureStrategy defaultBackpressureStrategy;
     private final EventMetricsCollector metricsCollector;
-    private final ConcurrentHashMap<Object,Subject<Object[]>> eventSpecificSubjects;
+    private final ConcurrentHashMap<Object, Subject<Object[]>> eventSpecificSubjects;
 
     public EventBus(String identifier,
-                    EventDispatchConfig eventDispatchConfig,
-                    Metrics metrics){
+                    EventDispatchConfig eventDispatchConfig){
         logger.debug(
                 "Instantiating event loop {} using {}",
                 identifier,
                 eventDispatchConfig);
-        this.defaultBackpressureStrategy = eventDispatchConfig.defaultBackpressureStrategy;
-        this.warnOnUnhandledEvents = eventDispatchConfig.warnOnUnhandledEvents;
-        this.metricsCollector = new EventMetricsCollector(identifier, metrics);
+        this.defaultBackpressureStrategy = eventDispatchConfig.defaultBackpressureStrategy();
+        this.warnOnUnhandledEvents = eventDispatchConfig.warnOnUnhandledEvents();
+        this.metricsCollector = new EventMetricsCollector(identifier);
         this.eventSpecificSubjects = new ConcurrentHashMap<>();
         this.defaultScheduler = EventBus.createDefaultSchedulerFrom(eventDispatchConfig);
     }
 
     private static Scheduler createDefaultSchedulerFrom (EventDispatchConfig config) {
-        switch (config.eventDispatchMode) {
+        switch (config.eventDispatchMode()) {
             case BLOCKING:
                 // nothing to do
                 return null;
@@ -63,19 +59,19 @@ public class EventBus {
                     t.setDaemon(true);
                     return t;
                 };
-                if (config.parallelism > 1) {
-                    return Schedulers.from(Executors.newFixedThreadPool(config.parallelism, threadFactoryBizLogic));
+                if (config.parallelism() > 1) {
+                    return Schedulers.from(Executors.newFixedThreadPool(config.parallelism(), threadFactoryBizLogic));
                 } else {
                     return Schedulers.from(Executors.newSingleThreadExecutor(threadFactoryBizLogic));
                 }
             case NON_BLOCKING_WORK_STEALING_POOL:
-                if (config.parallelism == 0) {
+                if (config.parallelism() == 0) {
                     return Schedulers.from(Executors.newWorkStealingPool());
                 } else {
-                    return Schedulers.from(Executors.newWorkStealingPool(config.parallelism));
+                    return Schedulers.from(Executors.newWorkStealingPool(config.parallelism()));
                 }
         }
-        throw new RuntimeException("Unsupported EventDispatchMode " + config.eventDispatchMode);
+        throw new RuntimeException("Unsupported EventDispatchMode " + config.eventDispatchMode());
     }
 
     private Subject<Object[]> getSubjectFor(Object event) {
@@ -101,7 +97,7 @@ public class EventBus {
                 metricsCollector.eventDispatched(event);
             }
         } catch (Exception e) {
-            logger.error("Unable to emit event " + event + " with parameters " + Arrays.toString(data),e);
+            logger.error("Unable to emit event {} with parameters {}", event, Arrays.toString(data),e);
         }
     }
 
