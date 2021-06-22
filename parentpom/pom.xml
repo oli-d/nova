@@ -64,7 +64,7 @@
 
         <junit.jupiter.version>5.5.2</junit.jupiter.version>
         <junit.platform.version>1.2.0</junit.platform.version>
-        <sonar.java.source>15</sonar.java.source>
+        <sonar.java.source>16</sonar.java.source>
     </properties>
 
     <dependencyManagement>
@@ -209,7 +209,7 @@
                     <plugin>
                         <groupId>org.jacoco</groupId>
                         <artifactId>jacoco-maven-plugin</artifactId>
-                        <version>0.7.9</version>
+                        <version>0.8.7</version>
                         <configuration>
                             <destFile>${basedir}/../target/coverage-reports/jacoco-unit.exec</destFile>
                             <dataFile>${basedir}/../target/coverage-reports/jacoco-unit.exec</dataFile>
@@ -343,7 +343,7 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-javadoc-plugin</artifactId>
-                        <version>3.0.1</version>
+                        <version>3.3.0</version>
                         <configuration>
                             <additionalOptions>-html5</additionalOptions>
                         </configuration>
@@ -367,7 +367,7 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-gpg-plugin</artifactId>
-                        <version>1.6</version>
+                        <version>3.0.1</version>
                         <executions>
                             <execution>
                                 <id>sign-artifacts</id>

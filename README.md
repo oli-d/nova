@@ -36,9 +36,9 @@ data sources,
 1. the need to split a long running execution into various parts
 and emit artificial "sub events", and 
 1. improper event processing can easily block your one and only
- thread, rendering the whole service unresponsive
+ thread, rendering the whole service unresponsive.
  
-Therefore we changed the philosophy (and implementation) of the 
+Therefore, we changed the philosophy (and implementation) of the 
 library and based it on RxJava (2.0) to promote a fully reactive
 way of programming.
  
@@ -73,9 +73,6 @@ Currently, the following libraries exist:
 
 - Service related
   * [service](./service/README.md): Small service skeleton with a defined lifecycle and easy access to Nova and its EventBus 
-  * [metrics-serialization](./metrics-serialization/README.md): Utility to easily serialize MetricDumps
-  * [metrics-elastic](./metrics-elastic/README.md): Utility to push Metrics to Elasticsearch
-  * [metrics-kafka](./metrics-kafka/README.md): Utility to push Metrics to Kafka
 
 ### 3. How do I integrate it in my projects?
 
