@@ -66,13 +66,9 @@ Currently, the following libraries exist:
 - Communication
   * [comm](./comm/README.md): communication base library providing protocol agnostic, reactive message sending and retrieval
   * [jms](./jms/README.md): reactive JMS messaging
-  * [http](./http/README.md): reactive HTTP communication
-  * [rest](./rest/README.md): annotation based REST communication according to the JAX-RS spec
-  * [websockets](./websockets/README.md): reactive WebSocket communication
-  * [kafka](./kafka/README.md): reactive Kafka communication
 
-- Service related
-  * [service](./service/README.md): Small service skeleton with a defined lifecycle and easy access to Nova and its EventBus 
+- spring-boot related
+  * [nova-starter](./nova-starter/README.md): Module to conveniently use Nova functionality with spring-boot  
 
 ### 3. How do I integrate it in my projects?
 

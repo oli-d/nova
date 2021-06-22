@@ -80,12 +80,6 @@
 
             <dependency>
                 <groupId>ch.squaredesk.nova</groupId>
-                <artifactId>service</artifactId>
-                <version>10.0.0</version>
-            </dependency>
-
-            <dependency>
-                <groupId>ch.squaredesk.nova</groupId>
                 <artifactId>comm</artifactId>
                 <version>10.0.0</version>
             </dependency>
@@ -96,50 +90,10 @@
             </dependency>
             <dependency>
                 <groupId>ch.squaredesk.nova</groupId>
-                <artifactId>http</artifactId>
-                <version>10.0.0</version>
-            </dependency>
-            <dependency>
-                <groupId>ch.squaredesk.nova</groupId>
                 <artifactId>http-test-utils</artifactId>
                 <version>10.0.0</version>
             </dependency>
-            <dependency>
-                <groupId>ch.squaredesk.nova</groupId>
-                <artifactId>rest</artifactId>
-                <version>10.0.0</version>
-            </dependency>
-            <dependency>
-                <groupId>ch.squaredesk.nova</groupId>
-                <artifactId>rest-test-utils</artifactId>
-                <version>10.0.0</version>
-            </dependency>
-            <dependency>
-                <groupId>ch.squaredesk.nova</groupId>
-                <artifactId>websockets</artifactId>
-                <version>10.0.0</version>
-            </dependency>
-            <dependency>
-                <groupId>ch.squaredesk.nova</groupId>
-                <artifactId>kafka</artifactId>
-                <version>10.0.0</version>
-            </dependency>
 
-            <dependency>
-                <groupId>ch.squaredesk.nova</groupId>
-                <artifactId>metrics-serialization</artifactId>
-                <version>10.0.0</version>
-            </dependency>
-            <dependency>
-                <groupId>ch.squaredesk.nova</groupId>
-                <artifactId>metrics-elastic</artifactId>
-                <version>10.0.0</version>
-            </dependency>
-            <dependency>
-                <groupId>ch.squaredesk.nova</groupId>
-                <artifactId>metrics-kafka</artifactId>
-                <version>10.0.0</version>
-            </dependency>
             <dependency>
                 <groupId>ch.squaredesk.nova</groupId>
                 <artifactId>nova-starter</artifactId>
@@ -157,7 +111,6 @@
         <module>communication/comm</module>
         <module>communication/jms</module>
         <module>communication/http-test-utils</module>
-        <module>communication/kafka</module>
 
         <module>test-utils</module>
         <module>examples</module>
